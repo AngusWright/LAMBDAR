@@ -6,6 +6,8 @@ function(env=NULL, outenv=NULL) {
   # Procedure measures the fluxes present in a supplied image
   # inside catalogued apertures. 
 
+  #GIT TEST LINE
+  
   # Load Parameter Space
   if (is.null(env)) {
     stop("No Parameter Space Environment Specified in Call")
