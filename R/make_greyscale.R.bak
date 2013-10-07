@@ -1,0 +1,51 @@
+make_greyscale <-
+function (struct=NA, file=NA, points=FALSE, cat=NA, lo=0.1, hi=0.998, log=TRUE, bad=0, flip=FALSE, outpng=NA, title="",...) {
+
+   if (all(is.na(struct))&(is.na(file))) { stop("No File or Image List Provided") }
+   if (!is.na(file)) { struct<-read.fits(file, hdu=0)}
+   if (points) {
+     if (is.na(cat)) { 
+       warning("No CSV Catalogue Supplied with points flag") 
+       points=FALSE
+     } else {
+       try.read=try(cat<-read.csv(cat))
+       if (class(try.read)=='try error') {
+         warning("Failed to read points catalogue")
+         points=FALSE
+       } 
+     }
+   }
+   for (i in 1:length(struct$dat) ) {
+     map<-magmap(struct$dat[[i]],bad=bad,lo=lo,hi=hi,log=log,flip=flip,...)$map
+     #Rotate matrix to correct x/y axis orientation
+     map<-matrix(map, ncol=dim(map)[2], byrow=T)
+     col<-rgb(map,map,map)
+     if (!any(is.na(outpng))) { png(file=outpng[i]) }
+     plot.new()
+     plot.window(xlim=range(struct$x[[i]],na.rm=TRUE), 
+                 ylim=range(struct$y[[i]],na.rm=TRUE), 
+                  asp=1/cos(median(struct$y[[i]], na.rm=TRUE)*pi/180))
+     image(x=seq(min(struct$x[[i]]),max(struct$x[[i]]),len=length(struct$x[[i]])),
+           y=seq(min(struct$y[[i]]),max(struct$y[[i]]),len=length(struct$y[[i]])),
+           #z=matrix(1:length(struct$dat[[i]]), ncol=dim(struct$dat[[i]])[2], byrow=T),col=col, axes=FALSE, add=TRUE, useRaster=TRUE)
+           z=map,col=grey((0:128)/128), axes=FALSE, add=TRUE, useRaster=TRUE)
+     #print(par("usr"))
+     plot.window(xlim=c(struct$x[[i]][1],struct$x[[i]][length(struct$x[[i]])]), 
+                 ylim=c(struct$y[[i]][1],struct$y[[i]][length(struct$y[[i]])]), 
+                  asp=1/cos(median(struct$y[[i]], na.rm=TRUE)*pi/180))
+     magaxis(xlab="RA/deg",ylab="Dec/deg",title=title)
+     if (points) {
+       if (is.null(cat$CONTAM)) {
+         if (!flip) { points(cat$RA, cat$DEC, cex=3, col='lightgreen') }
+         if ( flip) { points(cat$RA, cat$DEC, cex=3, col='red'       ) }
+       } else {
+         if (!flip) { points(cat$RA[which(cat$CONTAM==0)], cat$DEC[which(cat$CONTAM==0)], cex=3,        col='lightgreen')
+                      points(cat$RA[which(cat$CONTAM==1)], cat$DEC[which(cat$CONTAM==1)], cex=3, pch=4, col='lightgreen') }
+         if ( flip) { points(cat$RA[which(cat$CONTAM==0)], cat$DEC[which(cat$CONTAM==0)], cex=3,        col='red'       ) 
+                      points(cat$RA[which(cat$CONTAM==1)], cat$DEC[which(cat$CONTAM==1)], cex=3, pch=4, col='red'       ) }
+       }
+     } 
+     if (!any(is.na(outpng))) { dev.off() } 
+   }
+   return=NULL
+}
