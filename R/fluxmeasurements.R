@@ -537,13 +537,19 @@ function(env=NULL, outenv=NULL) {
   #Do we want to do sky estimation/subtraction?
   if (doskyest) {
     #Get sky estimates
-    browser()
+    if (verbose) { message("Perfoming Sky Subtraction"); cat("Performing Sky Subtraction") }
     skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),astrom=astr_struc)
-    skyest2<-as.vector(skyest)
+    skyflux<-skyest[,1]
+    skyerr<-skyest[,2]
+    browser()
     #Subrtract Sky Flux
-    skyflux<-skyest*sdfa
+    skyflux<-skyflux*sdfa
+    skyerr<-skyerr*sdfa
     dfaflux<-dfaflux-skyflux
     sfaflux<-sfaflux-skyflux
+    dfaerr<-sqrt(dfaerr^2+skyerr^2)
+    dfaerr<-sqrt(sfaerr^2+skyerr^2)
+    if (verbose) { message(paste("   - Done in",timer,"(s)\n")); cat(paste("   - Done in",timer,"(s)\n"))}
   } else {
     skyflux<-vector(0, length=length(dfaflux))
   }
@@ -652,6 +658,8 @@ function(env=NULL, outenv=NULL) {
     ssfad  <-ssfad[which(contams==0)]
     ssfa2e2<-ssfa2e2[which(contams==0)]
     sfaflux<-sfaflux[which(contams==0)]
+    skyflux<-skyflux[which(contams==0)]
+    skyerr <-skyerr[which(contams==0)]
     sfaerr <-sfaerr[which(contams==0)]
     sdfa   <-sdfa[which(contams==0)]
     sdfa2  <-sdfa2[which(contams==0)]
