@@ -6,8 +6,6 @@ function(env=NULL, outenv=NULL) {
   # Procedure measures the fluxes present in a supplied image
   # inside catalogued apertures. 
 
-  #GIT TEST LINE
-  
   # Load Parameter Space
   if (is.null(env)) {
     stop("No Parameter Space Environment Specified in Call")
@@ -231,7 +229,7 @@ function(env=NULL, outenv=NULL) {
       message(paste('Output FA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   }
-  #Do we want to output the SourceMask to file? 
+  #Do we want to make the SourceMask to file? 
   if (sourcemask) {
     #Note:
     #> In the case of flux measurements: we want SM to be 1 only where the sources are, and within the mask region
@@ -247,8 +245,9 @@ function(env=NULL, outenv=NULL) {
     if (diagnostic) {
       message(paste("SourceMask Max/Min:",max(sm),min(sm)))
       message(paste("OLDMethod - SourceMask Max/Min:",max(1-image.env$fa),min(1-image.env$fa)))
-      writefitsout(paste(pathout,smfilename, sep=""),sm,image.env$hdr_str,nochange=TRUE)
     }
+    #Are we outputting the sourcemask?
+    if (!is.null(smfilename)){ writefitsout(paste(pathout,smfilename, sep=""),sm,image.env$hdr_str,nochange=TRUE) }
     if (!quiet) { cat(" - Done\n") }
 
     #If we want the SourceMask only, then end here
@@ -258,8 +257,8 @@ function(env=NULL, outenv=NULL) {
     }
     #Remove arrays that are no longer needed
     rm(fa, envir=image.env)
-    rm(sm, envir=env)
-    gc()
+    #rm(sm, envir=env)
+    #gc()
   }
 
   #---------------------------------------------------------------
@@ -538,7 +537,9 @@ function(env=NULL, outenv=NULL) {
   #Do we want to do sky estimation/subtraction?
   if (doskyest) {
     #Get sky estimates
-    skyest<-skyback(ra,dec,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=im,maskim=sm,astrom=astr_struc)
+    browser()
+    skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),astrom=astr_struc)
+    skyest2<-as.vector(skyest)
     #Subrtract Sky Flux
     skyflux<-skyest*sdfa
     dfaflux<-dfaflux-skyflux

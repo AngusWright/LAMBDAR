@@ -539,7 +539,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (is.na(doskyest)) { 
     warning("Sky Estimate Flag not present in the Parameter File") 
     doskyest<-FALSE
+  } else if (doskyest & !sourcemask) {
+    warning("Source Mask creation being forced because Sky Estimate Flag is TRUE") 
+    sourcemask<-TRUE
   }
+    
+    
 
   #Name of Logfile to be output
   ID="LogFile" 
