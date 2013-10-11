@@ -16,22 +16,22 @@ writesfatableout(filename)
 string; path to, and filename of, output filename
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
 NULL; Output is to file
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

@@ -17,21 +17,21 @@ string; relative path and filename of the FITS file to be analysed.
 }
 }
 \details{
-This procedure is designed to read all common astrometry keywords. Nonetheless, the source should be checked to ensure that your fits file keywords are included. 
+This procedure is designed to read all common astrometry keywords. Nonetheless, the source should be checked to ensure that your fits file keywords are included.
 }
 \value{
 list; contains all keywords needed for determining locations in the fits image using astrometry.
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

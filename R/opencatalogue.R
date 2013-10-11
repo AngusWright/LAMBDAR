@@ -25,25 +25,25 @@ function(env=NULL, outenv=NULL){
     #Test Read of Catalogue for errors
     if (class(error)=="try error") {
       #Stop on Error
-      geterrormessage()
+      geterrmessage()
       sink(type="message")
       stop("Catalogue File read failed")
     }
-    fitstable<-as.data.frame(read.csv(paste(pathroot,catalogue,sep=""))) 
+    fitstable<-as.data.frame(read.csv(paste(pathroot,catalogue,sep="")))
   } else if (fits) {
     error<-try(as.data.frame(read.fitstab(paste(pathroot,catalogue,sep=""))))
     if (class(error)=="try error") {
       #Stop on Error
-      geterrormessage()
+      geterrmessage()
       sink(type="message")
       stop("Catalogue File read failed")
     }
-    fitstable<-as.data.frame(read.fitstab(paste(pathroot,catalogue,sep=""))) 
+    fitstable<-as.data.frame(read.fitstab(paste(pathroot,catalogue,sep="")))
   } else if (rdat) {
     error<-try(load(paste(pathroot,catalogue,sep="")))
     if (class(error)=="try error") {
       #Stop on Error
-      geterrormessage()
+      geterrmessage()
       sink(type="message")
       stop("Catalogue File read failed")
     }
@@ -55,34 +55,34 @@ function(env=NULL, outenv=NULL){
   #Check for Correct Column Syntax & Read Data
   #GAMA Catalogue ID
   error<-try(id_g<-fitstable[1:nrows,"CATAID"])
-  if ((class(error)=="try-error")||(is.null(id_g[1]))) { 
+  if ((class(error)=="try-error")||(is.null(id_g[1]))) {
     sink(type="message")
     stop("Catalogue does not contain CATAID column")
   }
   #Object RA
   error<-try(ra_g<-fitstable[1:nrows,"RA"])
-  if ((class(error)=="try-error")||(is.null(ra_g[1]))) { 
+  if ((class(error)=="try-error")||(is.null(ra_g[1]))) {
     sink(type="message")
     stop("Catalogue does not contain RA column")
   }
   #Object Dec
   error<-try(dec_g<-fitstable[1:nrows,"DEC"])
-  if ((class(error)=="try-error")||(is.null(dec_g[1]))) { 
+  if ((class(error)=="try-error")||(is.null(dec_g[1]))) {
     sink(type="message")
     stop("Catalogue does not contain DEC column")
   }
 
   #Setup Aperture Variables
-  if (forcepointsources) { 
+  if (forcepointsources) {
     #If using point - set standardised aperture values
-    theta_g<-array(0, dim=c(nrows)) 
-    a_g<-array(0, dim=c(nrows))  
-    b_g<-array(0, dim=c(nrows))  
+    theta_g<-array(0, dim=c(nrows))
+    a_g<-array(0, dim=c(nrows))
+    b_g<-array(0, dim=c(nrows))
   } else {
-    #Otherwise, Check Syntax & Read in Aperture Variables 
-    error<-try(theta_g<-fitstable[1:nrows,"THETA_J2000"])  # theta 
-    if ((class(error)=="try-error")||(is.null(theta_g))) { 
-      error<-try(theta_g<-fitstable[1:nrows,"THETA_J2000_N0E90"])  # theta 
+    #Otherwise, Check Syntax & Read in Aperture Variables
+    error<-try(theta_g<-fitstable[1:nrows,"THETA_J2000"])  # theta
+    if ((class(error)=="try-error")||(is.null(theta_g))) {
+      error<-try(theta_g<-fitstable[1:nrows,"THETA_J2000_N0E90"])  # theta
       if ((class(error)=="try-error")||(is.null(theta_g))) { sink(type="message") ; stop("Catalogue does not contain THETA_J2000 column") }
     }
     error<-try(a_g<-fitstable[1:nrows,"A_KRON_SEMIMAJ_ARC"]) # semimajor in arcsec
@@ -122,7 +122,7 @@ function(env=NULL, outenv=NULL){
 
 
   #Finished Reading Catalogue
-  if (showtime) { cat(paste(" - Done (", round(proc.time()[3]-timer[3], digits=3),"sec )\n")) 
+  if (showtime) { cat(paste(" - Done (", round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
   } else if (!quiet) { cat(" - Done\n") }
   detach(env)
 

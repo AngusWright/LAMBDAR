@@ -5,14 +5,17 @@
 Perform Flux Measurements
 }
 \description{
-Given image arrays and input object parameters, output a FITS table containing the fluxes of each object. Setup to this procedure is performed by the wrapping main function 
+Given image arrays and input object parameters, output a FITS table containing the fluxes of each object. Setup to this procedure is performed by the wrapping main function
 MeasureFluxes.
 }
 \usage{
-fluxmeasurements(id_g, ra_g, dec_g, x_g, y_g, theta_g, a_g, b_g, im, hdr, ime, imm, pathroot, pathout, prfmap, lambda, field, conf, fluxcorr, fluxweight, beamarea_in, asperpix, Jybm, sourcemask, nopsf, filtcontam, contams)
+fluxmeasurements(env=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+  \item{env}{
+environment identifier; The environment where all parameters are housed
+}
   \item{id_g}{
 vector of (m) strings; The catalogue IDs of the objects to be measured
 }
@@ -41,7 +44,7 @@ numeric (m) vector; lengths of the minor axis' of the apertures in arcsec
 numeric (n,n) array; input image
 }
   \item{hdr}{
-list; contains all keywords and values from the image FITS header 
+list; contains all keywords and values from the image FITS header
 }
   \item{ime}{
 numeric (n,n) array; input image error map
@@ -77,7 +80,7 @@ numeric; width of each image pixel in arcsec
 logical; if TRUE, image pixels are measure in Jy per beam, as opposed to Jy per Pixel
 }
   \item{sourcemask}{
-logical; if TRUE, source mask FITS image will be output to file 
+logical; if TRUE, source mask FITS image will be output to file
 }
   \item{nopsf}{
 logical; if TRUE, all objects will be convolved with a gaussian instead of an input PSF
@@ -89,11 +92,11 @@ logical; if TRUE, objects identified in the input catalogue as being 'contaminan
 numeric (m) vector; contaminant flags - if object 'i' is a contaminant, contams[i]=1; otherwise contams[i]=0
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
-NULL; function creates global variables which may be used for further analysis after return, but otherwise all output is to file. 
+NULL; function creates global variables which may be used for further analysis after return, but otherwise all output is to file.
 The most relevant global variables are those defined last:
   \item{sfafluxout}{
 numeric (m) vector; object fluxes
@@ -108,16 +111,16 @@ numeric (m) vector; weighted object fluxes
 numeric (m) vector; weighted object flux errors
 }
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

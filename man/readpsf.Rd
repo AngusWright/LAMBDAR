@@ -5,7 +5,7 @@
 Read and Process PSF FITS Image
 }
 \description{
-Reads an input fits image for a Point Spread Function (PSF) and performs calculations needed in MeasureFluxes. 
+Reads an input fits image for a Point Spread Function (PSF) and performs calculations needed in MeasureFluxes.
 }
 \usage{
 readpsf(filename, asperpix, stampsize_as, normalize = FALSE, gauss_fwhm_as = NA)
@@ -28,24 +28,24 @@ logical; if TRUE, PSF will be normalised to a height of 1
 numeric; FWHM of PSF gaussian. If supplied and greater than 0, PSF will be generated using a gaussian and not from input file
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
-numeric (n,n) array; image containing the read/generated PSF. The pixel length of each dimension of the array is floor(stampsize_as/asperpix). The function also creates 
+numeric (n,n) array; image containing the read/generated PSF. The pixel length of each dimension of the array is floor(stampsize_as/asperpix). The function also creates
 some global variables, the most useful of which is:
 \item{sumpsf}{ numeric; the sum of pixels that make the psf function }
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

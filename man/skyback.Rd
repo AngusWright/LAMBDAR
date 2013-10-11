@@ -5,7 +5,7 @@
 Function to find local sky values
 }
 \description{
-This function calculates local sky values using a combination source masking, sigma clipping of extreme pixels and iterating the median sky values of weighted annuli that are located around the ra and dec of the object of interest. The function is designed to cope with quite complex sky problems and is robust to outliers. It returns a single sky value and error for each requested ra and dec location. 
+This function calculates local sky values using a combination source masking, sigma clipping of extreme pixels and iterating the median sky values of weighted annuli that are located around the ra and dec of the object of interest. The function is designed to cope with quite complex sky problems and is robust to outliers. It returns a single sky value and error for each requested ra and dec location.
 }
 \usage{
 skyback(ra, dec, cutlo = 0, cuthi = 100, origim, astrom, maskim, remmask = TRUE, radweight = 1, clipiters = 5, PSFFWHMinPIX = 2/0.339, hardlo = 2, hardhi = 10)
@@ -52,9 +52,9 @@ The lower limit for the inner sky annuli, where the limit used is hardlo * PSFFW
 The lower limit for the outer sky annuli, where the limit used is hardhi * PSFFWHMinPIX.
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
 Returns a data frame with 3 columns containing the sky value (sky), sky error (skyerr) and the number of sky annuli that have error bars encompassing the final sky (Nnearsky), where this can be at most 10, and will be 6-7 for a well behaved sky.
 }

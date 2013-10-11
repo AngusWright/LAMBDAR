@@ -5,7 +5,7 @@
 Source Subtraction from FITS image
 }
 \description{
-Perform a subtraction of sources and/or contaminants from a FITS image.   
+Perform a subtraction of sources and/or contaminants from a FITS image.
 }
 \usage{
 sourcesubtraction(image, sfa_models, stamp_lims, fluxes, outputfile, outputheader, beamarea, insidemask)
@@ -16,7 +16,7 @@ sourcesubtraction(image, sfa_models, stamp_lims, fluxes, outputfile, outputheade
 string; relative path to, and filename of, the image to be used for subtraction
 }
   \item{sfa_models}{
-numeric length (m) list of (n,n) arrays; length (m) list of (n,n) stamps containing the apertures to be subtracted 
+numeric length (m) list of (n,n) arrays; length (m) list of (n,n) stamps containing the apertures to be subtracted
 }
   \item{stamp_lims}{
 numeric (m,4) array; limits of where the aperture stamps are to be placed, in image pixel space; [,1]=x_lo, [,2]=x_up, [,3]=y_lo, [,4]=y_up.
@@ -34,25 +34,25 @@ list; the FITS header for the output image
 numeric; the beam area for the input image
 }
   \item{insidemask}{
-logical (m) vector; if TRUE, then the object will be subtracted 
+logical (m) vector; if TRUE, then the object will be subtracted
 }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
+%%\details{
+%%%%  ~~ If necessary, more details than the description above ~~
+%%}
 \value{
 NULL; all output is to file
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

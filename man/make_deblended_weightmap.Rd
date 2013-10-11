@@ -5,9 +5,9 @@
 Deblend Photometeric Objects
 }
 \description{
-Deblends objects which are overlapping in a photometric image. Procedure is called by fluxmeasurements, part of the MeasureFluxes routine. 
-The procedure takes individual weighted object apertures, and determines what proportion of the blended flux should belong to the object in question. 
-It performs this analysis on all apertures from the input catalogue. 
+Deblends objects which are overlapping in a photometric image. Procedure is called by fluxmeasurements, part of the MeasureFluxes routine.
+The procedure takes individual weighted object apertures, and determines what proportion of the blended flux should belong to the object in question.
+It performs this analysis on all apertures from the input catalogue.
 }
 \usage{
 make_deblended_weightmap(wsfa, wfa)
@@ -21,31 +21,31 @@ numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) weighted obj
 numeric (p,q) array; full mask of all weighted object apertures, placed in their approriate locations, coadded
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
 numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) weighted, deblended, object aperture stamps
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
 MeasureFluxes, fluxmeasurements
 }
-\examples{
+%%\examples{
 
-}
+%%}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

@@ -19,31 +19,31 @@ numeric (n) vector; precise x pixel values for (n) objects
 numeric (n) vector; precise y pixel value for (n) objectss
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
 numeric (2,n) array; row-bound vectors containing the integer pixel values for x and y
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
 MeasureFluxes
 }
-\examples{
+%%\examples{
 
-}
+%%}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

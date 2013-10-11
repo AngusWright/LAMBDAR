@@ -5,7 +5,7 @@
 RA/Dec to Pixel
 }
 \description{
-Maps a provided array of RAs and Decs to pixel locations X and Y, when provided with calibrating central RA/Dec, X/Y, and scales. 
+Maps a provided array of RAs and Decs to pixel locations X and Y, when provided with calibrating central RA/Dec, X/Y, and scales.
 }
 \usage{
 radec2xy(ra, dec, ra0 = 0, dec0 = 0, x0 = 0, y0 = 0, xscale = 1, yscale = 1)
@@ -31,37 +31,37 @@ numeric; x-coordinate of the calibrating pixel
 numeric; x-coordinate of the calibrating pixel
 }
   \item{xscale}{
-numeric; RA-interval between successive x pixels (deg) 
+numeric; RA-interval between successive x pixels (deg)
 }
   \item{yscale}{
-numeric; Dec-interval between successive y pixels (deg) 
+numeric; Dec-interval between successive y pixels (deg)
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
-numeric (n,2) array; two column bound vectors containing the desired x pixel locations [,'X'] and y pixel locations [,'Y'] 
+numeric (n,2) array; two column bound vectors containing the desired x pixel locations [,'X'] and y pixel locations [,'Y']
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Aaron Robotham{ ICRAR}
  {\email{aaron.robotham@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
+%%\seealso{
 %% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
+%%}
+%%\examples{
 
-}
+%%}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

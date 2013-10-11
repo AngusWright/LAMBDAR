@@ -5,10 +5,10 @@
 Crop FITS Image
 }
 \description{
-Crop a fits image to a region of input radius, centred around an input RA and Dec. 
+Crop a fits image to a region of input radius, centred around an input RA and Dec.
 }
 \usage{
-crop_im(ra0 = NA, dec0 = NA, pathroot = "", inpim = NA, cutrad = 1, fitsoutname = NA, echo = FALSE)
+crop_im(ra0 = -999, dec0 = -999, pathroot = "", inpim = NA, cutrad = 1, fitsoutname = NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -30,30 +30,27 @@ numeric; Radius of cropped region (deg). Default value is 1 degree.
   \item{fitsoutname}{
 string; Filename for output cropped image
 }
-  \item{echo}{
-logical; if TRUE, echo the final command instead of executing it. This can be useful for diagnostics
-}
 }
 \details{
-The inputs ra0, dec0, inpim, cutrad, and fitsoutname can all be vectors of values if more than one crop is desired. 
-Note that each cropped image MUST have its own individual fitsoutname - the function will not create extended FITS files. 
-For example, if you wish to crop one image in many places: you can provide a single inpim, but vectors of 'n' ra0s, dec0s, cutrads, 
-and fitsoutnames. If you wish to crop the same location out of many images, you can provide a single ra0, dec0, and cutrad, but 
-vectors of 'n' inpims and fitsoutnames. 
+The inputs ra0, dec0, inpim, cutrad, and fitsoutname can all be vectors of values if more than one crop is desired.
+Note that each cropped image MUST have its own individual fitsoutname - the function will not create extended FITS files.
+For example, if you wish to crop one image in many places: you can provide a single inpim, but vectors of 'n' ra0s, dec0s, cutrads,
+and fitsoutnames. If you wish to crop the same location out of many images, you can provide a single ra0, dec0, and cutrad, but
+vectors of 'n' inpims and fitsoutnames.
 }
 \value{
 NULL; The cropped image(s) are output to file.
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

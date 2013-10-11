@@ -13,32 +13,32 @@ readparfile(parfile, starttime = NA)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{parfile}{
-string; relative path to, and filename of, the parameter file  
+string; relative path to, and filename of, the parameter file
 }
   \item{starttime}{
 numeric; CPU start time of the calling procedure, in seconds. Used for output of elapsed times; if not supplied, current CPU time is used.
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
-\value{
+%%}
+%%\value{
 %%  ~Describe the value returned
 %%  If it is a LIST, use
 %%  \item{comp1 }{Description of 'comp1'}
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
-}
-\references{
+%%}
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

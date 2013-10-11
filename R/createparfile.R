@@ -1,5 +1,5 @@
 createparfile <-
-  function( 
+  function(
     RootDirectory="./",
     Catalogue="./catalogue.fits",
     PSFMap="NONE",
@@ -38,6 +38,7 @@ createparfile <-
     ABVegaFlux=1.0,
     MagZeroPoint=-999,
     MagZPLabel="MagZP",
+    DoSkyEst=0,
     OutputDirectory="./Output/",
     LogFile="LAMBDARlog.txt",
     SourceMaskOnly=0,
@@ -65,26 +66,26 @@ cat(paste("#--------------------------------------------------------------------
 #
 #                   Default Parameter File for use by LAMBDAR
 #
-#   NB: All Parameters are provided here. 
-#       In some cases, certain parameters will not be required. 
+#   NB: All Parameters are provided here.
+#       In some cases, certain parameters will not be required.
 #
-# Written by:  A.H. Wright 
+# Written by:  A.H. Wright
 #
 #-------------------------------------------------------------------------------------
 
 #                #---------Working Directory Path-----------#
-RootDirectory          ",RootDirectory     ,"       
+RootDirectory          ",RootDirectory     ,"
 #                #-------File Paths: Relative to Root-------#
-Catalogue              ",Catalogue         ,"    #Catalogue Filename and Path                
+Catalogue              ",Catalogue         ,"    #Catalogue Filename and Path
 PSFMap                 ",PSFMap            ,"    #PSF Filename and Path                      (use 'NONE' if not wanted)
-DataMap                ",DataMap           ,"    #Image Filename and Path                    
-ErrorMap               ",ErrorMap          ,"    #Error Map Filename and Path                (use 'NONE' if not wanted) 
+DataMap                ",DataMap           ,"    #Image Filename and Path
+ErrorMap               ",ErrorMap          ,"    #Error Map Filename and Path                (use 'NONE' if not wanted)
 MaskMap                ",MaskMap           ,"    #Mask Filename and Path                     (use 'NONE' if not wanted)
 #                #-------Telescope Specific Variables-------#
 MapJyPerBeam           ",MapJyPerBeam      ,"    #Is the Image Flux measured in Jyperbeam (as opposed to JyPerPixel)?            [1/0]
 Confusion_Jy           ",Confusion_Jy      ,"    #Confusion in Jy
 Gauss_FWHM_AS          ",Gauss_FWHM_AS     ,"    #Gaussian FWHM of Seeing in ArcSec
-BeamArea_SqAS          ",BeamArea_SqAS     ,"    #Beam area in Square Arcsec 
+BeamArea_SqAS          ",BeamArea_SqAS     ,"    #Beam area in Square Arcsec
 FluxCorr               ",FluxCorr          ,"    #Flux Correction Factor
 EFactor                ",EFactor           ,"    #Error Map Scale Factor
 PSFheight              ",PSFheight         ,"    #PSF Scale-height
@@ -106,13 +107,13 @@ UseMask                ",UseMask           ,"    #Use the Source Mask?          
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
 SmoothAper             ",SmoothAper        ,"    #Smooth Apertures by resampling? (Improves aperture surface integral accuracy)  [1/0]
 ResamplingRes          ",ResamplingRes     ,"    #Rate of Upscaling in Resolution during Aperture Resampling (final res is n^[nIters] higher)
-ResamplingIters        ",ResamplingIters   ,"    #Number of iterations to perform in resampling   
+ResamplingIters        ",ResamplingIters   ,"    #Number of iterations to perform in resampling
 Verbose                ",Verbose           ,"    #Verbose Output?
-ShowTime               ",ShowTime          ,"    #Display execution & total elapsed time during run? 
+ShowTime               ",ShowTime          ,"    #Display execution & total elapsed time during run?
 PlotSample             ",PlotSample        ,"    #Plot a sample of the Single Apertures for Inspection?
 Diagnostic             ",Diagnostic        ,"    #Diagnostic Output of Variable Values During Computation - Helpful in Understanding Code
 Interactive            ",Interactive       ,"    #Interactive Mode - Allows user access to entire parameter-space after final calculations
-Magnitudes             ",Magnitudes        ,"    #Output Fluxes as ABVega Magnitudes 
+Magnitudes             ",Magnitudes        ,"    #Output Fluxes as ABVega Magnitudes
 ABVegaFlux             ",ABVegaFlux        ,"    #Flux of ABVega in this band - only used if outputting Magnitudes
 MagZeroPoint           ",MagZeroPoint      ,"    #Magnitude of the Image Zero Point. If -999, ZP will be read from FITS header
 MagZPLabel             ",MagZPLabel        ,"    #Label used for the Zero Point Keyword in the FITS header

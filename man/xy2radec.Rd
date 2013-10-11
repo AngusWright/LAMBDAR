@@ -5,7 +5,7 @@
 Pixel to RA/Dec
 }
 \description{
-Convert pixel locations to RA and Dec by using a calibrating pixel and known pixel widths. 
+Convert pixel locations to RA and Dec by using a calibrating pixel and known pixel widths.
 }
 \usage{
 xy2radec(x, y, ra0 = 0, dec0 = 0, x0 = 0, y0 = 0, xscale = 1, yscale = 1)
@@ -37,22 +37,22 @@ numeric; width of pixels in RA (deg)
 numeric; height of pixels in Dec (deg)
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
-numeric (n,2) array; RA and Dec vectors (column bound) of the input x,y coordinates 
+numeric (n,2) array; RA and Dec vectors (column bound) of the input x,y coordinates
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

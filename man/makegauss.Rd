@@ -1,8 +1,8 @@
-\name{readimage}
-\alias{readimage}
+\name{make_gauss}
+\alias{make_gauss}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Read Input Images
+Make 2d Gaussian
 }
 \description{
 Read the 3 FITS images (data, error map, mask map) that are input to the procedure MeasureFluxes. The procedure opens the files that are lsisted in the

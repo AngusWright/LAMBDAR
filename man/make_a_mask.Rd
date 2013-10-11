@@ -5,9 +5,9 @@
 Create Full Mask
 }
 \description{
-Create a full image mask of all smaller masks which are input. The full mask is of dimension fullmaskdim. 
-Pixel locations for the placement of smaller masks on large mask are determined from the 
-input variables x, y. 
+Create a full image mask of all smaller masks which are input. The full mask is of dimension fullmaskdim.
+Pixel locations for the placement of smaller masks on large mask are determined from the
+input variables x, y.
 }
 \usage{
 make_a_mask(masks, fullmaskdim, x, y)
@@ -15,7 +15,7 @@ make_a_mask(masks, fullmaskdim, x, y)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{masks}{
-numeric length(m) list of (n,n) arrays; length (m) list of (n,n) stamps, each containing a mask.  
+numeric length(m) list of (n,n) arrays; length (m) list of (n,n) stamps, each containing a mask.
 }
   \item{fullmaskdim}{
 numeric (2) vector; fullmaskdim[1] is the x-dimension of the full mask. fullmaskdim[2] is the y-dimension. fullmaskdim values must be > submask width.
@@ -27,31 +27,31 @@ numeric (m) vector; central x positions of masks to be placed onto full mask (pi
 numeric (m) vector; central y positions of masks to be placed onto full mask (pixel number)
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
 array; full mask, with dimesions fullmaskdim, of smaller masks placed in their appropriate locations.
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
 MeasureFluxes, fluxmeasurements
 }
-\examples{
+%%\examples{
 
-}
+%%}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

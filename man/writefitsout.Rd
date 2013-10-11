@@ -37,30 +37,30 @@ numeric; The new reference pixel for the y-axis, to be written to the fits heade
 numeric; The magnitude of the offset between the original pixel location paramters (from header_in), and what we wish to output.
 }
   \item{nochange}{
-logical; if TRUE, the new image will be output with the header_in header. Otherwise, new values will be added as above. 
+logical; if TRUE, the new image will be output with the header_in header. Otherwise, new values will be added as above.
 }
 }
-\details{
+%%\details{
 %%  ~~ If necessary, more details than the description above ~~
-}
+%%}
 \value{
 NULL; Output is to file
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
+%%\note{
 %%  ~~further notes~~
-}
+%%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, fluxmeasurements 
+MeasureFluxes, fluxmeasurements
 }
 \examples{
 

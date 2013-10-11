@@ -2,11 +2,11 @@
 \alias{MeasureFluxes}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Measure Fluxes 
+Measure Fluxes
 }
 \description{
-Measure galactic/object fluxes from an arbitrary FITS image, when provided an input catalogue of object locations and aperture parameters. 
-Detailed descriptions of the many functions called by this procedure can be found in their relevant help files.  
+Measure galactic/object fluxes from an arbitrary FITS image, when provided an input catalogue of object locations and aperture parameters.
+Detailed descriptions of the many functions called by this procedure can be found in their relevant help files.
 The procedure has many high-level options available; all options are designated an input parameter file.
 }
 \usage{
@@ -24,8 +24,8 @@ logical; if TRUE all output to screen is supressed
 Any arguments that are intended to be passed to the 'createparfile' routine
 }
 }
-\details{
-}
+%%\details{
+%%}
 \value{
 Measure Fluxes returns a list, contining some of the results which are sent to file.
   \item{SFAflux}{
@@ -47,15 +47,15 @@ Measure Fluxes returns a list, contining some of the results which are sent to f
   The error associated with the final deblended flux for each aperture
 }
 }
-\references{
+%%\references{
 %% ~put references to the literature/web site here ~
-}
+%%}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
 \note{
-After execution, there are a large number of global parameters assigned. As such, execution is best performed in a clean R terminal, and the terminal is best discarded 
+After execution, there are a large number of global parameters assigned. As such, execution is best performed in a clean R terminal, and the terminal is best discarded
 afterwards.
 }
 
