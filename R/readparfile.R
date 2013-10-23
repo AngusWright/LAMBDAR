@@ -82,11 +82,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Output Ellipse Overlaid Image?
   overlaymap<-NULL
   ID="OverlayEllipse"
-  overlay<-(params[ID,1]==1)
+  overlay<-params[ID,1]
   if (is.na(overlay)) { 
     warning("Overlay-Ellipses Image Flag not in Parameter File")
     overlay<-FALSE
-  }
+  } else { overlay<-(overlay==1) }
+  
   if ( overlay ) {
     #Name of the output Residual image
     ID="OverlayFile"
@@ -100,11 +101,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Perform Contaminant removal?
   nocontammap<-NULL
   ID="RemoveContam"
-  filtcontam<-(params[ID,1]==1)
+  filtcontam<-params[ID,1]
   if (is.na(filtcontam)) { 
     warning("Remove Contaminants Flag not in Parameter File")
     filtcontam<-FALSE
-  }
+  } else { filtcontam<-(filtcontam==1) }
+  
   if ( filtcontam ) {
     #Name of the output Residual image
     ID="NoContamImageFile"
@@ -211,11 +213,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   imefitsoutname<-NULL
   #Do we want to crop the input image(s)?
   ID="CropImage"
-  cropimage<-(params[ID,1]==1)
+  cropimage<-params[ID,1]
   if (is.na(cropimage)) { 
     warning("Crop Image Flag not in Parameter File")
     cropimage<-FALSE
-  }
+  } else { cropimage<-(cropimage==1) }
+  
   if (cropimage) {
     #What will the cropped image(s) be named
     ID="CropFitsName"
@@ -264,11 +267,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Is there an offset between the Input Catalogue angles and  
   #N0E90 Angular Coordinates?
   ID="AngularOffset"
-  angoffset<-(params[ID,1]==1)
+  angoffset<-params[ID,1]
   if (is.na(angoffset)) { 
     warning("Angular Offset Flag not in Parameter File")
     angoffset<-FALSE
-  }
+  } else { angoffset<-(angoffset==1) }
 
   #Is the map in Jy per Beam?
   ID="MapJyPerBeam"
@@ -332,20 +335,20 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Do we want to output the source mask only?
   ID="SourceMaskOnly"
-  sourcemaskonly<-(params[ID,1]==1)
+  sourcemaskonly<-params[ID,1]
   if (is.na(sourcemaskonly)) { 
     warning("Output Source Mask Only Flag not in Parameter File")
     sourcemaskonly<-FALSE
-  }
+  } else { sourcemaskonly<-(sourcemaskonly==1) }
 
   if (!(sourcemaskonly)) {
     #Do we want to output the source mask at all?
     ID="WriteSourceMask"
-    sourcemask<-(params[ID,1]==1)
+    sourcemask<-params[ID,1]
     if (is.na(sourcemask)) { 
       warning("Output Source Mask Flag not in Parameter File")
       sourcemask<-FALSE
-    }
+    } else { sourcemask<-(sourcemask==1) }
   } else { sourcemask<-TRUE }
 
   smfilename<-NULL
@@ -362,11 +365,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to output the All Apertures Mask
   aafilename<-NULL
   ID="WriteAAMask"
-  makeaamask<-(params[ID,1]==1)
+  makeaamask<-params[ID,1]
   if (is.na(makeaamask)) {
     warning("Make All Apertures Mask Flag not in Parameter File")
     makeaamask<-FALSE
-  } 
+  } else { makeaamask<-(makeaamask==1) } 
+  
   if ( makeaamask ) {
     #Name of the output All Apertures file
     ID="AllApersFile"
@@ -380,11 +384,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to output the Convolved Apertures mask
   fafilename<-NULL
   ID="WriteFAMask"
-  makefamask<-(params[ID,1]==1)
+  makefamask<-params[ID,1]
   if (is.na(makefamask)) {
     warning("Make Convolved Apertures Mask Flag not in Parameter File")
     makefamask<-FALSE
-  } 
+  } else { makefamask<-(makefamask==1) } 
+  
   if ( makefamask ) {
     #Name of the output Convolved Apertures Mask
     ID="ConvApersFile"
@@ -398,11 +403,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to output the Deblended Convolved Apertures mask
   dfafilename<-NULL
   ID="WriteDFAMask"
-  makedfamask<-(params[ID,1]==1)
+  makedfamask<-params[ID,1]
   if (is.na(makedfamask)) {
     warning("Make Deblended Convolved Apertures Mask Flag not in Parameter File")
     makedfamask<-FALSE
-  } 
+  } else { makedfamask<-(makedfamask==1) } 
+  
   if ( makedfamask ) {
     #Name of the output Convolved Apertures Mask
     ID="DeblConvApersFile"
@@ -416,11 +422,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to output the Residual image?
   residmap<-NULL
   ID="WriteResidMap"
-  makeresidmap<-(params[ID,1]==1)
+  makeresidmap<-params[ID,1]
   if (is.na(makeresidmap)) {
     warning("Make Residual Map Flag not in Parameter File")
     makeresidmap<-TRUE
-  } 
+  } else { makeresidmap<-(makeresidmap==1) } 
+  
   if ( makeresidmap ) {
     #Name of the output Residual image
     ID="ResidImageFile"
@@ -434,11 +441,12 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to output the Flux table?
   tableoutname<-NULL
   ID="WriteTable"
-  writetab<-(params[ID,1]==1)
+  writetab<-params[ID,1]
   if (is.na(writetab)) {
     warning("Write Table Flag not in Parameter File")
     writetab<-TRUE
-  } 
+  } else { writetab<-(writetab==1) } 
+  
   if ( writetab ) {
     #Name of output Flux Table
     ID="TableName"
@@ -454,11 +462,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   showtime<-FALSE
   } else {
     ID="ShowTime"
-    showtime<-(params[ID,1]==1)
+    showtime<-params[ID,1]
     if (is.na(showtime)) {
       warning("ShowTime Flag not in Parameter File")
       showtime<-FALSE
-    } 
+    } else { showtime<-(showtime==1) }
   }
 
   #Scale height of the PSF
@@ -471,35 +479,35 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Do we want Diagnostic Output in Log File
   ID="Interactive"
-  interact<-(params[ID,1]==1)
+  interact<-params[ID,1]
   if (is.na(interact)) {
     warning("Interactive Flag not in Parameter File")
     interact<-FALSE
-  } 
+  } else { interact<-(interact==1) }
 
   #Do we want Diagnostic Output in Log File
   ID="Diagnostic"
-  diagnostic<-(params[ID,1]==1)
+  diagnostic<-params[ID,1]
   if (is.na(diagnostic)) {
     warning("Diagnostic Flag not in Parameter File")
     diagnostic<-FALSE
-  } 
+  } else { diagnostic<-(diagnostic==1) }
 
   #Do we want Verbose Output in Log File
   ID="Verbose"
-  verbose<-(params[ID,1]==1)
+  verbose<-params[ID,1]
   if (is.na(verbose)) {
     warning("Verbose Flag not in Parameter File")
     verbose<-FALSE
-  } 
+  } else { verbose<-(verbose==1) }
 
   #Do we want a sample of the apertures to be output?
   ID="PlotSample"
-  plotsample<-(params[ID,1]==1)
+  plotsample<-params[ID,1]
   if (is.na(plotsample)) {
     warning("Plot Sample Flag not in Parameter File")
     plotsample<-FALSE
-  } 
+  } else { plotsample<-(plotsample==1) }
 
   #Make Magnitudes in Output?
   ID="MakeMagnitudes" 
@@ -535,16 +543,16 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Magnitudes Zero Point
   ID="DoSkyEst" 
-  doskyest<-(params[ID,1]==1)
+  doskyest<-params[ID,1]
   if (is.na(doskyest)) { 
     warning("Sky Estimate Flag not present in the Parameter File") 
     doskyest<-FALSE
-  } else if (doskyest & !sourcemask) {
+  } else { doskyest<-(doskyest==1) }
+  
+  if (doskyest & !sourcemask) {
     warning("Source Mask creation being forced because Sky Estimate Flag is TRUE") 
     sourcemask<-TRUE
   }
-    
-    
 
   #Name of Logfile to be output
   ID="LogFile" 
