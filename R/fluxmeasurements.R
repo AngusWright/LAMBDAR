@@ -1,15 +1,16 @@
 fluxmeasurements <-
-function(env=NULL) {
+function(env=NULL, outenv=NULL) {
 #function(id_g,ra_g,dec_g,x_g,y_g,theta_g,a_g,b_g,im,hdr,ime,imm,pathroot,
 #pathout,psfmap,lambda,field,conf,fluxcorr,fluxweight,beamarea_pix,asperpix,Jybm,
 #sourcemask,nopsf,filtcontam, contams) {
   # Procedure measures the fluxes present in a supplied image
-  # inside catalogued apertures.
+  # inside catalogued apertures. 
 
   # Load Parameter Space
   if (is.null(env)) {
     stop("No Parameter Space Environment Specified in Call")
   }
+  if (is.null(outenv)) { outenv<-env }
   attach(env)
 
   if (!quiet) { cat('Begining Flux Measurements\n') }
@@ -17,11 +18,11 @@ function(env=NULL) {
 
   timer<-proc.time()
   if (!quiet) { cat('Getting PSF details') }
-  message('Getting PSF details')
+  message('Getting PSF details') 
   # If we are filtering apertures with the PSF
   if (!(nopsf)) {
     #Calculate PSF - if one has not be supplied,
-    #then a gaussian PSF will be created. Stampsize of PSF
+    #then a gaussian PSF will be created. Stampsize of PSF 
     #should be = maximum stampsize: max aperture * stamp mult
     psf<-readpsf(environment(),paste(pathroot,psfmap,sep=""),asperpix,defbuff*max(a_g),stampmult,gauss_fwhm_as=gauss_fwhm_as,normalize=TRUE)
     if (verbose) { message(paste("Maxima of the PSF is at pixel", which(psf == max(psf)),"and has value",max(psf))) }
@@ -31,17 +32,17 @@ function(env=NULL) {
     #-----Diagnostic-----#
     if (diagnostic) { message(paste('Beam area before/after norm: ',beamarea_nn,beamarea_n)) }
   } else {
-    #As we are not using PSF filtering, we set stamp size ourselves
-    #and set the beamarea to unity
+    #As we are not using PSF filtering, we set stamp size ourselves 
+    #and set the beamarea to unity 
     beamarea_n<-1.0
     psffwhm<-0
   }
-  if (beamarea_pix == 0) {
+  if (beamarea_pix == 0) { 
     # If possible, use the beamarea just determined at high resolution
     beamarea<-beamarea_n
-  } else {
+  } else {  
     # Otherwise just use the input beamarea
-    beamarea<-beamarea_pix
+    beamarea<-beamarea_pix 
   }
   #-----Diagnostic-----#
   if (diagnostic) { message(paste('Beam area adopted: ',beamarea)) }
@@ -52,7 +53,7 @@ function(env=NULL) {
     if (length(image.env$ime)!=1) { image.env$ime<-image.env$ime/beamarea }
     conf<-conf/beamarea
   }
-  if (showtime) { cat(paste(' - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )\n'))
+  if (showtime) { cat(paste(' - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )\n')) 
     message(paste('Getting PSF details - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat(' - Done\n') }
 
@@ -67,8 +68,8 @@ function(env=NULL) {
   y_p<-pix["y_p",]
 
   #Create an array of stamps containing the apertures for all objects
-  timer=system.time(sa<-make_sa_mask(environment()))
-  if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+  timer=system.time(sa<-make_sa_mask(environment())) 
+  if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
     message(paste('Make SA Mask - Done (',round(timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }
 
@@ -78,7 +79,7 @@ function(env=NULL) {
   if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Single Apertures are inside the Mask.") }  # Nothing inside the mask
   sa<-sa[which(insidemask)]
   stamplen<-stamplen[which(insidemask)]
-  #This is to stop crashes when only 1 aperture is
+  #This is to stop crashes when only 1 aperture is 
   #present inside the image.
   if (length(which(insidemask))==1) {
     stamp_lims<-rbind(stamp_lims[which(insidemask),],stamp_lims[which(insidemask),])
@@ -102,17 +103,17 @@ function(env=NULL) {
   #Initialise arrays
   npos<-length(id_g)
 
-  #Create an full mask of all apertures in their correct locations
-  timer=system.time(image.env$aa<-make_a_mask(environment(), sa, dim(image.env$im)))
-  if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+  #Create an full mask of all apertures in their correct locations 
+  timer=system.time(image.env$aa<-make_a_mask(environment(), sa, dim(image.env$im))) 
+  if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
    message(paste('Make A Mask - Done (',round(timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }
 
   #Do we want to output the All Apertures Mask?
-  if (makeaamask) {
+  if (makeaamask) { 
     if (!quiet) { cat(paste('Outputting All Apertures Mask to',aafilename,"   ")) }
     #Write All Apertures Mask to file
-    writefitsout(paste(pathout,aafilename,sep=""),image.env$aa,image.env$hdr_str,nochange=TRUE)
+    writefitsout(paste(pathout,aafilename,sep=""),image.env$aa,image.env$hdr_str,nochange=TRUE) 
     if (!quiet) { cat(" - Done\n") }
   }
 
@@ -122,7 +123,7 @@ function(env=NULL) {
 
   #Do we want to filter the apertures using the PSF?
   if ((nopsf)&(length(which(fluxweight!=1))!=0)) {
-    #If not convolving with psf, and if all the fluxweights are not unity,
+    #If not convolving with psf, and if all the fluxweights are not unity, 
     #then skip filtering, duplicate the arrays, and only weight the stamps/apertures
     if (verbose) { message("NoPSF: Convolved Apertures are identical to Simple Apertures") }
     sfa<-sa
@@ -130,59 +131,59 @@ function(env=NULL) {
     if (verbose) { message("Fluxweights Present: Weighting Convolved Apertures") }
     #Perform aperture weighting
     timer=system.time(wsfa<-make_sfa_mask(environment(), sa,fluxweightin=fluxweight))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make WSFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     #Create a full mask of stamps/apertures
     timer=system.time(image.env$wfa<-make_a_mask(environment(), wsfa, dim(image.env$im)))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make WFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   } else if ((nopsf)&(length(which(fluxweight!=1))==0)) {
-    #If not convolving with psf, and if all the fluxweights are unity,
+    #If not convolving with psf, and if all the fluxweights are unity, 
     #then skip filtering and weighting, and simply duplicate the arrays
-    if (verbose) { message("NoPSF: Convolved Apertures are identical to Simple Apertures")
+    if (verbose) { message("NoPSF: Convolved Apertures are identical to Simple Apertures") 
                    message("No Fluxweights: Weighted Convolved Apertures are identical to Convolved Apertures") }
     sfa<-sa
     image.env$fa<-image.env$aa
     wsfa<-sfa
     image.env$wfa<-image.env$fa
   } else if ((!nopsf)&(length(which(fluxweight!=1))!=0)) {
-    #If convolving with psf, and if all the fluxweights are not unity,
+    #If convolving with psf, and if all the fluxweights are not unity, 
     #then colvolve and weight the stamps/apertures
     if (verbose) { message("PSF Present: Making Convolved Apertures") }
-    timer=system.time(sfa<-make_sfa_mask(environment(), sa))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    timer=system.time(sfa<-make_sfa_mask(environment(), sa)) 
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make SFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     #Create a full mask of all convolved stamps/apertures
-    timer=system.time(image.env$fa<-make_a_mask(environment(), sfa, dim(image.env$im)))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    timer=system.time(image.env$fa<-make_a_mask(environment(), sfa, dim(image.env$im))) 
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make FA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     #If we have nonunity Fluxweights, then weight apertures
     #weight the stamps/apertures by the input fluxweights
     if (verbose) { message("Fluxweights Present: Weighting Convolved Apertures") }
     timer=system.time(wsfa<-make_sfa_mask(environment(), sa,fluxweightin=fluxweight))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make WSFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     #Create a full mask of all the convolved weighted stamps/apertures
     timer=system.time(image.env$wfa<-make_a_mask(environment(), wsfa, dim(image.env$im)))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make WFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   } else if ((!nopsf)&(length(which(fluxweight!=1))==0)) {
-    #If convolving with psf, and if all the fluxweights are unity,
+    #If convolving with psf, and if all the fluxweights are unity, 
     #then colvolve and weight the stamps/apertures
     if (verbose) { message("PSF Present: Making Convolved Apertures") }
-    timer=system.time(sfa<-make_sfa_mask(environment(), sa))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    timer=system.time(sfa<-make_sfa_mask(environment(), sa)) 
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make SFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     #Create a full mask of all convolved stamps/apertures
-    timer=system.time(image.env$fa<-make_a_mask(environment(), sfa, dim(image.env$im)))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    timer=system.time(image.env$fa<-make_a_mask(environment(), sfa, dim(image.env$im))) 
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make FA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     #If we have unity Fluxweights, duplicate apertures
@@ -192,7 +193,7 @@ function(env=NULL) {
   }
   if (diagnostic) {
     if (verbose) { message("Checking Apertures for scaling errors") }
-    foreach(i=1:length(sa), .combine=function(a,b){NULL},.inorder=FALSE) %dopar% {
+    foreach(i=1:length(sa), .combine=function(a,b){NULL},.inorder=FALSE) %dopar% { 
       if (max(sa[[i]])>1){warning(paste("Max of Aperture",i,"is",max(sa[[i]]))) }
       if (max(sfa[[i]])>1){warning(paste("Max of Convolved Aperture",i,"is",max(sfa[[i]]))) }
       #if (max(wsfa[[i]])>1){warning(paste("Max of Weighted Convolved Aperture",i,"is",max(wsfa[[i]]))) }
@@ -200,41 +201,41 @@ function(env=NULL) {
   }
 
   #Do we want to plot a sample of the apertures?
-  if (plotsample) {
+  if (plotsample) { 
     #Set output name
     pdf(paste(pathout,"PSF_Samples.pdf",sep=""))
     #Set Layout
     par(mfrow=c(2,2))
     #Output a random 15 apertures to file
-    for (i in (runif(1:15)*npos)) {
+    for (i in (runif(1:15)*npos)) { 
       image(sa[[i]], main="Single Aperture (SA)", asp=1, col=heat.colors(1000), useRaster=TRUE)
       points(ceiling(stamplen[i]/2)/stamplen[i],ceiling(stamplen[i]/2)/stamplen[i],pch="+",lw=2.0, col="red")
       image(sfa[[i]], main="Single Convolved Apertrure (SFA)", asp=1, col=heat.colors(1000), useRaster=TRUE)
       points(ceiling(stamplen[i]/2)/stamplen[i],ceiling(stamplen[i]/2)/stamplen[i],pch="+",lw=2.0, col="red")
-    }
+    } 
     #Close the file
     dev.off()
   }
   #Remove arrays that are no longer needed
   rm(sa, envir=env)
   gc()
-
+  
 
   #Do we want to output the convolved apertures mask?
-  if (makefamask) {
+  if (makefamask) { 
     if (!quiet) { cat(paste('Outputting All Convolved Apertures Mask to',fafilename,"   ")) }
     timer=system.time(writefitsout(paste(pathout,fafilename,sep=""),image.env$wfa,image.env$hdr_str,nochange=TRUE) )
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Output FA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   }
-  #Do we want to make the SourceMask to file?
+  #Do we want to make the SourceMask to file? 
   if (sourcemask) {
     #Note:
     #> In the case of flux measurements: we want SM to be 1 only where the sources are, and within the mask region
     #> In the case of creating a source mask: we want SM to be 1 within the mask region in between sources only
     #
-    #To do this we:
+    #To do this we: 
     #         a) set the sm array = image mask (0s outside image, 1s inside)
     #         b) set all nonzero locations in aa to 0 in sm array
     if (!quiet) { cat(paste('Outputting Source Mask to',smfilename,"   ")) }
@@ -250,9 +251,9 @@ function(env=NULL) {
     if (!quiet) { cat(" - Done\n") }
 
     #If we want the SourceMask only, then end here
-    if (sourcemaskonly) {
+    if (sourcemaskonly) { 
       if (!quiet) { cat("SourceMaskOnly Flag Set\n")  }
-      return()
+      return() 
     }
     #Remove arrays that are no longer needed
     rm(fa, envir=image.env)
@@ -266,7 +267,7 @@ function(env=NULL) {
 
   #Perform Deblending of apertures
   timer=system.time(dbw<-make_deblended_weightmap(environment()))
-  if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+  if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
     message(paste('Make Deblended Weightmap - Done (',round(timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }
 
@@ -274,16 +275,16 @@ function(env=NULL) {
   rm(wfa, envir=image.env)
   rm(wsfa, envir=env)
   gc()
-
+  
   #Generate Deblended Flux Arrays
   if (!quiet) { cat("Generating Deblended Flux Arrays") }
   timer<-proc.time()
-
+  
   ##-----Diagnostic-----#
   #if (diagnostic) {
   ##check dbw - all values of deblended array >=0
-    #dbw_new<-foreach(i=1:npos) %dopar% {
-      #if(length(which(zapsmall(dbw[[i]]) <0))>0)  {
+    #dbw_new<-foreach(i=1:npos) %dopar% { 
+      #if(length(which(zapsmall(dbw[[i]]) <0))>0)  { 
         #warning("There are values of the deblended matrix < 0")
         #dbw[which(dbw[[i]] <0)]<-0
       #}
@@ -295,25 +296,25 @@ function(env=NULL) {
   #}
 
   #Create the Deblended Flux Array
-  #dfa<-foreach(i=1:npos) %dopar% { dbw[[i]]*fluxweight[i] }
-  dfa<-foreach(i=1:npos) %dopar% { dbw[[i]]*sfa[[i]] }
-  #dfa<-foreach(i=1:npos) %dopar% { dbw[[i]]*0.0 +1 }
-  #dfa<-foreach(i=1:npos) %dopar% { wsfa[[i]] }
+  #dfa<-foreach(i=1:npos) %dopar% { dbw[[i]]*fluxweight[i] } 
+  dfa<-foreach(i=1:npos) %dopar% { dbw[[i]]*sfa[[i]] } 
+  #dfa<-foreach(i=1:npos) %dopar% { dbw[[i]]*0.0 +1 } 
+  #dfa<-foreach(i=1:npos) %dopar% { wsfa[[i]] } 
 
-  if (showtime) { cat("   - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+  if (showtime) { cat("   - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
     message(paste("Make DFA - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )"))
   } else if (!quiet) { cat("   - Done\n") }
 
   #Do we want to output the deblended convolved apertures mask?
-  if (makedfamask) {
+  if (makedfamask) { 
     if (!quiet) { cat(paste('Making All Deblended Convolved Apertures Mask - ')) }
-    timer=system.time(image.env$adfa<-make_a_mask(environment(), dfa, dim(image.env$im)))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    timer=system.time(image.env$adfa<-make_a_mask(environment(), dfa, dim(image.env$im))) 
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Make ADFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     if (!quiet) { cat(paste('Outputting All Deblended Convolved Apertures Mask to',dfafilename,"   ")) }
     timer=system.time(writefitsout(paste(pathout,dfafilename,sep=""),image.env$adfa,image.env$hdr_str,nochange=TRUE) )
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Output ADFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   }
@@ -346,11 +347,11 @@ function(env=NULL) {
 
   #Compute Galaxy-by-Galaxy Results
 #-----
-  #Image Flux at central pixel
+  #Image Flux at central pixel 
   if (verbose) { cat("      Image Flux at central pixel ") }
-  pixflux<-foreach(i=1:npos, .inorder=TRUE)%dopar% {
-    if ((!(is.finite(x_p[i]) & is.finite(y_p[i]))) | (x_p[i] <= 0) | (y_p[i] <= 0) |
-        (x_p[i] > (length(im[,1]))) | (y_p[i] > (length(im[1,])))) { -99 } else { im[x_p[i],y_p[i]]  }
+  pixflux<-foreach(i=1:npos, .inorder=TRUE)%dopar% { 
+    if ((!(is.finite(x_p[i]) & is.finite(y_p[i]))) | (x_p[i] <= 0) | (y_p[i] <= 0) | 
+        (x_p[i] > (length(im[,1]))) | (y_p[i] > (length(im[1,])))) { -99 } else { im[x_p[i],y_p[i]]  } 
   }
   pixflux<-array(unlist(pixflux),dim=c(dim(pixflux[[1]]),length(pixflux)))
   if (verbose) { cat(" - Done\n") }
@@ -411,7 +412,7 @@ function(env=NULL) {
   if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
   if (length(ime)!=1) {
     ssfae<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
-      sum(sfa[[i]]*ime[xlo:xup,ylo:yup])
+      sum(sfa[[i]]*ime[xlo:xup,ylo:yup]) 
     }
     ssfae<-array(unlist(ssfae),dim=c(dim(ssfae[[1]]),length(ssfae)))
   } else if (ime==1) {
@@ -426,7 +427,7 @@ function(env=NULL) {
   if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
   if (length(ime)!=1) {
     ssfae2<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
-        sum(sfa[[i]]*(ime[xlo:xup,ylo:yup])^2.)
+        sum(sfa[[i]]*(ime[xlo:xup,ylo:yup])^2.) 
     }
     ssfae2<-array(unlist(ssfae2),dim=c(dim(ssfae2[[1]]),length(ssfae2)))
   } else if (ime==1) {
@@ -441,7 +442,7 @@ function(env=NULL) {
   if (verbose) { cat("      Integral of the [(convolved aperture * image error)^2]") }
   if (length(ime)!=1) {
     ssfa2e2<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
-        sum((sfa[[i]]*ime[xlo:xup,ylo:yup])^2.)
+        sum((sfa[[i]]*ime[xlo:xup,ylo:yup])^2.) 
     }
     ssfa2e2<-array(unlist(ssfa2e2),dim=c(dim(ssfa2e2[[1]]),length(ssfa2e2)))
   } else if (ime==1) {
@@ -456,7 +457,7 @@ function(env=NULL) {
   if (verbose) { cat("      Integral of the [(deblended convolved aperture * image error)^2]") }
   if (length(ime)!=1) {
     sdfa2e2<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
-        sum((dfa[[i]]*ime[xlo:xup,ylo:yup])^2.)
+        sum((dfa[[i]]*ime[xlo:xup,ylo:yup])^2.) 
     }
     sdfa2e2<-array(unlist(sdfa2e2),dim=c(dim(sdfa2e2[[1]]),length(sdfa2e2)))
   } else if (ime==1) {
@@ -471,7 +472,7 @@ function(env=NULL) {
   if (verbose) { cat("      Integral of the [(convolved aperture * image) / {(image error)^2} ]") }
   if (length(ime)!=1) {
     ssfadw<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
-        sum(sfa[[i]]*(im[xlo:xup,ylo:yup])/((ime[xlo:xup,ylo:yup])^2.))
+        sum(sfa[[i]]*(im[xlo:xup,ylo:yup])/((ime[xlo:xup,ylo:yup])^2.)) 
     }
     ssfadw<-array(unlist(ssfadw),dim=c(dim(ssfadw[[1]]),length(ssfadw)))
   } else if (ime==1) {
@@ -486,7 +487,7 @@ function(env=NULL) {
   if (verbose) { cat("      Integral of the [convolved aperture / (image error)^2 ]") }
   if (length(ime)!=1) {
     ssfaw<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
-        sum(sfa[[i]]/(ime[xlo:xup,ylo:yup])^2.)
+        sum(sfa[[i]]/(ime[xlo:xup,ylo:yup])^2.) 
     }
     ssfaw<-array(unlist(ssfaw),dim=c(dim(ssfaw[[1]]),length(ssfaw)))
   } else if (ime==1) {
@@ -512,10 +513,9 @@ function(env=NULL) {
   }
   if (verbose) { cat(" - Done\n") }
 #-----
-  if (showtime) { cat("   } - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+  if (showtime) { cat("   } - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
     message(paste("Perform Calculations - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )"))
   } else if (!quiet) { cat("   } - Done\n") }
-  if (!quiet) { cat("   Performing Final Calculations   ") }
 
 #
 # NB: in the following calculations - Int(<exp>) denotes the integral of the expression <exp>
@@ -540,7 +540,7 @@ function(env=NULL) {
     skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),astrom=astr_struc)
     skyflux<-skyest[,1]
     skyerr<-skyest[,2]
-    browser()
+    #browser()
     #Subrtract Sky Flux
     skyflux<-skyflux*sdfa
     skyerr<-skyerr*sdfa
@@ -548,11 +548,13 @@ function(env=NULL) {
     sfaflux<-sfaflux-skyflux
     dfaerr<-sqrt(dfaerr^2+skyerr^2)
     dfaerr<-sqrt(sfaerr^2+skyerr^2)
-    if (verbose) { message(paste("   - Done in",timer,"(s)\n")); cat(paste("   - Done in",timer,"(s)\n"))}
+    if (verbose) { message(paste("   - Done in",timer,"(s)\n")); cat("   - Done in ",timer,"(s)\n")}
   } else {
-    skyflux<-vector(0, length=length(dfaflux))
+    skyflux<-array(0, dim=c(length(dfaflux)))
+    skyerr<-array(0, dim=c(length(dfaflux)))
   }
 
+  if (!quiet) { cat("   Performing Final Calculations   ") }
 
   #Apply Flux Correction to the Finalised Values
   sfaflux<-sfaflux*fluxcorr
@@ -566,7 +568,7 @@ function(env=NULL) {
   if (makeMagnitudes) {
     mags<--2.5*(log10(dfaflux)-log10(ABvegaflux))+magZP
   } else {
-    mags<-rep(NA, length(id_g))
+    mags<-rep(NA, length(id_g)) 
   }
 
   #-----Diagnostic-----#
@@ -594,34 +596,34 @@ function(env=NULL) {
   }
 
   #Check that final values of Deblended Convolved Apertures are not NA/NaN/Inf
-  if (length(which(!is.finite(dfaerr[which(sdfa > 0)]))) > 0) {
+  if (length(which(!is.finite(dfaerr[which(sdfa > 0)]))) > 0) { 
     message(paste(length(!is.finite(dfaerr[which(sdfa > 0)])), "elements of dfaerr are not finite"))
     sink(type="message")
-    stop("NaN or Infs Produced in calculations")
-  }
+    stop("NaN or Infs Produced in calculations") 
+  } 
 
   if (!quiet) { cat(" - Done\n} Galaxy Results Complete\n") }
 
   #---------------------------------------------------------------
-  #PART FOUR: OUTPUT
+  #PART FOUR: OUTPUT 
   #---------------------------------------------------------------
 
   #If map was input in Jy/bm we need to convert it back before output in SourceSubtraction
-  if (Jybm) { ba=beamarea } else { ba=1. }
+  if (Jybm) { ba=beamarea } else { ba=1. }  
   # Do we want to overlay the elipses?
   if (overlay) {
     if (!quiet) { cat(paste("Writing Ellipse-Overlaid Image Map to",overlaymap,"   ")) }
     #Make overlay stamps (where aperture=FWHM, pix=1E3, else == 0)
-    overlaystamps<-foreach(i=1:length(sfa)) %dopar% {
+    overlaystamps<-foreach(i=1:length(sfa)) %dopar% { 
       tmp=sfa[[i]]
       tmp[which(tmp<(max(tmp)*2/5))]=0
       tmp[which(tmp>(max(tmp)*3/5))]=0
       tmp[which(tmp>0)]=-1E3
       tmp
-    }
+    } 
     #Perform Overlay
     timer=system.time(sourcesubtraction(im,overlaystamps,stamp_lims,1,paste(pathout,overlaymap, sep=""),hdr_str,ba,insidemask))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Contam Subtraction - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   }
@@ -631,14 +633,14 @@ function(env=NULL) {
       if (!quiet) { cat(paste("Writing Contaminant-subtracted Map to",nocontammap,"   ")) }
       #Perform Source Subtraction
       timer=system.time(sourcesubtraction(im,sfa,stamp_lims,dfaflux,paste(pathout,nocontammap, sep=""),hdr_str,ba,contams))
-      if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+      if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
         message(paste('Contam Subtraction - Done (',round(timer[3], digits=2),'sec )'))
       } else if (!quiet) { cat("   - Done\n") }
     }
     if (!quiet) { cat(paste("Writing Source-subtracted Map to",residmap,"   ")) }
     #Perform Source Subtraction
     timer=system.time(sourcesubtraction(im,sfa,stamp_lims,dfaflux,paste(pathout,residmap, sep=""),hdr_str,ba,insidemask))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Source Subtraction - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   }
@@ -671,11 +673,11 @@ function(env=NULL) {
   }
 
   #Do we want to output the Results Table?
-  if (writetab) {
+  if (writetab) { 
     if (!quiet) { cat(paste('Writing Results Table to ',tableoutname,'   ')) }
     #Output the results table
     timer=system.time(writesfatableout(environment(), paste(pathout,tableoutname, sep="")) )
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
       message(paste('Write Results Table - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   }
@@ -688,7 +690,7 @@ function(env=NULL) {
      sink(type='message')
      browser()
      sink(sinkfile, type='message')
-  }
+  } 
   if (!quiet) { cat('\n') }
   #Return Output Variables
   detach(env)
