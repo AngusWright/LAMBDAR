@@ -1,5 +1,5 @@
 fluxmeasurements <-
-function(env=NULL, outenv=NULL) {
+function(env=NULL) {
 #function(id_g,ra_g,dec_g,x_g,y_g,theta_g,a_g,b_g,im,hdr,ime,imm,pathroot,
 #pathout,psfmap,lambda,field,conf,fluxcorr,fluxweight,beamarea_pix,asperpix,Jybm,
 #sourcemask,nopsf,filtcontam, contams) {
@@ -10,7 +10,6 @@ function(env=NULL, outenv=NULL) {
   if (is.null(env)) {
     stop("No Parameter Space Environment Specified in Call")
   }
-  if (is.null(outenv)) { outenv<-env }
   attach(env)
 
   if (!quiet) { cat('Begining Flux Measurements\n') }
