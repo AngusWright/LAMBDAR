@@ -8,4 +8,4 @@ Maintainer: Angus H. Wright <angus.wright@icrar.org>
 Description: LAMBDAR (Lambda Adaptive Multi-Band Detection Algorithm in R) is a proceedure for measuring the fluxes of galaxies in an arbitrary FITS image, covering an arbitrary photometric wave-band, when provided all paramters needed to construct galactic apertures at the required locations.
 Depends: astro, doParallel, foreach
 License: GPL-2
-Packaged: 2013-10-09 03:35:33 UTC; awright
+Packaged: 2013-10-23 14:30:43 UTC; awright
