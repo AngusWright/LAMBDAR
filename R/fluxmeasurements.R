@@ -535,7 +535,7 @@ function(env=NULL) {
   #Do we want to do sky estimation/subtraction?
   if (doskyest) {
     #Get sky estimates
-    if (verbose) { message("Perfoming Sky Subtraction"); cat("Performing Sky Subtraction") }
+    if (verbose) { message("Perfoming Sky Subtraction"); cat("   Performing Sky Subtraction") }
     skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),astrom=astr_struc)
     skyflux<-skyest[,1]
     skyerr<-skyest[,2]
@@ -547,7 +547,7 @@ function(env=NULL) {
     sfaflux<-sfaflux-skyflux
     dfaerr<-sqrt(dfaerr^2+skyerr^2)
     dfaerr<-sqrt(sfaerr^2+skyerr^2)
-    if (verbose) { message(paste("   - Done in",timer,"(s)\n")); cat("   - Done in ",timer,"(s)\n")}
+    if (verbose) { message(paste("   - Done\n")); cat("   - Done\n")}
   } else {
     skyflux<-array(0, dim=c(length(dfaflux)))
     skyerr<-array(0, dim=c(length(dfaflux)))
