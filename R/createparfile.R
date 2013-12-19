@@ -13,6 +13,7 @@ createparfile <-
     FluxCorr=1.0,
     EFactor=1.0,
     PSFheight=1.0,
+    NormalisePSF=1,
     DataExtn=0,
     ErrorExtn=0,
     MaskExtn=0,
@@ -88,6 +89,7 @@ Gauss_FWHM_AS          ",Gauss_FWHM_AS     ,"    #Gaussian FWHM of Seeing in Arc
 BeamArea_SqAS          ",BeamArea_SqAS     ,"    #Beam area in Square Arcsec
 FluxCorr               ",FluxCorr          ,"    #Flux Correction Factor
 EFactor                ",EFactor           ,"    #Error Map Scale Factor
+NormalisePSF           ",NormalisePSF      ,"    #Normalise the PSF to Unity?                                                    [1/0]
 PSFheight              ",PSFheight         ,"    #PSF Scale-height
 #                #-------Fits Extension Values--------------#
 DataExtn               ",DataExtn          ,"    #Fits header extension of Data in Image File

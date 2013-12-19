@@ -180,6 +180,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   }
   forcepointsources<-(forcepointsources==1)
 
+  #Normalise the PSF
+  ID="NormalisePSF"
+  psfnorm<-params[ID,1]
+  if (is.na(psfnorm)) {
+    warning("PSF Normalisation Flag not in Parameter File")
+    psfnorm<-TRUE
+  } else { psfnorm<-(psfnorm==1) }
+
   #Do we want to Convolve the apertures with a PSF
   ID="PSFConvolve"
   psffilt<-as.numeric(params[ID,1])
@@ -515,7 +523,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (is.na(Magnitudes)) {
     warning("Make Magnitudes Flag not present in the Parameter File")
     Magnitudes<-TRUE
-  }
+  } else { Magnitudes<-(Magnitudes==1) }
 
   #AB Vega Magnitude
   ID="ABVegaFlux"
@@ -616,6 +624,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("params"           , params           , envir = env) #
   assign("plotsample"       , plotsample       , envir = env) #
   assign("psfmap"           , psfmap           , envir = env) #
+  assign("psfnorm"          , psfnorm          , envir = env) #
   assign("resampleaperture" , resampleaperture , envir = env) # QR
   assign("ra0"              , ra0              , envir = env) #
   assign("residmap"         , residmap         , envir = env) #

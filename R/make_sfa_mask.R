@@ -58,7 +58,8 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
       }
       if (length(which(sa_mask[[i]]!=0))>1){
       #Convolve and weight
-        ap<-(convolvepsf(psf[lims[1]:lims[2],lims[1]:lims[2]],sa_mask[[i]])/sum(psf))*fluxweight[i]
+        maxpsf<-max(psf[lims[1]:lims[2],lims[1]:lims[2]])
+        ap<-(convolvepsf(psf[lims[1]:lims[2],lims[1]:lims[2]]/maxpsf,sa_mask[[i]])/sum(psf))*fluxweight[i]
         if (length(which(ap <0))>0) {
           message(paste("Negatives Produced in PSF convolution with Aperture",i))
           warning(paste("Negatives Produced in PSF convolution"))
@@ -84,7 +85,7 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
 	      }
       }
     }
-    browser()
+    #browser()
     message('===========END============Convolution==============END=================\n')
   } else {
     #If we are not filtering by psf, and all fluxweights are equal to unity,

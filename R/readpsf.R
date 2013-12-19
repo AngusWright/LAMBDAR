@@ -69,6 +69,10 @@ function (env=NULL, filename,asperpix,apsize,stampmult,normalize=FALSE,gauss_fwh
   }
   if (verbose) { message(paste("PSF FWHM =",round(psffwhm, digits=3),"arcsec"))
                  message(paste("Stamp Size =",stampsizepix,"pixels")) }
+  if (psfnorm) {
+    message("PSF is being normalised to Unity")
+    im_psf<-im_psf/max(im_psf)
+  }
   sumpsf<-as.single(sum(im_psf))
   #Parse Parameter Space
   detach(env)

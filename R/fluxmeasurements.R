@@ -597,7 +597,7 @@ function(env=NULL) {
   #Check that final values of Deblended Convolved Apertures are not NA/NaN/Inf
   if (length(which(!is.finite(dfaerr[which(sdfa > 0)]))) > 0) {
     message(paste(length(!is.finite(dfaerr[which(sdfa > 0)])), "elements of dfaerr are not finite"))
-    browser()
+    #browser()
     sink(type="message")
     stop("NaN or Infs Produced in calculations")
   }

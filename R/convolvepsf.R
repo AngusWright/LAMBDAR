@@ -19,7 +19,7 @@ function(arr1, arr2, normalise=TRUE, nomag2=FALSE) {
       zapdig<-getOption("digits")
       if (abs(max(conv))-abs(max(arr1)) > 10^(-zapdig)) {
         zapdig<-floor(-log10(abs(max(conv))-abs(max(arr1))))
-        print(paste("Rezapping with Zapdigit:",zapdig,"(",max(conv),max(arr1),")"))
+        #print(paste("Rezapping with Zapdigit:",zapdig,"(",max(conv),max(arr1),")"))
         conv<-Re(zapsmall(fft(step,inverse=TRUE)/length(step), digits=zapdig))
       }
     } else {
@@ -28,7 +28,7 @@ function(arr1, arr2, normalise=TRUE, nomag2=FALSE) {
       zapdig<-getOption("digits")
       if (abs(max(conv))-abs(max(arr1)) > 10^(-zapdig)) {
         zapdig<-floor(-log10(abs(max(conv))-abs(max(arr1))))
-        print(paste("Rezapping with Zapdigit:",zapdig,"(",(abs(max(conv))-abs(max(arr1))),")"))
+        #print(paste("Rezapping with Zapdigit:",zapdig,"(",(abs(max(conv))-abs(max(arr1))),")"))
         conv<-Re(zapsmall(fft(step,inverse=TRUE)/length(step), digits=zapdig))
       }
     }
