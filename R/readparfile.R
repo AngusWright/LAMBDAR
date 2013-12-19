@@ -15,10 +15,10 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #------------------------------------------------------------------------------------------------
 
   #Print Header
-  if (!quiet) { cat(paste('------------------------------------------------------\n')) 
-                cat(paste('   LAMBDAR     version ',packageVersion("LAMBDAR"),': MeasureGamaFluxes\n')) 
-                cat(paste('------------------------------------------------------\n')) 
-                cat('Initialising Workspace {\n') 
+  if (!quiet) { cat(paste('------------------------------------------------------\n'))
+                cat(paste('   LAMBDAR     version ',packageVersion("LAMBDAR"),': MeasureGamaFluxes\n'))
+                cat(paste('------------------------------------------------------\n'))
+                cat('Initialising Workspace {\n')
                 cat('   Reading Parameter File   ') }
   #Test Reading of Parameter File
   error<-try(read.table(parfile, strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#", row.names=1), silent=TRUE)
@@ -35,16 +35,16 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Root Directory path
   ID="RootDirectory"
   pathroot<-params[ID,1]
-  if (is.na(pathroot)) { 
+  if (is.na(pathroot)) {
   stop("Root Directory Path not in Parameter File")
   }
-  #Ensure path ends in a '/' 
+  #Ensure path ends in a '/'
   if (lastnchar(pathroot,1) != '/') { pathroot<-paste(pathroot,'/') }
 
   #Output Directory path
   ID="OutputDirectory"
   pathout<-params[ID,1]
-  if (is.na(pathout)) { 
+  if (is.na(pathout)) {
   stop("Output Directory Path not in Parameter File")
   }
   #Ensure poth ends in a '/'
@@ -52,22 +52,22 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   dir.create(paste(pathroot, pathout,sep=""), showWarnings = FALSE)
 
   #Beam area in square arcsec
-  ID="BeamArea_SqAS" 
+  ID="BeamArea_SqAS"
   beamarea_SOM_as<-as.numeric(params[ID,1])
   if (is.na(beamarea_SOM_as)) { beamarea_SOM_as<-0 }
 
-  #PSF map filename 
+  #PSF map filename
   ID="PSFMap"
-  psfmap<-params[ID,1] 
-  if (is.na(psfmap)) { 
+  psfmap<-params[ID,1]
+  if (is.na(psfmap)) {
     warning("PSF Map Filename not in Paramter File")
-    psfmap<-"NONE" 
+    psfmap<-"NONE"
   }
 
   if (psfmap=="NONE") {
     #FWHM of seeing gaussian
     ID="Gauss_FWHM_AS"
-    gauss_fwhm_as<-as.numeric(params[ID,1]) 
+    gauss_fwhm_as<-as.numeric(params[ID,1])
     if (is.na(gauss_fwhm_as)) { gauss_fwhm_as<-0.0 }
 
     #If there is no PSF, and no gaussian FWHM provided - ERROR
@@ -83,11 +83,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   overlaymap<-NULL
   ID="OverlayEllipse"
   overlay<-params[ID,1]
-  if (is.na(overlay)) { 
+  if (is.na(overlay)) {
     warning("Overlay-Ellipses Image Flag not in Parameter File")
     overlay<-FALSE
   } else { overlay<-(overlay==1) }
-  
+
   if ( overlay ) {
     #Name of the output Residual image
     ID="OverlayFile"
@@ -96,17 +96,17 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       warning("Overlay Ellipse Map Filename not in Parameter File")
       overlaymap<-"OverlayEllipseImage.fits"
     }
-  } 
+  }
 
   #Perform Contaminant removal?
   nocontammap<-NULL
   ID="RemoveContam"
   filtcontam<-params[ID,1]
-  if (is.na(filtcontam)) { 
+  if (is.na(filtcontam)) {
     warning("Remove Contaminants Flag not in Parameter File")
     filtcontam<-FALSE
   } else { filtcontam<-(filtcontam==1) }
-  
+
   if ( filtcontam ) {
     #Name of the output Residual image
     ID="NoContamImageFile"
@@ -115,26 +115,26 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       warning("Contaminant Subtracted Residual Map Filename not in Parameter File")
       nocontammap<-"NoContamResidualImage.fits"
     }
-  } 
+  }
 
   #Name of Source Catalogue
   ID="Catalogue"
   catalogue<-params[ID,1]
-  if (is.na(catalogue)) { 
+  if (is.na(catalogue)) {
     stop("Catalogue Path not in Parameter File")
   }
 
   #Name of Data Image
   ID="DataMap"
   datamap<-params[ID,1]
-  if (is.na(datamap)) { 
+  if (is.na(datamap)) {
     stop("Data Map Path not in Parameter File")
   }
 
   #Name of Error Map
   ID="ErrorMap"
   errormap<-params[ID,1]
-  if (is.na(errormap)) { 
+  if (is.na(errormap)) {
     warning("Error Map Path not in Parameter File")
     errormap<-"NONE"
   }
@@ -142,15 +142,15 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Name of Mask Map
   ID="MaskMap"
   maskmap<-params[ID,1]
-  if (is.na(maskmap)) { 
+  if (is.na(maskmap)) {
     warning("Mask Map Path not in Parameter File")
     maskmap<-"NONE"
   }
 
-  #Extension number of Data in FITS Header 
+  #Extension number of Data in FITS Header
   ID="DataExtn"
   extn<-as.numeric(params[ID,1])
-  if (is.na(extn)) { 
+  if (is.na(extn)) {
     warning("FITS Data Extension Value not in Parameter File")
     extn<-0
   }
@@ -158,7 +158,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Extension number of Error Map in FITS Header
   ID="ErrorExtn"
   extnerr<-as.numeric(params[ID,1])
-  if (is.na(extnerr)) { 
+  if (is.na(extnerr)) {
     warning("FITS Error Extension Value not in Parameter File")
     extnerr<-0
   }
@@ -166,7 +166,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Extension number of Mask Map in FITS Header
   ID="MaskExtn"
   extnmask<-as.numeric(params[ID,1])
-  if (is.na(extnmask)) { 
+  if (is.na(extnmask)) {
     warning("FITS Mask Extension Flag not in Parameter File")
     extnmask<-0
   }
@@ -174,7 +174,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to force use of point sources?
   ID="PointSources"
   forcepointsources<-as.numeric(params[ID,1])
-  if (is.na(forcepointsources)) { 
+  if (is.na(forcepointsources)) {
     warning("Force Point Source Flag not in Parameter File")
     forcepointsources<-0
   }
@@ -183,16 +183,16 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to Convolve the apertures with a PSF
   ID="PSFConvolve"
   psffilt<-as.numeric(params[ID,1])
-  if (is.na(psffilt)) { 
+  if (is.na(psffilt)) {
     warning("PSF Convolve Flag not in Parameter File")
     psffilt<-0
   }
   if (psffilt==1) { nopsf<-0 } else { nopsf <- 1 }
-     
+
   #Error Map scale factor
   ID="EFactor"
   Efactor<-as.numeric(params[ID,1])
-  if (is.na(Efactor)) { 
+  if (is.na(Efactor)) {
     warning("Error Map Scale Factor not in Parameter File")
     Efactor<-1
   }
@@ -200,7 +200,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Flux Correction (Scale) Factor
   ID="FluxCorr"
   fluxcorr<-as.numeric(params[ID,1])
-  if (is.na(fluxcorr)) { 
+  if (is.na(fluxcorr)) {
   warning("Flux Correction Factor not in Parameter File")
   fluxcorr<-1
   }
@@ -214,16 +214,16 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to crop the input image(s)?
   ID="CropImage"
   cropimage<-params[ID,1]
-  if (is.na(cropimage)) { 
+  if (is.na(cropimage)) {
     warning("Crop Image Flag not in Parameter File")
     cropimage<-FALSE
   } else { cropimage<-(cropimage==1) }
-  
+
   if (cropimage) {
     #What will the cropped image(s) be named
     ID="CropFitsName"
     imfitsoutname<-params[ID,1]
-    if (is.na(imfitsoutname)) { 
+    if (is.na(imfitsoutname)) {
       warning("Cropped Images Filename not in Parameter File")
       imfitsoutname<-"croppedimage"
     }
@@ -232,17 +232,17 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     imfitsoutname<-paste(imfitsoutname,".fits",sep="")
     ID="CropImRA0"
     ra0<-as.numeric(params[ID,1])
-    if (is.na(ra0)) { 
+    if (is.na(ra0)) {
       warning("Cropped Images RA centre not in Parameter File")
     }
     ID="CropImDec0"
     dec0<-as.numeric(params[ID,1])
-    if (is.na(dec0)) { 
+    if (is.na(dec0)) {
       warning("Cropped Images Dec Centre not in Parameter File")
     }
     ID="CropImRad"
     cutrad<-as.numeric(params[ID,1])
-    if (is.na(cutrad)) { 
+    if (is.na(cutrad)) {
       warning("Cropped Images cropping Radius not in Parameter File")
     }
   }
@@ -250,7 +250,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Confusion noise factor (in Janskys)
   ID="Confusion_Jy"
   conf<-as.numeric(params[ID,1])
-  if (is.na(conf)) { 
+  if (is.na(conf)) {
     warning("Confusion Noise Factor not in Parameter File")
     conf<-0
   }
@@ -258,17 +258,17 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Number of Processors available for computations
   ID="nProcessors"
   ncores<-as.numeric(params[ID,1])
-  if (is.na(ncores)) { 
+  if (is.na(ncores)) {
     warning("Number of Processors Value not in Parameter File")
     ncores<-1
   }
   registerDoParallel(cores=ncores)
 
-  #Is there an offset between the Input Catalogue angles and  
+  #Is there an offset between the Input Catalogue angles and
   #N0E90 Angular Coordinates?
   ID="AngularOffset"
   angoffset<-params[ID,1]
-  if (is.na(angoffset)) { 
+  if (is.na(angoffset)) {
     warning("Angular Offset Flag not in Parameter File")
     angoffset<-FALSE
   } else { angoffset<-(angoffset==1) }
@@ -276,16 +276,16 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Is the map in Jy per Beam?
   ID="MapJyPerBeam"
   Jybm<-as.numeric(params[ID,1])
-  if (is.na(Jybm)) { 
+  if (is.na(Jybm)) {
     warning("Jansky Per Beam Flag not in Parameter File")
     Jybm<-0
   }
 
-  #Do we want to perform higher precision integrations of 
+  #Do we want to perform higher precision integrations of
   #Apertures by resampling around the edges?
   ID="SmoothAper"
   resampleaperture<-as.numeric(params[ID,1])
-  if (is.na(resampleaperture)) { 
+  if (is.na(resampleaperture)) {
     warning("Smooth Aperture Flag  not in Parameter File")
     resampleaperture<-1
   }
@@ -293,14 +293,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     #What resolution do we want to upscale by?
     ID="ResamplingRes"
     upres<-as.numeric(params[ID,1])
-    if (is.na(upres)) { 
+    if (is.na(upres)) {
       warning("Resampling Resolution Factor not in Parameter File")
       upres<-2
     }
-    #How many iterations of upscale do we want? 
+    #How many iterations of upscale do we want?
     ID="ResamplingIters"
     itersteps<-as.numeric(params[ID,1])
-    if (is.na(itersteps)) { 
+    if (is.na(itersteps)) {
       warning("Resampling Iterations Value not in Parameter File")
       itersteps<-10
     }
@@ -322,7 +322,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     stampmult<-3
   }
 
-  #Size of the aperture stamp as a multiple of the aperture major axis 
+  #Size of the aperture stamp as a multiple of the aperture major axis
   ID="ApStampWidth"
   defbuff<-as.numeric(params[ID,1])
   if (is.na(defbuff)) {
@@ -336,7 +336,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to output the source mask only?
   ID="SourceMaskOnly"
   sourcemaskonly<-params[ID,1]
-  if (is.na(sourcemaskonly)) { 
+  if (is.na(sourcemaskonly)) {
     warning("Output Source Mask Only Flag not in Parameter File")
     sourcemaskonly<-FALSE
   } else { sourcemaskonly<-(sourcemaskonly==1) }
@@ -345,7 +345,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     #Do we want to output the source mask at all?
     ID="WriteSourceMask"
     sourcemask<-params[ID,1]
-    if (is.na(sourcemask)) { 
+    if (is.na(sourcemask)) {
       warning("Output Source Mask Flag not in Parameter File")
       sourcemask<-FALSE
     } else { sourcemask<-(sourcemask==1) }
@@ -369,8 +369,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (is.na(makeaamask)) {
     warning("Make All Apertures Mask Flag not in Parameter File")
     makeaamask<-FALSE
-  } else { makeaamask<-(makeaamask==1) } 
-  
+  } else { makeaamask<-(makeaamask==1) }
+
   if ( makeaamask ) {
     #Name of the output All Apertures file
     ID="AllApersFile"
@@ -388,8 +388,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (is.na(makefamask)) {
     warning("Make Convolved Apertures Mask Flag not in Parameter File")
     makefamask<-FALSE
-  } else { makefamask<-(makefamask==1) } 
-  
+  } else { makefamask<-(makefamask==1) }
+
   if ( makefamask ) {
     #Name of the output Convolved Apertures Mask
     ID="ConvApersFile"
@@ -407,8 +407,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (is.na(makedfamask)) {
     warning("Make Deblended Convolved Apertures Mask Flag not in Parameter File")
     makedfamask<-FALSE
-  } else { makedfamask<-(makedfamask==1) } 
-  
+  } else { makedfamask<-(makedfamask==1) }
+
   if ( makedfamask ) {
     #Name of the output Convolved Apertures Mask
     ID="DeblConvApersFile"
@@ -426,8 +426,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (is.na(makeresidmap)) {
     warning("Make Residual Map Flag not in Parameter File")
     makeresidmap<-TRUE
-  } else { makeresidmap<-(makeresidmap==1) } 
-  
+  } else { makeresidmap<-(makeresidmap==1) }
+
   if ( makeresidmap ) {
     #Name of the output Residual image
     ID="ResidImageFile"
@@ -436,7 +436,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       warning("Residual Map Filename not in Parameter File")
       residmap<-"ResidualImage.fits"
     }
-  } 
+  }
 
   #Do we want to output the Flux table?
   tableoutname<-NULL
@@ -445,8 +445,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (is.na(writetab)) {
     warning("Write Table Flag not in Parameter File")
     writetab<-TRUE
-  } else { writetab<-(writetab==1) } 
-  
+  } else { writetab<-(writetab==1) }
+
   if ( writetab ) {
     #Name of output Flux Table
     ID="TableName"
@@ -455,7 +455,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       warning("Output Table Filename not in Parameter File")
       tableoutname<-"dfaResults.fits"
     }
-  } 
+  }
 
   #Do we want updates on how long things are taking?
   if (quiet) {
@@ -510,55 +510,55 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   } else { plotsample<-(plotsample==1) }
 
   #Make Magnitudes in Output?
-  ID="MakeMagnitudes" 
-  makeMagnitudes<-params[ID,1]
-  if (is.na(makeMagnitudes)) { 
-    warning("Make Magnitudes Flag not present in the Parameter File") 
-    makeMagnitudes<-TRUE
+  ID="Magnitudes"
+  Magnitudes<-params[ID,1]
+  if (is.na(Magnitudes)) {
+    warning("Make Magnitudes Flag not present in the Parameter File")
+    Magnitudes<-TRUE
   }
 
   #AB Vega Magnitude
-  ID="ABVegaFlux" 
+  ID="ABVegaFlux"
   ABvegaflux<-as.numeric(params[ID,1])
-  if (is.na(ABvegaflux)) { 
-    warning("AB Vega Flux Value not present in the Parameter File; using 1.0") 
+  if (is.na(ABvegaflux)) {
+    warning("AB Vega Flux Value not present in the Parameter File; using 1.0")
     ABvegaflux<-1.0
   }
 
   #Magnitudes Zero Point
-  ID="MagZeroPoint" 
+  ID="MagZeroPoint"
   magZP<-as.numeric(params[ID,1])
-  if (is.na(magZP)) { 
-    warning("Magnitudes Zero Point not present in the Parameter File; using 0.0") 
+  if (is.na(magZP)) {
+    warning("Magnitudes Zero Point not present in the Parameter File; using 0.0")
     magZP<-0.0
   }
 
   #Magnitudes Zero Point
-  ID="MagZPlabel" 
+  ID="MagZPlabel"
   magZPlabel<-params[ID,1]
-  if (is.na(magZPlabel)) { 
-    warning("FITS Zero Point Label not present in the Parameter File") 
+  if (is.na(magZPlabel)) {
+    warning("FITS Zero Point Label not present in the Parameter File")
     magZPlabel<-"MagZP"
   }
 
   #Magnitudes Zero Point
-  ID="DoSkyEst" 
+  ID="DoSkyEst"
   doskyest<-params[ID,1]
-  if (is.na(doskyest)) { 
-    warning("Sky Estimate Flag not present in the Parameter File") 
+  if (is.na(doskyest)) {
+    warning("Sky Estimate Flag not present in the Parameter File")
     doskyest<-FALSE
   } else { doskyest<-(doskyest==1) }
-  
+
   if (doskyest & !sourcemask) {
-    warning("Source Mask creation being forced because Sky Estimate Flag is TRUE") 
+    warning("Source Mask creation being forced because Sky Estimate Flag is TRUE")
     sourcemask<-TRUE
   }
 
   #Name of Logfile to be output
-  ID="LogFile" 
+  ID="LogFile"
   logfile<-params[ID,1]
-  if (is.na(logfile)) { 
-    warning("Output Log Filename not present in the Parameter File") 
+  if (is.na(logfile)) {
+    warning("Output Log Filename not present in the Parameter File")
     logfile<-"LAMDBAR_Log.txt"
   }
 
@@ -568,24 +568,24 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   # Assign variables to LAMBDAR workspace
   assign("aafilename"       , aafilename       , envir = env) # A
-  assign("ABvegaflux"       , ABvegaflux       , envir = env) #  
-  assign("angoffset"        , angoffset        , envir = env) #  
+  assign("ABvegaflux"       , ABvegaflux       , envir = env) #
+  assign("angoffset"        , angoffset        , envir = env) #
   assign("beamarea_SOM_as"  , beamarea_SOM_as  , envir = env) # B
   assign("conf"             , conf             , envir = env) # C
-  assign("cropimage"        , cropimage        , envir = env) # 
-  assign("catalogue"        , catalogue        , envir = env) # 
-  assign("cutrad"           , cutrad           , envir = env) # 
+  assign("cropimage"        , cropimage        , envir = env) #
+  assign("catalogue"        , catalogue        , envir = env) #
+  assign("cutrad"           , cutrad           , envir = env) #
   assign("datamap"          , datamap          , envir = env) # D
-  assign("doskyest"         , doskyest         , envir = env) # 
-  assign("defbuff"          , defbuff          , envir = env) # 
-  assign("diagnostic"       , diagnostic       , envir = env) # 
-  assign("dec0"             , dec0             , envir = env) # 
-  assign("dfafilename"      , dfafilename      , envir = env) # 
+  assign("doskyest"         , doskyest         , envir = env) #
+  assign("defbuff"          , defbuff          , envir = env) #
+  assign("diagnostic"       , diagnostic       , envir = env) #
+  assign("dec0"             , dec0             , envir = env) #
+  assign("dfafilename"      , dfafilename      , envir = env) #
   assign("errormap"         , errormap         , envir = env) # E
   assign("extn"             , extn             , envir = env) #
   assign("extnerr"          , extnerr          , envir = env) #
   assign("extnmask"         , extnmask         , envir = env) #
-  assign("Efactor"          , Efactor          , envir = env) # 
+  assign("Efactor"          , Efactor          , envir = env) #
   assign("fluxcorr"         , fluxcorr         , envir = env) # F
   assign("fafilename"       , fafilename       , envir = env) #
   assign("forcepointsources", forcepointsources, envir = env) #
@@ -596,35 +596,35 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("interact"         , interact         , envir = env) #
   assign("immfitsoutname"   , immfitsoutname   , envir = env) #
   assign("imefitsoutname"   , imefitsoutname   , envir = env) #
-  assign("imfitsoutname"    , imfitsoutname    , envir = env) # 
+  assign("imfitsoutname"    , imfitsoutname    , envir = env) #
   assign("Jybm"             , Jybm             , envir = env) # J
   assign("makeresidmap"     , makeresidmap     , envir = env) # KLM
-  assign("makedfamask"      , makedfamask      , envir = env) # 
-  assign("makeMagnitudes"   , makeMagnitudes   , envir = env) # 
-  assign("magZP"            , magZP            , envir = env) # 
-  assign("magZPlabel"       , magZPlabel       , envir = env) # 
-  assign("makefamask"       , makefamask       , envir = env) # 
-  assign("makeaamask"       , makeaamask       , envir = env) # 
-  assign("maskmap"          , maskmap          , envir = env) # 
+  assign("makedfamask"      , makedfamask      , envir = env) #
+  assign("makeMagnitudes"   , makeMagnitudes   , envir = env) #
+  assign("magZP"            , magZP            , envir = env) #
+  assign("magZPlabel"       , magZPlabel       , envir = env) #
+  assign("makefamask"       , makefamask       , envir = env) #
+  assign("makeaamask"       , makeaamask       , envir = env) #
+  assign("maskmap"          , maskmap          , envir = env) #
   assign("nopsf"            , nopsf            , envir = env) # N
   assign("nocontammap"      , nocontammap      , envir = env) #
-  assign("ncores"           , ncores           , envir = env) # 
+  assign("ncores"           , ncores           , envir = env) #
   assign("overlay"          , overlay          , envir = env) # O
-  assign("overlaymap"       , overlaymap       , envir = env) # 
+  assign("overlaymap"       , overlaymap       , envir = env) #
   assign("pathroot"         , pathroot         , envir = env) # P
   assign("pathout"          , pathout          , envir = env) #
   assign("params"           , params           , envir = env) #
   assign("plotsample"       , plotsample       , envir = env) #
-  assign("psfmap"           , psfmap           , envir = env) # 
+  assign("psfmap"           , psfmap           , envir = env) #
   assign("resampleaperture" , resampleaperture , envir = env) # QR
-  assign("ra0"              , ra0              , envir = env) # 
-  assign("residmap"         , residmap         , envir = env) # 
+  assign("ra0"              , ra0              , envir = env) #
+  assign("residmap"         , residmap         , envir = env) #
   assign("sourcemask"       , sourcemask       , envir = env) # S
   assign("sourcemaskonly"   , sourcemaskonly   , envir = env) #
   assign("sinkfile"         , sinkfile         , envir = env) #
   assign("stampmult"        , stampmult        , envir = env) #
   assign("showtime"         , showtime         , envir = env) #
-  assign("smfilename"       , smfilename       , envir = env) # 
+  assign("smfilename"       , smfilename       , envir = env) #
   assign("tableoutname"     , tableoutname     , envir = env) # T
   assign("upres"            , upres            , envir = env) # U
   assign("verbose"          , verbose          , envir = env) # V
@@ -632,14 +632,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
                                                               # XYZ
 
   #Print any warnings
-  if ((!quiet)&(!(is.null(warnings())))) { 
+  if ((!quiet)&(!(is.null(warnings())))) {
   cat('\n')
-  print(warnings()) 
+  print(warnings())
   cat('                  ')
   }
 
   #-----Diagnostic------#
-  if (diagnostic) { 
+  if (diagnostic) {
     if (!(is.null(warnings()))) {
     sink(sinkfile, type="output")
     print(warnings())
@@ -648,7 +648,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     message("Variables set at end of Parameter File read")
     sink(file=sinkfile, type="output", append=TRUE)
     print(environment())
-    #print(ls.str(envir=env)) 
+    #print(ls.str(envir=env))
     sink(file=NULL, type="output")
   }
 

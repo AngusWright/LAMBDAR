@@ -1,0 +1,57 @@
+#
+#Instructions for the instalation of the R Package LAMBDAR
+#
+#####################
+#   Download
+#####################
+
+#Package is available for download at:
+
+https://github.com/AngusWright/LAMBDAR
+
+#By clicking on the "Download Zip" Option on the lower-right-side of
+#the window.
+
+#Once downloaded, unzip the file using your favourite unzip method.
+
+#####################
+#   Install
+#####################
+
+#After download is unzipped, in the directory of the unzipped folder run:
+
+R CMD INSTALL LAMBDAR
+
+#if this command fails, it is likely because you are missing packages
+#that LAMBDAR requires to run (see Dependancies below), or you
+#lack sufficient permissions to load the package into the R library.
+#Usually this will prompt for loading the package in your personal
+#library, which should then be successful. If not, run:
+
+sudo R CMD INSTALL LAMBDAR
+
+#This will install the package in the main R library with root permissions.
+#Once installed, the package can be loaded from inside the R environment
+#using the command
+
+library(LAMBDAR)
+
+
+#####################
+#   Dependancies
+#####################
+
+#In order to install and run LAMBDAR, you will require the additional packages:
+#
+# > astro
+# > foreach
+# > doParallel
+#
+#as well as any packages that these depend on themselves.
+#To install these packages, in the R terminal, run
+
+install.packages('<package name>', dependancies=TRUE)
+
+#Once all dependant packages are loaded, run the commands to
+#install LAMBDAR.
+

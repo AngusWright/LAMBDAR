@@ -121,6 +121,7 @@ function(parfile=NA, quiet=FALSE, ...){ #Begin
   #Discard any apertures that lie completely outside of the image ± 1 pixel
   catlen<-length(x_g)
   insidemask<-!((x_g <= 0) | (x_g >= length(image.env$im[,1])+1) | (y_g <= 0) | (y_g >= length(image.env$im[1,])+1))
+  browser()
   if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Single Apertures are inside the image.") }  # Nothing inside the image
   x_g<-x_g[which(insidemask)]
   y_g<-y_g[which(insidemask)]
