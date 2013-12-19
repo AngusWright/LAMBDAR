@@ -600,7 +600,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("Jybm"             , Jybm             , envir = env) # J
   assign("makeresidmap"     , makeresidmap     , envir = env) # KLM
   assign("makedfamask"      , makedfamask      , envir = env) #
-  assign("makeMagnitudes"   , makeMagnitudes   , envir = env) #
+  assign("Magnitudes"       , Magnitudes       , envir = env) #
   assign("magZP"            , magZP            , envir = env) #
   assign("magZPlabel"       , magZPlabel       , envir = env) #
   assign("makefamask"       , makefamask       , envir = env) #

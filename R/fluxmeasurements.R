@@ -564,7 +564,7 @@ function(env=NULL) {
   dfaerr<-dfaerr*fluxcorr
 
   #Calculate Magnitudes
-  if (makeMagnitudes) {
+  if (Magnitudes) {
     mags<--2.5*(log10(dfaflux)-log10(ABvegaflux))+magZP
   } else {
     mags<-rep(NA, length(id_g))

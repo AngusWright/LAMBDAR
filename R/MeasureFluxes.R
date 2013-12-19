@@ -96,7 +96,7 @@ function(parfile=NA, quiet=FALSE, ...){ #Begin
   rm(astr_struc, envir=image.env)
 
   #If needed, read ZP Magnitude from Image header
-  if ((makeMagnitudes) & (magZP==-999)){
+  if ((Magnitudes) & (magZP==-999)){
     magZP<-read.fitskey(magZPlabel,paste(pathroot,datamap,sep=""))
     if (!is.finite(magZP)) { sink(type='message'); stop("Zero Point Magnitude determination failed") }
   }
