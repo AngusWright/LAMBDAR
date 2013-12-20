@@ -12,32 +12,22 @@ function(arr1, arr2, normalise=TRUE, nomag2=FALSE) {
   # additional error handling by scaling the zapsmall
   # function to the degree of overflow in the final
   # aperture
+  if (nomag2) {
+     #Disregard Magnitude information
+     #by normalisation
+     arr2<-arr2*sum(arr2)/length(arr2)
+  }
+  step<-Mod(fft(arr1))*fft(arr2)
+  conv<-Re(zapsmall(fft(step,inverse=TRUE)))
+  zapdig<-getOption("digits")
+  message(paste("Max values of Input Array 1 and Convolved Array:", max(conv),max(arr1)))
+  if (abs(max(conv))-abs(max(arr1)) > 10^(-zapdig)) {
+    zapdig<-floor(-log10(abs(max(conv))-abs(max(arr1))))
+    #print(paste("Rezapping with Zapdigit:",zapdig,"(",max(conv),max(arr1),")"))
+    conv<-Re(zapsmall(fft(step,inverse=TRUE), digits=zapdig))
+  }
   if (normalise) {
-    if (!nomag2) {
-      step<-Mod(fft(arr1))*fft(arr2)
-      conv<-Re(zapsmall(fft(step,inverse=TRUE)/length(step)))
-      zapdig<-getOption("digits")
-      if (abs(max(conv))-abs(max(arr1)) > 10^(-zapdig)) {
-        zapdig<-floor(-log10(abs(max(conv))-abs(max(arr1))))
-        #print(paste("Rezapping with Zapdigit:",zapdig,"(",max(conv),max(arr1),")"))
-        conv<-Re(zapsmall(fft(step,inverse=TRUE)/length(step), digits=zapdig))
-      }
-    } else {
-      step<-Mod(fft(arr1))*(fft(arr2)/Mod(fft(arr2)))
-      conv<-Re(zapsmall(fft(step,inverse=TRUE)/length(step)))
-      zapdig<-getOption("digits")
-      if (abs(max(conv))-abs(max(arr1)) > 10^(-zapdig)) {
-        zapdig<-floor(-log10(abs(max(conv))-abs(max(arr1))))
-        #print(paste("Rezapping with Zapdigit:",zapdig,"(",(abs(max(conv))-abs(max(arr1))),")"))
-        conv<-Re(zapsmall(fft(step,inverse=TRUE)/length(step), digits=zapdig))
-      }
-    }
-  } else {
-    if (!nomag2) {
-      conv<-Re(zapsmall(fft(Mod(fft(arr1))*fft(arr2),inverse=TRUE)))
-    } else {
-      conv<-Re(zapsmall(fft(Mod(fft(arr1))*(fft(arr2)/Mod(fft(arr2))),inverse=TRUE)))
-    }
+    conv=conv/length(step)
   }
   return=conv
 }

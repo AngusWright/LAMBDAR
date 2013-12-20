@@ -43,23 +43,52 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
     #Else if we are filtering apertures with the PSFs, perform the convolution and
     #multiply by the fluxweight simultaneously
     message('--------------------------Convolution----------------------------------')
+    image(psf)
     sfa_mask<-foreach(i=1:npos, xc=x_g, yc=y_g, .inorder=TRUE) %dopar% {
       #Use square subset of psf array so that arrays are conformable
       #in convolution
       if (length(sa_mask[[i]][,1])<length(psf[,1])){
-        lims<-c(1,length(sa_mask[[i]][,1]))
-        if (length(psf[lims[1]:lims[2],1])!=length(sa_mask[[i]][,1])) { print(paste(length(psf[lims[1]:lims[2],1]),length(sa_mask[[i]][,1]))) }
+        #lims<-c(1,length(sa_mask[[i]][,1]))
+        #limits from PSF peak - 1/2 stampwidth, 
+        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+        sa.len<-length(sa_mask[[i]][,1])
+        if (sa.len%%2) { sa.len<-sa.len-1 }
+        delta<-(sa.len)*c(-0.5,+0.5)
+        lims<-rbind(centre[1]+delta,centre[2]+delta)
+        #Check for -ve indexes or indexes above PSF width
+        if (lims[1,1]<1) {
+          lims[1,]<-lims[1,]+(1-lims[1,1])
+        }
+        if (lims[2,1]<1) {
+          lims[2,]<-lims[2,]+(1-lims[2,1])
+        }
+        if (lims[1,2]>length(psf[,1])) {
+          lims[1,]<-lims[1,]+(length(psf[,1])-lims[1,2])
+        }
+        if (lims[2,2]>length(psf[,1])) {
+          lims[2,]<-lims[2,]+(length(psf[,1])-lims[2,2])
+        }
+        if (length(psf[lims[1]:lims[3],1])!=length(sa_mask[[i]][,1])) { 
+          stop(paste("PSF and Aperture Arrays are non-conformable. Lengths are:",length(psf[lims[1]:lims[3],1]),length(sa_mask[[i]][,1])))
+        }
       } else if (length(sa_mask[[i]][,1])==length(psf[,1])){
-        lims<-c(1,length(psf[,1]))
+        lims<-matrix(data=rep(c(1,length(psf[,1])),2),nrow=2, byrow=TRUE)
       } else {
         #sa_mask is LARGER than psf image
         sink(type="message")
         stop("Aperture Stamp is larger than PSF - convolution cannot be performed")
       }
+      # TODO: Add functionality for PSFLimited apertures. 
+      # The apertures should be padded such that they are 
+      # at least the width of the PSF, so that no PSF components
+      # are tructated in convolution
+      if (diagnostic) { message(paste("PSF Subset complete in Aperture",i)) }
       if (length(which(sa_mask[[i]]!=0))>1){
       #Convolve and weight
-        maxpsf<-max(psf[lims[1]:lims[2],lims[1]:lims[2]])
-        ap<-(convolvepsf(psf[lims[1]:lims[2],lims[1]:lims[2]]/maxpsf,sa_mask[[i]])/sum(psf))*fluxweight[i]
+        if (diagnostic) { message(paste("Doing convolution of PSF with Aperture", i)) }
+        #maxpsf<-max(psf[lims[1]:lims[2],lims[1]:lims[2]])
+        #ap<-(convolvepsf(psf[lims[1]:lims[2],lims[1]:lims[2]]/maxpsf,sa_mask[[i]])/sum(psf))*fluxweight[i]
+        ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]])/sum(psf))*fluxweight[i]
         if (length(which(ap <0))>0) {
           message(paste("Negatives Produced in PSF convolution with Aperture",i))
           warning(paste("Negatives Produced in PSF convolution"))
@@ -68,7 +97,7 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
       } else {
         #We have a point source - reinterpolate the PSF at point source XcenYcen, and return that
         if ((xc%%1!=0.5)|(yc%%1!=0.5)) {
-          if (verbose) { message("Reinterpolating the Point Source PSF") }
+          #if (diagnostic) { message(paste("Reinterpolating the PSF for Point Source Aperture",i)) }
           len<-length(psf[,1])
           #Make object of psf at old pixel centres
           psf_obj<-list(x=seq(1,len)+0.5, y=seq(1,len)+0.5,z=psf)
@@ -77,10 +106,11 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
           xnew<-expanded[,1]+xc%%1
           ynew<-expanded[,2]+yc%%1
           #Call Interpolation
-          ap<-matrix(interp2D(xnew, ynew, psf_obj)*fluxweight[i], ncol=dim(psf)[1])[lims[1]:lims[2],lims[1]:lims[2]]
+          ap<-matrix(interp2D(xnew, ynew, psf_obj)*fluxweight[i], ncol=length(psf[,1]))[lims[1]:lims[3],lims[2]:lims[4]]
           return=ap
         } else {
-          ap<-psf[lims[1]:lims[2],lims[1]:lims[2]]
+          if (diagnostic) { message(paste("Using the Uninterpolated PSF for Point Source Aperture",i)) }
+          ap<-psf[lims[1]:lims[3],lims[2]:lims[4]]
           return=ap
 	      }
       }
