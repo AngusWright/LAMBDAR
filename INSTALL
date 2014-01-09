@@ -13,22 +13,30 @@ https://github.com/AngusWright/LAMBDAR
 #the window.
 
 #Once downloaded, unzip the file using your favourite unzip method.
+#The unzipped folder will be named 'LAMBDAR-master'
 
 #####################
 #   Install
 #####################
 
-#After download is unzipped, in the directory of the unzipped folder run:
+#The syntax for installing R packages from the command line is
+#
+# R CMD INSTALL <package folder>
+#
+#As such, after the download is unzipped, from the folder containing the package directory, run:
 
-R CMD INSTALL LAMBDAR
+R CMD INSTALL LAMBDAR-master
 
+# i.e. if you unzipped the folder in the 'Downloads' directory, run the above command from inside 
+#      'Downloads'
+#
 #if this command fails, it is likely because you are missing packages
-#that LAMBDAR requires to run (see Dependancies below), or you
+#that LAMBDAR requires to run (see Dependencies below), or you
 #lack sufficient permissions to load the package into the R library.
 #Usually this will prompt for loading the package in your personal
 #library, which should then be successful. If not, run:
 
-sudo R CMD INSTALL LAMBDAR
+sudo R CMD INSTALL LAMBDAR-master
 
 #This will install the package in the main R library with root permissions.
 #Once installed, the package can be loaded from inside the R environment
@@ -38,7 +46,7 @@ library(LAMBDAR)
 
 
 #####################
-#   Dependancies
+#   Dependencies
 #####################
 
 #In order to install and run LAMBDAR, you will require the additional packages:
@@ -52,7 +60,7 @@ library(LAMBDAR)
 #as well as any packages that these depend on themselves.
 #To install these packages, in the R terminal, run
 
-install.packages('<package name>', dependancies=TRUE)
+install.packages('<package name>', dependencies=TRUE)
 
 #Once all dependant packages are loaded, run the commands to
 #install LAMBDAR.
