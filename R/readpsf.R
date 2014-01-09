@@ -19,6 +19,7 @@ function (env=NULL, filename,asperpix,apsize,confidence,normalize=TRUE,gauss_fwh
     nsig<-sqrt(qchisq(confidence,df=2)) #Determine nsigma for desired confidence using chisq distribution
     psf.clip<-nsig*psfsigma.pix
     psf.clip<-psf.clip*2 # convert psf.clip from radius to diameter
+    psfwidth<-psf.clip*asperpix
     stampsizepix=(floor((ceiling(apsize/asperpix)+ceiling(psf.clip/2))/2)*2+1)
 
     x0=floor(psf.clip/2.)
