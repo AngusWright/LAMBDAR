@@ -15,7 +15,7 @@ function (env=NULL, filename,asperpix,apsize,confidence,normalize=TRUE,gauss_fwh
   if (gauss_fwhm_as > 0) {
     if (verbose) { message("Creating Gaussian PSF from input parameters") }
     psffwhm.pix<-gauss_fwhm_as/asperpix
-    psfsigma.pix<-psffwhm/(2*sqrt(2*log(2)))
+    psfsigma.pix<-psffwhm.pix/(2*sqrt(2*log(2)))
     nsig<-sqrt(qchisq(confidence,df=2)) #Determine nsigma for desired confidence using chisq distribution
     psf.clip<-nsig*psfsigma.pix
     psf.clip<-psf.clip*2 # convert psf.clip from radius to diameter
