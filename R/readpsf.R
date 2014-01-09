@@ -20,7 +20,7 @@ function (env=NULL, filename,asperpix,apsize,confidence,normalize=TRUE,gauss_fwh
     psf.clip<-nsig*psfsigma.pix
     psf.clip<-psf.clip*2 # convert psf.clip from radius to diameter
     psfwidth<-psf.clip*asperpix
-    stampsizepix=(floor((ceiling(apsize/asperpix)+ceiling(psf.clip/2))/2)*2+1)
+    stampsizepix=(floor((ceiling(defbuff*apsize/asperpix)+ceiling(psf.clip))/2)*2+1)
 
     x0=floor(psf.clip/2.)
     y0=floor(psf.clip/2.)
@@ -46,7 +46,7 @@ function (env=NULL, filename,asperpix,apsize,confidence,normalize=TRUE,gauss_fwh
     psf.clip<-get.confidence(im_psf,confidence)
     psf.clip<-psf.clip*2 # convert psf.clip from radius to diameter
     psfwidth<-psf.clip*asperpix
-    stampsizepix<-(floor((ceiling(apsize/asperpix)+ceiling(psf.clip/2))/2)*2+1)
+    stampsizepix<-(floor((ceiling(defbuff*apsize/asperpix)+ceiling(psf.clip))/2)*2+1)
 
     if (any(dim(im_psf) < stampsizepix)) {
       im_big<-array(0, dim=c(stampsizepix,stampsizepix))
