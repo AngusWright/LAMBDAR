@@ -180,14 +180,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   }
   forcepointsources<-(forcepointsources==1)
 
-  #Normalise the PSF
-  ID="NormalisePSF"
-  psfnorm<-params[ID,1]
-  if (is.na(psfnorm)) {
-    warning("PSF Normalisation Flag not in Parameter File")
-    psfnorm<-TRUE
-  } else { psfnorm<-(psfnorm==1) }
-
   #Do we want to Convolve the apertures with a PSF
   ID="PSFConvolve"
   psffilt<-as.numeric(params[ID,1])
@@ -320,14 +312,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Number of PSF FWHM's that are added to the widths of the aperture stamps (which are, by default, ceiling(1.05*ApMajAxis) wide)
   #If we are not convolving with the PSF, PSF FWHM==0, and no buffer is added onto the default.
-  ID="StampMult"
-  stampmult<-as.numeric(params[ID,1])
-  if (is.na(stampmult)) {
-    warning("StampMult Value not in Parameter File")
-    stampmult<-3
-  }  else if (stampmult<=0) {
-    warning("StampMult Value is greater than or equal to zero. Value should really be strictly >= 3. Setting to 3")
-    stampmult<-3
+  ID="PSFConfidence"
+  confidence<-as.numeric(params[ID,1])
+  if (is.na(confidence)) {
+    warning("PSFConfidence Value not in Parameter File")
+    confidence<-0.95
+  }  else if (confidence<=0) {
+    warning("PSFConfidence Value is less than or equal to zero. Value should be strictly 0<confidence<1. Setting to 0.95")
+    confidence<-0.95
   }
 
   #Size of the aperture stamp as a multiple of the aperture major axis
@@ -337,8 +329,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     warning("ApStampWidth Value not in Parameter File")
     defbuff<-1.05
   }  else if (defbuff<=1) {
-    warning("ApStampWidth Value is less than or equal to Unity. Value must be strictly > 1. Setting to 3")
-    stampmult<-1.05
+    warning("ApStampWidth Value is less than or equal to Unity. Value must be strictly > 1. Setting to 1.05")
+    defbuff<-1.05
   }
 
   #Do we want to output the source mask only?
@@ -461,7 +453,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     tableoutname<-params[ID,1]
     if (is.na(tableoutname)) {
       warning("Output Table Filename not in Parameter File")
-      tableoutname<-"dfaResults.fits"
+      tableoutname<-"dfaResults.csv"
     }
   }
 
@@ -477,14 +469,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     } else { showtime<-(showtime==1) }
   }
 
-  #Scale height of the PSF
-  ID="PSFheight"
-  height<-as.numeric(params[ID,1])
-  if (is.na(height)) {
-    warning("PSF Height Value not in Parameter File")
-    height<-1.0
-  }
-
   #Do we want Diagnostic Output in Log File
   ID="Interactive"
   interact<-params[ID,1]
@@ -492,6 +476,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     warning("Interactive Flag not in Parameter File")
     interact<-FALSE
   } else { interact<-(interact==1) }
+  
+  #What limit do we want for the use of masks what cross the mask edges
+  ID="UseMaskLim"
+  useMaskLim<-params[ID,1]
+  if (is.na(useMaskLim)) {
+    warning("UseMaskLim Value not in Parameter File")
+    useMaskLim<-0.95
+  }
 
   #Do we want Diagnostic Output in Log File
   ID="Diagnostic"
@@ -549,7 +541,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     magZPlabel<-"MagZP"
   }
 
-  #Magnitudes Zero Point
+  #Perform a Sky estimation & subtraction?
   ID="DoSkyEst"
   doskyest<-params[ID,1]
   if (is.na(doskyest)) {
@@ -562,6 +554,37 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     sourcemask<-TRUE
   }
 
+  #Calculate the Sky RMS? 
+  ID="GetSkyRMS"
+  getskyrms<-params[ID,1]
+  if (is.na(getskyrms)) {
+    warning("Get Sky RMS Flag not present in the Parameter File")
+    getskyrms<-TRUE
+  } else { getskyrms<-(getskyrms==1) }
+  
+  if (doskyest||getskyrms) { 
+    #Number of iterations used in sky estimation
+    ID="SkyEstIters"
+    skycutiters<-params[ID,1]
+    if (is.na(skycutiters)) {
+      warning("Sky Estimate Iterations Value not present in the Parameter File")
+      skycutiters<-5
+    }
+    #Sigma level used in sky cut
+    ID="SkyEstProbCut"
+    skyprobcut<-as.numeric(params[ID,1])
+    if (is.na(skyprobcut)) {
+      warning("Sky Estimate Simga Cut Level not present in the Parameter File")
+      skyprobcut<-3
+    } 
+    #Level of Corellated noise in image
+    ID="SkyCorrelNoise"
+    correl.noise<-as.numeric(params[ID,1])
+    if (is.na(correl.noise)) {
+      warning("Sky Correlated Noise Level not present in the Parameter File")
+      correl.noise<-1
+    } 
+  }
   #Name of Logfile to be output
   ID="LogFile"
   logfile<-params[ID,1]
@@ -580,7 +603,9 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("angoffset"        , angoffset        , envir = env) #
   assign("beamarea_SOM_as"  , beamarea_SOM_as  , envir = env) # B
   assign("conf"             , conf             , envir = env) # C
+  assign("confidence"       , confidence       , envir = env) #
   assign("cropimage"        , cropimage        , envir = env) #
+  assign("correl.noise"     , correl.noise     , envir = env) #
   assign("catalogue"        , catalogue        , envir = env) #
   assign("cutrad"           , cutrad           , envir = env) #
   assign("datamap"          , datamap          , envir = env) # D
@@ -599,7 +624,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("forcepointsources", forcepointsources, envir = env) #
   assign("filtcontam"       , filtcontam       , envir = env) #
   assign("gauss_fwhm_as"    , gauss_fwhm_as    , envir = env) # G
-  assign("height"           , height           , envir = env) # H
   assign("itersteps"        , itersteps        , envir = env) # I
   assign("interact"         , interact         , envir = env) #
   assign("immfitsoutname"   , immfitsoutname   , envir = env) #
@@ -624,18 +648,19 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("params"           , params           , envir = env) #
   assign("plotsample"       , plotsample       , envir = env) #
   assign("psfmap"           , psfmap           , envir = env) #
-  assign("psfnorm"          , psfnorm          , envir = env) #
   assign("resampleaperture" , resampleaperture , envir = env) # QR
   assign("ra0"              , ra0              , envir = env) #
   assign("residmap"         , residmap         , envir = env) #
   assign("sourcemask"       , sourcemask       , envir = env) # S
   assign("sourcemaskonly"   , sourcemaskonly   , envir = env) #
   assign("sinkfile"         , sinkfile         , envir = env) #
-  assign("stampmult"        , stampmult        , envir = env) #
   assign("showtime"         , showtime         , envir = env) #
+  assign("skycutiters"      , skycutiters      , envir = env) #
+  assign("skyprobcut"       , skyprobcut       , envir = env) #
   assign("smfilename"       , smfilename       , envir = env) #
   assign("tableoutname"     , tableoutname     , envir = env) # T
   assign("upres"            , upres            , envir = env) # U
+  assign("useMaskLim"       , useMaskLim       , envir = env)
   assign("verbose"          , verbose          , envir = env) # V
   assign("writetab"         , writetab         , envir = env) # W
                                                               # XYZ

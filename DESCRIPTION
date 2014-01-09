@@ -1,11 +1,11 @@
 Package: LAMBDAR
 Type: Package
 Title: Measure galaxy fluxes from an arbitrary FITS image using input aperture locations and dimensions
-Version: 2.5.6
-Date: 2013-11-20
+Version: 2.6
+Date: 2014-01-09
 Author: Angus H. Wright
 Maintainer: Angus H. Wright <angus.wright@icrar.org>
 Description: LAMBDAR (Lambda Adaptive Multi-Band Detection Algorithm in R) is a proceedure for measuring the fluxes of galaxies in an arbitrary FITS image, covering an arbitrary photometric wave-band, when provided all paramters needed to construct galactic apertures at the required locations.
-Depends: astro, doParallel, foreach
+Depends: astro, doParallel, foreach, magicaxis, nortest
 License: GPL-2
 Packaged: 2013-10-23 14:30:43 UTC; awright

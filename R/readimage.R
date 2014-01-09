@@ -44,21 +44,25 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
     ime<-1
     hdr_err<-NULL
   } else {
-    #If map present, read
-    if (!quiet) { cat(paste("   Reading Data from ErrorMap",errormap,"   ")) }
-    #Test Read of Error Map for errors
-    error<-try(read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE))
-    if (class(error)=="try error") {
-      #Stop on Error
-      geterrmessage()
-      stop("Error Map File read failed")
-    }
-    ime_fits=read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE)
-    hdr=ime_fits$hdr[[1]][which(ime_fits$hdr[[1]][,"key"]!="COMMENT"),]
-    ime<-ime_fits$dat[[1]]
-    #Remove NA/NaN/Inf's
-    ime[which(!is.finite(ime))]<-0.0
-    hdr_err<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
+    if (!is.na(as.numeric(errormap))) {
+        if (!quiet) { cat(paste("   Using Supplied Single Gain value of",errormap," for errors   ")) }
+        ime<-as.numeric(errormap)
+    } else {
+      #If map present, read
+      if (!quiet) { cat(paste("   Reading Data from ErrorMap",errormap,"   ")) }
+      #Test Read of Error Map for errors
+      error<-try(read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE))
+      if (class(error)=="try error") {
+        #Stop on Error
+        geterrmessage()
+        stop("Error Map File read failed: Provided Entry is neither a file, nor NONE, nor a numeric Gain")
+      }
+      ime_fits=read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE)
+      hdr=ime_fits$hdr[[1]][which(ime_fits$hdr[[1]][,"key"]!="COMMENT"),]
+      ime<-ime_fits$dat[[1]]
+      #Remove NA/NaN/Inf's
+      ime[which(!is.finite(ime))]<-0.0
+      hdr_err<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)  }
   }
   if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
   timer<-proc.time()

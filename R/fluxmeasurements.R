@@ -23,7 +23,7 @@ function(env=NULL) {
     #Calculate PSF - if one has not be supplied,
     #then a gaussian PSF will be created. Stampsize of PSF
     #should be = maximum stampsize: max aperture * stamp mult
-    psf<-readpsf(environment(),paste(pathroot,psfmap,sep=""),asperpix,defbuff*max(a_g),stampmult,gauss_fwhm_as=gauss_fwhm_as,normalize=TRUE)
+    psf<-readpsf(environment(),paste(pathroot,psfmap,sep=""),asperpix,defbuff*max(a_g),confidence,gauss_fwhm_as=gauss_fwhm_as)
     if (verbose) { message(paste("Maxima of the PSF is at pixel", which(psf == max(psf)),"and has value",max(psf))) }
     #Normalise Beam Area
     beamarea_nn<-sumpsf
@@ -34,7 +34,7 @@ function(env=NULL) {
     #As we are not using PSF filtering, we set stamp size ourselves
     #and set the beamarea to unity
     beamarea_n<-1.0
-    psffwhm<-0
+    psfwidth<-0
   }
   if (beamarea_pix == 0) {
     # If possible, use the beamarea just determined at high resolution
@@ -239,7 +239,7 @@ function(env=NULL) {
     #         b) set all nonzero locations in aa to 0 in sm array
     if (!quiet) { cat(paste('Outputting Source Mask to',smfilename,"   ")) }
     if (length(image.env$imm)!=1) { sm<-image.env$imm } else { sm<-array(1, dim=dim(image.env$im)) }
-    sm[which(image.env$fa > height*(pnorm(-3)))]<-0
+    sm[which(image.env$fa > (pnorm(-3)))]<-0
     #-----Diagnoistic-----#
     if (diagnostic) {
       message(paste("SourceMask Max/Min:",max(sm),min(sm)))
@@ -414,11 +414,18 @@ function(env=NULL) {
       sum(sfa[[i]]*ime[xlo:xup,ylo:yup])
     }
     ssfae<-array(unlist(ssfae),dim=c(dim(ssfae[[1]]),length(ssfae)))
-  } else if (ime==1) {
-    ssfae<-ssfa
+  } else if (length(ime)==1){
+    if (ime==1) {
+      ssfae<-ssfa
+    } else {
+      ssfae<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
+        sum(sfa[[i]]*ime)
+      }
+      ssfae<-array(unlist(ssfae),dim=c(dim(ssfae[[1]]),length(ssfae)))
+    }
   } else {
     sink(type="message")
-    stop("Image Error is neither an array, nor equal to unity")
+    stop("Image Error is NULL")
   }
   if (verbose) { cat(" - Done\n") }
 #-----
@@ -429,11 +436,18 @@ function(env=NULL) {
         sum(sfa[[i]]*(ime[xlo:xup,ylo:yup])^2.)
     }
     ssfae2<-array(unlist(ssfae2),dim=c(dim(ssfae2[[1]]),length(ssfae2)))
-  } else if (ime==1) {
-    ssfae2<-ssfa
+  } else if (length(ime)==1){
+    if (ime==1) {
+      ssfae2<-ssfa
+    } else {
+      ssfae2<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
+          sum(sfa[[i]]*(ime)^2.)
+      }
+      ssfae2<-array(unlist(ssfae2),dim=c(dim(ssfae2[[1]]),length(ssfae2)))
+    }
   } else {
     sink(type="message")
-    stop("Image Error is neither an array, nor equal to unity")
+    stop("Image Error is NULL")
   }
   if (verbose) { cat(" - Done\n") }
 #-----
@@ -444,11 +458,18 @@ function(env=NULL) {
         sum((sfa[[i]]*ime[xlo:xup,ylo:yup])^2.)
     }
     ssfa2e2<-array(unlist(ssfa2e2),dim=c(dim(ssfa2e2[[1]]),length(ssfa2e2)))
-  } else if (ime==1) {
-    ssfa2e2<-ssfa2
+  } else if (length(ime)==1){
+    if (ime==1) {
+      ssfa2e2<-ssfa2
+    } else {
+      ssfa2e2<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
+          sum((sfa[[i]]*ime)^2.)
+      }
+      ssfa2e2<-array(unlist(ssfa2e2),dim=c(dim(ssfa2e2[[1]]),length(ssfa2e2)))
+    }
   } else {
     sink(type="message")
-    stop("Image Error is neither an array, nor equal to unity")
+    stop("Image Error is NULL")
   }
   if (verbose) { cat(" - Done\n") }
 #-----
@@ -459,11 +480,18 @@ function(env=NULL) {
         sum((dfa[[i]]*ime[xlo:xup,ylo:yup])^2.)
     }
     sdfa2e2<-array(unlist(sdfa2e2),dim=c(dim(sdfa2e2[[1]]),length(sdfa2e2)))
-  } else if (ime==1) {
-    sdfa2e2<-sdfa2
+  } else if (length(ime)==1){
+    if (ime==1) {
+      sdfa2e2<-sdfa2
+    } else {
+      sdfa2e2<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
+          sum((dfa[[i]]*ime)^2.)
+      }
+      sdfa2e2<-array(unlist(sdfa2e2),dim=c(dim(sdfa2e2[[1]]),length(sdfa2e2)))
+    }
   } else {
     sink(type="message")
-    stop("Image Error is neither an array, nor equal to unity")
+    stop("Image Error is NULL")
   }
   if (verbose) { cat(" - Done\n") }
 #-----
@@ -474,11 +502,18 @@ function(env=NULL) {
         sum(sfa[[i]]*(im[xlo:xup,ylo:yup])/((ime[xlo:xup,ylo:yup])^2.))
     }
     ssfadw<-array(unlist(ssfadw),dim=c(dim(ssfadw[[1]]),length(ssfadw)))
-  } else if (ime==1) {
-    ssfadw<-ssfad
+  } else if (length(ime)==1){
+    if (ime==1) {
+      ssfadw<-ssfad
+    } else {
+      ssfadw<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
+          sum(sfa[[i]]*(im[xlo:xup,ylo:yup])/((ime)^2.))
+      }
+      ssfadw<-array(unlist(ssfadw),dim=c(dim(ssfadw[[1]]),length(ssfadw)))
+    }
   } else {
     sink(type="message")
-    stop("Image Error is neither an array, nor equal to unity")
+    stop("Image Error is NULL")
   }
   if (verbose) { cat(" - Done\n") }
 #-----
@@ -489,11 +524,18 @@ function(env=NULL) {
         sum(sfa[[i]]/(ime[xlo:xup,ylo:yup])^2.)
     }
     ssfaw<-array(unlist(ssfaw),dim=c(dim(ssfaw[[1]]),length(ssfaw)))
-  } else if (ime==1) {
-    ssfaw<-ssfa
+  } else if (length(ime)==1){
+    if (ime==1) {
+      ssfaw<-ssfa
+    } else {
+      ssfaw<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
+          sum(sfa[[i]]/(ime)^2.)
+      }
+      ssfaw<-array(unlist(ssfaw),dim=c(dim(ssfaw[[1]]),length(ssfaw)))
+    }
   } else {
     sink(type="message")
-    stop("Image Error is neither an array, nor equal to unity")
+    stop("Image Error is NULL")
   }
   if (verbose) { cat(" - Done\n") }
 #-----
@@ -504,11 +546,18 @@ function(env=NULL) {
         sum((sfa[[i]]/ime[xlo:xup,ylo:yup])^2.)
     }
     ssfa2w<-array(unlist(ssfa2w),dim=c(dim(ssfa2w[[1]]),length(ssfa2w)))
-  } else if (ime==1) {
-    ssfa2w<-ssfa2
+  } else if (length(ime)==1){
+    if (ime==1) {
+      ssfa2w<-ssfa2
+    } else {
+      ssfa2w<-foreach(i=1:npos,xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4],.inorder=TRUE) %dopar% {
+          sum((sfa[[i]]/ime)^2.)
+      }
+      ssfa2w<-array(unlist(ssfa2w),dim=c(dim(ssfa2w[[1]]),length(ssfa2w)))
+    }
   } else {
     sink(type="message")
-    stop("Image Error is neither an array, nor equal to unity")
+    stop("Image Error is NULL")
   }
   if (verbose) { cat(" - Done\n") }
 #-----
@@ -533,41 +582,60 @@ function(env=NULL) {
   sfaerrw<-sqrt(1/ssfaw*(ssfa/beamarea*ssfa/ssfa2)^2. + ((conf*beamarea)^2.*sqrt(ssfa)))
 
   #Do we want to do sky estimation/subtraction?
-  if (doskyest) {
+  if (doskyest||getskyrms) {
     #Get sky estimates
-    if (verbose) { message("Perfoming Sky Subtraction"); cat("   Performing Sky Subtraction") }
-    skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),astrom=astr_struc)
-    skyflux<-skyest[,1]
-    skyerr<-skyest[,2]
-    #browser()
-    #Subrtract Sky Flux
-    skyflux<-skyflux*sdfa
-    skyerr<-skyerr*sdfa
-    dfaflux<-dfaflux-skyflux
-    sfaflux<-sfaflux-skyflux
-    dfaerr<-sqrt(dfaerr^2+skyerr^2)
-    dfaerr<-sqrt(sfaerr^2+skyerr^2)
+    if (verbose) { message("Perfoming Sky Estimation"); cat("   Performing Sky Estimation") }
+    skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),
+                    astrom=astr_struc,clipiters=skycutiters,probcut=skyprobcut)
+    skylocal<-skyest[,'sky']
+    skyerr<-skyest[,'skyerr']*correl.noise
+    skyrms<-skyest[,'skyRMS']
+    skypval<-skyest[,'skyRMSpval']
+    detecthres<-foreach(i=1:npos, .inorder=TRUE, .combine='c')%dopar% { 5*skyrms[i]*sqrt(length(which(sfa[[i]]>0))) }
+    if (Magnitudes) {
+      detecthres.mag<--2.5*(log10(detecthres)-log10(ABvegaflux))+magZP
+    } else {
+      detecthres.mag<-array(NA, dim=c(length(dfaflux)))
+    }
     if (verbose) { message(paste("   - Done\n")); cat("   - Done\n")}
+    #browser()
+    if (doskyest) {
+      if (verbose) { message("Perfoming Sky Subtraction"); cat("   Performing Sky Subtraction") }
+      #Subrtract Sky Flux
+      skyflux<-skylocal*sdfa
+      skyerr<-skyerr*sdfa
+      dfaflux<-dfaflux-skyflux
+      sfaflux<-sfaflux-skyflux
+      dfaerr<-sqrt(dfaerr^2+skyerr^2)
+      dfaerr<-sqrt(sfaerr^2+skyerr^2)
+      if (verbose) { message(paste("   - Done\n")); cat("   - Done\n")}
+    }
   } else {
-    skyflux<-array(0, dim=c(length(dfaflux)))
-    skyerr<-array(0, dim=c(length(dfaflux)))
+    skyflux<-array(NA, dim=c(length(dfaflux)))
+    skyerr<-array(NA, dim=c(length(dfaflux)))
+    skyrms<-array(NA, dim=c(length(dfaflux)))
+    skypval<-array(NA, dim=c(length(dfaflux)))
+    detecthres<-array(NA, dim=c(length(dfaflux)))
+    detecthres.mag<-array(NA, dim=c(length(dfaflux)))
   }
 
   if (!quiet) { cat("   Performing Final Calculations   ") }
 
   #Apply Flux Correction to the Finalised Values
-  sfaflux<-sfaflux*fluxcorr
-  sfafluxw<-sfafluxw*fluxcorr
-  dfaflux<-dfaflux*fluxcorr
-  sfaerr<-sfaerr*fluxcorr
-  sfaerrw<-sfaerrw*fluxcorr
-  dfaerr<-dfaerr*fluxcorr
+  if (fluxcorr!=1) {
+    sfaflux<-sfaflux*fluxcorr
+    sfafluxw<-sfafluxw*fluxcorr
+    dfaflux<-dfaflux*fluxcorr
+    sfaerr<-sfaerr*fluxcorr
+    sfaerrw<-sfaerrw*fluxcorr
+    dfaerr<-dfaerr*fluxcorr
+  }
 
   #Calculate Magnitudes
   if (Magnitudes) {
     mags<--2.5*(log10(dfaflux)-log10(ABvegaflux))+magZP
   } else {
-    mags<-rep(NA, length(id_g))
+    mags<-array(NA, dim=c(length(dfaflux)))
   }
 
   #-----Diagnostic-----#
@@ -610,23 +678,7 @@ function(env=NULL) {
 
   #If map was input in Jy/bm we need to convert it back before output in SourceSubtraction
   if (Jybm) { ba=beamarea } else { ba=1. }
-  # Do we want to overlay the elipses?
-  if (overlay) {
-    if (!quiet) { cat(paste("Writing Ellipse-Overlaid Image Map to",overlaymap,"   ")) }
-    #Make overlay stamps (where aperture=FWHM, pix=1E3, else == 0)
-    overlaystamps<-foreach(i=1:length(sfa)) %dopar% {
-      tmp=sfa[[i]]
-      tmp[which(tmp<(max(tmp)*2/5))]=0
-      tmp[which(tmp>(max(tmp)*3/5))]=0
-      tmp[which(tmp>0)]=-1E3
-      tmp
-    }
-    #Perform Overlay
-    timer=system.time(sourcesubtraction(im,overlaystamps,stamp_lims,1,paste(pathout,overlaymap, sep=""),hdr_str,ba,insidemask))
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
-      message(paste('Contam Subtraction - Done (',round(timer[3], digits=2),'sec )'))
-    } else if (!quiet) { cat("   - Done\n") }
-  }
+
   # Do we want to make the residual map?
   if (makeresidmap) {
     if (filtcontam) {
@@ -660,7 +712,11 @@ function(env=NULL) {
     ssfa2e2<-ssfa2e2[which(contams==0)]
     sfaflux<-sfaflux[which(contams==0)]
     skyflux<-skyflux[which(contams==0)]
+    skylocal<-skylocal[which(contams==0)]
     skyerr <-skyerr[which(contams==0)]
+    skyrms <-skyrms[which(contams==0)]
+    skypval<-skypval[which(contams==0)]
+    detecthres<-detecthres[which(contams==0)]
     sfaerr <-sfaerr[which(contams==0)]
     sdfa   <-sdfa[which(contams==0)]
     sdfa2  <-sdfa2[which(contams==0)]
@@ -669,7 +725,7 @@ function(env=NULL) {
     dfaflux<-dfaflux[which(contams==0)]
     dfaerr <-dfaerr[which(contams==0)]
     pixflux<-pixflux[which(contams==0)]
-    mags<-mags[which(contams==0)]
+    mags   <-mags[which(contams==0)]
   }
 
   #Do we want to output the Results Table?

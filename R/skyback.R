@@ -1,4 +1,4 @@
-skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10){
+skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3){
   if(length(ra) != length(dec)){stop('ra and dec lengths do not much!')}
   if(length(ra) != length(cutlo)){stop('ra and cutlo lengths do not much!')}
   if(length(ra) != length(cuthi)){stop('ra and cuthi lengths do not much!')}
@@ -8,6 +8,7 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
   pixlocvec=round(ad2xy(ra,dec,astrom))
   
   output=foreach(i=1:length(ra),.combine='rbind')%dopar%{
+   #for (i in 1:length(ra)){
     ra=ravec[i];dec=decvec[i];cutlo=cutlovec[i];cuthi=cuthivec[i];pixloc=pixlocvec[i,]
     #Find extreme pixels to cut out
     xlocs=pixloc[1]+(-cuthi:cuthi)
@@ -42,11 +43,11 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
       temprad=temprad[tempval!=0]
       tempval=tempval[tempval!=0]
     }
-    #Do iterative 3-sigma pixel clipping
+    #Do iterative <probcut>-sigma pixel clipping
     if(clipiters>0){
+      probcut<-1-pnorm(probcut)
       for(i in 1:clipiters){
-        #0.001349898 is the value used for a 3-sigma iterative sky cut
-        vallims=2*median(tempval)-quantile(tempval,0.001349898)
+        vallims=2*median(tempval)-quantile(tempval,probcut)
         temprad=temprad[tempval<vallims]
         tempval=tempval[tempval<vallims]
       }
@@ -59,6 +60,10 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
     skyerr=sd(tempy)
     #Gen weights to use for weighted mean sky finding. This also weights by separation from the object of interest via radweight
     weights=1/((tempmedian$x^radweight)*(tempylims[,2]-tempylims[,1])/2)^2
+    #Generate Sky RMS 
+    skyRMS=as.numeric((quantile(tempval,0.5)-quantile(tempval,pnorm(-1))))
+    #Determine Pearsons Test for Normality p-value for sky
+    skyRMSpval=pearson.test(tempval)$p.value
     #Find the weighted mean of the medians
     sky=sum(tempy*weights)/(sum(weights))
     #Now we iterate until no running medians are outside the 1-sigma bound of the sky
@@ -71,7 +76,7 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
     #Find the number of running medians that agree with the final sky within error bounds (max=10)
     Nnearsky=length(which(tempylims[,1]<=sky & tempylims[,2]>=sky))
     #Organise data into data.frame for foreach
-    data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky)
+    data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky,skyRMS=skyRMS,skyRMSpval=skyRMSpval)
   }
   #Output the foreach data
   return=output

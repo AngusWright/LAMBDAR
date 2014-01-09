@@ -167,8 +167,8 @@ function(parfile=NA, quiet=FALSE, ...){ #Begin
     sink(type=c("output","message")) ; stop("Data image header does not contain CD or CDELT keywords")
   }
 
-  #Set apertures with NA/NULL aperture axis or minoraxis<apertruediag to point-sources
-  diag_arcsec<-abs(asperpix)*sqrt(2)
+  #Set apertures with NA/NULL aperture axis or minoraxis<aperturediag to point-sources
+  diag_arcsec<-abs(asperpix)*sqrt(2)/2
   message("Forcing",length(which((b_g<diag_arcsec)|!is.finite(a_g))),"apertures to be point sources")
   a_g[which((b_g<diag_arcsec)|!is.finite(a_g))]<-0
   theta_g[which((b_g<diag_arcsec)|!is.finite(theta_g))]<-0

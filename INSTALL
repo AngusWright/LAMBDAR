@@ -44,6 +44,8 @@ library(LAMBDAR)
 #In order to install and run LAMBDAR, you will require the additional packages:
 #
 # > astro
+# > magicaxis
+# > nortest
 # > foreach
 # > doParallel
 #
