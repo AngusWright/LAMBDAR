@@ -15,14 +15,13 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
   if (showtime) { timer<-proc.time() }
 
   #Test Read of Data Image for errors
-  error<-try(read.fits(paste(pathroot,datamap,sep=""),hdu=extn, comments=FALSE))
-  if (class(error)=="try error") {
+  im_fits<-try(read.fits(paste(pathroot,datamap,sep=""),hdu=extn, comments=FALSE))
+  if (class(im_fits)=="try error") {
     #Stop on Error
     geterrmessage()
     stop("Data Image File read failed")
   }
   #Read Data Image
-  im_fits<-read.fits(paste(pathroot,datamap,sep=""),hdu=extn, comments=FALSE)
   hdr=im_fits$hdr[[1]][which(im_fits$hdr[[1]][,"key"]!="COMMENT"),]
   hdr_str<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
   im<-im_fits$dat[[1]]
@@ -51,13 +50,12 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
       #If map present, read
       if (!quiet) { cat(paste("   Reading Data from ErrorMap",errormap,"   ")) }
       #Test Read of Error Map for errors
-      error<-try(read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE))
-      if (class(error)=="try error") {
+      ime_fits<-try(read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE))
+      if (class(ime_fits)=="try error") {
         #Stop on Error
         geterrmessage()
         stop("Error Map File read failed: Provided Entry is neither a file, nor NONE, nor a numeric Gain")
       }
-      ime_fits=read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE)
       hdr=ime_fits$hdr[[1]][which(ime_fits$hdr[[1]][,"key"]!="COMMENT"),]
       ime<-ime_fits$dat[[1]]
       #Remove NA/NaN/Inf's
@@ -78,13 +76,12 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
     #If mask present, read
     if (!quiet) { cat(paste("   Reading Data from MaskMap",maskmap,"   ")) }
     #Test Read of Mask Map for errors
-    error<-try(read.fits(paste(pathroot,maskmap,sep=""),hdu=extnerr, comments=FALSE))
-    if (class(error)=="try error") {
+    imm_fits<-try(read.fits(paste(pathroot,maskmap,sep=""),hdu=extmask, comments=FALSE))
+    if (class(imm_fits)=="try error") {
       #Stop on Error
       geterrmessage()
       stop("Mask Map read failed")
     }
-    imm_fits=read.fits(paste(pathroot,maskmap,sep=""),hdu=extnmask, comments=FALSE)
     hdr=imm_fits$hdr[[1]][which(imm_fits$hdr[[1]][,"key"]!="COMMENT"),]
     imm<-imm_fits$dat[[1]]
     #Remove NA/NaN/Inf's
