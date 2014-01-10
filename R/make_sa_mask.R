@@ -29,7 +29,7 @@ function(env=NULL, outenv=NULL){
   message("Setting Stamp Limits")
   #Stampwidths: aperture width multiplied by a buffer, plus the
   #PSF WIDHT determined by the desired confidence. Total axis length MUST be odd
-  stamplen<-(floor((ceiling(defbuff*a_g/asperpix)+ceiling(psfwidth/asperpix))/2)*2+1)
+  stamplen<-(floor((ceiling(defbuff*a_g*2/asperpix)+ceiling(psf.clip))/2)*2+1)
 
   #Calculate Stamp limits in image-pixel space; parallelised
   stamp_lims_list<-foreach(i=1:npos,width=floor(stamplen/2),.inorder=TRUE) %dopar% {
