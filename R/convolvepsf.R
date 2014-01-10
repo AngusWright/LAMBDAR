@@ -19,7 +19,7 @@ function(arr1, arr2, normalise=TRUE, nomag2=FALSE, zapdig=NULL) {
   }
   step<-Mod(fft(arr1))*fft(arr2)
   if (is.null(zapdig)) { zapdig<-getOption("digits") }
-  conv<-Re(zapsmall(fft(step,inverse=TRUE), digits=zapdig))
+  conv<-Re(fft(step,inverse=TRUE))
   #message(paste("Max values of Input Array 1 and Convolved Array:", max(arr1),max(conv)))
   #if (abs(max(conv))-abs(max(arr1)) > 10^(-zapdig)) {
   #  zapdig<-floor(-log10(abs(max(conv))-abs(max(arr1))))
@@ -28,5 +28,5 @@ function(arr1, arr2, normalise=TRUE, nomag2=FALSE, zapdig=NULL) {
   if (normalise) {
     conv=conv/length(step)
   }
-  return=conv
+  return=zapsmall(conv, digits=zapdig)
 }
