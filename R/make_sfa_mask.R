@@ -43,7 +43,7 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
     #Else if we are filtering apertures with the PSFs, perform the convolution and
     #multiply by the fluxweight simultaneously
     message('--------------------------Convolution----------------------------------')
-    #image(psf)
+    image(psf)
     sfa_mask<-foreach(i=1:npos, xc=x_g, yc=y_g, .inorder=TRUE) %dopar% {
       #Use square subset of psf array so that arrays are conformable
       #in convolution
@@ -78,20 +78,23 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
         sink(type="message")
         stop("Aperture Stamp is larger than PSF - convolution cannot be performed")
       }
-      # TODO: Add functionality for PSFLimited apertures. 
-      # The apertures should be padded such that they are 
-      # at least the width of the PSF, so that no PSF components
-      # are tructated in convolution
+      
       if (diagnostic) { message(paste("PSF Subset complete in Aperture",i)) }
       if (length(which(sa_mask[[i]]!=0))>1){
       #Convolve and weight
         if (diagnostic) { message(paste("Doing convolution of PSF with Aperture", i)) }
-        #maxpsf<-max(psf[lims[1]:lims[2],lims[1]:lims[2]])
-        #ap<-(convolvepsf(psf[lims[1]:lims[2],lims[1]:lims[2]]/maxpsf,sa_mask[[i]])/sum(psf))*fluxweight[i]
-        ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]])/sum(psf))*fluxweight[i]
+        #Aperture should be convolved with PSF, and then set so maxima is Unity
+        ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]]))
+        ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
         if (length(which(ap <0))>0) {
           message(paste("Negatives Produced in PSF convolution with Aperture",i))
-          warning(paste("Negatives Produced in PSF convolution"))
+          zapdig<-floor(-log10(abs(min(ap))))
+          ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]],zapdig=zapdig))
+          ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
+          message(paste("Attempting rezap with zapdigit",zapdig))
+          if (length(which(ap<0))>0) {
+            stop("Rezap unable to remove negatives in convolution")
+          }
         }
         return=ap
       } else {
@@ -106,7 +109,9 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
           xnew<-expanded[,1]+xc%%1
           ynew<-expanded[,2]+yc%%1
           #Call Interpolation
-          ap<-matrix(interp2D(xnew, ynew, psf_obj)*fluxweight[i], ncol=length(psf[,1]))[lims[1]:lims[3],lims[2]:lims[4]]
+          #Point Source is special case where integral of Ap == Integral of PSF
+          ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=length(psf[,1]))
+          ap<-(ap*(sum(psf)/sum(ap))*fluxweight[i])[lims[1]:lims[3],lims[2]:lims[4]]
           return=ap
         } else {
           if (diagnostic) { message(paste("Using the Uninterpolated PSF for Point Source Aperture",i)) }
