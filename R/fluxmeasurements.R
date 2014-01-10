@@ -591,6 +591,9 @@ function(env=NULL) {
     skyerr<-skyest[,'skyerr']*correl.noise
     skyrms<-skyest[,'skyRMS']
     skypval<-skyest[,'skyRMSpval']
+    skyflux<-skylocal*sdfa
+    skyerr<-skyerr*sdfa
+
     detecthres<-foreach(i=1:npos, .inorder=TRUE, .combine='c')%dopar% { 5*skyrms[i]*sqrt(length(which(sfa[[i]]>0))) }
     if (Magnitudes) {
       detecthres.mag<--2.5*(log10(detecthres)-log10(ABvegaflux))+magZP
@@ -602,8 +605,6 @@ function(env=NULL) {
     if (doskyest) {
       if (verbose) { message("Perfoming Sky Subtraction"); cat("   Performing Sky Subtraction") }
       #Subrtract Sky Flux
-      skyflux<-skylocal*sdfa
-      skyerr<-skyerr*sdfa
       dfaflux<-dfaflux-skyflux
       sfaflux<-sfaflux-skyflux
       dfaerr<-sqrt(dfaerr^2+skyerr^2)

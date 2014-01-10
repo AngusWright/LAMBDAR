@@ -624,6 +624,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("forcepointsources", forcepointsources, envir = env) #
   assign("filtcontam"       , filtcontam       , envir = env) #
   assign("gauss_fwhm_as"    , gauss_fwhm_as    , envir = env) # G
+  assign("getskyrms"        , getskyrms        , envir = env) # 
   assign("itersteps"        , itersteps        , envir = env) # I
   assign("interact"         , interact         , envir = env) #
   assign("immfitsoutname"   , immfitsoutname   , envir = env) #
