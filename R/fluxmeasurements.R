@@ -35,6 +35,7 @@ function(env=NULL) {
     #and set the beamarea to unity
     beamarea_n<-1.0
     psfwidth<-0
+    psf.clip<-0
   }
   if (beamarea_pix == 0) {
     # If possible, use the beamarea just determined at high resolution
