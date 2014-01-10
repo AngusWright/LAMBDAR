@@ -16,7 +16,7 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
 
   #Test Read of Data Image for errors
   im_fits<-try(read.fits(paste(pathroot,datamap,sep=""),hdu=extn, comments=FALSE))
-  if (class(im_fits)=="try error") {
+  if (class(im_fits)=="try-error") {
     #Stop on Error
     geterrmessage()
     stop("Data Image File read failed")
@@ -51,7 +51,7 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
       if (!quiet) { cat(paste("   Reading Data from ErrorMap",errormap,"   ")) }
       #Test Read of Error Map for errors
       ime_fits<-try(read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE))
-      if (class(ime_fits)=="try error") {
+      if (class(ime_fits)=="try-error") {
         #Stop on Error
         geterrmessage()
         stop("Error Map File read failed: Provided Entry is neither a file, nor NONE, nor a numeric Gain")
@@ -76,8 +76,8 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
     #If mask present, read
     if (!quiet) { cat(paste("   Reading Data from MaskMap",maskmap,"   ")) }
     #Test Read of Mask Map for errors
-    imm_fits<-try(read.fits(paste(pathroot,maskmap,sep=""),hdu=extmask, comments=FALSE))
-    if (class(imm_fits)=="try error") {
+    imm_fits<-try(read.fits(paste(pathroot,maskmap,sep=""),hdu=extnmask, comments=FALSE))
+    if (class(imm_fits)=="try-error") {
       #Stop on Error
       geterrmessage()
       stop("Mask Map read failed")

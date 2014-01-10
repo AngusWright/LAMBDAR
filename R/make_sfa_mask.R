@@ -43,7 +43,7 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
     #Else if we are filtering apertures with the PSFs, perform the convolution and
     #multiply by the fluxweight simultaneously
     message('--------------------------Convolution----------------------------------')
-    image(psf)
+    #image(psf)
     sfa_mask<-foreach(i=1:npos, xc=x_g, yc=y_g, .inorder=TRUE) %dopar% {
       #Use square subset of psf array so that arrays are conformable
       #in convolution
