@@ -22,8 +22,8 @@ function (env=NULL, filename,asperpix,apsize,confidence,normalize=TRUE,gauss_fwh
     psfwidth<-psf.clip*asperpix
     stampsizepix=(floor((ceiling(defbuff*apsize*2/asperpix)+ceiling(psf.clip))/2)*2+1)
 
-    x0=floor(psf.clip/2.)
-    y0=floor(psf.clip/2.)
+    x0=ceiling(psf.clip/2.)
+    y0=ceiling(psf.clip/2.)
     if (verbose) { message(paste("gauss_fwhm_as, x0, y0, sigma_p, stampsizepix\n",
                            round(gauss_fwhm_as, digits=3), x0, y0, psfsigma.pix, stampsizepix)) }
 
