@@ -54,7 +54,10 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Beam area in square arcsec
   ID="BeamArea_SqAS"
   beamarea_SOM_as<-as.numeric(params[ID,1])
-  if (is.na(beamarea_SOM_as)) { beamarea_SOM_as<-0 }
+  if (is.na(beamarea_SOM_as)) { 
+    warning("Beamarea Parameter not present in Parameter File")
+    beamarea_SOM_as<-0 
+  }
 
   #Do we want to Convolve the apertures with a PSF
   ID="PSFConvolve"
@@ -133,6 +136,63 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     stop("Catalogue Path not in Parameter File")
   }
 
+  #What is the title of the Catalogue's RA Column?
+  ID="CatIDColumnLabel"
+  catalab<-params[ID,1]
+  if (is.na(catalab)) {
+    warning("Catalogue CATID Column Label not in Parameter File; using 'CATAID'")
+    ralab<-"CATAID"
+  }
+  #What is the title of the Catalogue's RA Column?
+  ID="RAColumnLabel"
+  ralab<-params[ID,1]
+  if (is.na(ralab)) {
+    warning("Catalogue RA Column Label not in Parameter File; using 'ALPHA_J2000'")
+    ralab<-"ALPHA_J2000"
+  }
+  #What is the title of the Catalogue's Dec Column?
+  ID="DecColumnLabel"
+  declab<-params[ID,1]
+  if (is.na(declab)) {
+    warning("Catalogue Dec Column Label not in Parameter File; using 'DELTA_J2000'")
+    declab<-"DELTA_J2000"
+  }
+  #What is the title of the Catalogue's Theta Column?
+  ID="ThetaColumnLabel"
+  thetalab<-params[ID,1]
+  if (is.na(thetalab)) {
+    warning("Catalogue Theta Column Label not in Parameter File; using 'THETA_J2000'")
+    thetalab<-"THETA_J2000"
+  }
+  #What is the title of the Catalogue's SemiMaj Axis Column?
+  ID="SemiMajColumnLabel"
+  semimajlab<-params[ID,1]
+  if (is.na(semimajlab)) {
+    warning("Catalogue SemiMajor Axis Column Label not in Parameter File; using 'SEMIMAJ_AS'")
+    semimajlab<-"SEMIMAJ_AS"
+  }
+  #What is the title of the Catalogue's SemiMaj Axis Column?
+  ID="SemiMinColumnLabel"
+  semiminlab<-params[ID,1]
+  if (is.na(semiminlab)) {
+    warning("Catalogue SemiMinor Axis Column Label not in Parameter File; using 'SEMIMIN_AS'")
+    semiminlab<-"SEMIMIN_AS"
+  }
+    #What is the title of the Catalogue's SemiMaj Axis Column?
+  ID="ContamColumnLabel"
+  contamlab<-params[ID,1]
+  if (is.na(contamlab)) {
+    warning("Catalogue SemiMajor Axis Column Label not in Parameter File; using 'CONTAM'")
+    contamlab<-"CONTAM"
+  }
+    #What is the title of the Catalogue's SemiMaj Axis Column?
+  ID="FluxWgtColumnLabel"
+  fluxweightlab<-params[ID,1]
+  if (is.na(fluxweightlab)) {
+    warning("Catalogue FluxWeight Column Label not in Parameter File; using 'FLUXWEIGHT'")
+    fluxweightlab<-"FLUXWEIGHT"
+  }
+  
   #Name of Data Image
   ID="DataMap"
   datamap<-params[ID,1]
@@ -154,6 +214,22 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (is.na(maskmap)) {
     warning("Mask Map Path not in Parameter File")
     maskmap<-"NONE"
+  }
+  
+  #Name of Weight Map
+  ID="WeightMap"
+  wgtmap<-params[ID,1]
+  if (is.na(wgtmap)) {
+    warning("Weight Map Path not in Parameter File")
+    wgtmap<-"NONE"
+  }
+  
+  #Zero Point of Weight Map
+  ID="WeightMapZP"
+  wgtzp<-as.numeric(params[ID,1])
+  if (is.na(wgtzp)) {
+    warning("Weight Map Zero Point not in Parameter File; Using 0")
+    wgtzp<-0
   }
 
   #Extension number of Data in FITS Header
@@ -179,15 +255,24 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     warning("FITS Mask Extension Flag not in Parameter File")
     extnmask<-0
   }
+  
+  #Extension number of Data in FITS Header
+  ID="WgtExtn"
+  extnwgt<-as.numeric(params[ID,1])
+  if (is.na(extnwgt)) {
+    warning("FITS Weight Map Extension Value not in Parameter File")
+    extnwgt<-0
+  }
 
   #Do we want to force use of point sources?
   ID="PointSources"
   forcepointsources<-as.numeric(params[ID,1])
   if (is.na(forcepointsources)) {
     warning("Force Point Source Flag not in Parameter File")
-    forcepointsources<-0
+    forcepointsources<-FALSE
+  } else {
+    forcepointsources<-(forcepointsources==1)
   }
-  forcepointsources<-(forcepointsources==1)
 
   #Error Map scale factor
   ID="EFactor"
@@ -580,6 +665,10 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       warning("Sky Correlated Noise Level not present in the Parameter File")
       correl.noise<-1
     } 
+  } else {
+    skycutiters<-0
+    skyprobcut<-0
+    correl.noise<-0
   }
   
   smfilename<-NULL
@@ -625,21 +714,26 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("correl.noise"     , correl.noise     , envir = env) #
   assign("catalogue"        , catalogue        , envir = env) #
   assign("cutrad"           , cutrad           , envir = env) #
+  assign("contamlab"        , contamlab        , envir = env) #
+  assign("catalab"          , catalab          , envir = env) #
   assign("datamap"          , datamap          , envir = env) # D
   assign("doskyest"         , doskyest         , envir = env) #
   assign("defbuff"          , defbuff          , envir = env) #
   assign("diagnostic"       , diagnostic       , envir = env) #
   assign("dec0"             , dec0             , envir = env) #
+  assign("declab"           , declab           , envir = env) #
   assign("dfafilename"      , dfafilename      , envir = env) #
   assign("errormap"         , errormap         , envir = env) # E
   assign("extn"             , extn             , envir = env) #
   assign("extnerr"          , extnerr          , envir = env) #
   assign("extnmask"         , extnmask         , envir = env) #
+  assign("extnwgt"          , extnwgt          , envir = env) #
   assign("Efactor"          , Efactor          , envir = env) #
   assign("fluxcorr"         , fluxcorr         , envir = env) # F
   assign("fafilename"       , fafilename       , envir = env) #
   assign("forcepointsources", forcepointsources, envir = env) #
   assign("filtcontam"       , filtcontam       , envir = env) #
+  assign("fluxweightlab"    , fluxweightlab    , envir = env) #
   assign("gauss_fwhm_as"    , gauss_fwhm_as    , envir = env) # G
   assign("getskyrms"        , getskyrms        , envir = env) # 
   assign("itersteps"        , itersteps        , envir = env) # I
@@ -668,6 +762,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("psfmap"           , psfmap           , envir = env) #
   assign("resampleaperture" , resampleaperture , envir = env) # QR
   assign("ra0"              , ra0              , envir = env) #
+  assign("ralab"            , ralab            , envir = env) #
   assign("residmap"         , residmap         , envir = env) #
   assign("sourcemask"       , sourcemask       , envir = env) # S
   assign("sourcemaskonly"   , sourcemaskonly   , envir = env) #
@@ -676,8 +771,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("showtime"         , showtime         , envir = env) #
   assign("skycutiters"      , skycutiters      , envir = env) #
   assign("skyprobcut"       , skyprobcut       , envir = env) #
+  assign("semimajlab"       , semimajlab       , envir = env) #
+  assign("semiminlab"       , semiminlab       , envir = env) #
   assign("smfilename"       , smfilename       , envir = env) #
   assign("tableoutname"     , tableoutname     , envir = env) # T
+  assign("thetalab"         , thetalab         , envir = env) #
   assign("upres"            , upres            , envir = env) # U
   assign("useMaskLim"       , useMaskLim       , envir = env)
   assign("verbose"          , verbose          , envir = env) # V

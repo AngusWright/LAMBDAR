@@ -56,27 +56,41 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
     tempmedian=magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T)
     tempylims=tempmedian$ysd
     tempy=tempmedian$y
-    #Calculate worst case sky error- the sd of the medians calculated
-    skyerr=sd(tempy)
-    #Gen weights to use for weighted mean sky finding. This also weights by separation from the object of interest via radweight
-    weights=1/((tempmedian$x^radweight)*(tempylims[,2]-tempylims[,1])/2)^2
-    #Generate Sky RMS 
-    skyRMS=as.numeric((quantile(tempval,0.5)-quantile(tempval,pnorm(-1))))
-    #Determine Pearsons Test for Normality p-value for sky
-    skyRMSpval=pearson.test(tempval)$p.value
-    #Find the weighted mean of the medians
-    sky=sum(tempy*weights)/(sum(weights))
-    #Now we iterate until no running medians are outside the 1-sigma bound of the sky
-    while(any(!(tempylims[,1]<=sky & tempylims[,2]>=sky)) & all(!(tempylims[,1]<=sky & tempylims[,2]>=sky))==FALSE){
-      tempy=tempy[tempylims[,1]<=sky & tempylims[,2]>=sky]
-      weights=weights[tempylims[,1]<=sky & tempylims[,2]>=sky]
-      tempylims=rbind(tempylims[tempylims[,1]<=sky & tempylims[,2]>=sky,])
+    tempx=tempmedian$x
+    #Remove bins with no skypixels present
+    if (any(is.na(tempylims))) {
+      tempy  <-tempy[which(!is.na(tempylims))]
+      tempx  <-tempx[which(!is.na(tempylims))]
+      temprad<-temprad[which(!is.na(tempylims))]
+      tempval<-tempval[which(!is.na(tempylims))]
+      tempref<-tempref[which(!is.na(tempylims))]
+    }   
+    if (length(tempy)!=0) {
+      #Calculate worst case sky error- the sd of the medians calculated
+      skyerr=sd(tempy)
+      #Gen weights to use for weighted mean sky finding. This also weights by separation from the object of interest via radweight
+      weights=1/((tempx^radweight)*(tempylims[,2]-tempylims[,1])/2)^2
+      #Generate Sky RMS 
+      skyRMS=as.numeric((quantile(tempval,0.5)-quantile(tempval,pnorm(-1))))
+      #Determine Pearsons Test for Normality p-value for sky
+      skyRMSpval=pearson.test(tempval)$p.value
+      #Find the weighted mean of the medians
       sky=sum(tempy*weights)/(sum(weights))
+      #Now we iterate until no running medians are outside the 1-sigma bound of the sky
+      while(any(!(tempylims[,1]<=sky & tempylims[,2]>=sky)) & all(!(tempylims[,1]<=sky & tempylims[,2]>=sky))==FALSE){
+        tempy=tempy[tempylims[,1]<=sky & tempylims[,2]>=sky]
+        weights=weights[tempylims[,1]<=sky & tempylims[,2]>=sky]
+        tempylims=rbind(tempylims[tempylims[,1]<=sky & tempylims[,2]>=sky,])
+        sky=sum(tempy*weights)/(sum(weights))
+      }
+      #Find the number of running medians that agree with the final sky within error bounds (max=10)
+      Nnearsky=length(which(tempylims[,1]<=sky & tempylims[,2]>=sky))
+      #Organise data into data.frame for foreach
+      data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky,skyRMS=skyRMS,skyRMSpval=skyRMSpval)
+    } else {
+      #No Sky estimate available - return NAs
+      data.frame(sky=0,skyerr=0,Nnearsky=NA,skyRMS=NA,skyRMSpval=NA)
     }
-    #Find the number of running medians that agree with the final sky within error bounds (max=10)
-    Nnearsky=length(which(tempylims[,1]<=sky & tempylims[,2]>=sky))
-    #Organise data into data.frame for foreach
-    data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky,skyRMS=skyRMS,skyRMSpval=skyRMSpval)
   }
   #Output the foreach data
   return=output

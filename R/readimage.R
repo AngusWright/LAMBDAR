@@ -68,10 +68,26 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
 
   #Read mask map
   if (maskmap=='NONE') {
-    if (!quiet) { cat(paste("   Generating Mask Map ")) }
-    #If no mask, set mask to 1: transparent will be used everywhere
-    imm<-1
-    hdr_mask<-NULL
+    if (wgtmap=='NONE') {
+      if (!quiet) { cat(paste("   Generating Mask Map ")) }
+      #If no mask, set mask to 1: transparent will be used everywhere
+      imm<-1
+      hdr_mask<-NULL
+    } else {
+      imwt_fits<-try(read.fits(paste(pathroot,wgtmap,sep=""),hdu=extnwgt,comments=FALSE))
+      if (class(imwt_fits)=="try-error") {
+        #Stop on Error
+        geterrmessage()
+        stop("Weight Map read failed")
+      }
+      hdr=imwt_fits$hdr[[1]][which(imwt_fits$hdr[[1]][,"key"]!="COMMENT"),]
+      imwt<-imwt_fits$dat[[1]]
+      #Make mask same dimensions as weightmap
+      imm<-array(1,dim=dim(imwt))
+      #Make mask 0 where weightmap == weightmap zero point
+      imm[which(imwt==wtzp)]<-0
+      hdr_mask<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
+    }
   } else {
     #If mask present, read
     if (!quiet) { cat(paste("   Reading Data from MaskMap",maskmap,"   ")) }

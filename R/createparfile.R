@@ -6,6 +6,15 @@ createparfile <-
     DataMap="./datamap.fits",
     ErrorMap="NONE",
     MaskMap="NONE",
+    WeightMap="NONE",
+    CatIDColumnLabel="CATAID",
+    RAColumnLabel="ALPHA_J2000",
+    DecColumnLabel="DELTA_J2000",
+    ThetaColumnLabel="THETA_J2000",
+    SemiMinColumnLabel="SEMIMIN_AS",
+    SemiMajColumnLabel="SEMIMAJ_AS",
+    ContamColumnLabel="CONTAMS",
+    FluxWgtColumnLabel="FLUXWEIGHT",
     MapJyPerBeam=0,
     Confusion_Jy=0.0,
     Gauss_FWHM_AS=0.0,
@@ -15,6 +24,8 @@ createparfile <-
     DataExtn=0,
     ErrorExtn=0,
     MaskExtn=0,
+    WeightExtn=0,
+    WeightMapZP=0,
     CropImage=0,
     CropImRA0=-999,
     CropImDec0=-999,
@@ -84,6 +95,16 @@ PSFMap                 ",PSFMap            ,"    #PSF Filename and Path         
 DataMap                ",DataMap           ,"    #Image Filename and Path
 ErrorMap               ",ErrorMap          ,"    #Error Map Filename and Path                (use 'NONE' if not wanted)
 MaskMap                ",MaskMap           ,"    #Mask Filename and Path                     (use 'NONE' if not wanted)
+WeightMap              ",WeightMap         ,"    #Weight Map Filename and Path               (use 'NONE' if not wanted)
+#                #-------Catalogue Specific Variables-------#
+CatIDColumnLabel       ",CatIDColumnLab    ,"    #Label for designating the Catalogue ID Column of the supplied catalogue
+RAColumnLabel          ",RAColumnLabel     ,"    #Label for designating the RA Column of the supplied catalogue
+DecColumnLabel         ",DecColumnLabel    ,"    #Label for designating the Dec Column of the supplied catalogue
+ThetaColumnLabel       ",ThetaColumnLabel  ,"    #Label for designating the Theta (on-sky aperture angle) Column of the supplied catalogue
+SemiMinColumnLabel     ",SemiMinColumnLabel,"    #Label for designating the SemiMinor Axis Column of the supplied catalogue
+SemiMajColumnLabel     ",SemiMajColumnLabel,"    #Label for designating the SemiMajor Axis Column of the supplied catalogue
+ContamColumnLabel      ",ContamColumnLabel ,"    #Label for designating the Contaminants ID Column of the supplied catalogue
+FluxWgtColumnLabel     ",FluxWgtColumnLabel,"    #Label for designating the FluxWeights Column of the supplied catalogue
 #                #-------Telescope Specific Variables-------#
 MapJyPerBeam           ",MapJyPerBeam      ,"    #Is the Image Flux measured in Jyperbeam (as opposed to JyPerPixel)?            [1/0]
 Confusion_Jy           ",Confusion_Jy      ,"    #Confusion in Jy
@@ -91,10 +112,12 @@ Gauss_FWHM_AS          ",Gauss_FWHM_AS     ,"    #Gaussian FWHM of Seeing in Arc
 BeamArea_SqAS          ",BeamArea_SqAS     ,"    #Beam area in Square Arcsec
 FluxCorr               ",FluxCorr          ,"    #Flux Correction Factor
 EFactor                ",EFactor           ,"    #Error Map Scale Factor
+WeightMapZP            ",WeightMapZP       ,"    #Zero Point of the Weight Map - used for masking Data if no mask is supplied
 #                #-------Fits Extension Values--------------#
 DataExtn               ",DataExtn          ,"    #Fits header extension of Data in Image File
 ErrorExtn              ",ErrorExtn         ,"    #Fits header extension of Data in Error File
 MaskExtn               ",MaskExtn          ,"    #Fits header extension of Data in Mask File
+WeightExtn             ",WeightExtn        ,"    #Fits header extension of Data in Weight Map File
 #                #--------Image Cropping Options------------#
 CropImage             ",CropImage          ,"    #Do we want to crop the input image to a particular subsection?                 [1/0]
 CropImRA0             ",CropImRA0          ,"    #RA that crop will centre around (deg; NA will focus crop on image centre)

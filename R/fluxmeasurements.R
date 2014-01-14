@@ -594,12 +594,22 @@ function(env=NULL) {
     #Get sky estimates
     if (!quiet) { message("Perfoming Sky Estimation"); cat("   Performing Sky Estimation") }
     if (nopsf) { 
-      psffwhm<-median(a_g[which(a_g > 0)])*2
+      psffwhm<-median(a_g[which(a_g>0)])*defbuff
+      if (is.na(psffwhm)) { 
+        #There are no apertures that are not point sources, 
+        #and no PSF convolution - everything is a single pixel flux
+        #set to a default of 5pixels
+        psffwhm<-5
+      }
     } else { 
       psffwhm<-get.confidence(psf, confidence=(2*sqrt(2*log(2))))*2
     }
-    skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),
-                    astrom=astr_struc,clipiters=skycutiters,probcut=skyprobcut,FWHMinPIX=psffwhm)
+    timer=system.time(skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),
+                    astrom=astr_struc,clipiters=skycutiters,probcut=skyprobcut,PSFFWHMinPIX=psffwhm))
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+      message(paste('Sky Estimate - Done (',round(timer[3], digits=2),'sec )'))
+    } else if (!quiet) { cat("   - Done\n") }
+    
     skylocal<-skyest[,'sky']
     skyerr<-skyest[,'skyerr']*correl.noise
     skyrms<-skyest[,'skyRMS']
@@ -625,6 +635,7 @@ function(env=NULL) {
       if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
     }
   } else {
+    skylocal<-array(NA, dim=c(length(dfaflux)))
     skyflux<-array(NA, dim=c(length(dfaflux)))
     skyerr<-array(NA, dim=c(length(dfaflux)))
     skyrms<-array(NA, dim=c(length(dfaflux)))

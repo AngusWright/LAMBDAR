@@ -10,9 +10,9 @@ function(env=NULL,filename) {
 
   sz=length(ra_g)
   newtable = t(replicate(sz, list('CATA_INDEX'=0,
-                            'ALPHA_J2000_R'=0,
-                            'DELTA_J2000_R'=0,
-                            'THETA_J2000_R'=0.,
+                            'ALPHA_J2000'=0,
+                            'DELTA_J2000'=0,
+                            'THETA_J2000'=0.,
                             'MAJOR_ARCSEC'=0,
                             'MINOR_ARCSEC'=0,
                             'SumSA'=0.,
@@ -39,9 +39,9 @@ function(env=NULL,filename) {
                             'PixelFlux'=0.)))
 
   newtable[,"CATA_INDEX"] = as.integer(id_g)
-  newtable[,"ALPHA_J2000_R"] = ra_g
-  newtable[,"DELTA_J2000_R"] = dec_g
-  newtable[,"THETA_J2000_R"] = theta_g
+  newtable[,"ALPHA_J2000"] = ra_g
+  newtable[,"DELTA_J2000"] = dec_g
+  newtable[,"THETA_J2000"] = theta_g
   newtable[,"MAJOR_ARCSEC"] = a_g
   newtable[,"MINOR_ARCSEC"] = b_g
   newtable[,"SumSA"] = ssa
