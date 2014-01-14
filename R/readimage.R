@@ -74,6 +74,7 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
       imm<-1
       hdr_mask<-NULL
     } else {
+      if (!quiet) { cat(paste("   Reading Data from Weight Map",wgtmap,"   ")) }
       imwt_fits<-try(read.fits(paste(pathroot,wgtmap,sep=""),hdu=extnwgt,comments=FALSE))
       if (class(imwt_fits)=="try-error") {
         #Stop on Error
@@ -82,10 +83,14 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
       }
       hdr=imwt_fits$hdr[[1]][which(imwt_fits$hdr[[1]][,"key"]!="COMMENT"),]
       imwt<-imwt_fits$dat[[1]]
+      if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+      timer<-proc.time()
+      } else if (!quiet) { cat(" - Done\n") }
+      if (!quiet) { cat(paste("   Generating Mask Map from Weight Map ")) }
       #Make mask same dimensions as weightmap
       imm<-array(1,dim=dim(imwt))
       #Make mask 0 where weightmap == weightmap zero point
-      imm[which(imwt==wtzp)]<-0
+      imm[which(imwt==wgtzp)]<-0
       hdr_mask<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
     }
   } else {

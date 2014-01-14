@@ -63,6 +63,7 @@ createparfile <-
     OverlayEllipse=1,
     OverlayFile="OverlayEllipse.fits",
     WriteSourceMask=1,
+    SourceMaskConfLim=0.98,
     SourceMaskFile="SourceMask.fits",
     WriteDFAMask=1,
     DelbConvApersFile="AllDbCnvAps_Mask.fits",
@@ -97,7 +98,7 @@ ErrorMap               ",ErrorMap          ,"    #Error Map Filename and Path   
 MaskMap                ",MaskMap           ,"    #Mask Filename and Path                     (use 'NONE' if not wanted)
 WeightMap              ",WeightMap         ,"    #Weight Map Filename and Path               (use 'NONE' if not wanted)
 #                #-------Catalogue Specific Variables-------#
-CatIDColumnLabel       ",CatIDColumnLab    ,"    #Label for designating the Catalogue ID Column of the supplied catalogue
+CatIDColumnLabel       ",CatIDColumnLabel  ,"    #Label for designating the Catalogue ID Column of the supplied catalogue
 RAColumnLabel          ",RAColumnLabel     ,"    #Label for designating the RA Column of the supplied catalogue
 DecColumnLabel         ",DecColumnLabel    ,"    #Label for designating the Dec Column of the supplied catalogue
 ThetaColumnLabel       ",ThetaColumnLabel  ,"    #Label for designating the Theta (on-sky aperture angle) Column of the supplied catalogue
@@ -119,11 +120,11 @@ ErrorExtn              ",ErrorExtn         ,"    #Fits header extension of Data 
 MaskExtn               ",MaskExtn          ,"    #Fits header extension of Data in Mask File
 WeightExtn             ",WeightExtn        ,"    #Fits header extension of Data in Weight Map File
 #                #--------Image Cropping Options------------#
-CropImage             ",CropImage          ,"    #Do we want to crop the input image to a particular subsection?                 [1/0]
-CropImRA0             ",CropImRA0          ,"    #RA that crop will centre around (deg; NA will focus crop on image centre)
-CropImDec0            ",CropImDec0         ,"    #Dec that crop will centre around (deg; NA will focus crop on image centre)
-CropImRad             ",CropImRad          ,"    #Radius of crop (deg; NA will default to 1deg radius)
-CropFitsName          ",CropFitsName       ,"    #Name of the output cropped image (without '.fits' extension)
+CropImage              ",CropImage          ,"    #Do we want to crop the input image to a particular subsection?                 [1/0]
+CropImRA0              ",CropImRA0          ,"    #RA that crop will centre around (deg; NA will focus crop on image centre)
+CropImDec0             ",CropImDec0         ,"    #Dec that crop will centre around (deg; NA will focus crop on image centre)
+CropImRad              ",CropImRad          ,"    #Radius of crop (deg; NA will default to 1deg radius)
+CropFitsName           ",CropFitsName       ,"    #Name of the output cropped image (without '.fits' extension)
 #                #--------Additional Options----------------#
 RemoveContam           ",RemoveContam      ,"    #Remove Contaminants (Catalogue must contain 'CONTAMFLAG' column) from the image?         [1/0]
 PSFConvolve            ",PSFConvolve       ,"    #Convolve the Aperture with a PSF?                                              [1/0]

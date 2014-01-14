@@ -75,6 +75,11 @@ function(parfile=NA, quiet=FALSE, ...){ #Begin
       crop_im(ra0=ra0, dec0=dec0, pathroot=pathroot, inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname)
       if (verbose) { message(paste("Using", immfitsoutname, "as mask map")) }
       maskmap<-immfitsoutname
+    } else if (wgtmap != "NONE") {
+      if (verbose) { message(paste("Cropping Input Weight Map: Outputting to", imwgtfitsoutname)) }
+      crop_im(ra0=ra0, dec0=dec0, pathroot=pathroot, inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname)
+      if (verbose) { message(paste("Using", imwgtfitsoutname, "as weight map")) }
+      wgtmap<-imwgtfitsoutname
     }
     if (errormap != "NONE") {
       if (verbose) { message(paste("Cropping Input Error Map: Outputting to", imefitsoutname)) }

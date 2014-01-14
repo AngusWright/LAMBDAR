@@ -742,6 +742,7 @@ function(env=NULL) {
     skyrms <-skyrms[which(contams==0)]
     skypval<-skypval[which(contams==0)]
     detecthres<-detecthres[which(contams==0)]
+    detecthres.mag<-detecthres.mag[which(contams==0)]
     sfaerr <-sfaerr[which(contams==0)]
     sdfa   <-sdfa[which(contams==0)]
     sdfa2  <-sdfa2[which(contams==0)]

@@ -141,7 +141,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   catalab<-params[ID,1]
   if (is.na(catalab)) {
     warning("Catalogue CATID Column Label not in Parameter File; using 'CATAID'")
-    ralab<-"CATAID"
+    catalab<-"CATAID"
   }
   #What is the title of the Catalogue's RA Column?
   ID="RAColumnLabel"
@@ -295,6 +295,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   dec0<-NULL
   imfitsoutname<-NULL
   immfitsoutname<-NULL
+  imwgtfitsoutname<-NULL
   imefitsoutname<-NULL
   #Do we want to crop the input image(s)?
   ID="CropImage"
@@ -313,6 +314,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       imfitsoutname<-"croppedimage"
     }
     immfitsoutname<-paste(imfitsoutname,"_mask.fits",sep="")
+    imwgtfitsoutname<-paste(imfitsoutname,"_wgt.fits",sep="")
     imefitsoutname<-paste(imfitsoutname,"_err.fits",sep="")
     imfitsoutname<-paste(imfitsoutname,".fits",sep="")
     ID="CropImRA0"
@@ -672,6 +674,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   }
   
   smfilename<-NULL
+  smConfidenceLim<-NULL
   if ( sourcemask ) {
     if (sourcemaskout) {
       #Name of SourceMask that is output
@@ -739,6 +742,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("itersteps"        , itersteps        , envir = env) # I
   assign("interact"         , interact         , envir = env) #
   assign("immfitsoutname"   , immfitsoutname   , envir = env) #
+  assign("imwgtfitsoutname" , imwgtfitsoutname , envir = env) #
   assign("imefitsoutname"   , imefitsoutname   , envir = env) #
   assign("imfitsoutname"    , imfitsoutname    , envir = env) #
   assign("Jybm"             , Jybm             , envir = env) # J
@@ -780,6 +784,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("useMaskLim"       , useMaskLim       , envir = env)
   assign("verbose"          , verbose          , envir = env) # V
   assign("writetab"         , writetab         , envir = env) # W
+  assign("wgtmap"           , wgtmap           , envir = env) # W
+  assign("wgtzp"            , wgtzp            , envir = env) # W
                                                               # XYZ
 
   #Print any warnings

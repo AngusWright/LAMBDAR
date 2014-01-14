@@ -68,6 +68,8 @@ function (env=NULL, filename,asperpix,apsize,confidence,normalize=TRUE,gauss_fwh
     message("PSF is being normalised to Unity")
     im_psf<-im_psf/max(im_psf)
   }
+  #Finally, Remove any Negative Values in the PSF, and calculate the sum
+  im_psf[which(im_psf<0)]<-0 
   sumpsf<-as.single(sum(im_psf))
   #Parse Parameter Space
   detach(env)

@@ -85,17 +85,16 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
         if (diagnostic) { message(paste("Doing convolution of PSF with Aperture", i)) }
         #Aperture should be convolved with PSF, and then set so maxima is Unity
         ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]]))
-        ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
-        if (length(which(ap <0))>0) {
+         if (length(which(ap <0))>0) {
           message(paste("Negatives Produced in PSF convolution with Aperture",i))
-          zapdig<-floor(-log10(abs(min(ap))))-1
+          zapdig<-floor(-log10(abs(min(ap))))
           ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]],zapdig=zapdig))
-          ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
           message(paste("Attempting rezap with zapdigit",zapdig))
           if (length(which(ap<0))>0) {
             stop("Rezap unable to remove negatives in convolution")
           }
         }
+        ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
         return=ap
       } else {
         #We have a point source - reinterpolate the PSF at point source XcenYcen, and return that
