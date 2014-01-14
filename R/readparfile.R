@@ -56,6 +56,15 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   beamarea_SOM_as<-as.numeric(params[ID,1])
   if (is.na(beamarea_SOM_as)) { beamarea_SOM_as<-0 }
 
+  #Do we want to Convolve the apertures with a PSF
+  ID="PSFConvolve"
+  psffilt<-as.numeric(params[ID,1])
+  if (is.na(psffilt)) {
+    warning("PSF Convolve Flag not in Parameter File")
+    psffilt<-0
+  }
+  if (psffilt==1) { nopsf<-0 } else { nopsf <- 1 }
+
   #PSF map filename
   ID="PSFMap"
   psfmap<-params[ID,1]
@@ -70,8 +79,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     gauss_fwhm_as<-as.numeric(params[ID,1])
     if (is.na(gauss_fwhm_as)) { gauss_fwhm_as<-0.0 }
 
-    #If there is no PSF, and no gaussian FWHM provided - ERROR
-    if ((gauss_fwhm_as==0.0)&(psfmap=="NONE")) {
+    #If we want convolution, there is no PSF, and no gaussian FWHM provided - ERROR
+    if ((psffilt)&(gauss_fwhm_as==0.0)&(psfmap=="NONE")) {
       stop("Parameter file does not provide either PSF map or Gaussian FWHM")
     }
   } else {
@@ -179,15 +188,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     forcepointsources<-0
   }
   forcepointsources<-(forcepointsources==1)
-
-  #Do we want to Convolve the apertures with a PSF
-  ID="PSFConvolve"
-  psffilt<-as.numeric(params[ID,1])
-  if (is.na(psffilt)) {
-    warning("PSF Convolve Flag not in Parameter File")
-    psffilt<-0
-  }
-  if (psffilt==1) { nopsf<-0 } else { nopsf <- 1 }
 
   #Error Map scale factor
   ID="EFactor"
@@ -344,22 +344,18 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if (!(sourcemaskonly)) {
     #Do we want to output the source mask at all?
     ID="WriteSourceMask"
-    sourcemask<-params[ID,1]
-    if (is.na(sourcemask)) {
+    sourcemaskout<-params[ID,1]
+    if (is.na(sourcemaskout)) {
       warning("Output Source Mask Flag not in Parameter File")
-      sourcemask<-FALSE
-    } else { sourcemask<-(sourcemask==1) }
-  } else { sourcemask<-TRUE }
-
-  smfilename<-NULL
-  if ( sourcemask ) {
-    #Name of SourceMask that is output
-    ID="SourceMaskFile"
-    smfilename<-params[ID,1]
-    if (is.na(smfilename)) {
-      warning("Source Mask filename not in Parameter File")
-      smfilename<-"SourceMask.fits"
+      sourcemaskout<-FALSE
+      sourcemask   <-FALSE
+    } else { 
+      sourcemaskout<-(sourcemaskout==1) 
+      sourcemask   <-(sourcemaskout==1) 
     }
+  } else { 
+    sourcemaskout<-TRUE 
+    sourcemask   <-TRUE 
   }
 
   #Do we want to output the All Apertures Mask
@@ -549,11 +545,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     doskyest<-FALSE
   } else { doskyest<-(doskyest==1) }
 
-  if (doskyest & !sourcemask) {
-    warning("Source Mask creation being forced because Sky Estimate Flag is TRUE")
-    sourcemask<-TRUE
-  }
-
   #Calculate the Sky RMS? 
   ID="GetSkyRMS"
   getskyrms<-params[ID,1]
@@ -563,6 +554,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   } else { getskyrms<-(getskyrms==1) }
   
   if (doskyest||getskyrms) { 
+    #Sourcemask needed for SkyEstimate. If not TRUE, set to TRUE
+    if (!sourcemask) {
+      warning("Source Mask creation being forced because Sky Estimate Flag is TRUE")
+      sourcemask<-TRUE
+    }
     #Number of iterations used in sky estimation
     ID="SkyEstIters"
     skycutiters<-params[ID,1]
@@ -585,6 +581,27 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       correl.noise<-1
     } 
   }
+  
+  smfilename<-NULL
+  if ( sourcemask ) {
+    if (sourcemaskout) {
+      #Name of SourceMask that is output
+      ID="SourceMaskFile"
+      smfilename<-params[ID,1]
+      if (is.na(smfilename)) {
+        warning("Source Mask filename not in Parameter File")
+        smfilename<-"SourceMask.fits"
+      }
+    }
+    #Name of SourceMask that is output
+    ID="SourceMaskConfLim"
+    smConfidenceLim<-as.numeric(params[ID,1])
+    if (is.na(smConfidenceLim)) {
+      warning("Source Mask Confidence Limit not in Parameter File")
+      smConfidenceLim<-0.95
+    }
+  }
+  
   #Name of Logfile to be output
   ID="LogFile"
   logfile<-params[ID,1]
@@ -654,6 +671,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("residmap"         , residmap         , envir = env) #
   assign("sourcemask"       , sourcemask       , envir = env) # S
   assign("sourcemaskonly"   , sourcemaskonly   , envir = env) #
+  assign("smConfidenceLim"  , smConfidenceLim  , envir = env) #
   assign("sinkfile"         , sinkfile         , envir = env) #
   assign("showtime"         , showtime         , envir = env) #
   assign("skycutiters"      , skycutiters      , envir = env) #

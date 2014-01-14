@@ -88,7 +88,7 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
         ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
         if (length(which(ap <0))>0) {
           message(paste("Negatives Produced in PSF convolution with Aperture",i))
-          zapdig<-floor(-log10(abs(min(ap))))
+          zapdig<-floor(-log10(abs(min(ap))))-1
           ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]],zapdig=zapdig))
           ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
           message(paste("Attempting rezap with zapdigit",zapdig))

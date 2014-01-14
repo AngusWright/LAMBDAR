@@ -133,6 +133,7 @@ TableName              ",TableName         ,"    #Filename for Results Table
 WriteAAMask            ",WriteAAMask       ,"    #Write the All Apertures Mask image to file?                                   [1/0]
 AllApersFile           ",AllApersFile      ,"    #Filename for All Apertures Mask
 WriteSourceMask        ",WriteSourceMask   ,"    #Write the Source Mask image to file?                                          [1/0]
+SourceMaskConfLim      ",SourceMaskConfLim ,"    #When convolving with PSF, to what confidence should the Sourcemask extend when Blocking Apertures?
 SourceMaskFile         ",SourceMaskFile    ,"    #Filename for Source Mask
 WriteDFAMask           ",WriteDFAMask      ,"    #Write the Convolved Apertures Mask image to file?                             [1/0]
 DelbConvApersFile      ",DelbConvApersFile ,"    #Filename for All Convolved Apertures Mask

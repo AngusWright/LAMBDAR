@@ -35,6 +35,7 @@ function(env=NULL) {
     #and set the beamarea to unity
     beamarea_n<-1.0
     psfwidth<-0
+    psf.clip<-0
   }
   if (beamarea_pix == 0) {
     # If possible, use the beamarea just determined at high resolution
@@ -239,7 +240,11 @@ function(env=NULL) {
     #         b) set all nonzero locations in aa to 0 in sm array
     if (!quiet) { cat(paste('Outputting Source Mask to',smfilename,"   ")) }
     if (length(image.env$imm)!=1) { sm<-image.env$imm } else { sm<-array(1, dim=dim(image.env$im)) }
-    sm[which(image.env$fa > (pnorm(-3)))]<-0
+    if (nopsf) {
+      sm[which(image.env$fa > 0)]<-0
+    } else {
+      sm[which(image.env$fa > get.confidence(psf,smConfidenceLim,value=TRUE))]<-0
+    }   
     #-----Diagnoistic-----#
     if (diagnostic) {
       message(paste("SourceMask Max/Min:",max(sm),min(sm)))
@@ -561,14 +566,11 @@ function(env=NULL) {
   }
   if (verbose) { cat(" - Done\n") }
 #-----
-  if (showtime) { cat("   } - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
-    message(paste("Perform Calculations - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )"))
-  } else if (!quiet) { cat("   } - Done\n") }
-
+ 
 #
 # NB: in the following calculations - Int(<exp>) denotes the integral of the expression <exp>
 #
-
+  if (verbose) { cat("      Final Fluxes and Error Calculations ") }
   #Convolved aperture flux = Int(fltAp*Im) * Int(fltAp) / Int(fltAp^2)
   sfaflux<-ssfad*ssfa/ssfa2
 
@@ -580,13 +582,24 @@ function(env=NULL) {
   dfaerr<-sqrt((sdfa2e2 * (ssfa/ssfa2)^2.) + ((conf*beamarea)^2.*sqrt(sdfa)))
   sfafluxw<-ssfadw*ssfa/ssfa2w
   sfaerrw<-sqrt(1/ssfaw*(ssfa/beamarea*ssfa/ssfa2)^2. + ((conf*beamarea)^2.*sqrt(ssfa)))
-
+  if (verbose) { cat(" - Done\n") }
+#-----
+  if (showtime) { cat("   } - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+    message(paste("Perform Calculations - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )"))
+  } else if (!quiet) { cat("   } - Done\n") }
+#-----
+  
   #Do we want to do sky estimation/subtraction?
   if (doskyest||getskyrms) {
     #Get sky estimates
-    if (verbose) { message("Perfoming Sky Estimation"); cat("   Performing Sky Estimation") }
+    if (!quiet) { message("Perfoming Sky Estimation"); cat("   Performing Sky Estimation") }
+    if (nopsf) { 
+      psffwhm<-median(a_g[which(a_g > 0)])*2
+    } else { 
+      psffwhm<-get.confidence(psf, confidence=(2*sqrt(2*log(2))))*2
+    }
     skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),
-                    astrom=astr_struc,clipiters=skycutiters,probcut=skyprobcut)
+                    astrom=astr_struc,clipiters=skycutiters,probcut=skyprobcut,FWHMinPIX=psffwhm)
     skylocal<-skyest[,'sky']
     skyerr<-skyest[,'skyerr']*correl.noise
     skyrms<-skyest[,'skyRMS']
@@ -600,16 +613,16 @@ function(env=NULL) {
     } else {
       detecthres.mag<-array(NA, dim=c(length(dfaflux)))
     }
-    if (verbose) { message(paste("   - Done\n")); cat("   - Done\n")}
+    if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
     #browser()
     if (doskyest) {
-      if (verbose) { message("Perfoming Sky Subtraction"); cat("   Performing Sky Subtraction") }
+      if (!quiet) { message("Perfoming Sky Subtraction"); cat("   Performing Sky Subtraction") }
       #Subrtract Sky Flux
       dfaflux<-dfaflux-skyflux
       sfaflux<-sfaflux-skyflux
       dfaerr<-sqrt(dfaerr^2+skyerr^2)
       dfaerr<-sqrt(sfaerr^2+skyerr^2)
-      if (verbose) { message(paste("   - Done\n")); cat("   - Done\n")}
+      if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
     }
   } else {
     skyflux<-array(NA, dim=c(length(dfaflux)))
