@@ -693,6 +693,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       smConfidenceLim<-0.95
     }
   }
+ 
+  #Do we want to set a minimum aperture to use, regardless of inputs?
+  ID="MinApRad"
+  MinApRad<-as.numeric(params[ID,1])
+  if (is.na(MinApRad)) {
+   warning("Minimum Aperture Specification not in Parameter File")
+   MinApRad<-0
+  }
   
   #Name of Logfile to be output
   ID="LogFile"
@@ -754,6 +762,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("makefamask"       , makefamask       , envir = env) #
   assign("makeaamask"       , makeaamask       , envir = env) #
   assign("maskmap"          , maskmap          , envir = env) #
+  assign("MinApRad"         , MinApRad         , envir = env) #
   assign("nopsf"            , nopsf            , envir = env) # N
   assign("nocontammap"      , nocontammap      , envir = env) #
   assign("ncores"           , ncores           , envir = env) #
