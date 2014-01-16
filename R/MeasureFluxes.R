@@ -109,6 +109,11 @@ function(parfile=NA, quiet=FALSE, ...){ #Begin
   #Read source catalogue
   opencatalogue(environment())
 
+  if(MinApRad>0){
+    a_g[a_g<MinApRad]=MinApRad
+    b_g[b_g<MinApRad]=MinApRad
+  }
+
   #Determine which galaxies are inside the input image
   #and have physical aperture parameters
   if (!quiet) { cat("   Determining Correct Galaxy Sample ") }
