@@ -144,6 +144,13 @@ function(parfile=NA, quiet=FALSE, ...){
   #Read source catalogue {{{
   opencatalogue(environment())
   #}}}
+  
+  #If wanted, Set Minimum Aperture Radius {{{
+  if(MinApRad>0){
+    a_g[a_g<MinApRad]=MinApRad
+    b_g[b_g<MinApRad]=MinApRad
+  }
+  #}}}
 
   #Determine Initial Galaxy Sample {{{
   #Details {{{

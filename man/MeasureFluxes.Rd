@@ -7,7 +7,8 @@ Measure Fluxes
 \description{
 Measure galactic/object fluxes from an arbitrary FITS image, when provided an input catalogue of object locations and aperture parameters.
 Detailed descriptions of the many functions called by this procedure can be found in their relevant help files.
-The procedure has many high-level options available; all options are designated an input parameter file.
+The procedure has many high-level options available; all options are designated in an input parameter file. This 
+parameter can be created by running MeasureFluxes("--makepar"). For more in depth examples, see below.
 }
 \usage{
 MeasureFluxes(parfile, quiet = FALSE, ...)
@@ -27,7 +28,7 @@ Any arguments that are intended to be passed to the 'createparfile' routine
 %%\details{
 %%}
 \value{
-Measure Fluxes returns a list, contining some of the results which are sent to file.
+Measure Fluxes returns a list, contining a subset of the results which are sent to file.
   \item{SFAflux}{
   The flux of each aperture, without consideration of deblending
 }
@@ -56,6 +57,9 @@ Angus H Wright{ ICRAR}
 }
 %\note{
 %}
+\note{
+All parameters and data used by MeasureFluxes are stored in environments created within the function.  
+}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
@@ -66,11 +70,13 @@ createparfile
 # To generate a default parameter file for use:
 MeasureFluxes("--makepar")
 
-# To generate a parameter file for use, with customised values:
-##  i.e. Changing the input Catalogue name
+# When generating the parameter file, all parameters can be made custom 
+# by including the parameter name and its desired value in the makepar call.
+# For Example, to generate a parameter file for use, with customised Catalogue 
+# name value:
 MeasureFluxes("--makepar", Catalogue="MyCat.csv")
 
-##  i.e. Changing the input Catalogue name, and changing number of processors
+# Or changing the input Catalogue name, and changing number of processors
 MeasureFluxes("--makepar", Catalogue="MyCat.csv", nProcessors=10)
 
 # To execute the program using the parameter file "Lambdar.par":

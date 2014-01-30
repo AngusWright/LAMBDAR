@@ -35,6 +35,7 @@ createparfile <-
     PSFConvolve=1,
     AngularOffset=0,
     PointSources=0,
+    MinApRad=0,
     SmoothAper=1,
     ResamplingRes=3,
     ResamplingIters=4,
@@ -131,6 +132,7 @@ RemoveContam           ",RemoveContam      ,"    #Remove Contaminants (Catalogue
 PSFConvolve            ",PSFConvolve       ,"    #Convolve the Aperture with a PSF?                                              [1/0]
 AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N90E0 angular coords, 1 if it is in N0E90 coords
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
+MinApRad               ",MinApRad          ,"    #State minimum aperture to use for sources
 SmoothAper             ",SmoothAper        ,"    #Smooth Apertures by resampling? (Improves aperture surface integral accuracy)  [1/0]
 ResamplingRes          ",ResamplingRes     ,"    #Rate of Upscaling in Resolution during Aperture Resampling (final res is n^[nIters] higher)
 ResamplingIters        ",ResamplingIters   ,"    #Number of iterations to perform in resampling
