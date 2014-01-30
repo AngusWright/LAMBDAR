@@ -1,9 +1,34 @@
 #
 #Instructions for the instalation of the R Package LAMBDAR
 #
+
+#
+# From GitHub via R console
+#
+
+#Lambdar can be downloaded Directly from GitHub into your R Library
+#To do this, you must have the developer tools installed & loaded.
+#To install & load the devtools, inside the R console Run:
+
+install.packages("devtools")
+library(devtools)
+
+#Then, still in the R console, run:
+
+install_github("LAMBDAR","AngusWright")
+library("LAMBDAR")
+
+#NOTE: This may fail if you are missing Dependencies
+#See "Dependencies" Section below
+
+#
+# From GitHub via Web Browser
+#
+
 #####################
 #   Download
 #####################
+
 
 #Package is available for download at:
 
@@ -27,7 +52,7 @@ https://github.com/AngusWright/LAMBDAR
 
 R CMD INSTALL LAMBDAR-master
 
-# i.e. if you unzipped the folder in the 'Downloads' directory, run the above command from inside 
+# i.e. if you unzipped the folder in the 'Downloads' directory, run the above command from inside
 #      'Downloads'
 #
 #if this command fails, it is likely because you are missing packages
@@ -43,7 +68,6 @@ sudo R CMD INSTALL LAMBDAR-master
 #using the command
 
 library(LAMBDAR)
-
 
 #####################
 #   Dependencies
