@@ -41,17 +41,17 @@ function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffse
       radec<-xy2ad(xcent,ycent,header)
       ra_deg<-radec[,"RA"]
       dec_deg<-radec[,"DEC"]
-      
+
 
       #keep astr same as in astr_in except for the following tags:
       #      $NAXIS - 2 element array giving image size
       astr_out$NAXIS1<-xsize
       astr_out$NAXIS2<-ysize
-      #      $CRPIX - 2 element double vector giving X and Y coordinates of reference 
+      #      $CRPIX - 2 element double vector giving X and Y coordinates of reference
       #               pixel (def = NAXIS/2) in FITS convention (first pixel is 1,1)
       astr_out$CRPIX1<-1+floor(xsize/2.)
       astr_out$CRPIX2<-1+floor(ysize/2.)
-      #      $CRVAL - 2 element double precision vector giving R.A. and DEC of 
+      #      $CRVAL - 2 element double precision vector giving R.A. and DEC of
       #             reference pixel in DEGREES
       astr_out$CRVAL1<-ra_deg
       astr_out$CRVAL2<-dec_deg
@@ -91,4 +91,5 @@ function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffse
   colnames(headout)<-c("key","value")
   fits<-list(hdr=list(headout), dat=list(image))
   write.fits(fits,file=filename,type="double",hdu=0)
+  return=NULL
 }

@@ -38,7 +38,7 @@ function (pattern="", envir=NULL, pos = 1, order.by, decreasing=FALSE, head=FALS
     #}}}
   }
   #return {{{
-  out
+  return=out
   #}}}
 }
 #}}}

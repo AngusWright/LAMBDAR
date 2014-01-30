@@ -18,6 +18,6 @@ function(ra,dec,astr_struc,diagnostic=FALSE){
   #}}}
   #Get Pixel Values & Return {{{
   pix<-radec2xy(ra,dec,ra0,dec0,x0,y0,xscale,yscale)
-  return(pix)
+  return=pix
   #}}}
 }

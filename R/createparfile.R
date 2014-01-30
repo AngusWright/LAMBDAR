@@ -177,5 +177,5 @@ PSFConfidence          ",PSFConfidence     ,"    #Number of PSF FWHM's added to 
 #Close Sink and return NULL {{{
 sink()
 return=NULL
-}}}
+#}}}
 }

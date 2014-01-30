@@ -192,9 +192,9 @@ function(env=NULL, outenv=NULL){
   assign("insidemask",insidemask,envir=outenv)
   #}}}
 
-  #Return array of apertures {{{
-  sa_mask
-  #}}}
-
   message('===========END============Make_SA_MASK=============END=================\n')
+
+  #Return array of apertures {{{
+  return=sa_mask
+  #}}}
 }

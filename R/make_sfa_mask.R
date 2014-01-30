@@ -186,6 +186,6 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
 
   #Return array of Stamps {{{
   detach(env)
-  sfa_mask
+  return=sfa_mask
   #}}}
 }

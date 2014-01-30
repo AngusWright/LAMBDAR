@@ -1,20 +1,20 @@
 make.fits.header <- function(hdr){
-    
+
     # columns
     key = hdr[,"key"]
     value = hdr[,"value"]
     comment = hdr[,"comment"]
-    
+
     # loop over each key
     rows = {}
     for(i in 1:length(key)){
-    
+
         # special key?
         special = FALSE
         if(key[i]=="COMMENT" | key[i]=="HISTORY"){
             special = TRUE
         }
-        
+
         # key
         key[i] = sprintf("%-8s", key[i])
         hier = FALSE
@@ -22,7 +22,7 @@ make.fits.header <- function(hdr){
             key[i] = paste("HIERARCH",key[i],"")
             hier = TRUE
         }
-        
+
         # value
         if(special){
             value[i] = ""
@@ -53,19 +53,19 @@ make.fits.header <- function(hdr){
                 }
             }
         }
-        
+
         # update rows
         row = substr(sprintf("%-80s", paste(key[i], value[i], comment[i], sep="")),1,80)
         rows = c(rows,row)
-        
+
     }
-    
+
     # pad header to multiple of 2880 characters (36*80)
     hdr = paste(paste(rows,collapse="",sep=""),"END",sep="")
     pad = paste(rep(" ",(2880 - (nchar(hdr)%%2880))),collapse="",sep="")
     hdr = paste(hdr, pad, collapse="", sep="")
-    
-    return(hdr)
-    
+
+    return=hdr
+
 }
 

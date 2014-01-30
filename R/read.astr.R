@@ -33,6 +33,6 @@ function(fitsname){
                        as.numeric(c(astr_struc$CROTA[2],astr_struc$CDELT[2])))
   }#}}}
   #Return {{{
-  return(astr_struc)
+  return=astr_struc
   #}}}
 }

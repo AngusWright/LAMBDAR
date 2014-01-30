@@ -71,6 +71,6 @@ function(env=NULL,outenv=NULL) {
   #Return {{{
   detach(env)
   #Return Deblended Stamps
-  dbw_map
+  return=dbw_map
   #}}}
 }

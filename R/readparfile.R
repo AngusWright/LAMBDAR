@@ -770,7 +770,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
    MinApRad<-0
   }
   #}}}
-  
+
   #Name of Logfile to be output {{{
   ID="LogFile"
   logfile<-params[ID,1]
@@ -897,6 +897,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Finished Setup of Parameter Space {{{
   if (!quiet) { cat(" - Done\n") }
+  return=NULL
   #}}}
 
 }

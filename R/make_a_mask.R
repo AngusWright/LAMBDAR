@@ -53,6 +53,6 @@ function (env=NULL, masks, fullmaskdim, outenv=NULL){
 
   #Return the Full Mask {{{
   detach(env)
-  a_mask
+  return=a_mask
   #}}}
 }

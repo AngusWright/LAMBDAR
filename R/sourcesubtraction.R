@@ -59,4 +59,5 @@ function(image,sfa_models,stamp_lims,fluxes,outputfile,outputheader,beamarea,ins
   writefitsout(outputfile,resid_im,outputheader, nochange=TRUE)
   #}}}
   message('=========END==========Source_Subtraction===========END=================\n')
+  return=NULL
 }

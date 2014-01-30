@@ -175,7 +175,6 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
       #}}}
     }#}}}
     cat(" - Done\n")
-
-
+    return=NULL
 }
 

@@ -17,5 +17,5 @@ function(ra,dec,ra0=0,dec0=0,x0=0,y0=0,xscale=1,yscale=1){
   }
   X = (xx(ra0,dec0,ra,dec)/tan(xscale)) + x0
   Y = (yy(ra0,dec0,ra,dec)/tan(yscale)) + y0
-  return(cbind(X,Y))
+  return=cbind(X,Y)
 }

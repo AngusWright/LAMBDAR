@@ -42,13 +42,46 @@ function(env=NULL,filename) {
                             'Magnitude'=0.,
                             'PixelFlux'=0.)))
 
+  #Get distance from image edge {{{
+  #X-axis {{{
+  #Distance from low side in pixels {{{
+  dx_p_lo<-x_p
+  #}}}
+  #Distance from high side in pixels {{{
+  dx_p_hi<-astr_struc$NAXIS[1]-x_p
+  #}}}
+  #Which apertures are closer to the high side {{{
+  index_x<-which(dx_p_hi < dx_p_lo)
+  #}}}
+  #Distances {{{
+  dx_p<-dx_p_lo
+  dx_p[index_x]<-dx_p_hi[index_x]
+  #}}}
+  #}}}
+  #Y-axis {{{
+  #Distance from low side in pixels {{{
+  dy_p_lo<-y_p
+  #}}}
+  #Distance from high side in pixels {{{
+  dy_p_hi<-astr_struc$NAXIS[2]-y_p
+  #}}}
+  #Which apertures are closer to the high side {{{
+  index_y<-which(dy_p_hi < dy_p_lo)
+  #}}}
+  #Distances {{{
+  dy_p<-dy_p_lo
+  dy_p[index_y]<-dy_p_hi[index_y]
+  #}}}
+  #}}}
+  #}}}
+
   newtable[,"CATA_INDEX"] = as.integer(id_g)
   newtable[,"ALPHA_J2000"] = ra_g
   newtable[,"DELTA_J2000"] = dec_g
   newtable[,"X_IMAGE"] = x_p
   newtable[,"Y_IMAGE"] = y_p
-  newtable[,"NX_PIX2EDGE"] = min(x_p, astr_struc$NAXIS[1]-x_p)
-  newtable[,"NY_PIX2EDGE"] = min(y_p, astr_struc$NAXIS[2]-y_p)
+  newtable[,"NX_PIX2EDGE"] = dx_p
+  newtable[,"NY_PIX2EDGE"] = dy_p
   newtable[,"THETA_J2000"] = theta_g
   newtable[,"MAJOR_ARCSEC"] = a_g
   newtable[,"MINOR_ARCSEC"] = b_g
@@ -76,4 +109,5 @@ function(env=NULL,filename) {
   newtable[,"PixelFlux"] = pixflux
   write.table(newtable,file=filename,sep=",", col.names=TRUE, na="-", dec=".", row.names=FALSE)
   detach(env)
+  return=NULL
 }

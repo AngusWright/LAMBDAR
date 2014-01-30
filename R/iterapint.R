@@ -17,7 +17,7 @@ if(majax>0){
   for(i in 1:itersteps){
    check=checkgrid(x=x,y=y,xstep=xstep,ystep=ystep,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax,deg=deg)
    if(any(check$logic[,'empty'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'empty']],0))}
-   if(any(check$logic[,'full'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'full']],weight))} 
+   if(any(check$logic[,'full'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'full']],weight))}
    regrid=reexpand.grid(x[check$logic[,'part']],y[check$logic[,'part']],xstep=xstep,ystep=ystep,id=newID[check$logic[,'part']],upres=upres)
    x=regrid$x
    y=regrid$y

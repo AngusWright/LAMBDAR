@@ -9,5 +9,5 @@ function(x,y,astr_struc,diagnostic=FALSE){
   yscale=astr_struc$CD[2,2]
   if (diagnostic) { message(paste("ASTR:",ra0,dec0,x0,y0,xscale,yscale)) }
   radec<-xy2radec(x,y,ra0,dec0,x0,y0,xscale,yscale)
-  return(radec)
+  return=radec
 }

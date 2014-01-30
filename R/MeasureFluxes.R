@@ -144,7 +144,7 @@ function(parfile=NA, quiet=FALSE, ...){
   #Read source catalogue {{{
   opencatalogue(environment())
   #}}}
-  
+
   #If wanted, Set Minimum Aperture Radius {{{
   if(MinApRad>0){
     a_g[a_g<MinApRad]=MinApRad
@@ -314,6 +314,7 @@ function(parfile=NA, quiet=FALSE, ...){
         immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*i
         if ((apmem+immem) >= memLim) {
           ncores<-i-1
+          immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
           break
         }
       }
@@ -389,7 +390,6 @@ function(parfile=NA, quiet=FALSE, ...){
                  message(paste('Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n')) }
    sink(type="message")
    return=results
-   rm(list=ls())
    #}}}
 
 }
