@@ -1,0 +1,44 @@
+lsos <-
+function(..., n=10) {
+  ls.objects(..., order.by="Size", decreasing=TRUE, head=TRUE, n=n)
+}
+#Longhand Function {{{
+ls.objects <-
+function (pattern="", envir=NULL, pos = 1, order.by, decreasing=FALSE, head=FALSE, n=5) {
+  #Get variable names {{{
+  if (is.null(envir)) {
+    #Get variable names using 'pos' {{{
+    napply <- function(names, fn) sapply(names, function(x) fn(get(x, pos = pos)))
+    names <- ls(pos = pos, pattern = pattern)
+    #}}}
+  } else {
+    #Get variable names using 'envir' {{{
+    napply <- function(names, fn) sapply(names, function(x) fn(get(x, envir = envir)))
+    names <- ls(envir = envir, pattern = pattern)
+    #}}}
+  }#}}}
+  if (length(names)!=0) {
+    #There are objects, get details {{{
+    obj.class <- napply(names, function(x) as.character(class(x))[1])
+    obj.mode <- napply(names, mode)
+    obj.type <- ifelse(is.na(obj.class), obj.mode, obj.class)
+    obj.prettysize <- napply(names, function(x) { capture.output(print(object.size(x), units = "auto")) })
+    obj.size <- napply(names, object.size)
+    obj.dim <- t(napply(names, function(x) as.numeric(dim(x))[1:2]))
+    vec <- is.na(obj.dim)[, 1] & (obj.type != "function")
+    obj.dim[vec, 1] <- napply(names, length)[vec]
+    out <- data.frame(obj.type, obj.size, obj.prettysize, obj.dim)
+    names(out) <- c("Type", "Size", "PrettySize", "Rows", "Columns")
+    if (!missing(order.by)) { out <- out[order(out[[order.by]], decreasing=decreasing), ] }
+    if (head) { out <- head(out, n) }
+    #}}}
+  } else {
+    #There are no matching object, return null {{{
+    out<-as.character(NULL)
+    #}}}
+  }
+  #return {{{
+  out
+  #}}}
+}
+#}}}

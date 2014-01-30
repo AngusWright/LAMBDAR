@@ -5,7 +5,7 @@
 RA/Dec to Pixel via Header Astrometry
 }
 \description{
-Convert RA,Dec locations into X,Y (pixel numbers) by reading key astrometry values from an input list.
+Converts RA/DEC (degrees) to X/Y (pixels) position using the TAN Gnomonic projection system.
 }
 \usage{
 ad2xy(ra, dec, astr_struc, diagnostic = FALSE)
@@ -13,13 +13,13 @@ ad2xy(ra, dec, astr_struc, diagnostic = FALSE)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{ra}{
-numeric (n) vector; RA of objects
+numeric (n) vector; RA values
 }
   \item{dec}{
 numeric (n) vector; Dec values
 }
   \item{astr_struc}{
-list of Astrometry Keywords and values returned from read of a fits header
+list; Astrometry Keywords and values returned from read of a fits header. See "read.astr" function
 }
   \item{diagnostic}{
 logical; if TRUE, diagnostic information will be output as type 'message'
@@ -38,14 +38,16 @@ numeric (n,2) array; two numeric (n) vectors 'X' and 'Y', column-bound
 Angus H Wright{ ICRAR} \\
  {\email{angus.wright@icrar.org}}
 }
-%%\note{
-%%  ~~further notes~~
-%%}
+\note{
+ While this routine is designed for use with the TAN Gnomonic projection,
+ an orthographic SIN projection *without rotation* is degenerate and therefore
+ also valid for use
+}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-read.astr, MeasureFluxes
+\link{radec2xy}, \link{read.astr}, \link{MeasureFluxes}
 }
 %%\examples{
 

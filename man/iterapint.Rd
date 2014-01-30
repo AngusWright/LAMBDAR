@@ -8,8 +8,8 @@
 Elliptical Aperture Creation
 }
 \description{
-The iterapint() procedure creates a single elliptical aperture on a grid, which is designated by the values of \{x,y\}.
-The aperture is created with properties designated by the input parameters. In order to improve the accuracy of
+The iterapint() procedure creates a single elliptical aperture on a finite grid, which is designated by the values of \{x,y\}.
+The aperture is created with properties determined by the input parameters. In order to improve the accuracy of
 the aperture integral, the accuracy of the pixel values at the aperture boundary are improved by increasing the
 resolution of the grid at the boundary, calculating the subpixel values, and summing over subpixels.
 The functions checkgrid(), inap(), and reexpand.grid() are low level functions called internally by iterapint().
@@ -65,10 +65,9 @@ logical; if TRUE - aperture is scaled so that maximum pixel value is unity.
 }
   \item{splitpart}{
 logical; determines how aperture boundary pixels that are partially covered by the aperture are assigned.
-         At the highest level:
-            if TRUE - boundary pixels are assigned fractional values determined by the number of corners that
-                   the pixel has covered by the aperture.
-            if FALSE - boundary pixels are assigned unity if the pixel is partially covered, otherwise zero.
+         if TRUE  - boundary pixels are assigned fractional values determined by the number of corners that
+                    the pixel has covered by the aperture.
+         if FALSE - boundary pixels are assigned unity if the pixel centre is covered, otherwise zero.
 }
 }
 \details{
@@ -105,7 +104,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, fluxmeasurements
+\link{MeasureFluxes}, \link{fluxmeasurements}
 }
 \examples{
 ## Example 1: Simple Generation of an aperture

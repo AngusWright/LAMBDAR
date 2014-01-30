@@ -5,13 +5,16 @@
 Write MeasureFluxes Results
 }
 \description{
-Output a CSV table containing the MeasureFluxes results to file
+Output a CSV table, to file, containing the MeasureFluxes results
 }
 \usage{
-writesfatableout(filename)
+writesfatableout(env=NULL, filename)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+  \item{env}{
+environment; the enovironment containing the parameters and results of MeasureFluxes.
+}
   \item{filename}{
 string; path to, and filename of, output filename
 }
@@ -36,7 +39,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, fluxmeasurements
+\link{MeasureFluxes}, \link{fluxmeasurements}
 }
 \examples{
 

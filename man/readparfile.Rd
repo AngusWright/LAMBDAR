@@ -5,10 +5,11 @@
 Read Parameter File
 }
 \description{
-Reads the Parameter file required for the execution of the MeasureFluxes procedure
+Reads the Parameter file required for the execution of the MeasureFluxes procedure. This parameter file can be
+generated using the 'createparfile' routine, or by calling createparfile through 'MeasureFluxes'.
 }
 \usage{
-readparfile(parfile, starttime = NA)
+readparfile(parfile=NA, starttime=NA, quiet=FALSE, env=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -18,17 +19,19 @@ string; relative path to, and filename of, the parameter file
   \item{starttime}{
 numeric; CPU start time of the calling procedure, in seconds. Used for output of elapsed times; if not supplied, current CPU time is used.
 }
+  \item{quiet}{
+logical; if TRUE, all output is suppressed.
+}
+  \item{env}{
+environment; the environment to which all parameters will be assigned. if NULL, a new environment is generated.
+}
 }
 %%\details{
 %%  ~~ If necessary, more details than the description above ~~
 %%}
-%%\value{
-%%  ~Describe the value returned
-%%  If it is a LIST, use
-%%  \item{comp1 }{Description of 'comp1'}
-%%  \item{comp2 }{Description of 'comp2'}
-%% ...
-%%}
+\value{
+NULL; all output is to the parameter environment 'env'
+}
 %%\references{
 %% ~put references to the literature/web site here ~
 %%}
@@ -43,7 +46,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes
+\link{MeasureFluxes}, \link{createparfile}
 }
 \examples{
 

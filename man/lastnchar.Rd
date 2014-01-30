@@ -16,7 +16,7 @@ lastnchar(x, n)
 string; length > n
 }
   \item{n}{
-integer;
+integer; number of characters to be returned
 }
 }
 %%\details{
@@ -39,7 +39,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, readparfile
+\link{MeasureFluxes}, \link{readparfile}
 }
 %%\examples{
 

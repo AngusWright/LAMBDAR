@@ -13,7 +13,7 @@ sourcesubtraction(image, sfa_models, stamp_lims, fluxes, outputfile, outputheade
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{image}{
-string; relative path to, and filename of, the image to be used for subtraction
+numeric (j,k) array; the image to be used for subtraction
 }
   \item{sfa_models}{
 numeric length (m) list of (n,n) arrays; length (m) list of (n,n) stamps containing the apertures to be subtracted
@@ -37,9 +37,13 @@ numeric; the beam area for the input image
 logical (m) vector; if TRUE, then the object will be subtracted
 }
 }
-%%\details{
-%%%%  ~~ If necessary, more details than the description above ~~
-%%}
+\details{
+Procedure performs a subtraction of the provided sfa_models from the 'image'. The models are normalised so that the
+integral of ith model is fluxes[i]. This means that the source subtraction is only going to accurately remove all
+object flux (leaving only noise) in cases where the object is perfectly modeled. As this is rarely the case, the
+result of this source subtraction is generally the creation of 'butterfly' patterns. This is an indication that objects
+are not being modeled perfectly by the aperture-psf convolution.
+}
 \value{
 NULL; all output is to file
 }
@@ -57,7 +61,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, fluxmeasurements
+\link{MeasureFluxes}, \link{fluxmeasurements}
 }
 \examples{
 

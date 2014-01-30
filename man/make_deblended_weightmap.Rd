@@ -10,20 +10,28 @@ The procedure takes individual weighted object apertures, and determines what pr
 It performs this analysis on all apertures from the input catalogue.
 }
 \usage{
-make_deblended_weightmap(wsfa, wfa)
+make_deblended_weightmap(env=NULL, outenv=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{wsfa}{
-numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) weighted object aperture stamps
+  \item{env}{
+environment; the environment containing the parameters used in 'MeasureFluxes'
 }
-  \item{wfa}{
-numeric (p,q) array; full mask of all weighted object apertures, placed in their approriate locations, coadded
+  \item{outenv}{
+environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
 }
 }
-%%\details{
-%%  ~~ If necessary, more details than the description above ~~
-%%}
+\details{
+The most relevant parameters to the execution of this function are the weighted & convolved aperture stamps (wsfa), and the
+weighted & convolved full aperture mask (wfa):
+
+- wsfa: numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) weighted & convolved object aperture stamps
+-  wfa: numeric (p,q) array; full mask of all weighted & convolved object apertures, placed in their approriate locations, coadded
+
+The deblended weightmaps are determined by what fraction of each aperture contributes to the full mask model at each pixel
+in the objects stamp. I.e. Deblended weightmap @ (i,j)th pixel of an aperture stamp = wsfa[i,j]/wfa[n,m], where (n,m) is the
+corresponding location of (i,j) in the full mask.
+}
 \value{
 numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) weighted, deblended, object aperture stamps
 }
@@ -41,7 +49,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, fluxmeasurements
+\link{MeasureFluxes}, \link{fluxmeasurements}
 }
 %%\examples{
 

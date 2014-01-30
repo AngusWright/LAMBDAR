@@ -8,25 +8,25 @@ Make Weighted and Convolved Apertures
 Convolve the input aperture stamps with the PSF, and weight the resultant apertures by the input fluxweightin.
 }
 \usage{
-make_sfa_mask(sa_mask, fluxweightin = NULL, nopsf = 0)
+make_sfa_mask(env=NULL,sa_mask,fluxweightin=NULL,outenv=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+  \item{env}{
+environment; the environment containing the parameters used in 'MeasureFluxes'
+}
   \item{sa_mask}{
 numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) aperture stamps
 }
   \item{fluxweightin}{
 numeric vector; can be either a length (m) vector of aperture weights, or a single numeric applied to all apertures as a scale-factor.
 }
-  \item{nopsf}{
-logical; if TRUE, the apertures are convolved with a gaussian instead of an input PSF
+  \item{outenv}{
+environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
 }
-}
-\details{
-Many of the parameters required by this function are setup in the global environment by the function MeasureFluxes and its subsidiaries.
 }
 \value{
-numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) convolved, weighted, aperture stamps
+numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) convolved & weighted aperture stamps
 }
 %%\references{
 %% ~put references to the literature/web site here ~
@@ -42,7 +42,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes
+\link{MeasureFluxes}, \link{fluxmeasurements}, \link{convolvepsf}
 }
 %%\examples{
 

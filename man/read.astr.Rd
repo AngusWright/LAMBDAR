@@ -36,7 +36,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, fluxmeasurements
+\link{MeasureFluxes}, \link{fluxmeasurements}
 }
 \examples{
 

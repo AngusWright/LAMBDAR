@@ -11,7 +11,7 @@ apertures in photometric measurements. As such, the positional information of th
 more accurately the phase information of the first array's fft) is discarded.
 }
 \usage{
-convolvepsf(arr1, arr2, normalise = TRUE, nomag2 = FALSE)
+convolvepsf(arr1, arr2, normalise = TRUE, mag2 = TRUE, zapdig = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -19,14 +19,24 @@ convolvepsf(arr1, arr2, normalise = TRUE, nomag2 = FALSE)
 (n,n) dimensional array; Usually will contain the PSF function. Phase information of this array is discarded in convolution
 }
   \item{arr2}{
-(n,n) dimensional array; Phase information of this array is retained in convolution
+(n,n) dimensional array; Phase information of this array is retained in convolution. Magnitude information is optionally included/excluded
+}
+  \item{normalise}{
+logical; if TRUE, the normalised Fourier Transform will be calculated
+}
+  \item{nomag2}{
+logical; if TRUE, then the magnitude information of arr2 is removed prior to FFT via normalisation
+}
+  \item{zapdig}{
+integer; the precision to be used in a call to 'zapsmall'. Used for removing (unwanted) small variations in near-zero areas
+of the array return by the FFT. If zapdig is NULL, getOption("digits") is used.
 }
 }
 %%\details{
 %%  ~~ If necessary, more details than the description above ~~
 %%}
 \value{
-(n,n) dimensional array containing the convolved image.
+(n,n) dimensional array containing the convolved & 'zapped' image.
 }
 %%\references{
 %% ~put references to the literature/web site here ~
@@ -42,7 +52,7 @@ Angus H Wright{ ICRAR} \\
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes
+\link{MeasureFluxes}, \link{zapsmall}
 }
 %%\examples{
 

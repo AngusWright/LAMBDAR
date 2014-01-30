@@ -54,10 +54,8 @@ Measure Fluxes returns a list, contining some of the results which are sent to f
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-\note{
-After execution, there are a large number of global parameters assigned. As such, execution is best performed in a clean R terminal, and the terminal is best discarded
-afterwards.
-}
+%\note{
+%}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
@@ -74,6 +72,10 @@ MeasureFluxes("--makepar", Catalogue="MyCat.csv")
 
 ##  i.e. Changing the input Catalogue name, and changing number of processors
 MeasureFluxes("--makepar", Catalogue="MyCat.csv", nProcessors=10)
+
+# To execute the program using the parameter file "Lambdar.par":
+MeasureFluxes("Lambdar.par")
+
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

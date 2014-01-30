@@ -2,29 +2,29 @@
 \alias{make_a_mask}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Create Full Mask
+Create a Full Mask
 }
 \description{
-Create a full image mask of all smaller masks which are input. The full mask is of dimension fullmaskdim.
+Create a full image mask of all smaller masks/apertures which are input. The full mask is of dimension fullmaskdim.
 Pixel locations for the placement of smaller masks on large mask are determined from the
 input variables x, y.
 }
 \usage{
-make_a_mask(masks, fullmaskdim, x, y)
+make_a_mask(env=NULL, masks, fullmaskdim, outenv=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
+  \item{env}{
+environment; the environment containing the parameters used in 'MeasureFluxes'
+}
   \item{masks}{
 numeric length(m) list of (n,n) arrays; length (m) list of (n,n) stamps, each containing a mask.
 }
   \item{fullmaskdim}{
 numeric (2) vector; fullmaskdim[1] is the x-dimension of the full mask. fullmaskdim[2] is the y-dimension. fullmaskdim values must be > submask width.
 }
-  \item{xcen}{
-numeric (m) vector; central x positions of masks to be placed onto full mask (pixel number)
-}
-  \item{ycen}{
-numeric (m) vector; central y positions of masks to be placed onto full mask (pixel number)
+  \item{outenv}{
+environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
 }
 }
 %%\details{
@@ -47,7 +47,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, fluxmeasurements
+\link{MeasureFluxes}, \link{fluxmeasurements}
 }
 %%\examples{
 

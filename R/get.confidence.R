@@ -1,27 +1,33 @@
 get.confidence<-
 function(zdist,confidence=0.95, nsteps=100, value=FALSE){
+#Details {{{
 #function returns the radius from the
-#*image centre*, in pixels, that contains
+#*image maxima*, in pixels, that contains
 #<confidence> proportion of the image
 #if value=TRUE, then the value of the PSF
-#at that confidence radius is returned instead
-  
-  im.len.x<-dim(zdist)[1]
-  im.len.y<-dim(zdist)[2]
-  x = seq(floor(-im.len.x/2), floor(im.len.x/2), length=im.len.x)
-  y = seq(floor(-im.len.y/2), floor(im.len.y/2), length=im.len.y)
+#at that confidence radius is returned instead }}}
+
+  #Setup Radius-map {{{
+  centre<-as.numeric(which(zdist==max(zdist), arr.ind=TRUE))
+  im.rad.x<-min(centre[1],length(zdist[,1])-centre[1])-1
+  im.rad.y<-min(centre[2],length(zdist[1,])-centre[2])-1
+  lim<-c(centre[1]-im.rad.x, centre[1]+im.rad.x, centre[2]-im.rad.y, centre[2]+im.rad.y)
+  x = seq(floor(-im.rad.x), floor(im.rad.x), length=im.rad.x*2+1)
+  y = seq(floor(-im.rad.y), floor(im.rad.y), length=im.rad.y*2+1)
   xy = expand.grid(x,y)
-
   r=sqrt(xy[,1]^2+xy[,2]^2)
-
+  #}}}
+  #Determine Confidence Radius {{{
   tmp.order<-order(r)
-  zvec<-as.numeric(zdist)
+  zvec<-as.numeric(zdist[lim[1]:lim[2],lim[3]:lim[4]])
   zcumsum<-cumsum(zvec[tmp.order])
   rcut<-max(abs(r[tmp.order][zcumsum<=sum(zdist)*confidence]))
+  #}}}
+  #Return desired parameter {{{
   if (value) {
     return=zvec[which(r==rcut)]
   } else {
     return=ceiling(rcut)
-  }
+  }#}}}
 }
 

@@ -5,7 +5,8 @@
 RA/Dec to Pixel
 }
 \description{
-Maps a provided array of RAs and Decs to pixel locations X and Y, when provided with calibrating central RA/Dec, X/Y, and scales.
+Maps a provided array of RAs and Decs to pixel locations X and Y using the TAN Gnomonic projection,
+when provided with calibrating central RA/Dec, X/Y, and scales.
 }
 \usage{
 radec2xy(ra, dec, ra0 = 0, dec0 = 0, x0 = 0, y0 = 0, xscale = 1, yscale = 1)
@@ -50,9 +51,10 @@ numeric (n,2) array; two column bound vectors containing the desired x pixel loc
 Aaron Robotham{ ICRAR}
  {\email{aaron.robotham@icrar.org}}
 }
-%%\note{
-%%  ~~further notes~~
-%%}
+\note{
+  This function is designed to work with the TAN Gnomonic projection. However, due to degeneracy the procedure
+  can also be used with a orthographic SIN projection *without rotation*.
+}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 

@@ -60,8 +60,6 @@ createparfile <-
     TableName="dfaResults.csv",
     WriteAAMask=1,
     AllApersFile="AllAps_Mask.fits",
-    OverlayEllipse=1,
-    OverlayFile="OverlayEllipse.fits",
     WriteSourceMask=1,
     SourceMaskConfLim=0.98,
     SourceMaskFile="SourceMask.fits",
@@ -76,7 +74,10 @@ createparfile <-
     ApStampWidth=1.05,
     PSFConfidence=0.95 ) {
 
+#Sink Output to File {{{
 sink(file="Lambdar_default.par")
+#}}}
+#Write File {{{
 cat(paste("#-------------------------------------------------------------------------------------
 #
 #                   Default Parameter File for use by LAMBDAR
@@ -147,7 +148,7 @@ DoSkyEst               ",DoSkyEst          ,"    #Perform estimate of local sky-
 SkyEstIters            ",SkyEstIters       ,"    #Number of iterations of sigma-cutting used in sky estimation
 SkyEstProbCut          ",SkyEstProbCut     ,"    #Sigma Level used in sigma-cutting of sky pixels
 SkyCorrelNoise         ",SkyCorrelNoise    ,"    #Level of Correlated noise in the image, if known (factor is multiplicative - 1 == no correlated noise)
-GetSkyRMS              ",GetSkyRMS         ,"    #As above without subtraction, and output the local sky RMS (if doing sky estimate, this happens automatically) 
+GetSkyRMS              ",GetSkyRMS         ,"    #As above without subtraction, and output the local sky RMS (if doing sky estimate, this happens automatically)
 #                #---------------Outputs--------------------#
 OutputDirectory        ",OutputDirectory   ,"    #Output directory Name and Path
 LogFile                ",LogFile           ,"    #Filename for Log
@@ -170,6 +171,9 @@ NoContamImage          ",NoContamImage     ,"    #Filename for Contaminant Subtr
 nProcessors            ",nProcessors       ,"    #Number of Processors Available for Use in Computations
 ApStampWidth           ",ApStampWidth      ,"    #Width of the Aperture stamps in multiples of aperture major axis; Can be changed with caution if memory issues arise.
 PSFConfidence          ",PSFConfidence     ,"    #Number of PSF FWHM's added to the Aperture Stamp Widths, to wings on apertures after PSF convolution."))
-
+#}}}
+#Close Sink and return NULL {{{
 sink()
+return=NULL
+}}}
 }

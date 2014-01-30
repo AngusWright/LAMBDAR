@@ -5,7 +5,7 @@
 Crop FITS Image
 }
 \description{
-Crop a fits image to a region of input radius, centred around an input RA and Dec.
+Crop a fits image to a sub-region determined by the input radius, RA, and Dec.
 }
 \usage{
 crop_im(ra0 = -999, dec0 = -999, pathroot = "", inpim = NA, cutrad = 1, fitsoutname = NA)
@@ -13,10 +13,10 @@ crop_im(ra0 = -999, dec0 = -999, pathroot = "", inpim = NA, cutrad = 1, fitsoutn
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{ra0}{
-numeric; RA of focus of crop (deg). Default value is the central RA of the input FITS image.
+numeric; RA of focus of crop (deg). If -999 is provided, the crop will centre around the FITS header RA Reference Pixel (i.e. CRPIX[1]).
 }
   \item{dec0}{
-numeric; Dec of focus of crop (deg). Default value is the central Dec of the input FITS image.
+numeric; Dec of focus of crop (deg). If -999 is provided, the crop will centre around the FITS header Dec Reference Pixel (i.e. CRPIX[2]).
 }
   \item{pathroot}{
 string; Path to input FITS image
@@ -33,7 +33,7 @@ string; Filename for output cropped image
 }
 \details{
 The inputs ra0, dec0, inpim, cutrad, and fitsoutname can all be vectors of values if more than one crop is desired.
-Note that each cropped image MUST have its own individual fitsoutname - the function will not create extended FITS files.
+Note that each cropped image *must* have its own individual fitsoutname - the function will not create extended FITS files.
 For example, if you wish to crop one image in many places: you can provide a single inpim, but vectors of 'n' ra0s, dec0s, cutrads,
 and fitsoutnames. If you wish to crop the same location out of many images, you can provide a single ra0, dec0, and cutrad, but
 vectors of 'n' inpims and fitsoutnames.
@@ -48,14 +48,16 @@ NULL; The cropped image(s) are output to file.
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-%%\note{
-%%  ~~further notes~~
-%%}
+\note{
+  The current coding of the crop function means that if no RA and Dec is supplied, and the FITS Reference Pixels are outside the
+  FITS image (which is perfectly legal in WCS), the crop will fail. This problem will be fixed in an upcoming release, where we
+  plan to have the crop default to the FITS image centre.
+}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes
+\link{MeasureFluxes}
 }
 \examples{
 

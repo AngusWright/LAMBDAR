@@ -9,14 +9,28 @@ Read the 3 FITS images (data, error map, mask map) that are input to the procedu
 MeasureFluxes parameter file, and generate the relevant default images in the event that one is not specified.
 }
 \usage{
-readimage()
+readimage(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL)
+}
+\arguments{
+  \item{env}{
+environment; the environment containing the parameters used in 'MeasureFluxes'
+}
+  \item{quiet}{
+logical; if TRUE, all output is suppressed
+}
+  \item{showtime}{
+logical; if TRUE, execution times are printed along with output
+}
+  \item{outenv}{
+environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
+}
 }
 %- maybe also 'usage' for other objects documented here.
 %%\details{
 %%  ~~ If necessary, more details than the description above ~~
 %%}
 \value{
-NULL; the procedure does however create a series of global variables that contain important information:
+NULL; the procedure outputs images into the 'outenv' environment, for use by 'MeasureFluxes'. These images/objects are:
   \item{im}{
   2D array containing the fits image data
   }
@@ -50,7 +64,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes, readparfile, createparfile
+\link{MeasureFluxes}, \link{readparfile}, \link{createparfile}
 }
 \examples{
 
