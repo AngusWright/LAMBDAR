@@ -37,7 +37,9 @@ function(parfile=NA, quiet=FALSE, ...){
   if (sysName=="Linux") {
     #Linux Systems {{{
     #Memory Limit returned in kBytes. Convert to bits.
-    memLim<-as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
+    memTot<-as.numeric(system("awk '/MemTotal:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
+    memAct<-as.numeric(system("awk '/Active:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
+    memLim<-memTot-memAct
     if (!is.finite(memLim)) {
       warning("Memory Limit determination failed. Setting to Inf.")
       memLim<-Inf
@@ -284,7 +286,11 @@ function(parfile=NA, quiet=FALSE, ...){
   #     immem = nimages*imsizeinBytes*nThreads
   #}}}
   #Aperture Memory requirements {{{
-  apsizeinbits<-(max(a_g)*2/asperpix)^2*64
+  catlen<-length(id_g)
+  #Use 3rd Quantile of aperture semimajor axes {{{
+  aprad.3rdquant<-as.numeric(summary(a_g[which(a_g>0)])[5])
+  #}}}
+  apsizeinbits<-(2*aprad.3rdquant/asperpix)^2*64
   apmem<-catlen*apsizeinbits*3
   #}}}
   #Image Memory requirements {{{
@@ -306,7 +312,8 @@ function(parfile=NA, quiet=FALSE, ...){
       sink(type='message')
       stop(paste("This computation is not possible on this machine,",
                  "as the required memory (",(apmem+immem)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
-                 "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation."))
+                 "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
+                 "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, and",round(immem*1E-9/8,digits=3),"Gb for images\n"))
       #}}}
     } else {
     #Otherwise, determine the maximum number of threads that won't fail {{{
