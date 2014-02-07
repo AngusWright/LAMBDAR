@@ -147,8 +147,8 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
       #Update header values for new image {{{
       header[which(header[,'key']=='NAXIS1'),'value']<-paste(ncol[i])
       header[which(header[,'key']=='NAXIS2'),'value']<-paste(nrow[i])
-      header[which(header[,'key']=='CRPIX1'),'value']<-header[which(header[,'key']=='CRPIX1'),'value']-lowerx
-      header[which(header[,'key']=='CRPIX2'),'value']<-header[which(header[,'key']=='CRPIX2'),'value']-lowery
+      header[which(header[,'key']=='CRPIX1'),'value']<-paste(as.numeric(header[which(header[,'key']=='CRPIX1'),'value'])-lowerx)
+      header[which(header[,'key']=='CRPIX2'),'value']<-paste(as.numeric(header[which(header[,'key']=='CRPIX2'),'value'])-lowery)
       #}}}
       #Write the new header to file {{{
       pipe<-file(inpim[i], 'rb')
