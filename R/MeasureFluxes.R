@@ -271,75 +271,83 @@ function(parfile=NA, quiet=FALSE, ...){
     message(paste("min/max X_G:", min(x_g), max(x_g),"\nmin/max Y_G:",min(x_g), max(y_g)))
   }#}}}
 
-  #Check that computation is able to be performed within memory limits {{{
-  if (!quiet) { cat("   Checking Memory Limits {") }
-  #Details {{{
-  #Perform a rudimentary check that the image isn't too
-  #large for the Available system memory, using
-  # approx aperture memory:
-  #     apmem = napertures*apsizeinBits*nLists
-  # where
-  #     nLists=3
-  #     apsizeinbits = (max(semimagor.axis)*2/asperpix)^2*bitsperpixel
-  #
-  # approx image memory during calculations:
-  #     immem = nimages*imsizeinBytes*nThreads
-  #}}}
-  #Aperture Memory requirements {{{
-  catlen<-length(id_g)
-  #Use 3rd Quantile of aperture semimajor axes {{{
-  aprad.3rdquant<-as.numeric(summary(a_g[which(a_g>0)])[5])
-  #}}}
-  apsizeinbits<-(2*aprad.3rdquant/asperpix)^2*64
-  apmem<-catlen*apsizeinbits*3
-  #}}}
-  #Image Memory requirements {{{
-  immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
-  #}}}
-
-  #Check Memory Allocation is less than available free memory {{{
-  if ((apmem+immem) >= memLim) {
-    #If not, try and continue by reducing the number of threads {{{
-    warning("Memory Required for this computation will exceed system RAM\n")
-    cat(paste("\n        Memory Required for this computation will exceed system RAM\n",
-                 "       Attempting to limit memory usage by lowering number of threads - "))
-    #Memory Required on 1 thread {{{
-    immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']
+  #If wanted, check memory-safe {{{
+  if (memSafe) {
+    #Check that computation is able to be performed within memory limits {{{
+    if (!quiet) { cat("   Checking Memory Limits {") }
+    #Details {{{
+    #Perform a rudimentary check that the image isn't too
+    #large for the Available system memory, using
+    # approx aperture memory:
+    #     apmem = napertures*apsizeinBits*nLists
+    # where
+    #     nLists=4
+    #     apsizeinbits = (max(semimagor.axis)*2/asperpix)^2*bitsperpixel
+    #
+    # approx image memory during calculations:
+    #     immem = nimages*imsizeinBytes*nThreads
     #}}}
+    #Aperture Memory requirements {{{
+    catlen<-length(id_g)
+    #Use 3rd Quantile of aperture semimajor axes {{{
+    aprad.3rdquant<-as.numeric(summary(a_g[which(a_g>0)])[5])
+    #}}}
+    apsizeinbits<-(2*aprad.3rdquant/asperpix)^2*64
+    apmem<-catlen*apsizeinbits*4
+    #}}}
+    #Image Memory requirements {{{
+    nimage=4
+    if (length(image.env$imm)>1){ nimage=nimage+1 }
+    if (length(image.env$ime)>1){ nimage=nimage+1 }
+    if (sourcemask){ nimage=nimage+1 }
+    immem<-nimages*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
+    #}}}
+
+    #Check Memory Allocation is less than available free memory {{{
     if ((apmem+immem) >= memLim) {
-      #If this is too much, less threads cannot help. Stop {{{
-      cat("Failed\n")
-      sink(type='message')
-      stop(paste("This computation is not possible on this machine,",
-                 "as the required memory (",(apmem+immem)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
-                 "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
-                 "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, and",round(immem*1E-9/8,digits=3),"Gb for images\n"))
+      #If not, try and continue by reducing the number of threads {{{
+      warning("Memory Required for this computation will exceed system RAM\n")
+      cat(paste("\n        Memory Required for this computation will exceed system RAM\n",
+                   "       Attempting to limit memory usage by lowering number of threads - "))
+      #Memory Required on 1 thread {{{
+      immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']
       #}}}
-    } else {
-    #Otherwise, determine the maximum number of threads that won't fail {{{
-      for( i in 2:ncores) {
-        immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*i
-        if ((apmem+immem) >= memLim) {
-          ncores<-i-1
-          immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
-          break
+      if ((apmem+immem) >= memLim) {
+        #If this is too much, less threads cannot help. Stop {{{
+        cat("Failed\n")
+        sink(type='message')
+        stop(paste("This computation is not possible on this machine,",
+                   "as the required memory (",(apmem+immem)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
+                   "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
+                   "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, and",round(immem*1E-9/8,digits=3),"Gb for images\n"))
+        #}}}
+      } else {
+      #Otherwise, determine the maximum number of threads that won't fail {{{
+        for( i in 2:ncores) {
+          immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*i
+          if ((apmem+immem) >= memLim) {
+            ncores<-i-1
+            immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
+            break
+          }
         }
-      }
-      #}}}
-      #Update number of threads to be used, and notify {{{
-      cat(paste("Success. Continuing computations with",ncores,"threads\n"))
-      registerDoParallel(cores=ncores)
-      #}}}
+        #}}}
+        #Update number of threads to be used, and notify {{{
+        cat(paste("Success. Continuing computations with",ncores,"threads\n"))
+        registerDoParallel(cores=ncores)
+        #}}}
+      }#}}}
     }#}}}
-  }#}}}
-  #Notify Memory Usage Status {{{
-  if (!quiet) {
-    cat(paste("\n       This computation will require approximately ",round((apmem+immem)*1E-9/8,digits=3)," Gb of memory.\n",
-                 "       Total memory available for the system is ",(memLim)*1E-9/8," Gb.\n",sep=""))
+    #Notify Memory Usage Status {{{
+    if (!quiet) {
+      cat(paste("\n       This computation will require approximately ",round((apmem+immem)*1E-9/8,digits=3)," Gb of memory.\n",
+                   "       Total memory available for the system is ",(memLim)*1E-9/8," Gb.\n",sep=""))
+    }
+    message(paste("This computation will require approximately",round((apmem+immem)*1E-9/8,digits=3),"Gb of memory.\n",
+                  "Total memory available for the system is",(memLim)*1E-9/8,"Gb."))
+    #}}}
+    #}}}
   }
-  message(paste("This computation will require approximately",round((apmem+immem)*1E-9/8,digits=3),"Gb of memory.\n",
-                "Total memory available for the system is",(memLim)*1E-9/8,"Gb."))
-  #}}}
   #}}}
 
   #Ensure Image Output is possible {{{

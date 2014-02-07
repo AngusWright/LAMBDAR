@@ -771,6 +771,15 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #Do we want a Memory-Safe run?
+  ID="MemorySafe"
+  memSafe<-as.numeric(params[ID,1])
+  if (is.na(MinApRad)) {
+   warning("Memory Safe Flag Parameter not present in the Parameter File")
+   memSafe<-TRUE
+  } else { memSafe<-(memSafe==1) }
+  #}}}
+
   #Name of Logfile to be output {{{
   ID="LogFile"
   logfile<-params[ID,1]
@@ -835,6 +844,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("makeaamask"       , makeaamask       , envir = env) #
   assign("maskmap"          , maskmap          , envir = env) #
   assign("MinApRad"         , MinApRad         , envir = env) #
+  assign("memSafe"          , memSafe          , envir = env) #
   assign("nopsf"            , nopsf            , envir = env) # N
   assign("nocontammap"      , nocontammap      , envir = env) #
   assign("ncores"           , ncores           , envir = env) #

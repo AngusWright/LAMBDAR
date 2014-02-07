@@ -71,6 +71,7 @@ createparfile <-
     WriteResidMap=1,
     ResidImageFile="ResidualImage.fits",
     NoContamImage="NoContamResIm.fits",
+    MemorySafe=1,
     nProcessors=1,
     ApStampWidth=1.05,
     PSFConfidence=0.95 ) {
@@ -170,6 +171,7 @@ WriteResidMap          ",WriteResidMap     ,"    #Write the Residual Image Map t
 ResidImageFile         ",ResidImageFile    ,"    #Filename for Residual Image
 NoContamImage          ",NoContamImage     ,"    #Filename for Contaminant Subtracted Residual Image
 #                #-------Computational Management-----------#
+MemorySafe             ",MemorySafe        ,"    #Do we want to perform checks to ensure the program does not use more memory than is available? [1/0]
 nProcessors            ",nProcessors       ,"    #Number of Processors Available for Use in Computations
 ApStampWidth           ",ApStampWidth      ,"    #Width of the Aperture stamps in multiples of aperture major axis; Can be changed with caution if memory issues arise.
 PSFConfidence          ",PSFConfidence     ,"    #Number of PSF FWHM's added to the Aperture Stamp Widths, to wings on apertures after PSF convolution."))
