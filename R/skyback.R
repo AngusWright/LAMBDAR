@@ -7,6 +7,7 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
   ravec<-ra;decvec<-dec;cutlovec<-round(cutlo);cuthivec<-round(cuthi)
   pixlocvec<-round(ad2xy(ra,dec,astrom))
   count<-length(ra)
+  probcut<-1-pnorm(probcut)
 
   output<-NULL
   estimated<-FALSE
@@ -47,7 +48,6 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
     }
     #Do iterative <probcut>-sigma pixel clipping
     if(clipiters>0){
-      probcut<-1-pnorm(probcut)
       for(i in 1:clipiters){
         vallims<-2*median(tempval)-quantile(tempval,probcut)
         temprad<-temprad[tempval<vallims]
