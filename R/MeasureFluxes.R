@@ -272,9 +272,9 @@ function(parfile=NA, quiet=FALSE, ...){
   }#}}}
 
   #If wanted, check memory-safe {{{
-  if (memSafe) {
+  if (memSafe & is.finite(memLim)) {
     #Check that computation is able to be performed within memory limits {{{
-    if (!quiet) { cat("   Checking Memory Limits {") }
+    if (!quiet) { cat("   Checking Memory Usage & Limits {") }
     #Details {{{
     #Perform a rudimentary check that the image isn't too
     #large for the Available system memory, using
@@ -286,6 +286,52 @@ function(parfile=NA, quiet=FALSE, ...){
     #
     # approx image memory during calculations:
     #     immem = nimages*imsizeinBytes*nThreads
+    #
+    # current memory usage from parameter/image storage
+    #     currmem = memory available at initialisation - memory currently used.
+    #}}}
+    #Get System Memory Usage (platform dependant) at Current Time {{{
+    if (sysName=="Linux") {
+      #Linux Systems {{{
+      #Memory returned in kBytes. Convert to bits.
+      memTot<-as.numeric(system("awk '/MemTotal:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
+      memAct<-as.numeric(system("awk '/Active:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
+      memCur<-memTot-memAct
+      if (!is.finite(memCur)) {
+        warning("Memory determination failed. Setting to Inf.")
+        memCur<-Inf
+      }
+      #}}}
+    } else if (sysName=="Darwin") {
+      #Mac Systems {{{
+      memCur<-system("top -l 1 | grep PhysMem | awk '{print $6}'", intern=TRUE)
+      #Determine unit and convert to Bits
+           if (grepl('G',memCur)) { memCur<-as.numeric(strsplit(memCur,'G'))*1E9*8 } #Gigabytes
+      else if (grepl('M',memCur)) { memCur<-as.numeric(strsplit(memCur,'M'))*1E6*8 } #Megabytes
+      else if (grepl('k',memCur)) { memCur<-as.numeric(strsplit(memCur,'k'))*1E3*8 } #Kilobytes
+      else                        { memCur<-as.numeric(memCur)*8 }                   #bytes
+      if (!is.finite(memCur)) {
+        warning("Memory determination failed. Setting to Inf.")
+        memCur<-Inf
+      }
+      #}}}
+    } else if (sysName=="Windows") {
+      #Windows Machines {{{
+      #Memory returned in Bytes. Convert to Bits
+      memCur<-as.numeric(memory.limit())*8
+      if (!is.finite(memCur)) {
+        warning("Memory determination failed. Setting to Inf.")
+        memCur<-Inf
+      }
+      #}}}
+    } else {
+      #Any Others, warn & set to Inf {{{
+      warning("Unknown Operating System Name. Cannot determine Memory Usages.\nUsing Infinity")
+      message("Unknown Operating System Name. Cannot determine Memory Usages.\nUsing Infinity")
+      memCur<-Inf
+      #}}}
+    }
+    memCur<-memLim-MemCur
     #}}}
     #Aperture Memory requirements {{{
     catlen<-length(id_g)
@@ -300,11 +346,10 @@ function(parfile=NA, quiet=FALSE, ...){
     if (length(image.env$imm)>1){ nimage=nimage+1 }
     if (length(image.env$ime)>1){ nimage=nimage+1 }
     if (sourcemask){ nimage=nimage+1 }
-    immem<-nimages*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
+    immem<-nimage*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
     #}}}
-
     #Check Memory Allocation is less than available free memory {{{
-    if ((apmem+immem) >= memLim) {
+    if ((apmem+immem+memCur) >= memLim) {
       #If not, try and continue by reducing the number of threads {{{
       warning("Memory Required for this computation will exceed system RAM\n")
       cat(paste("\n        Memory Required for this computation will exceed system RAM\n",
@@ -312,14 +357,15 @@ function(parfile=NA, quiet=FALSE, ...){
       #Memory Required on 1 thread {{{
       immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']
       #}}}
-      if ((apmem+immem) >= memLim) {
+      if ((apmem+immem+memCur) >= memLim) {
         #If this is too much, less threads cannot help. Stop {{{
         cat("Failed\n")
         sink(type='message')
         stop(paste("This computation is not possible on this machine,",
-                   "as the required memory (",(apmem+immem)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
+                   "as the required memory (",(apmem+immem+memCur)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
                    "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
-                   "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, and",round(immem*1E-9/8,digits=3),"Gb for images\n"))
+                   "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, ",round(immem*1E-9/8,digits=3),"Gb for images.",
+                   "\n",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n"))
         #}}}
       } else {
       #Otherwise, determine the maximum number of threads that won't fail {{{
