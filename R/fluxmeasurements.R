@@ -800,6 +800,8 @@ function(env=NULL) {
     ra_g   <-ra_g[which(contams==0)]
     dec_g  <-dec_g[which(contams==0)]
     theta_g<-theta_g[which(contams==0)]
+    x_p    <-x_p[which(contams==0)]
+    y_p    <-y_p[which(contams==0)]
     a_g    <-a_g[which(contams==0)]
     b_g    <-b_g[which(contams==0)]
     ssa    <-ssa[which(contams==0)]
@@ -852,6 +854,7 @@ function(env=NULL) {
   #Return {{{
   if (!quiet) { cat('\n') }
   detach(env)
+  detach(image.env)
   return=list(SFAflux=sfaflux,SFAerror=sfaerr, SFAfluxWeight=sfafluxw, SFAerrorWeight=sfaerrw, DFAflux=dfaflux,DFAerror=dfaerr)
   #}}}
 }
