@@ -255,7 +255,7 @@ function(parfile=NA, quiet=FALSE, ...){
   diag_arcsec<-abs(asperpix)*sqrt(2)/2
   #}}}
   #Make needed changes, and notify {{{
-  message("Forcing",length(which((b_g<diag_arcsec)|!is.finite(a_g))),"apertures to be point sources")
+  message("Forcing ",length(which((b_g<diag_arcsec)|!is.finite(a_g)))," apertures to be point sources")
   a_g[which((b_g<diag_arcsec)|!is.finite(a_g))]<-0
   theta_g[which((b_g<diag_arcsec)|!is.finite(theta_g))]<-0
   b_g[which((b_g<diag_arcsec)|!is.finite(b_g))]<-0
@@ -331,7 +331,7 @@ function(parfile=NA, quiet=FALSE, ...){
       memCur<-Inf
       #}}}
     }
-    memCur<-memLim-MemCur
+    memCur<-memLim-memCur
     #}}}
     #Aperture Memory requirements {{{
     catlen<-length(id_g)
