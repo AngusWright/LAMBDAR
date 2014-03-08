@@ -137,8 +137,10 @@ function(env=NULL) {
   if (makeaamask) {
     if (!quiet) { cat(paste('Outputting All Apertures Mask to',aafilename,"   ")) }
     #Write All Apertures Mask to file
-    writefitsout(paste(pathout,aafilename,sep=""),image.env$aa,image.env$hdr_str,nochange=TRUE)
-    if (!quiet) { cat(" - Done\n") }
+    timer=system.time(writefitsout(paste(pathout,aafilename,sep=""),image.env$aa,image.env$hdr_str,nochange=TRUE))
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+      message(paste('Output FA Mask - Done (',round(timer[3], digits=2),'sec )'))
+    } else if (!quiet) { cat("   - Done\n") }
   }#}}}
   #}}}
 
@@ -349,6 +351,31 @@ function(env=NULL) {
   gc()
   #}}}
 
+  # If we want Messa-like apertures, truncate all aperture values to be less than or equal to unity*fluxweight[i] {{{
+  if (mesaAps) {
+    if (length(fluxweight)==1) { fweight<-fluxweight }
+    for (i in 1:length(sfa)) {
+      if (length(fluxweight)!=1) { fweight<-fluxweight[i] }
+      sfa[[i]][which(sfa[[i]]>fweight)]<-fweight
+    }
+    #If wanted, output the Convolved & Weighted Aperture Mask {{{
+    if (makefamask) {
+      if (!quiet) { cat(paste('Mesa-like Apertures; ')) }
+      timer=system.time(image.env$wfa<-make_a_mask(environment(), sfa, dim(image.env$im)))
+      if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+        message(paste('Make FA Mask - Done (',round(timer[3], digits=2),'sec )'))
+      } else if (!quiet) { cat("   - Done\n") }
+      fafilename<-paste("mesa_",fafilename,sep="")
+      if (!quiet) { cat(paste('Outputting Mesa-like All Convolved Apertures Mask to',fafilename,"   ")) }
+      timer=system.time(writefitsout(paste(pathout,fafilename,sep=""),image.env$wfa,image.env$hdr_str,nochange=TRUE) )
+      if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+        message(paste('Output FA Mask - Done (',round(timer[3], digits=2),'sec )'))
+      } else if (!quiet) { cat("   - Done\n") }
+      rm(wfa, envir=image.env)
+    }#}}}
+  }
+  #}}}
+
   #Generate Deblended Flux Arrays {{{
   if (!quiet) { cat("Generating Deblended Flux Arrays") }
   timer<-proc.time()
@@ -386,6 +413,7 @@ function(env=NULL) {
   #PART FOUR: COMPUTE AND OUTPUT GALAXY-BY-GALAXY RESULTS {{{
 
   if (!quiet) { cat("Computing Galaxy-by-Galaxy Results {\n") }
+
   # Make Images Available {{{
   attach(image.env)
   #}}}
@@ -654,7 +682,7 @@ function(env=NULL) {
     #Get PSF FWHM {{{
     if (nopsf) {
       #If no PSF, set FWHM to median aperture radius + buffer {{{
-      psffwhm<-round(median(a_g[which(a_g>0)])*defbuff/asperpix)
+      psffwhm<-round(min(a_g[which(a_g>0)])/asperpix)
       if (is.na(psffwhm)) {
         #All Apertures are point sources, force width = 5 pixels {{{
         #Details {{{
@@ -667,7 +695,8 @@ function(env=NULL) {
       #}}}
     } else {
       #Get radius of FWHM using FWHM confidence value = erf(2*sqrt(2*log(2))/sqrt(2)) {{{
-      psffwhm<-get.confidence(psf, confidence=(2*pnorm(2*sqrt(2*log(2)))-1))
+      erf<-function(x) 2*pnorm(x*sqrt(2))-1
+      psffwhm<-get.confidence(psf, confidence=erf(log(2)))
       #}}}
     }#}}}
     #Perform Sky Estimation {{{
@@ -704,8 +733,8 @@ function(env=NULL) {
       #Subrtract Sky Flux
       dfaflux<-dfaflux-skyflux
       sfaflux<-sfaflux-skyflux
-      dfaerr<-sqrt(dfaerr^2+skyerr^2)
-      dfaerr<-sqrt(sfaerr^2+skyerr^2)
+      dfaerr[which(!is.na(skyerr))]<-sqrt(dfaerr^2+skyerr^2)[which(!is.na(skyerr))]
+      sfaerr[which(!is.na(skyerr))]<-sqrt(sfaerr^2+skyerr^2)[which(!is.na(skyerr))]
       if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
     }#}}}
   } else {

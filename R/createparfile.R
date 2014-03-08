@@ -33,6 +33,7 @@ createparfile <-
     CropFitsName="cropped_im",
     RemoveContam=0,
     PSFConvolve=1,
+    MesaApertures=1,
     AngularOffset=0,
     PointSources=0,
     MinApRad=0,
@@ -131,6 +132,7 @@ CropFitsName           ",CropFitsName       ,"    #Name of the output cropped im
 #                #--------Additional Options----------------#
 RemoveContam           ",RemoveContam      ,"    #Remove Contaminants (Catalogue must contain 'CONTAMFLAG' column) from the image?         [1/0]
 PSFConvolve            ",PSFConvolve       ,"    #Convolve the Aperture with a PSF?                                              [1/0]
+MesaApertures          ",MesaApertures     ,"    #Do we want 'Mesa-like' flat-topped apertures? If not, 'Munro-like' peaked apertures are made     [1/0]
 AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N90E0 angular coords, 1 if it is in N0E90 coords
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
 MinApRad               ",MinApRad          ,"    #State minimum aperture to use for sources

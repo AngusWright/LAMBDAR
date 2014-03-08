@@ -771,13 +771,22 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
-  #Do we want a Memory-Safe run?
+  #Do we want a Memory-Safe run? {{{
   ID="MemorySafe"
   memSafe<-as.numeric(params[ID,1])
-  if (is.na(MinApRad)) {
-   warning("Memory Safe Flag Parameter not present in the Parameter File")
+  if (is.na(memSafe)) {
+   warning("Memory Safe Flag not present in the Parameter File")
    memSafe<-TRUE
   } else { memSafe<-(memSafe==1) }
+  #}}}
+
+  #Do we want a Mesa-like Apertures? {{{
+  ID="MesaApertures"
+  mesaAps<-as.numeric(params[ID,1])
+  if (is.na(mesaAps)) {
+   warning("Mesa-like Apertures Flag not present in the Parameter File")
+   mesaAps<-TRUE
+  } else { mesaAps<-(mesaAps==1) }
   #}}}
 
   #Name of Logfile to be output {{{
@@ -845,6 +854,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("maskmap"          , maskmap          , envir = env) #
   assign("MinApRad"         , MinApRad         , envir = env) #
   assign("memSafe"          , memSafe          , envir = env) #
+  assign("mesaAps"          , mesaAps          , envir = env) #
   assign("nopsf"            , nopsf            , envir = env) # N
   assign("nocontammap"      , nocontammap      , envir = env) #
   assign("ncores"           , ncores           , envir = env) #

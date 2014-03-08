@@ -90,6 +90,6 @@ function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffse
   headout<-cbind(rownames(header),header[,1])
   colnames(headout)<-c("key","value")
   fits<-list(hdr=list(headout), dat=list(image))
-  write.fits(fits,file=filename,type="double",hdu=0)
+  write.fits64(fits,file=filename,type="double",hdu=0)
   return=NULL
 }

@@ -33,6 +33,10 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
   #If vector of values supplied, weights == input {{{
   } else { fluxweight<-fluxweightin }
   #}}}
+  #Check, and warn, if fluxweights are greater than unity{{{
+  if (any(fluxweight > 1)) {
+    warning("Supplied Fluxweight has values greater than unity. This will artificially scale those fluxes upward")
+  }
   #}}}
 
   #Check that number of Fluxweights == number of stamps {{{
@@ -95,7 +99,6 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
         #}}}
       }
       #}}}
-
       #Diagnostic {{{
       if (diagnostic) { message(paste("PSF Subset complete in Aperture",i)) }
       #}}}
@@ -106,14 +109,14 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
         if (diagnostic) { message(paste("Doing convolution of PSF with Aperture", i)) }
         #}}}
         #Convolve {{{
-        ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]]))
+        ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]],normalise=TRUE))
         #}}}
         #Check for Negatives produced by convolution {{{
          if (length(which(ap <0))>0) {
           #If Negatives produced, rezap with required 'digits' level {{{
           message(paste("Negatives Produced in PSF convolution with Aperture",i))
           zapdig<-floor(-log10(abs(min(ap))))
-          ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]],zapdig=zapdig))
+          ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],sa_mask[[i]],zapdig=zapdig, normalise=TRUE))
           message(paste("Attempting rezap with zapdigit",zapdig))
           if (length(which(ap<0))>0) {
             #if still negatives, error {{{
@@ -123,8 +126,18 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
           #}}}
         }
         #}}}
-        #Normalise and Weight apertures {{{
+        #Finalise Aperture {{{
+        if (mesaAps) {
+        #We want messa-like apertures; only weight apertures {{{
+        #Do not normalise aperture to unity, as later we will want to
+        #truncate each aperture to where its value exceeds psfheight
+        ap<-ap*fluxweight[i]
+        #}}}
+        } else {
+        #We want Munro-like apertures; Normalise and Weight apertures {{{
         ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
+        #}}}
+        }
         #}}}
         #Return {{{
         return=ap

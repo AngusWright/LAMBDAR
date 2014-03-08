@@ -396,32 +396,6 @@ function(parfile=NA, quiet=FALSE, ...){
   }
   #}}}
 
-  #Ensure Image Output is possible {{{
-  #Details {{{
-  #A legacy to the old 32-bit R installations
-  #is that the writeBin() function is unable
-  #to write more than 2^32-1 bits to file in
-  #a single writebin() call. Until the write.fits()
-  #function in the 'astro' package, which utilises
-  #writeBin, is adjusted for writing arrays of
-  #more than 2^32-1 bits, we are limited to write
-  #only files this size or smaller. Therefore:
-  #}}}
-  #Check that largest image size is lt Maximum Binary Write Limit {{{
-  MaxBinWrite<-2^32-1 #bits
-  if (lsos(pattern="im",envir=image.env)[1,'Size']>MaxBinWrite) {
-    #If too big, warn and suppress image output {{{
-    warning("Image size is greater than writeBin() maximum vector size\nImages will not be output.")
-    message("WARNING: Image size is greater than writeBin() maximum vector size\nImages will not be output.")
-    makeaamask<-FALSE
-    makefamask<-FALSE
-    makedfamask<-FALSE
-    makeresidmap<-FALSE
-    smfilename<-NULL
-    #}}}
-  }#}}}
-  #}}}
-
   #Get beam area in pixels {{{
   beamarea_pix<-beamarea_SOM_as/(asperpix)^2.
   #}}}
