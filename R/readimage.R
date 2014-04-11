@@ -22,11 +22,13 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
     stop("Data Image File read failed")
   }
   #}}}
+
   #Read Data Image {{{
   hdr=im_fits$hdr[[1]][which(im_fits$hdr[[1]][,"key"]!="COMMENT"),]
   hdr_str<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
   im<-im_fits$dat[[1]]
   #}}}
+
   #Remove NA/NaN/Inf's {{{
   im[which(!is.finite(im))]<-0.0
   #}}}
@@ -41,79 +43,37 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
   } else if (!quiet) { cat(" - Done\n") }
   #}}}
 
-  #Read error map {{{
-  if (errormap=='NONE') {
-    #If no error map, set map to 1: equal weighting will be used everywhere {{{
-    if (!quiet) { cat(paste("   Generating Error Map ")) }
-    ime<-1
-    hdr_err<-NULL
-    #}}}
-  } else {
-    #Check if Gain value or Error map File {{{
-    if (!is.na(as.numeric(errormap))) {
-      #Gain Value {{{
-      if (!quiet) { cat(paste("   Using Supplied Single Gain value of",errormap," for errors   ")) }
-      ime<-as.numeric(errormap)
-      #}}}
-    } else {
-      #Error Map File {{{
-      if (!quiet) { cat(paste("   Reading Data from ErrorMap",errormap,"   ")) }
-      #Test Read of Error Map for errors {{{
-      ime_fits<-try(read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE))
-      if (class(ime_fits)=="try-error") {
-        #Stop on Error
-        geterrmessage()
-        stop("Error Map File read failed: Provided Entry is neither a file, nor NONE, nor a numeric Gain")
-      }
-      #}}}
-      #Read Error Map {{{
-      hdr=ime_fits$hdr[[1]][which(ime_fits$hdr[[1]][,"key"]!="COMMENT"),]
-      hdr_err<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
-      ime<-ime_fits$dat[[1]]
-      #}}}
-      #Remove NA/NaN/Inf's {{{
-      ime[which(!is.finite(ime))]<-0.0
-      #}}}
-      #}}}
+  #Read Weightmap if needed {{{
+  if ((wgtmap!="NONE")&(maskmap=="NONE"|errormap=="NONE")) {
+    if (!quiet) { cat(paste("   Reading Data from Weight Map",wgtmap,"   ")) }
+    #Try read weight map {{{
+    imwt_fits<-try(read.fits(paste(pathroot,wgtmap,sep=""),hdu=extnwgt,comments=FALSE))
+    if (class(imwt_fits)=="try-error") {
+      #Stop on Error
+      geterrmessage()
+      stop("Weight Map read failed")
     }
     #}}}
-  }
-  #Scale error map by Efactor {{{
-  ime=ime*Efactor
-  #}}}
-  if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
-  timer<-proc.time()
-  } else if (!quiet) { cat(" - Done\n") }
-  #}}}
+    #Read Weightmap {{{
+    hdr=imwt_fits$hdr[[1]][which(imwt_fits$hdr[[1]][,"key"]!="COMMENT"),]
+    imwt<-imwt_fits$dat[[1]]
+    if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+    timer<-proc.time()
+    } else if (!quiet) { cat(" - Done\n") }
+    #}}}
+  }#}}}
 
   #Read mask map {{{
   if (maskmap=='NONE') {
     #No Mask Present {{{
     if (wgtmap=='NONE') {
-      #No Mask of Weight map. Generate transparent mask {{{
+      #No Weight map for mask generation; Generate transparent mask {{{
       if (!quiet) { cat(paste("   Generating Mask Map ")) }
       #If no mask, set mask to 1: transparent will be used everywhere
       imm<-1
       hdr_mask<-NULL
       #}}}
     } else {
-      #Weight map present. Generate mask from Weightmap {{{
-      if (!quiet) { cat(paste("   Reading Data from Weight Map",wgtmap,"   ")) }
-      #Try read weight map {{{
-      imwt_fits<-try(read.fits(paste(pathroot,wgtmap,sep=""),hdu=extnwgt,comments=FALSE))
-      if (class(imwt_fits)=="try-error") {
-        #Stop on Error
-        geterrmessage()
-        stop("Weight Map read failed")
-      }
-      #}}}
-      #Read Weightmap {{{
-      hdr=imwt_fits$hdr[[1]][which(imwt_fits$hdr[[1]][,"key"]!="COMMENT"),]
-      imwt<-imwt_fits$dat[[1]]
-      if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
-      timer<-proc.time()
-      } else if (!quiet) { cat(" - Done\n") }
-      #}}}
       #Generate Mask {{{
       if (!quiet) { cat(paste("   Generating Mask Map from Weight Map ")) }
       #Make mask same dimensions as weightmap {{{
@@ -122,7 +82,6 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
       #Make mask 0 where weightmap == weightmap zero point {{{
       imm[which(imwt==wgtzp)]<-0
       hdr_mask<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
-      #}}}
       #}}}
       #}}}
     }#}}}
@@ -148,6 +107,59 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
     #}}}
   }
   if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+  } else if (!quiet) { cat(" - Done\n") }
+  #}}}
+
+  #Read error map {{{
+  if (errormap=='NONE') {
+    #If no error map, generate the sigma-map using the provided gain and the image_map {{{
+    if (!quiet) { cat(paste("   Generating Error Map ")) }
+    if (wgtmap=="NONE") {
+      #No Weightmap; sigma map is poisson-like {{{
+      ime<-sqrt(abs(im))
+      #}}}
+    } else {
+      #Weightmap present; sigma map is image/image*gain {{{
+      ime<-abs(im)/sqrt(abs(im*(1/imwt)))
+      #}}}
+    }
+    hdr_err<-hdr_str
+    #}}}
+  } else {
+    #Check if Gain value or Error map File {{{
+    if (!is.na(as.numeric(errormap))) {
+      #Gain Value {{{
+      if (!quiet) { cat(paste("   Using Supplied Single Gain value of",errormap," for errors   ")) }
+      ime<-abs(im)/sqrt(abs(im*as.numeric(errormap)))
+      #}}}
+    } else {
+      #Sigma Map File {{{
+      if (!quiet) { cat(paste("   Reading Data from ErrorMap",errormap,"   ")) }
+      #Test Read of Error Map for errors {{{
+      ime_fits<-try(read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE))
+      if (class(ime_fits)=="try-error") {
+        #Stop on Error
+        geterrmessage()
+        stop("Error Map File read failed: Provided Entry is neither a file, nor NONE, nor a numeric Gain")
+      }
+      #}}}
+      #Read Sigma Map {{{
+      hdr=ime_fits$hdr[[1]][which(ime_fits$hdr[[1]][,"key"]!="COMMENT"),]
+      hdr_err<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
+      ime<-ime_fits$dat[[1]]
+      #}}}
+      #Remove NA/NaN/Inf's {{{
+      ime[which(!is.finite(ime))]<-0.0
+      #}}}
+      #}}}
+    }
+    #}}}
+  }
+  #Scale error map by Efactor {{{
+  ime=ime*Efactor
+  #}}}
+  if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+  timer<-proc.time()
   } else if (!quiet) { cat(" - Done\n") }
   #}}}
 

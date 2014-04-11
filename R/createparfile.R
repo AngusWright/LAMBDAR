@@ -33,7 +33,7 @@ createparfile <-
     CropFitsName="cropped_im",
     RemoveContam=0,
     PSFConvolve=1,
-    MesaApertures=1,
+    ApertureConfLimit=0.8,
     AngularOffset=0,
     PointSources=0,
     MinApRad=0,
@@ -55,6 +55,7 @@ createparfile <-
     SkyEstProbCut=3,
     SkyCorrelNoise=1,
     GetSkyRMS=1,
+    UsePixelFluxWgts=1,
     OutputDirectory="./Output/",
     LogFile="LAMBDARlog.txt",
     SourceMaskOnly=0,
@@ -130,9 +131,9 @@ CropImDec0             ",CropImDec0         ,"    #Dec that crop will centre aro
 CropImRad              ",CropImRad          ,"    #Radius of crop (deg; NA will default to 1deg radius)
 CropFitsName           ",CropFitsName       ,"    #Name of the output cropped image (without '.fits' extension)
 #                #--------Additional Options----------------#
-RemoveContam           ",RemoveContam      ,"    #Remove Contaminants (Catalogue must contain 'CONTAMFLAG' column) from the image?         [1/0]
+RemoveContam           ",RemoveContam      ,"    #Remove Contaminants from the image?         [1/0]
 PSFConvolve            ",PSFConvolve       ,"    #Convolve the Aperture with a PSF?                                              [1/0]
-MesaApertures          ",MesaApertures     ,"    #Do we want 'Mesa-like' flat-topped apertures? If not, 'Munro-like' peaked apertures are made     [1/0]
+ApertureConfLimit      ",ApertureConfLimit ,"    #Confidence limit used when converting PSF convolved apertures to binary apertures  [1/0]
 AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N90E0 angular coords, 1 if it is in N0E90 coords
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
 MinApRad               ",MinApRad          ,"    #State minimum aperture to use for sources
@@ -154,6 +155,7 @@ SkyEstIters            ",SkyEstIters       ,"    #Number of iterations of sigma-
 SkyEstProbCut          ",SkyEstProbCut     ,"    #Sigma Level used in sigma-cutting of sky pixels
 SkyCorrelNoise         ",SkyCorrelNoise    ,"    #Level of Correlated noise in the image, if known (factor is multiplicative - 1 == no correlated noise)
 GetSkyRMS              ",GetSkyRMS         ,"    #As above without subtraction, and output the local sky RMS (if doing sky estimate, this happens automatically)
+UsePixelFluxWgts       ",UsePixelFluxWgts  ,"    #Do you want the pixel flux at the object RA DEC to be used for relative fluxweighting? [1/0]
 #                #---------------Outputs--------------------#
 OutputDirectory        ",OutputDirectory   ,"    #Output directory Name and Path
 LogFile                ",LogFile           ,"    #Filename for Log

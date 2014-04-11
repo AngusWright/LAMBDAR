@@ -142,7 +142,7 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
     #Crop Image(s) {{{
     for (i in 1:len) {
       #Get the Image header {{{
-      header<-read.fitshdr(inpim[i])
+      header<-read.fitshdr(file.path(pathroot,inpim[i]))
       #}}}
       #Update header values for new image {{{
       header[which(header[,'key']=='NAXIS1'),'value']<-paste(ncol[i])
@@ -151,8 +151,8 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
       header[which(header[,'key']=='CRPIX2'),'value']<-paste(as.numeric(header[which(header[,'key']=='CRPIX2'),'value'])-lowery)
       #}}}
       #Write the new header to file {{{
-      pipe<-file(inpim[i], 'rb')
-      pipeout<-file(fitsoutname[i], 'wb')
+      pipe<-file(file.path(pathroot,inpim[i]), 'rb')
+      pipeout<-file(file.path(pathroot,fitsoutname[i]), 'wb')
       h<-make.fits.header(header)
       writeChar(h, pipeout, eos=NULL)
       headbytes<-nchar(h, type='bytes')

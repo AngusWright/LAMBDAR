@@ -31,7 +31,7 @@ function(env=NULL,outenv=NULL) {
       if ((sum(wsfa[[i]]) > 0)&&(sum(image.env$wfa[xlo:xup,ylo:yup])>0)) {
         #Aperture stamps are error free {{{
         #Check for errors in array sizes {{{
-        if (dim(wsfa[[i]])[1] != dim(image.env$wfa[xlo:xup,ylo:yup])[1]) {
+        if (length(wsfa[[i]][1,]) != length(image.env$wfa[xlo:xup,ylo:yup][1,])) {
           print(paste(dim(wsfa[[i]]),"!=",dim(image.env$wfa[xlo:xup,ylo:yup])))
           print(paste("[",xlo,":",xup,",",ylo,":",yup,"]"))
           sink(type="message")

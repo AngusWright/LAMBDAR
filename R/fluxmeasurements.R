@@ -25,7 +25,7 @@ function(env=NULL) {
     #then a gaussian PSF will be created. Stampsize of PSF
     #should be = maximum stampsize: max aperture * stamp mult }}}
     #Get PSF {{{
-    psf<-readpsf(environment(),paste(pathroot,psfmap,sep=""),asperpix,defbuff*max(a_g),confidence,gauss_fwhm_as=gauss_fwhm_as)
+    psf<-readpsf(environment(),file.path(pathroot,psfmap),asperpix,defbuff*max(a_g),confidence,gauss_fwhm_as=gauss_fwhm_as)
     #}}}
     #Notify {{{
     if (verbose) { message(paste("Maxima of the PSF is at pixel", which(psf == max(psf)),"and has value",max(psf))) }
@@ -137,7 +137,7 @@ function(env=NULL) {
   if (makeaamask) {
     if (!quiet) { cat(paste('Outputting All Apertures Mask to',aafilename,"   ")) }
     #Write All Apertures Mask to file
-    timer=system.time(writefitsout(paste(pathout,aafilename,sep=""),image.env$aa,image.env$hdr_str,nochange=TRUE))
+    timer=system.time(writefitsout(file.path(pathroot,pathout,aafilename),image.env$aa,image.env$hdr_str,nochange=TRUE))
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Output FA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
@@ -150,6 +150,42 @@ function(env=NULL) {
   #apertures with the PSF. If not wanted,
   #duplicate the single apertures.
   #Also, perform flux weighting. }}}
+
+  #If wanted, use pixel fluxes as fluxweights {{{
+  if (usePixelFluxWeights) {
+    #Image Flux at central pixel {{{
+    if (verbose) { cat(" Determine Image Flux at central pixel ") }
+    pixflux<-foreach(i=1:npos, .inorder=TRUE)%dopar% {
+      if ((!(is.finite(x_p[i]) & is.finite(y_p[i]))) | (x_p[i] <= 0) | (y_p[i] <= 0) |
+          (x_p[i] > (length(image.env$im[,1]))) | (y_p[i] > (length(image.env$im[1,])))) { -99 } else { image.env$im[x_p[i],y_p[i]]  }
+    }
+    pixflux<-array(unlist(pixflux),dim=c(dim(pixflux[[1]]),length(pixflux)))
+    if (verbose) { cat(" - Done\n") }#}}}
+    if (any(pixflux==-99)) { warning("Some pixel flux determinations failed") }
+    if (length(image.env$im) > 1E5) { index<-runif(1E5,min=1,max=length(image.env$im)) } else { index<-1:length(image.env$im) }
+    xdat<-as.numeric(image.env$im[index])
+    x.dens=density(xdat[which(xdat < mean(xdat)*1.1)])
+    x.mode=x.dens$x[which.max(x.dens$y)]
+    # Select all data with value < mode - this will be exclusively noise
+    xdat=xdat-x.mode
+    noise=xdat[which(xdat <= 0.0)]
+    # Determine Gaussian Characteristics
+    stdev=abs(quantile(noise,pnorm(-1)*2))
+    message("Noise Profile: Mean = ", x.mode, " ; Stdv = ",abs(stdev)," ;\n")
+    # Set weighting limits as all pixels beyond 3sigma of noise
+    pixlimit<-x.mode+3*stdev
+    if (pixlimit<0) { warning("Pixel Limit is < 0?! Using absolute value"); pixlimit<-abs(x.mode+3*stdev) }
+    if (pixlimit==0) { warning("Pixel Limit is == 0?! Using next highest value as limit"); pixlimit<-min(pixflux[which(pixflux>pixlimit)]) }
+    fluxweight<-pixflux
+    fluxweight[which(fluxweight<pixlimit)]<-pixlimit
+    fluxweight<-fluxweight/quantile(fluxweight, 0.99, na.rm=TRUE)
+    fluxweight[which(fluxweight==0)]<-min(fluxweight[which(fluxweight>0)])
+    fluxweight[which(fluxweight>1)]<-1
+    rm(index)
+    rm(xdat)
+    rm(noise)
+    rm(x.dens)
+  }#}}}
 
   #If needed, do Convolutions & Fluxweightings {{{
   if ((nopsf)&(length(which(fluxweight!=1))!=0)) {
@@ -261,7 +297,7 @@ function(env=NULL) {
   #Do we want to plot a sample of the apertures? {{{
   if (plotsample) {
     #Set output name {{{
-    pdf(paste(pathout,"PSF_Samples.pdf",sep=""))
+    pdf(file.path(pathroot,pathout,"PSF_Samples.pdf"))
     #}}}
     #Set Layout {{{
     par(mfrow=c(2,2))
@@ -287,7 +323,7 @@ function(env=NULL) {
   #If wanted, output the Convolved & Weighted Aperture Mask {{{
   if (makefamask) {
     if (!quiet) { cat(paste('Outputting All Convolved Apertures Mask to',fafilename,"   ")) }
-    timer=system.time(writefitsout(paste(pathout,fafilename,sep=""),image.env$wfa,image.env$hdr_str,nochange=TRUE) )
+    timer=system.time(writefitsout(file.path(pathroot,pathout,fafilename),image.env$wfa,image.env$hdr_str,nochange=TRUE) )
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Output FA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
@@ -308,7 +344,7 @@ function(env=NULL) {
     if (nopsf) {
       sm[which(image.env$fa > 0)]<-0
     } else {
-      sm[which(image.env$fa > get.confidence(psf,smConfidenceLim,value=TRUE))]<-0
+      sm[which(image.env$fa > max(psf, na.rm=TRUE)*(1-smConfidenceLim))]<-0
     }
     if (!quiet) { cat(" - Done\n") }
     #}}}
@@ -320,7 +356,7 @@ function(env=NULL) {
     #If wanted, output the SourceMask {{{
     if (!is.null(smfilename)){
       if (!quiet) { cat(paste('Outputting Source Mask to',smfilename,"   ")) }
-      writefitsout(paste(pathout,smfilename, sep=""),sm,image.env$hdr_str,nochange=TRUE)
+      writefitsout(file.path(pathroot,pathout,smfilename),sm,image.env$hdr_str,nochange=TRUE)
       if (!quiet) { cat(" - Done\n") }
     }#}}}
 
@@ -351,23 +387,25 @@ function(env=NULL) {
   gc()
   #}}}
 
-  # If we want Messa-like apertures, truncate all aperture values to be less than or equal to unity*fluxweight[i] {{{
-  if (mesaAps) {
-    if (length(fluxweight)==1) { fweight<-fluxweight }
+  # If we have convolved with a PSF, convert back to tophat apertures (now expanded by PSF convolution) {{{
+  if (!nopsf) {
+    apLimit<-(1-apLimit)
+    # For each aperture, Binary filter at aplim*max(ap)
     for (i in 1:length(sfa)) {
-      if (length(fluxweight)!=1) { fweight<-fluxweight[i] }
-      sfa[[i]][which(sfa[[i]]>fweight)]<-fweight
+      tmpLim<-apLimit*max(sfa[[i]], na.rm=TRUE)
+      sfa[[i]][which(sfa[[i]] <  tmpLim)]<-0
+      sfa[[i]][which(sfa[[i]] >= tmpLim)]<-1
     }
     #If wanted, output the Convolved & Weighted Aperture Mask {{{
     if (makefamask) {
-      if (!quiet) { cat(paste('Mesa-like Apertures; ')) }
+      if (!quiet) { cat(paste('Updated Apertures; ')) }
       timer=system.time(image.env$wfa<-make_a_mask(environment(), sfa, dim(image.env$im)))
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Make FA Mask - Done (',round(timer[3], digits=2),'sec )'))
       } else if (!quiet) { cat("   - Done\n") }
-      fafilename<-paste("mesa_",fafilename,sep="")
-      if (!quiet) { cat(paste('Outputting Mesa-like All Convolved Apertures Mask to',fafilename,"   ")) }
-      timer=system.time(writefitsout(paste(pathout,fafilename,sep=""),image.env$wfa,image.env$hdr_str,nochange=TRUE) )
+      fafilename<-paste("final_",fafilename,sep="")
+      if (!quiet) { cat(paste('Outputting Re-Boxcar-ed All Convolved Apertures Mask to',fafilename,"   ")) }
+      timer=system.time(writefitsout(file.path(pathroot,pathout,fafilename),image.env$wfa,image.env$hdr_str,nochange=TRUE) )
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Output FA Mask - Done (',round(timer[3], digits=2),'sec )'))
       } else if (!quiet) { cat("   - Done\n") }
@@ -397,7 +435,7 @@ function(env=NULL) {
       message(paste('Make ADFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     if (!quiet) { cat(paste('Outputting All Deblended Convolved Apertures Mask to',dfafilename,"   ")) }
-    timer=system.time(writefitsout(paste(pathout,dfafilename,sep=""),image.env$adfa,image.env$hdr_str,nochange=TRUE) )
+    timer=system.time(writefitsout(file.path(pathroot,pathout,dfafilename),image.env$adfa,image.env$hdr_str,nochange=TRUE) )
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Output ADFA Mask - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
@@ -432,13 +470,16 @@ function(env=NULL) {
   timer<-proc.time()
 #-----
   #Image Flux at central pixel {{{
-  if (verbose) { cat("      Image Flux at central pixel ") }
-  pixflux<-foreach(i=1:npos, .inorder=TRUE)%dopar% {
-    if ((!(is.finite(x_p[i]) & is.finite(y_p[i]))) | (x_p[i] <= 0) | (y_p[i] <= 0) |
-        (x_p[i] > (length(im[,1]))) | (y_p[i] > (length(im[1,])))) { -99 } else { im[x_p[i],y_p[i]]  }
+  if (!usePixelFluxWeights) {
+    if (verbose) { cat("      Image Flux at central pixel ") }
+    pixflux<-foreach(i=1:npos, .inorder=TRUE)%dopar% {
+      if ((!(is.finite(x_p[i]) & is.finite(y_p[i]))) | (x_p[i] <= 0) | (y_p[i] <= 0) |
+          (x_p[i] > (length(im[,1]))) | (y_p[i] > (length(im[1,])))) { -99 } else { im[x_p[i],y_p[i]]  }
+    }
+    pixflux<-array(unlist(pixflux),dim=c(dim(pixflux[[1]]),length(pixflux)))
+    if (verbose) { cat(" - Done\n") }
   }
-  pixflux<-array(unlist(pixflux),dim=c(dim(pixflux[[1]]),length(pixflux)))
-  if (verbose) { cat(" - Done\n") }#}}}
+  #}}}
 #-----
   #Integral of the aperture {{{
   if (verbose) { cat("      Integral of the aperture") }
@@ -648,20 +689,24 @@ function(env=NULL) {
 #-----
   #Final Flux & Error Calculations {{{
   if (verbose) { cat("      Final Fluxes and Error Calculations ") }
-  #Convolved aperture flux = Int(fltAp*Im) * Int(fltAp) / Int(fltAp^2) {{{
-  sfaflux<-ssfad*ssfa/ssfa2
+  #Convolved aperture flux = Int(fltAp*Im) {{{
+  sfaflux<-ssfad
+  #sfaflux<-ssfad*ssfa/ssfa2
   #}}}
 
-  #Deblended convolved aperture flux = Int(DBfltAp*Im) * Int(fltAp) / Int(fltAp^2) {{{
-  dfaflux<-sdfad*ssfa/ssfa2
+  #Deblended convolved aperture flux = Int(DBfltAp*Im) {{{
+  dfaflux<-sdfad
+  #dfaflux<-sdfad*ssfa/ssfa2
   #}}}
 
   #Convolved aperture error {{{
-  sfaerr<-sqrt((ssfa2e2 * (ssfa/ssfa2)^2.) + ((conf*beamarea)^2.*sqrt(ssfa)))
+  sfaerr<-sqrt((ssfa2e2) + ((conf*beamarea)^2.*sqrt(ssfa)))
+  #sfaerr<-sqrt((ssfa2e2 * (ssfa/ssfa2)^2.) + ((conf*beamarea)^2.*sqrt(ssfa)))
   #}}}
 
   #Deblended Convolved aperture error {{{
-  dfaerr<-sqrt((sdfa2e2 * (ssfa/ssfa2)^2.) + ((conf*beamarea)^2.*sqrt(sdfa)))
+  dfaerr<-sqrt((sdfa2e2) + ((conf*beamarea)^2.*sqrt(sdfa)))
+  #dfaerr<-sqrt((sdfa2e2 * (ssfa/ssfa2)^2.) + ((conf*beamarea)^2.*sqrt(sdfa)))
   #}}}
 
   #Convolved Aperture Flux Weights & Error Weights {{{
@@ -810,14 +855,14 @@ function(env=NULL) {
     if (filtcontam) {
       if (!quiet) { cat(paste("Writing Contaminant-subtracted Map to",nocontammap,"   ")) }
       #Perform Source Subtraction
-      timer=system.time(sourcesubtraction(im,sfa,stamp_lims,dfaflux,paste(pathout,nocontammap, sep=""),hdr_str,ba,contams))
+      timer=system.time(sourcesubtraction(im,sfa,stamp_lims,dfaflux,file.path(pathroot,pathout,nocontammap),hdr_str,ba,contams))
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Contam Subtraction - Done (',round(timer[3], digits=2),'sec )'))
       } else if (!quiet) { cat("   - Done\n") }
     }
     if (!quiet) { cat(paste("Writing Source-subtracted Map to",residmap,"   ")) }
     #Perform Source Subtraction
-    timer=system.time(sourcesubtraction(im,sfa,stamp_lims,dfaflux,paste(pathout,residmap, sep=""),hdr_str,ba,insidemask))
+    timer=system.time(sourcesubtraction(im,sfa,stamp_lims,dfaflux,file.path(pathroot,pathout,residmap),hdr_str,ba,insidemask))
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Source Subtraction - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
@@ -859,9 +904,14 @@ function(env=NULL) {
 
   #If wanted, output the Results Table {{{
   if (writetab) {
-    if (!quiet) { cat(paste('Writing Results Table to ',tableoutname,'   ')) }
     #Output the results table
-    timer=system.time(writesfatableout(environment(), paste(pathout,tableoutname, sep="")) )
+    if ((nloops!=1)&&(length(param.env$tableoutname)!=nloops)) {
+      if (!quiet) { cat(paste('Writing Results Table to ',file.path(pathroot,pathout,paste(sep="",tableoutname,"_file",f,".csv")),'   ')) }
+      timer=system.time(writesfatableout(environment(), file.path(pathroot,pathout,paste(sep="",tableoutname,"_file",f,".csv"))) )
+    } else {
+      if (!quiet) { cat(paste('Writing Results Table to ',file.path(pathroot,pathout,paste(sep="",tableoutname,".csv")),'   ')) }
+      timer=system.time(writesfatableout(environment(), file.path(pathroot,pathout,paste(sep="",tableoutname,".csv"))) )
+    }
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Write Results Table - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
@@ -879,6 +929,15 @@ function(env=NULL) {
      sink(sinkfile, type='message')
   }#}}}
   #}}}
+
+    #Send Parameters to logfile {{{
+    sink(sinkfile, type="output")
+    cat("Memory Hogs in this run:\n")
+    print(lsos(envir=environment(), head=TRUE, n=10))
+    cat("Images used in this run:\n")
+    print(lsos(envir=image.env, head=FALSE))
+    sink(type="output")
+    #}}}
 
   #Return {{{
   if (!quiet) { cat('\n') }

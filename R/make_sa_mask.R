@@ -37,7 +37,7 @@ function(env=NULL, outenv=NULL){
   stamplen<-(floor((ceiling(defbuff*a_g*2/asperpix)+ceiling(psf.clip))/2)*2+1)
   #Deal with Point Sources {{{
   if      (all(stamplen==1)) { stamplen[which(stamplen==1)]<-3 }
-  else if (any(stamplen==1)) { stamplen[which(stamplen==1)]<-min(a_g[which(a_g>0)],na.rm=TRUE)*2+3 }
+  else if (any(stamplen==1)) { stamplen[which(stamplen==1)]<-floor(min(a_g[which(a_g>0)],na.rm=TRUE))*2+3 }
   #}}}
   #Calculate Stamp limits in image-pixel space; parallelised {{{
   stamp_lims_list<-foreach(i=1:npos,width=floor(stamplen/2),.inorder=TRUE) %dopar% {

@@ -22,7 +22,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
                 cat('   Reading Parameter File   ') }
   #}}}
   #Test Reading of Parameter File {{{
-  params<-try(read.table(parfile, strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#", row.names=1), silent=TRUE)
+  params<-try(read.table(parfile, strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#", row.names=1, fill=TRUE), silent=TRUE)
   if (class(params)=="try-error") {
     #Stop on Error
     stop("Parameter file read failed")
@@ -33,29 +33,41 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   ## Assign Parameter File values to variables {{{
   #Root Directory path {{{
   ID="RootDirectory"
-  pathroot<-params[ID,1]
-  if (is.na(pathroot)) {
-  stop("Root Directory Path not in Parameter File")
+  ind<-which(params[ID,]!="")
+  pathroot<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(pathroot))) {
+    stop("Root Directory Path not in Parameter File")
+  } else {
+    pathroot<-try(c(t(read.table(file.path(params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(pathroot)=="try-error") {
+      pathroot<-params[ID,ind]
+    }
   }
   #Ensure path ends in a '/'
-  if (lastnchar(pathroot,1) != '/') { pathroot<-paste(pathroot,'/') }
+  if (lastnchar(pathroot,1) != '/') { pathroot<-paste(pathroot,'/',sep="") }
   #}}}
 
   #Output Directory path {{{
   ID="OutputDirectory"
-  pathout<-params[ID,1]
-  if (is.na(pathout)) {
-  stop("Output Directory Path not in Parameter File")
+  ind<-which(params[ID,]!="")
+  pathout<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(pathout))) {
+    stop("Output Path not in Parameter File")
+  } else {
+    pathout<-try(c(t(read.table(file.path(params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(pathout)=="try-error") {
+      pathout<-params[ID,ind]
+    }
   }
-  #Ensure poth ends in a '/'
-  if (lastnchar(pathout,1) != '/') { pathout<-paste(pathout,'/') }
-  dir.create(paste(pathroot, pathout,sep=""), showWarnings = FALSE)
+  #Ensure path ends in a '/'
+  if (lastnchar(pathout,1) != '/') { pathout<-paste(pathout,'/',sep="") }
   #}}}
 
   #Beam area in square arcsec {{{
   ID="BeamArea_SqAS"
-  beamarea_SOM_as<-as.numeric(params[ID,1])
-  if (is.na(beamarea_SOM_as)) {
+  ind<-which(params[ID,]!="")
+  beamarea_SOM_as<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(beamarea_SOM_as))) {
     warning("Beamarea Parameter not present in Parameter File")
     beamarea_SOM_as<-0
   }
@@ -73,22 +85,60 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #PSF map filename {{{
   ID="PSFMap"
-  psfmap<-params[ID,1]
-  if (is.na(psfmap)) {
+  ind<-which(params[ID,]!="")
+  psfmap<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(psfmap))) {
     warning("PSF Map Filename not in Paramter File")
     psfmap<-"NONE"
+  }
+  #Determine if provided psfmap is an image or filelist {{{
+  if ((length(psfmap)==1)&(psfmap!="NONE")&(!grepl(".fits", psfmap))) {
+    #One file provided without .fits extension - must be filelist
+    psfmap<-try(c(t(read.table(file.path(psfmap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(psfmap)=="try-error") {
+      warning("PSF Map Filename not in Paramter File")
+      psfmap<-"NONE"
+    }
+    if (is.na(psfmap)) {
+      warning("PSF Map Filename not in Paramter File")
+      psfmap<-"NONE"
+    }
   }
   #}}}
 
   #If no PSF map, get gaussian FWHM {{{
-  if (psfmap=="NONE") {
+  if (any(psfmap=="NONE")) {
     #FWHM of seeing gaussian
     ID="Gauss_FWHM_AS"
-    gauss_fwhm_as<-as.numeric(params[ID,1])
-    if (is.na(gauss_fwhm_as)) { gauss_fwhm_as<-0.0 }
+    ind<-which(params[ID,]!="")
+    gauss_fwhm_as<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(gauss_fwhm_as))) {
+      if ((length(ind)==1)) {
+        gauss_fwhm_as<-try(c(t(read.table(file.path(params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+        if (class(gauss_fwhm_as)=="try-error") {
+          gauss_fwhm_as<-0.0
+        }
+        if (is.na(gauss_fwhm_as)) {
+          gauss_fwhm_as<-0.0
+        }
+      } else {
+        gauss_fwhm_as<-0.0
+      }
+    }
+    #Make sure PSF maps and Gauss FWHM vals are conformable {{{
+    if (length(gauss_fwhm_as)!=length(psfmap)) {
+      gauss_fwhm_as<-rep(gauss_fwhm_as[1], length(psfmap))
+    }#}}}
+
+    #Make sure files with PSF maps have Gauss FWHM vals set to 0 {{{
+    ind<-which(psfmap!="NONE")
+    if (length(ind)>0) { gauss_fwhm_as[ind]<-0.0 }
+    #}}}
+
     #If we want convolution, there is no PSF, and no gaussian FWHM provided - ERROR {{{
-    if ((psffilt)&(gauss_fwhm_as==0.0)&(psfmap=="NONE")) {
-      stop("Parameter file does not provide either PSF map or Gaussian FWHM")
+    ind<-which(psfmap=="NONE")
+    if ((psffilt)&(any(gauss_fwhm_as[ind]==0.0))) {
+      stop("Parameter file does not provide either PSF map or Gaussian FWHM for One or more files")
     }
     #}}}
   } else {
@@ -101,10 +151,23 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Perform Contaminant removal? {{{
   nocontammap<-NULL
   ID="RemoveContam"
-  filtcontam<-params[ID,1]
-  if (is.na(filtcontam)) {
-    warning("Remove Contaminants Flag not in Parameter File")
-    filtcontam<-FALSE
+  ind<-which(params[ID,]!="")
+  filtcontam<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(filtcontam))) {
+    if ((length(ind)==1)) {
+      filtcontam<-try(c(t(read.table(file.path(params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+      if (class(filtcontam)=="try-error") {
+        warning("Remove Contaminants Flag not in Parameter File")
+        filtcontam<-FALSE
+      } else { filtcontam<-(filtcontam==1) }
+      if (is.na(filtcontam)) {
+        warning("Remove Contaminants Flag not in Parameter File")
+        filtcontam<-FALSE
+      }
+    } else {
+      warning("Remove Contaminants Flag not in Parameter File")
+      filtcontam<-FALSE
+    }
   } else { filtcontam<-(filtcontam==1) }
   #}}}
 
@@ -122,10 +185,24 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Name of Source Catalogue {{{
   ID="Catalogue"
-  catalogue<-params[ID,1]
-  if (is.na(catalogue)) {
+  ind<-which(params[ID,]!="")
+  catalogue<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(catalogue))) {
     stop("Catalogue Path not in Parameter File")
   }
+  #Determine if provided weightmap is an image or filelist {{{
+  if ((length(catalogue)==1)&(!grepl(".Rdata",catalogue))&(!grepl(".fits", catalogue))) {
+    #One file provided without .fits extension - must be filelist
+    catalogue<-try(c(t(read.table(file.path(catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(catalogue)=="try-error") {
+      #Stop on Error
+      stop("Catalogue Filelist read failed")
+    }
+    if (is.na(catalogue)) {
+      stop("Data Map Path not in Parameter File")
+    }
+  }
+  #}}}
   #}}}
 
   #What is the title of the Catalogue's ID Column? {{{
@@ -195,72 +272,136 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Name of Data Image {{{
   ID="DataMap"
-  datamap<-params[ID,1]
-  if (is.na(datamap)) {
+  ind<-which(params[ID,]!="")
+  datamap<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(datamap))) {
     stop("Data Map Path not in Parameter File")
   }
+  #Determine if provided datamap is an image or filelist {{{
+  if ((length(datamap)==1)&(datamap!="NONE")&(!grepl(".fits", datamap))) {
+    #One file provided without .fits extension - must be filelist
+    datamap<-try(c(t(read.table(file.path(datamap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(datamap)=="try-error") {
+      #Stop on Error
+      stop("Datamap Filelist read failed")
+    }
+    if (is.na(datamap)) {
+      stop("Data Map Path not in Parameter File")
+    }
+  }
+  #}}}
   #}}}
 
   #Name of Error Map {{{
   ID="ErrorMap"
-  errormap<-params[ID,1]
-  if (is.na(errormap)) {
+  ind<-which(params[ID,]!="")
+  errormap<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(errormap))) {
     warning("Error Map Path not in Parameter File")
     errormap<-"NONE"
-  }#}}}
+  }
+  #Determine if provided errormap is an image or filelist {{{
+  if ((length(errormap)==1)&(errormap!="NONE")&(!grepl(".fits", errormap))) {
+    #One file provided without .fits extension - must be filelist
+    errormap<-try(c(t(read.table(file.path(errormap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(errormap)=="try-error") {
+      #Stop on Error
+      stop("Errormap Filelist read failed")
+    }
+    if (is.na(errormap)) {
+      stop("Data Map Path not in Parameter File")
+    }
+  }
+  #}}}
+  #}}}
 
   #Name of Mask Map {{{
   ID="MaskMap"
-  maskmap<-params[ID,1]
-  if (is.na(maskmap)) {
+  ind<-which(params[ID,]!="")
+  maskmap<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(maskmap))) {
     warning("Mask Map Path not in Parameter File")
     maskmap<-"NONE"
-  }#}}}
+  }
+  #Determine if provided maskmap is an image or filelist {{{
+  if ((length(maskmap)==1)&(maskmap!="NONE")&(!grepl(".fits", maskmap))) {
+    #One file provided without .fits extension - must be filelist
+    maskmap<-try(c(t(read.table(file.path(maskmap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(maskmap)=="try-error") {
+      #Stop on Error
+      stop("maskmap Filelist read failed")
+    }
+    if (is.na(maskmap)) {
+      stop("Data Map Path not in Parameter File")
+    }
+  }
+  #}}}
+  #}}}
 
   #Name of Weight Map {{{
   ID="WeightMap"
-  wgtmap<-params[ID,1]
-  if (is.na(wgtmap)) {
+  ind<-which(params[ID,]!="")
+  wgtmap<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(wgtmap))) {
     warning("Weight Map Path not in Parameter File")
     wgtmap<-"NONE"
-  }#}}}
+  }
+  #Determine if provided weightmap is an image or filelist {{{
+  if ((length(wgtmap)==1)&(wgtmap!="NONE")&(!grepl(".fits", wgtmap))) {
+    #One file provided without .fits extension - must be filelist
+    wgtmap<-try(c(t(read.table(file.path(wgtmap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(wgtmap)=="try-error") {
+      #Stop on Error
+      stop("weightmap Filelist read failed")
+    }
+    if (is.na(wgtmap)) {
+      stop("Data Map Path not in Parameter File")
+    }
+  }
+  #}}}
+  #}}}
 
   #Zero Point of Weight Map {{{
   ID="WeightMapZP"
-  wgtzp<-as.numeric(params[ID,1])
-  if (is.na(wgtzp)) {
+  ind<-which(params[ID,]!="")
+  wgtzp<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(wgtzp))) {
     warning("Weight Map Zero Point not in Parameter File; Using 0")
     wgtzp<-0
   }#}}}
 
   #Extension number of Data in FITS Header {{{
   ID="DataExtn"
-  extn<-as.numeric(params[ID,1])
-  if (is.na(extn)) {
+  ind<-which(params[ID,]!="")
+  extn<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(extn))) {
     warning("FITS Data Extension Value not in Parameter File")
     extn<-0
   }#}}}
 
   #Extension number of Error Map in FITS Header {{{
   ID="ErrorExtn"
-  extnerr<-as.numeric(params[ID,1])
-  if (is.na(extnerr)) {
+  ind<-which(params[ID,]!="")
+  extnerr<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(extnerr))) {
     warning("FITS Error Extension Value not in Parameter File")
     extnerr<-0
   }#}}}
 
   #Extension number of Mask Map in FITS Header {{{
   ID="MaskExtn"
-  extnmask<-as.numeric(params[ID,1])
-  if (is.na(extnmask)) {
+  ind<-which(params[ID,]!="")
+  extnmask<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(extnmask))) {
     warning("FITS Mask Extension Flag not in Parameter File")
     extnmask<-0
   }#}}}
 
   #Extension number of Data in FITS Header {{{
-  ID="WgtExtn"
-  extnwgt<-as.numeric(params[ID,1])
-  if (is.na(extnwgt)) {
+  ID="WeightExtn"
+  ind<-which(params[ID,]!="")
+  extnwgt<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(extnwgt))) {
     warning("FITS Weight Map Extension Value not in Parameter File")
     extnwgt<-0
   }#}}}
@@ -277,16 +418,18 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Error Map scale factor #{{{
   ID="EFactor"
-  Efactor<-as.numeric(params[ID,1])
-  if (is.na(Efactor)) {
+  ind<-which(params[ID,]!="")
+  Efactor<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(Efactor))) {
     warning("Error Map Scale Factor not in Parameter File")
     Efactor<-1
   } #}}}
 
   #Flux Correction (Scale) Factor {{{
   ID="FluxCorr"
-  fluxcorr<-as.numeric(params[ID,1])
-  if (is.na(fluxcorr)) {
+  ind<-which(params[ID,]!="")
+  fluxcorr<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(fluxcorr))) {
   warning("Flux Correction Factor not in Parameter File")
   fluxcorr<-1
   }#}}}
@@ -302,8 +445,9 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
   #Do we want to crop the input image(s)? {{{
   ID="CropImage"
-  cropimage<-params[ID,1]
-  if (is.na(cropimage)) {
+  ind<-which(params[ID,]!="")
+  cropimage<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(cropimage))) {
     warning("Crop Image Flag not in Parameter File")
     cropimage<-FALSE
   } else { cropimage<-(cropimage==1) }
@@ -325,23 +469,29 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     #}}}
     #Cropped image RA {{{
     ID="CropImRA0"
-    ra0<-as.numeric(params[ID,1])
-    if (is.na(ra0)) {
+    ind<-which(params[ID,]!="")
+    ra0<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(ra0))) {
       warning("Cropped Images RA centre not in Parameter File")
+      ra0<- -999
     }
     #}}}
     #Cropped image Dec {{{
     ID="CropImDec0"
-    dec0<-as.numeric(params[ID,1])
-    if (is.na(dec0)) {
+    ind<-which(params[ID,]!="")
+    dec0<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(dec0))) {
       warning("Cropped Images Dec Centre not in Parameter File")
+      dec0<- -999
     }
     #}}}
     #Cropped image radius {{{
     ID="CropImRad"
-    cutrad<-as.numeric(params[ID,1])
-    if (is.na(cutrad)) {
+    ind<-which(params[ID,]!="")
+    cutrad<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(cutrad))) {
       warning("Cropped Images cropping Radius not in Parameter File")
+      cutrad<-0.5
     }
     #}}}
   }
@@ -349,8 +499,9 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Confusion noise factor (in Janskys) {{{
   ID="Confusion_Jy"
-  conf<-as.numeric(params[ID,1])
-  if (is.na(conf)) {
+  ind<-which(params[ID,]!="")
+  conf<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(conf))) {
     warning("Confusion Noise Factor not in Parameter File")
     conf<-0
   }#}}}
@@ -378,8 +529,9 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Is the map in Jy per Beam? {{{
   ID="MapJyPerBeam"
-  Jybm<-as.numeric(params[ID,1])
-  if (is.na(Jybm)) {
+  ind<-which(params[ID,]!="")
+  Jybm<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(Jybm))) {
     warning("Jansky Per Beam Flag not in Parameter File")
     Jybm<-0
   }
@@ -389,26 +541,41 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to perform higher precision integrations of
   #Apertures by resampling around the edges?
   ID="SmoothAper"
-  resampleaperture<-as.numeric(params[ID,1])
-  if (is.na(resampleaperture)) {
-    warning("Smooth Aperture Flag  not in Parameter File")
-    resampleaperture<-1
+  ind<-which(params[ID,]!="")
+  resampleaperture<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(resampleaperture))) {
+    if ((length(ind)==1)) {
+      resampleaperture<-as.numeric(try(c(t(read.table(file.path(params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(resampleaperture)=="try-error") {
+        warning("Aperture Resample Flag not in Parameter File")
+        resampleaperture<-1
+      }
+      if (is.na(resampleaperture)) {
+        warning("Aperture Resample Flag not in Parameter File")
+        resampleaperture<-1
+      }
+    } else {
+      warning("Aperture Resample Flag not in Parameter File")
+      resampleaperture<-1
+    }
   }
   #}}}
   #Resample Parameters {{{
-  if (resampleaperture) {
+  if (any(resampleaperture)) {
     #What resolution do we want to upscale by? {{{
     ID="ResamplingRes"
-    upres<-as.numeric(params[ID,1])
-    if (is.na(upres)) {
+    ind<-which(params[ID,]!="")
+    upres<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(upres))) {
       warning("Resampling Resolution Factor not in Parameter File")
       upres<-2
     }
     #}}}
     #How many iterations of upscale do we want? {{{
     ID="ResamplingIters"
-    itersteps<-as.numeric(params[ID,1])
-    if (is.na(itersteps)) {
+    ind<-which(params[ID,]!="")
+    itersteps<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(itersteps))) {
       warning("Resampling Iterations Value not in Parameter File")
       itersteps<-10
     }
@@ -578,9 +745,21 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     #Name of output Flux Table
     ID="TableName"
     tableoutname<-params[ID,1]
-    if (is.na(tableoutname)) {
-      warning("Output Table Filename not in Parameter File")
-      tableoutname<-"dfaResults.csv"
+    if ((length(ind)==0)||(is.na(tableoutname))) {
+        #Warn on Error
+        warning("Output Table Filename not in Parameter File")
+        tableoutname<-"dfaResults"
+      } else {
+        if (length(ind)==1) {
+        tableoutname<-try(c(t(read.table(file.path(params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+        if (class(tableoutname)=="try-error") {
+          #Warn on Error
+          tableoutname<-params[ID,1]
+        }
+        if (is.na(tableoutname)) {
+          tableoutname<-params[ID,1]
+        }
+      }
     }
   }
   #}}}
@@ -654,7 +833,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #AB Vega Magnitude {{{
   ID="ABVegaFlux"
-  ABvegaflux<-as.numeric(params[ID,1])
+  ind<-which(params[ID,]!="")
+  ABvegaflux<-as.numeric(params[ID,ind])
   if (is.na(ABvegaflux)) {
     warning("AB Vega Flux Value not present in the Parameter File; using 1.0")
     ABvegaflux<-1.0
@@ -663,17 +843,34 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Magnitudes Zero Point {{{
   ID="MagZeroPoint"
-  magZP<-as.numeric(params[ID,1])
-  if (is.na(magZP)) {
-    warning("Magnitudes Zero Point not present in the Parameter File; using 0.0")
-    magZP<-0.0
+  ind<-which(params[ID,]!="")
+  magZP<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(magZP))) {
+    if (length(ind)==1) {
+      magZP<-as.numeric(try(c(t(read.table(file.path(params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(magZP)=="try-error") {
+        #Warn on Error
+        warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
+        magZP<-0.0
+      }
+      if (is.na(magZP)) {
+        #Warn on Error
+        warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
+        magZP<-0.0
+      }
+    } else {
+      #Warn on Error
+      warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
+      magZP<-0.0
+    }
   }
   #}}}
 
   #Magnitudes Zero Point {{{
-  ID="MagZPlabel"
-  magZPlabel<-params[ID,1]
-  if (is.na(magZPlabel)) {
+  ID="MagZPLabel"
+  ind<-which(params[ID,]!="")
+  magZPlabel<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(magZPlabel))) {
     warning("FITS Zero Point Label not present in the Parameter File")
     magZPlabel<-"MagZP"
   }
@@ -726,8 +923,9 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
     #Level of Corellated noise in image {{{
     ID="SkyCorrelNoise"
-    correl.noise<-as.numeric(params[ID,1])
-    if (is.na(correl.noise)) {
+    ind<-which(params[ID,]!="")
+    correl.noise<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(correl.noise))) {
       warning("Sky Correlated Noise Level not present in the Parameter File")
       correl.noise<-1
     }
@@ -764,10 +962,26 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Set Minimum Aperture Radius {{{
   ID="MinApRad"
-  MinApRad<-as.numeric(params[ID,1])
-  if (is.na(MinApRad)) {
-   warning("Minimum Aperture Specification not in Parameter File")
-   MinApRad<-0
+  ind<-which(params[ID,]!="")
+  MinApRad<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(MinApRad))) {
+    if (length(ind)==1) {
+      MinApRad<-as.numeric(try(c(t(read.table(file.path(params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(MinApRad)=="try-error") {
+        #Warn on Error
+        warning("Minimum Aperture Specification not in Parameter File")
+        MinApRad<-0
+      }
+      if (is.na(MinApRad)) {
+        #Warn on Error
+        warning("Minimum Aperture Specification not in Parameter File")
+        MinApRad<-0
+      }
+    } else {
+      #Warn on Error
+      warning("Minimum Aperture Specification not in Parameter File")
+      MinApRad<-0
+    }
   }
   #}}}
 
@@ -780,13 +994,22 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   } else { memSafe<-(memSafe==1) }
   #}}}
 
-  #Do we want a Mesa-like Apertures? {{{
-  ID="MesaApertures"
-  mesaAps<-as.numeric(params[ID,1])
-  if (is.na(mesaAps)) {
-   warning("Mesa-like Apertures Flag not present in the Parameter File")
-   mesaAps<-TRUE
-  } else { mesaAps<-(mesaAps==1) }
+  #What limit value do we want for the Aperture generation? #{{{
+  ID="ApertureConfLimit"
+  apLimit<-as.numeric(params[ID,1])
+  if (is.na(apLimit)) {
+   warning("Aperture Confidence Limit Parameter not present in the Parameter File")
+   apLimit<-0.99
+  }
+  #}}}
+
+  #Do we want to fluxweight using Pixel Fluxes? {{{
+  ID="UsePixelFluxWgts"
+  usePixelFluxWeights<-params[ID,1]
+  if (is.na(usePixelFluxWeights)) {
+    warning("Use PixelFlux for Fluxweights Parameter not present in the Parameter File")
+    usePixelFluxWeights<-TRUE
+  } else { usePixelFluxWeights<-(usePixelFluxWeights==1) }
   #}}}
 
   #Name of Logfile to be output {{{
@@ -799,15 +1022,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
   #}}}
 
-  #Send Message output to logfile {{{
-  sinkfile<-file(paste(pathout,logfile,sep=""),open="wt")
-  sink(sinkfile, type="message")
-  #}}}
-
   # Assign variables to LAMBDAR workspace {{{
   assign("aafilename"       , aafilename       , envir = env) # A
   assign("ABvegaflux"       , ABvegaflux       , envir = env) #
   assign("angoffset"        , angoffset        , envir = env) #
+  assign("apLimit"          , apLimit          , envir = env) #
   assign("beamarea_SOM_as"  , beamarea_SOM_as  , envir = env) # B
   assign("conf"             , conf             , envir = env) # C
   assign("confidence"       , confidence       , envir = env) #
@@ -844,7 +1063,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("imefitsoutname"   , imefitsoutname   , envir = env) #
   assign("imfitsoutname"    , imfitsoutname    , envir = env) #
   assign("Jybm"             , Jybm             , envir = env) # J
-  assign("makeresidmap"     , makeresidmap     , envir = env) # KLM
+  assign("logfile"          , logfile          , envir = env) # KL
+  assign("makeresidmap"     , makeresidmap     , envir = env) # M
   assign("makedfamask"      , makedfamask      , envir = env) #
   assign("Magnitudes"       , Magnitudes       , envir = env) #
   assign("magZP"            , magZP            , envir = env) #
@@ -854,13 +1074,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("maskmap"          , maskmap          , envir = env) #
   assign("MinApRad"         , MinApRad         , envir = env) #
   assign("memSafe"          , memSafe          , envir = env) #
-  assign("mesaAps"          , mesaAps          , envir = env) #
   assign("nopsf"            , nopsf            , envir = env) # N
   assign("nocontammap"      , nocontammap      , envir = env) #
   assign("ncores"           , ncores           , envir = env) #
   assign("pathroot"         , pathroot         , envir = env) # P
   assign("pathout"          , pathout          , envir = env) #
-  assign("params"           , params           , envir = env) #
   assign("plotsample"       , plotsample       , envir = env) #
   assign("psfmap"           , psfmap           , envir = env) #
   assign("resampleaperture" , resampleaperture , envir = env) # QR
@@ -870,7 +1088,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("sourcemask"       , sourcemask       , envir = env) # S
   assign("sourcemaskonly"   , sourcemaskonly   , envir = env) #
   assign("smConfidenceLim"  , smConfidenceLim  , envir = env) #
-  assign("sinkfile"         , sinkfile         , envir = env) #
   assign("showtime"         , showtime         , envir = env) #
   assign("skycutiters"      , skycutiters      , envir = env) #
   assign("skyprobcut"       , skyprobcut       , envir = env) #
@@ -881,6 +1098,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("thetalab"         , thetalab         , envir = env) #
   assign("upres"            , upres            , envir = env) # U
   assign("useMaskLim"       , useMaskLim       , envir = env)
+  assign("usePixelFluxWeights", usePixelFluxWeights , envir = env)
   assign("verbose"          , verbose          , envir = env) # V
   assign("writetab"         , writetab         , envir = env) # W
   assign("wgtmap"           , wgtmap           , envir = env) # W
@@ -893,21 +1111,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   cat('\n')
   print(warnings())
   cat('                  ')
-  }
-  #}}}
-
-  #-----Diagnostic------# {{{
-  if (diagnostic) {
-    if (!(is.null(warnings()))) {
-    sink(sinkfile, type="output")
-    print(warnings())
-    sink(type="output")
-    }
-    message("Variables set at end of Parameter File read")
-    sink(file=sinkfile, type="output", append=TRUE)
-    print(environment())
-    #print(ls.str(envir=env))
-    sink(file=NULL, type="output")
   }
   #}}}
 

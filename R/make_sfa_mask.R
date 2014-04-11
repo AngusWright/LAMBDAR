@@ -127,17 +127,7 @@ function(env=NULL,sa_mask,fluxweightin=NULL, outenv=NULL) {
         }
         #}}}
         #Finalise Aperture {{{
-        if (mesaAps) {
-        #We want messa-like apertures; only weight apertures {{{
-        #Do not normalise aperture to unity, as later we will want to
-        #truncate each aperture to where its value exceeds psfheight
-        ap<-ap*fluxweight[i]
-        #}}}
-        } else {
-        #We want Munro-like apertures; Normalise and Weight apertures {{{
-        ap<-ap/max(ap, na.rm=TRUE)*fluxweight[i]
-        #}}}
-        }
+        ap<-(ap/max(ap))*fluxweight[i]
         #}}}
         #Return {{{
         return=ap

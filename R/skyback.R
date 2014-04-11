@@ -48,8 +48,8 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
     }
     #Do iterative <probcut>-sigma pixel clipping
     if(clipiters>0){
-      for(i in 1:clipiters){
-        vallims<-2*median(tempval)-quantile(tempval,probcut)
+      for(j in 1:clipiters){
+        vallims<-2*median(tempval)-quantile(tempval,probcut, na.rm=TRUE)
         temprad<-temprad[tempval<vallims]
         tempval<-tempval[tempval<vallims]
       }
@@ -61,11 +61,12 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
     tempx<-tempmedian$x
     #Remove bins with no skypixels present
     if (any(is.na(tempylims))) {
-      tempy  <-tempy[which(!is.na(tempylims))]
-      tempx  <-tempx[which(!is.na(tempylims))]
-      temprad<-temprad[which(!is.na(tempylims))]
-      tempval<-tempval[which(!is.na(tempylims))]
-      tempref<-tempref[which(!is.na(tempylims))]
+      tempy  <-tempy[which(!is.na(tempylims[,1]))]
+      tempx  <-tempx[which(!is.na(tempylims[,1]))]
+      temprad<-temprad[which(!is.na(tempylims[,1]))]
+      tempval<-tempval[which(!is.na(tempylims[,1]))]
+      tempref<-tempref[which(!is.na(tempylims[,1]))]
+      tempylims<-matrix(tempylims[which(!is.na(tempylims),arr.ind=TRUE)], ncol=2)
     }
     if (length(tempy)!=0) {
       #Calculate worst case sky error- the sd of the medians calculated
@@ -73,7 +74,7 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
       #Gen weights to use for weighted mean sky finding. This also weights by separation from the object of interest via radweight
       weights<-1/((tempx^radweight)*(tempylims[,2]-tempylims[,1])/2)^2
       #Generate Sky RMS
-      skyRMS<-as.numeric((quantile(tempval,0.5)-quantile(tempval,pnorm(-1))))
+      skyRMS<-as.numeric((quantile(tempval,0.5, na.rm=TRUE)-quantile(tempval,pnorm(-1),na.rm=TRUE)))
       #Determine Pearsons Test for Normality p-value for sky
       skyRMSpval<-pearson.test(tempval)$p.value
       #Find the weighted mean of the medians
