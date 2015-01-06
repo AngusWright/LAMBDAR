@@ -5,6 +5,8 @@
 Read Parameter File
 }
 \description{
+__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+
 Reads the Parameter file required for the execution of the MeasureFluxes procedure. This parameter file can be
 generated using the 'createparfile' routine, or by calling createparfile through 'MeasureFluxes'.
 }

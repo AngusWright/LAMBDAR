@@ -5,7 +5,8 @@
 Pixel to RA/Dec
 }
 \description{
-Convert pixel locations to RA and Dec by using a calibrating pixel and known pixel widths.
+Convert pixel locations to RA and Dec by using a calibrating pixel and known pixel widths,
+in the TAN Gnomonic coordinate system.
 }
 \usage{
 xy2radec(x, y, ra0 = 0, dec0 = 0, x0 = 0, y0 = 0, xscale = 1, yscale = 1)

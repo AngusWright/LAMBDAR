@@ -21,7 +21,8 @@ the routine with no parameters specified.
     RemoveContam=0, PSFConvolve=1, AngularOffset=0, PointSources=0, SmoothAper=1, ResamplingRes=3,
     ResamplingIters=4, UseMaskLim=0.95, Verbose=0, ShowTime=1, PlotSample=0, Diagnostic=0,
     Interactive=0, Magnitudes=0, ABVegaFlux=1.0, MagZeroPoint=-999, MagZPLabel="MagZP", DoSkyEst=0,
-    SkyEstIters=5, SkyEstProbCut=3, SkyCorrelNoise=1, GetSkyRMS=1, OutputDirectory="./Output/",
+    SkyEstIters=5, SkyEstProbCut=3, SkyCorrelNoise=1, GetSkyRMS=1, IterateFluxes=1,
+    nIterations=2, OutputDirectory="./Output/",
     LogFile="LAMBDARlog.txt", SourceMaskOnly=0, WriteTable=1, TableName="dfaResults.csv",
     WriteAAMask=1, AllApersFile="AllAps_Mask.fits", WriteSourceMask=1, SourceMaskConfLim=0.98,
     SourceMaskFile="SourceMask.fits", WriteDFAMask=1, DelbConvApersFile="AllDbCnvAps_Mask.fits",
@@ -84,6 +85,8 @@ the routine with no parameters specified.
  \item{SkyEstProbCut}{ float; Probability limit used in iterative clipping of sky-pixels during sky estimation }
  \item{SkyCorrelNoise}{ float; Multiplicative factor describing the amount of correlated noise in the datamap }
  \item{GetSkyRMS}{ boolean 0/1; Perform an estimation of the local sky background, without doing subtraction }
+ \item{IterateFluxes}{ boolean 0/1; Perform an iteration of the flux measurements, to create improve photometric accuracy (generally, not always) }
+ \item{nIterations}{ integer; Number of iterations we would like to perform when refining fluxes }
  \item{OutputDirectory}{ string; Output directory Name and Path }
  \item{LogFile}{ string; Filename for Log }
  \item{SourceMaskOnly}{ boolean 0/1; Only Output Source Mask image to file, and stop (without calculating fluxes)? (Overrules all other Flags) [1/0] }
@@ -111,9 +114,9 @@ the routine with no parameters specified.
 \value{
 NULL; Procedure outputs the parameter file to 'LAMBDAR_default.par'
 }
-%%\references{
-%% ~put references to the literature/web site here ~
-%%}
+\references{
+Wright et al. 2015 (in prep)
+}
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}

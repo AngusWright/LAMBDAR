@@ -5,6 +5,8 @@
 Make Aperture Stamps
 }
 \description{
+__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+
 Create a length (m) list of (n,n) arrays, containing object apertures given input aperture parameters
 }
 \usage{
@@ -24,7 +26,7 @@ Aperture parameters, which are used in the creation of the aperture stamps, are 
 The returned list of aperture stamps is sent to 'outenv'. If not supplied, 'outenv' is set to be the same environment as 'env'.
 }
 \value{
-numeric [[m]][n.n] list; aperture stamps with pixel range [0,1]
+numeric [[m]][n,n] list; aperture stamps with pixel range [0,1]
 }
 %%\references{
 %% ~put references to the literature/web site here ~

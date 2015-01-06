@@ -1,5 +1,5 @@
 sourcesubtraction <-
-function(image,sfa_models,stamp_lims,fluxes,outputfile,outputheader,beamarea,insidemask) {
+function(image,sfa_models,stamp_lims,fluxes,outputfile,outputheader,beamarea,insidemask,diagnostic=FALSE,verbose=FALSE) {
   # Procedure subtracts stamps from the input image.
 
   message('------------------------Source_Subtraction-----------------------------')
@@ -23,8 +23,13 @@ function(image,sfa_models,stamp_lims,fluxes,outputfile,outputheader,beamarea,ins
   }
   #}}}
 
+  #Get MPI options {{{
+  chunkSize=ceiling(npos/getDoParWorkers())
+  mpiopts<-list(chunkSize=chunkSize)
+  #}}}
+
   #Perform Subtraction {{{
-  modelsource<-foreach (i=1:npos, flux=fluxes, inside=insidemask, model=sfa_models, .inorder=TRUE) %dopar% {
+  modelsource<-foreach (i=1:npos, flux=fluxes, inside=insidemask, model=sfa_models, .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
     if ((sum(abs(model))==0)|(!(inside))) {
       #If stamp is empty, skip it {{{
       return=NULL
@@ -56,7 +61,7 @@ function(image,sfa_models,stamp_lims,fluxes,outputfile,outputheader,beamarea,ins
   #}}}
   if (diagnostic) { message(paste("After assignment",round(length(which(is.na(resid_im)))/length(resid_im)*100,digits=2),"% of the resid_im matrix are NA")) }
   #Output Residual Image {{{
-  writefitsout(outputfile,resid_im,outputheader, nochange=TRUE)
+  writefitsout(outputfile,resid_im,outputheader, nochange=TRUE,verbose=verbose,diagnostic=diagnostic)
   #}}}
   message('=========END==========Source_Subtraction===========END=================\n')
   return=NULL

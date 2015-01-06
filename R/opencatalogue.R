@@ -1,12 +1,15 @@
 opencatalogue <-
-function(env=NULL, outenv=NULL){
+function(outenv=parent.env(environment()), env=NULL){
 
   # Load Parameter Space {{{
-  if (is.null(env)) {
-    stop("No Parameter Space Environment Specified in Call")
+  if(!is.null(env)) {
+    attach(env, warn.conflicts=FALSE)
   }
-  if (is.null(outenv)) { outenv<-env }
-  attach(env, warn.conflicts=FALSE)
+  if(is.null(outenv)&!is.null(env)) { outenv<-env }
+  else if (is.null(outenv)) {
+    warning("Output Environment cannot be NULL; using parent env")
+    outenv<-parent.env(environment())
+  }
   #}}}
 
   #Open and Read Catalogue {{{
@@ -24,7 +27,7 @@ function(env=NULL, outenv=NULL){
   #}}}
   #Open Catalogue {{{
   if (csv) {
-    fitstable<-try(as.data.frame(read.csv(paste(pathroot,catalogue,sep=""))))
+    fitstable<-try(as.data.frame(read.csv(paste(pathroot,pathwork,catalogue,sep=""))))
     #Test Read of Catalogue for errors
     if (class(fitstable)=="try-error") {
       #Stop on Error
@@ -33,7 +36,7 @@ function(env=NULL, outenv=NULL){
       stop("Catalogue File read failed")
     }
   } else if (fits) {
-    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,catalogue,sep=""))))
+    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,pathwork,catalogue,sep=""))))
     if (class(fitstable)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -41,7 +44,7 @@ function(env=NULL, outenv=NULL){
       stop("Catalogue File read failed")
     }
   } else if (rdat) {
-    names<-try(as.list(load(paste(pathroot,catalogue,sep=""))))
+    names<-try(as.list(load(paste(pathroot,pathwork,catalogue,sep=""))))
     if (class(names)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -137,14 +140,14 @@ function(env=NULL, outenv=NULL){
   assign("theta_g"   ,theta_g   ,envir=outenv)
   if (filtcontam) { assign("contams"   ,contams   ,envir=outenv) }
   assign("fluxweight",fluxweight,envir=outenv)
-  assign("fitstable" ,fitstable ,envir=outenv)
+  #assign("fitstable" ,fitstable ,envir=outenv)
   assign("nrows"     ,nrows     ,envir=outenv)
   #}}}
 
   #Finished Reading Catalogue, return {{{
   if (showtime) { cat(paste(" - Done (", round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
   } else if (!quiet) { cat(" - Done\n") }
-  detach(env)
+  if (!is.null(env)) { detach(env) }
   return=NULL
   #}}}
 

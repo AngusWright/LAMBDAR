@@ -1,13 +1,43 @@
 MeasureFluxes <-
-function(parfile=NA, quiet=FALSE, ...){
+function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
 #Proceedure measures GAMA object fluxes from an arbitrary fits image
+
+  #If needed, register the parallel backend {{{
+  if (MPIBackend) {
+    #Check for MPI libraries
+    if (!(any(grepl("doMPI", search()))&&any(grepl("Rmpi", search())))) {
+      #MPI libraries are *not* already loaded
+      loadlibs<-try(require("Rmpi"))
+      if (class(loadlibs)=="try-error") {
+        stop(cat("MPI backend requested, but Rmpi package could not be loaded.",
+                 "\nPackage may be in a special library location not known to LAMBDAR.",
+                 "\nTry loading it before running MeasureFluxes"))
+      }
+      loadlibs<-try(require("doMPI"))
+      if (class(loadlibs)=="try-error") {
+        stop(cat("MPI backend requested, but doMPI package could not be loaded.",
+                 "\nPackage may be in a special library location not known to LAMBDAR.",
+                 "\nTry loading it before running MeasureFluxes"))
+      }
+    }
+    #Create Cluster
+    #message("The Size of the MPI Universe is ",mpi.universe.size()," with Comm Size ",mpi.comm.size(0))
+    suppressMessages(cl<-startMPIcluster())
+    registerDoMPI(cl)
+    on.exit(mpi.quit())
+    if (!quiet) { cat("The Size of the MPI Universe is ",mpi.universe.size()," with Comm Size ",mpi.comm.size(0)) }
+  }
+  #}}}
 
   #For Setup, warnings are handled internally - print nothing {{{
   options(warn=-1)
   #}}}
 
-  #Set quiet variable {{{
-  assign("quiet", quiet)
+  #Set function Environments {{{
+  environment(opencatalogue)<-environment()
+  environment(readimage)<-environment()
+  environment(readparfile)<-environment()
+  environment(fluxmeasurements)<-environment()
   #}}}
 
   #Check for appropriate calling syntax {{{
@@ -28,61 +58,89 @@ function(parfile=NA, quiet=FALSE, ...){
     return()
   }#}}}
 
+  #If requested, resume LAMBDAR run from last loop state {{{
+  if (parfile == "--resume") {
+    if (file.exists(".LambdarParameters.Rdata")&file.exists(".LambdarActiveLoop.txt")) {
+      if (!quiet) { cat("Resuming from Previous Loop State\n") }
+      load(".LambdarParameters.Rdata")
+      lstart<-as.numeric(read.csv(".LambdarActiveLoop.txt"))[1]
+      resume<-TRUE
+    } else {
+      stop("Resume Requested, but one/both of the required resume files .LambdarParameters.Rdata & .LambdarLoopState.txt are missing")
+    }
+  } else {
+    lstart<-1
+    resume<-FALSE
+  }#}}}
+
   #Set start timer & print opening {{{
   starttime<-proc.time()[3]
   #}}}
 
   #Get System Memory Limit (platform dependant) before any assignments {{{
-  sysName=Sys.info()[1]
-  if (sysName=="Linux") {
-    #Linux Systems {{{
-    #Memory Limit returned in kBytes. Convert to bits.
-    memTot<-as.numeric(system("awk '/MemTotal:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
-    memAct<-as.numeric(system("awk '/Active:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
-    memLim<-memTot-memAct
-    if (!is.finite(memLim)) {
-      warning("Memory Limit determination failed. Setting to Inf.")
+  #Can't do this when using MPI backend, as system calls can cause data corruption
+  if (!MPIBackend) {
+    sysName=Sys.info()[1]
+    if (sysName=="Linux") {
+      #Linux Systems {{{
+      #Memory Limit returned in kBytes. Convert to bits.
+      memTot<-as.numeric(system("awk '/MemTotal:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
+      memAct<-as.numeric(system("awk '/Active:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
+      memLim<-memTot-memAct
+      if (!is.finite(memLim)) {
+        warning("Memory Limit determination failed. Setting to Inf.")
+        memLim<-Inf
+      }
+      #}}}
+    } else if (sysName=="Darwin") {
+      #Mac Systems {{{
+      memLim<-system("top -l 1 | grep PhysMem | awk '{print $6}'", intern=TRUE)
+      #Determine unit and convert to Bits
+           if (grepl('G',memLim)) { memLim<-as.numeric(strsplit(memLim,'G'))*1E9*8 } #Gigabytes
+      else if (grepl('M',memLim)) { memLim<-as.numeric(strsplit(memLim,'M'))*1E6*8 } #Megabytes
+      else if (grepl('k',memLim)) { memLim<-as.numeric(strsplit(memLim,'k'))*1E3*8 } #Kilobytes
+      else                        { memLim<-as.numeric(memLim)*8 }                   #bytes
+      if (!is.finite(memLim)) {
+        warning("Memory Limit determination failed. Setting to Inf.")
+        memLim<-Inf
+      }
+      #}}}
+    } else if (sysName=="Windows") {
+      #Windows Machines {{{
+      #Memory Limit returned in Bytes. Convert to Bits
+      memLim<-as.numeric(memory.limit())*8
+      if (!is.finite(memLim)) {
+        warning("Memory Limit determination failed. Setting to Inf.")
+        memLim<-Inf
+      }
+      #}}}
+    } else {
+      #Any Others, warn & set to Inf {{{
+      warning("Unknown Operating System Name. Cannot determine Memory Limits.\nUsing Infinity")
+      message("Unknown Operating System Name. Cannot determine Memory Limits.\nUsing Infinity")
       memLim<-Inf
+      #}}}
     }
-    #}}}
-  } else if (sysName=="Darwin") {
-    #Mac Systems {{{
-    memLim<-system("top -l 1 | grep PhysMem | awk '{print $6}'", intern=TRUE)
-    #Determine unit and convert to Bits
-         if (grepl('G',memLim)) { memLim<-as.numeric(strsplit(memLim,'G'))*1E9*8 } #Gigabytes
-    else if (grepl('M',memLim)) { memLim<-as.numeric(strsplit(memLim,'M'))*1E6*8 } #Megabytes
-    else if (grepl('k',memLim)) { memLim<-as.numeric(strsplit(memLim,'k'))*1E3*8 } #Kilobytes
-    else                        { memLim<-as.numeric(memLim)*8 }                   #bytes
-    if (!is.finite(memLim)) {
-      warning("Memory Limit determination failed. Setting to Inf.")
-      memLim<-Inf
-    }
-    #}}}
-  } else if (sysName=="Windows") {
-    #Windows Machines {{{
-    #Memory Limit returned in Bytes. Convert to Bits
-    memLim<-as.numeric(memory.limit())*8
-    if (!is.finite(memLim)) {
-      warning("Memory Limit determination failed. Setting to Inf.")
-      memLim<-Inf
-    }
-    #}}}
-  } else {
-    #Any Others, warn & set to Inf {{{
-    warning("Unknown Operating System Name. Cannot determine Memory Limits.\nUsing Infinity")
-    message("Unknown Operating System Name. Cannot determine Memory Limits.\nUsing Infinity")
-    memLim<-Inf
-    #}}}
   }#}}}
 
   #Setup Parameter Space (read .par file) {{{
-  param.env<-new.env(parent=environment())
-  readparfile(parfile,starttime,quiet,env=param.env)
+  if (!resume) {
+    param.env<-new.env(parent=environment())
+    readparfile(parfile,starttime,quiet,env=param.env)
+  }
   parameterList<-ls(envir=param.env)
   #}}}
 
   #From here on, produce warnings as they occur {{{
   options(warn=1)
+  #}}}
+
+  #If needed, register the parallel backend {{{
+  if (!MPIBackend) {
+    #Straight Register of cores
+    registerDoParallel(cores=param.env$ncores)
+    if (!quiet) { cat("   Program running with ",getDoParWorkers()," workers/threads.\n") }
+  }
   #}}}
 
   #Initialise Loop Counter {{{
@@ -91,45 +149,63 @@ function(parfile=NA, quiet=FALSE, ...){
   if (!quiet) { cat("   There are ",nloops," files to analyse:\n") }
   #}}}
 
+  #If doing multiple loops; save the parameters in case we need to reset mid-run {{{
+  if ((nloops>1)&(!resume)) {
+    save(file=".LambdarParameters.Rdata", param.env)
+  }
+  #}}}
+
   #Loop through files supplied {{{
-  for (f in 1:nloops) {
+  for (f in lstart:nloops) {
+    #Set restart value {{{
+    write.csv(file=".LambdarActiveLoop.txt", c(f), row.names=FALSE)
+    #}}}
+
     #Initialise Timer and Get Parameters for this run {{{
     loopstarttime<-proc.time()[3]
     getNthVar(parameterList,n=f,inenv=param.env,outenv=environment(),lim=nloops)
-    dir.create(file.path(pathroot, pathout), showWarnings = FALSE)
+    dir.create(file.path(pathroot,pathwork, pathout), showWarnings = FALSE)
     #}}}
 
     #Send Message output to logfile {{{
-    sinkfile<-file(file.path(pathroot,pathout,logfile),open="wt")
+    sinkfile<-file(file.path(pathroot,pathwork,pathout,logfile),open="wt")
     sink(sinkfile, type="message")
+    on.exit(sink(type="message"), add=TRUE)
+    #Print any warnings {{{
+    if ((!quiet)&(!(is.null(warnings())))) {
+    cat('\n')
+    print(warnings())
+    cat('\n')
+    }
+    #}}}
     #}}}
 
     #If wanted, crop image prior to read {{{
     if (cropimage) {
       #Data Image {{{
       if (verbose) { message(paste("Cropping Input Image: Outputting to", imfitsoutname)) }
-      crop_im(ra0=ra0, dec0=dec0, pathroot=pathroot, inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname)
+      crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname)
       if (verbose) { message(paste("Using", imfitsoutname, "as data image")) }
       datamap<-imfitsoutname
       #}}}
       #Mask Image {{{
       if (maskmap != "NONE") {
         if (verbose) { message(paste("Cropping Input Mask Map: Outputting to", immfitsoutname)) }
-        crop_im(ra0=ra0, dec0=dec0, pathroot=pathroot, inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname)
+        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname)
         if (verbose) { message(paste("Using", immfitsoutname, "as mask map")) }
         maskmap<-immfitsoutname
       #}}}
       #Or Weights Image {{{
       } else if (wgtmap != "NONE") {
         if (verbose) { message(paste("Cropping Input Weight Map: Outputting to", imwgtfitsoutname)) }
-        crop_im(ra0=ra0, dec0=dec0, pathroot=pathroot, inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname)
+        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname)
         if (verbose) { message(paste("Using", imwgtfitsoutname, "as weight map")) }
         wgtmap<-imwgtfitsoutname
       }#}}}
       #Error Image {{{
-      if (errormap != "NONE") {
+      if ((errormap != "NONE")&(is.na(as.numeric(errormap)))) {
         if (verbose) { message(paste("Cropping Input Error Map: Outputting to", imefitsoutname)) }
-        crop_im(ra0=ra0, dec0=dec0, pathroot=pathroot, inpim=errormap, cutrad=cutrad, fitsoutname=imefitsoutname)
+        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=errormap, cutrad=cutrad, fitsoutname=imefitsoutname)
         if (verbose) { message(paste("Using", imefitsoutname, "as error map")) }
         errormap<-imefitsoutname
       }#}}}
@@ -146,7 +222,7 @@ function(parfile=NA, quiet=FALSE, ...){
     #}}}
 
     #Read in Data, Mask map, & Error map {{{
-    readimage(environment(),quiet,showtime,image.env)
+    readimage(env=NULL,quiet,showtime,outenv=image.env)
     #Move Astrometry list from image env to main env {{{
     astr_struc<-image.env$astr_struc
     rm(astr_struc, envir=image.env)
@@ -155,7 +231,7 @@ function(parfile=NA, quiet=FALSE, ...){
 
     #If needed, read ZP Magnitude from Image header {{{
     if ((Magnitudes) & (magZP==-999)){
-      magZP<-read.fitskey(magZPlabel,paste(pathroot,datamap,sep=""))
+      magZP<-read.fitskey(magZPlabel,paste(pathroot,pathwork,datamap,sep=""))
       #If Failed, do not output Magnitudes {{{
       if (!is.finite(magZP)) {
         message("Zero Point Magnitude determination failed - Not outputting Magnitudes")
@@ -165,7 +241,7 @@ function(parfile=NA, quiet=FALSE, ...){
     }#}}}
 
     #Read source catalogue {{{
-    opencatalogue(environment())
+    opencatalogue(outenv=environment())
     #}}}
 
     #If wanted, Set Minimum Aperture Radius {{{
@@ -199,7 +275,24 @@ function(parfile=NA, quiet=FALSE, ...){
     catlen<-length(x_g)
     insidemask<-!((x_g <= 0) | (x_g >= length(image.env$im[,1])+1) | (y_g <= 0) | (y_g >= length(image.env$im[1,])+1))
     #Check that something is inside the image {{{
-    if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Single Apertures are inside the image.") }
+    if (length(which(insidemask==TRUE))==0) {
+      warning("No Single Apertures are inside the image.")
+      #Notify & Close Logfile {{{
+      message(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
+      message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
+      message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
+      sink(type='message')
+      close(sinkfile)
+      if (!quiet) {
+        cat(paste('- Done\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
+        cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
+        cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
+        if (f!=nloops) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
+      }
+      next
+      #}}}
+    }
+    #if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Single Apertures are inside the image.") }
     #}}}
     #Remove object catalogue entries {{{
     x_g<-x_g[which(insidemask)]
@@ -210,6 +303,7 @@ function(parfile=NA, quiet=FALSE, ...){
     theta_g<-theta_g[which(insidemask)]
     a_g<-a_g[which(insidemask)]
     b_g<-b_g[which(insidemask)]
+    if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
     if (filtcontam) { contams<-contams[which(insidemask)] }
     #}}}
     #Notify how many objects remain {{{
@@ -233,7 +327,10 @@ function(parfile=NA, quiet=FALSE, ...){
     theta_g<-theta_g[which(insidemask)]
     a_g<-a_g[which(insidemask)]
     b_g<-b_g[which(insidemask)]
+    if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
     if (filtcontam) { contams<-contams[which(insidemask)] }
+    chunkSize=length(id_g)/getDoParWorkers()
+    mpiopts<-list(chunkSize=chunkSize)
     #}}}
     #Notify how many objects remain {{{
     if (verbose) { message(paste("There are",length(x_g),"supplied objects with physical aperture values (",
@@ -252,7 +349,7 @@ function(parfile=NA, quiet=FALSE, ...){
       #Using CDELT keywords {{{
       asperpix<-max(abs(astr_struc$CDELT))*3600.
       #}}}
-    } else if (all(is.finite(astr_struc$CD))) {
+    } else if (all(is.finite(astr_struc$CD[1:2,1:2]))) {
       #Using CD matrix keywords {{{
       asperpix<-max(astr_struc$CD[1,1],astr_struc$CD[2,2])*3600.
       #}}}
@@ -293,7 +390,7 @@ function(parfile=NA, quiet=FALSE, ...){
     }#}}}
 
     #If wanted, check memory-safe {{{
-    if (memSafe & is.finite(memLim)) {
+    if ((!MPIBackend)&&(memSafe & is.finite(memLim))) {
       #Check that computation is able to be performed within memory limits {{{
       if (!quiet) { cat("   Checking Memory Usage & Limits {") }
       #Details {{{
@@ -303,7 +400,7 @@ function(parfile=NA, quiet=FALSE, ...){
       #     apmem = napertures*apsizeinBits*nLists
       # where
       #     nLists=4
-      #     apsizeinbits = (max(semimagor.axis)*2/asperpix)^2*bitsperpixel
+      #     apsizeinbits = (3rd Quantile{(semimajor.axis)}*2/asperpix)^2*bitsperpixel
       #
       # approx image memory during calculations:
       #     immem = nimages*imsizeinBytes*nThreads
@@ -318,7 +415,7 @@ function(parfile=NA, quiet=FALSE, ...){
         memTot<-as.numeric(system("awk '/MemTotal:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
         memAct<-as.numeric(system("awk '/Active:/ {print $2}' /proc/meminfo", intern=TRUE))*1E3*8
         memCur<-memTot-memAct
-        if (!is.finite(memCur)) {
+        if ((length(memCur)==0)||!is.finite(memCur)) {
           warning("Memory determination failed. Setting to Inf.")
           memCur<-Inf
         }
@@ -358,6 +455,10 @@ function(parfile=NA, quiet=FALSE, ...){
       catlen<-length(id_g)
       #Use 3rd Quantile of aperture semimajor axes {{{
       aprad.3rdquant<-as.numeric(summary(a_g[which(a_g>0)])[5])
+      if (is.na(aprad.3rdquant)) {
+        #All apertures are point sources - make a default width @ 10 pix
+        aprad.3rdquant<-10
+      }
       #}}}
       apsizeinbits<-(2*aprad.3rdquant/asperpix)^2*64
       apmem<-catlen*apsizeinbits*4
@@ -426,7 +527,7 @@ function(parfile=NA, quiet=FALSE, ...){
       cat("   } - Done\n")
       cat('} Initialisation Complete ')
     }
-    if (showtime) { cat(paste(' (  Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'  )\n')) }
+    if (showtime) { cat(paste(' (  Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'  )\n')) }
     #}}}
 
     #-----Diagnostic-----# {{{
@@ -445,8 +546,21 @@ function(parfile=NA, quiet=FALSE, ...){
     #}}}
 
     #Run Flux Measurements {{{
-    loopresults<-fluxmeasurements(environment())
-    results<-c(results, loopresults)
+    loopresults<-fluxmeasurements()
+    if (doReturn) {
+      results<-c(results, loopresults)
+    } else {
+      loopresults<-NULL
+    }
+    #}}}
+
+
+    #Notify & Close Logfile {{{
+    message(paste('-----------------------------------------------------\nDatamap Complete\n'))
+    message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
+    message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
+    sink(type='message')
+    close(sinkfile)
     #}}}
 
     #Loop Completed - Print Update, Loop {{{
@@ -455,21 +569,24 @@ function(parfile=NA, quiet=FALSE, ...){
       cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
       cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
       if (f!=nloops) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
-      message(paste('-----------------------------------------------------\nDatamap Complete\n'))
-      message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
-      message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
     }
     #}}}
-    #Remove Sink {{{
-    sink(type="message")
-    #}}}
+  }#}}}
+
+  #Remove State Preservation Files {{{
+  if (nloops>1) {
+    system("rm -f .LambdarActiveLoop.txt .LambdarParameters.Rdata")
   }#}}}
 
   #Program Completed - Print closing {{{
   if (!quiet) {
     cat(paste('-----------------------------------------------------\nProgram Complete\n'))
   }
-  return=results
+  if (doReturn) {
+    return=results
+  } else {
+    return="There are no results being returned because doReturn=FALSE"
+  }
   #}}}
 
 }

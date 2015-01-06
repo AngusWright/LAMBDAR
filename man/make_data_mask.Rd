@@ -1,34 +1,33 @@
-\name{make_sfa_mask}
-\alias{make_sfa_mask}
+\name{make_data_mask}
+\alias{make_data_mask}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Make Weighted and Convolved Apertures
+Make Data Stamps
 }
 \description{
 __This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
 
-Convolve the input aperture stamps with the PSF, and weight the resultant apertures by the input fluxweightin.
+Create a series of length (m) list of (n,n) arrays, containing the data cutouts around all input catalogue objects.
 }
 \usage{
-make_sfa_mask(env=NULL,sa_mask,fluxweightin=NULL,outenv=NULL)
+make_data_mask(env=NULL,outenv=NULL)
 }
-%- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{env}{
 environment; the environment containing the parameters used in 'MeasureFluxes'
-}
-  \item{sa_mask}{
-numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) aperture stamps
-}
-  \item{fluxweightin}{
-numeric vector; can be either a length (m) vector of aperture weights, or a single numeric applied to all apertures as a scale-factor.
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
 }
 }
+%- maybe also 'usage' for other objects documented here.
+\details{
+This function creates cutouts of the input image, input mask, and error map. This is done so that parallelisation is as efficient
+as possible.
+}
 \value{
-numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) convolved & weighted aperture stamps
+numeric [[m]][n,n] list; stamps of the input image
+Further numeric [[m]][n,n] list may be generated, but are assigned to the output environement directly, and are not returned.
 }
 %%\references{
 %% ~put references to the literature/web site here ~
@@ -44,7 +43,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}, \link{convolvepsf}
+\link{MeasureFluxes}, \link{fluxmeasurements}
 }
 %%\examples{
 

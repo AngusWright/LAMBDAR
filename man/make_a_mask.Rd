@@ -5,6 +5,8 @@
 Create a Full Mask
 }
 \description{
+__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+
 Create a full image mask of all smaller masks/apertures which are input. The full mask is of dimension fullmaskdim.
 Pixel locations for the placement of smaller masks on large mask are determined from the
 input variables x, y.
@@ -18,7 +20,7 @@ make_a_mask(env=NULL, masks, fullmaskdim, outenv=NULL)
 environment; the environment containing the parameters used in 'MeasureFluxes'
 }
   \item{masks}{
-numeric length(m) list of (n,n) arrays; length (m) list of (n,n) stamps, each containing a mask.
+numeric length(m) list of (n,n) arrays; length (m) list of (n,n) stamps, each containing an aperture mask.
 }
   \item{fullmaskdim}{
 numeric (2) vector; fullmaskdim[1] is the x-dimension of the full mask. fullmaskdim[2] is the y-dimension. fullmaskdim values must be > submask width.

@@ -1,6 +1,7 @@
 createparfile <-
   function(
     RootDirectory="./",
+    WorkingDirectory="./",
     Catalogue="./catalogue.fits",
     PSFMap="NONE",
     DataMap="./datamap.fits",
@@ -53,8 +54,12 @@ createparfile <-
     DoSkyEst=0,
     SkyEstIters=5,
     SkyEstProbCut=3,
+    SkyDefault="median",
     SkyCorrelNoise=1,
     GetSkyRMS=1,
+    FluxWgtType="flux",
+    IterateFluxes=1,
+    nIterations=2,
     UsePixelFluxWgts=1,
     OutputDirectory="./Output/",
     LogFile="LAMBDARlog.txt",
@@ -95,6 +100,7 @@ cat(paste("#--------------------------------------------------------------------
 
 #                #---------Working Directory Path-----------#
 RootDirectory          ",RootDirectory     ,"
+WorkingDirectory       ",WorkingDirectory  ,"
 #                #-------File Paths: Relative to Root-------#
 Catalogue              ",Catalogue         ,"    #Catalogue Filename and Path
 PSFMap                 ",PSFMap            ,"    #PSF Filename and Path                      (use 'NONE' if not wanted)
@@ -134,7 +140,7 @@ CropFitsName           ",CropFitsName       ,"    #Name of the output cropped im
 RemoveContam           ",RemoveContam      ,"    #Remove Contaminants from the image?         [1/0]
 PSFConvolve            ",PSFConvolve       ,"    #Convolve the Aperture with a PSF?                                              [1/0]
 ApertureConfLimit      ",ApertureConfLimit ,"    #Confidence limit used when converting PSF convolved apertures to binary apertures  [1/0]
-AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N90E0 angular coords, 1 if it is in N0E90 coords
+AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N0E90 angular coords, 1 if it is in N90E0 coords
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
 MinApRad               ",MinApRad          ,"    #State minimum aperture to use for sources
 SmoothAper             ",SmoothAper        ,"    #Smooth Apertures by resampling? (Improves aperture surface integral accuracy)  [1/0]
@@ -153,9 +159,13 @@ MagZPLabel             ",MagZPLabel        ,"    #Label used for the Zero Point 
 DoSkyEst               ",DoSkyEst          ,"    #Perform estimate of local sky-background for each object, and subtract it from the flux
 SkyEstIters            ",SkyEstIters       ,"    #Number of iterations of sigma-cutting used in sky estimation
 SkyEstProbCut          ",SkyEstProbCut     ,"    #Sigma Level used in sigma-cutting of sky pixels
+SkyDefault             ",SkyDefault        ,"    #Default Value to use for local sky if estimation fails. May be numeric, 'median', or 'mean'. Otherwise will be NA.
 SkyCorrelNoise         ",SkyCorrelNoise    ,"    #Level of Correlated noise in the image, if known (factor is multiplicative - 1 == no correlated noise)
 GetSkyRMS              ",GetSkyRMS         ,"    #As above without subtraction, and output the local sky RMS (if doing sky estimate, this happens automatically)
 UsePixelFluxWgts       ",UsePixelFluxWgts  ,"    #Do you want the pixel flux at the object RA DEC to be used for relative fluxweighting? [1/0]
+FluxWgtType            ",FluxWgtType       ,"    #What is the form of the input fluxweights ('flux', 'mag', or 'scale')?
+IterateFluxes          ",IterateFluxes     ,"    #Do you want to iterate the flux determination to improve deblending?
+nIterations            ",nIterations       ,"    #How many iterations do you want to do?
 #                #---------------Outputs--------------------#
 OutputDirectory        ",OutputDirectory   ,"    #Output directory Name and Path
 LogFile                ",LogFile           ,"    #Filename for Log
@@ -178,7 +188,7 @@ NoContamImage          ",NoContamImage     ,"    #Filename for Contaminant Subtr
 MemorySafe             ",MemorySafe        ,"    #Do we want to perform checks to ensure the program does not use more memory than is available? [1/0]
 nProcessors            ",nProcessors       ,"    #Number of Processors Available for Use in Computations
 ApStampWidth           ",ApStampWidth      ,"    #Width of the Aperture stamps in multiples of aperture major axis; Can be changed with caution if memory issues arise.
-PSFConfidence          ",PSFConfidence     ,"    #Number of PSF FWHM's added to the Aperture Stamp Widths, to wings on apertures after PSF convolution."))
+PSFConfidence          ",PSFConfidence     ,"    #PSF Confidence Value used in buffering the Aperture Stamp Widths; PSF integrated out to this width, and that radii is added."))
 #}}}
 #Close Sink and return NULL {{{
 sink()

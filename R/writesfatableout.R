@@ -2,10 +2,9 @@ writesfatableout <-
 function(env=NULL,filename) {
   #Write out a table containing the flux results for each galaxy
   # Load Parameter Space
-  if(is.null(env)) {
-    stop("No Parameter Space Environment Specified in function call")
+  if(!is.null(env)) {
+    attach(env, warn.conflicts=FALSE)
   }
-  attach(env, warn.conflicts=FALSE)
   #on.exit(detach('env'))
 
   sz=length(ra_g)
@@ -43,122 +42,84 @@ function(env=NULL,filename) {
   #}}}
   #}}}
 
-  if (diagnostic) {
-    newtable = t(replicate(sz, list('CATA_INDEX'=0,
-                            'ALPHA_J2000'=0,
-                            'DELTA_J2000'=0,
-                            'X_IMAGE'=0,
-                            'Y_IMAGE'=0,
-                            'NX_PIX2EDGE'=0,
-                            'NY_PIX2EDGE'=0,
-                            'THETA_J2000'=0.,
-                            'MAJOR_ARCSEC'=0,
-                            'MINOR_ARCSEC'=0,
-                            'SumSA'=0.,
-                            'SumSFA'=0.,
-                            'SumSFAsq'=0.,
-                            'SumSFAxData'=0.,
-                            'SumSFAsqxErrorsq'=0.,
-                            'SkyLocal'=0.,
-                            'SkyFlux'=0.,
-                            'SkyError'=0.,
-                            'SkyRMS'=0.,
-                            'SkyRMSpval'=0.,
-                            'DetecThres_5sig'=0.,
-                            'DetecThresMag_5sig'=0.,
-                            'SFAFlux'=0.,
-                            'SFAErr'=0.,
-                            'SumDFA'=0.,
-                            'SumDFAsq'=0.,
-                            'SumDFAxData'=0.,
-                            'SumDFAsqxErrorsq'=0.,
-                            'DFAFlux'=0.,
-                            'DFAErr'=0.,
-                            'Magnitude'=0.,
-                            'PixelFlux'=0.)))
-
-    newtable[,"CATA_INDEX"] = as.integer(id_g)
-    newtable[,"ALPHA_J2000"] = ra_g
-    newtable[,"DELTA_J2000"] = dec_g
-    newtable[,"X_IMAGE"] = x_p
-    newtable[,"Y_IMAGE"] = y_p
-    newtable[,"NX_PIX2EDGE"] = dx_p
-    newtable[,"NY_PIX2EDGE"] = dy_p
-    newtable[,"THETA_J2000"] = theta_g
-    newtable[,"MAJOR_ARCSEC"] = a_g
-    newtable[,"MINOR_ARCSEC"] = b_g
-    newtable[,"SumSA"] = ssa
-    newtable[,"SumSFA"] = ssfa
-    newtable[,"SumSFAsq"] = ssfa2
-    newtable[,"SumSFAxData"] = ssfad
-    newtable[,"SumSFAsqxErrorsq"] = ssfa2e2
-    newtable[,"SkyLocal"] = skylocal
-    newtable[,"SkyFlux"] = skyflux
-    newtable[,"SkyError"] = skyerr
-    newtable[,"SkyRMS"] = skyrms
-    newtable[,"SkyRMSpval"] = skypval
-    newtable[,"DetecThres_5sig"] = detecthres
-    newtable[,"DetecThresMag_5sig"] = detecthres.mag
-    newtable[,"SFAFlux"] = sfaflux
-    newtable[,"SFAErr"] = sfaerr
-    newtable[,"SumDFA"] = sdfa
-    newtable[,"SumDFAsq"] = sdfa2
-    newtable[,"SumDFAxData"] = sdfad
-    newtable[,"SumDFAsqxErrorsq"] = sdfa2e2
-    newtable[,"DFAFlux"] = dfaflux
-    newtable[,"Magnitude"] = mags
-    newtable[,"DFAErr"] = dfaerr
-    newtable[,"PixelFlux"] = pixflux
-    write.table(newtable,file=filename,sep=",", col.names=TRUE, na="-", dec=".", row.names=FALSE)
+  if (verbose|diagnostic) {
+    newtable<-data.frame(CATA_INDEX = as.integer(id_g))
+    newtable[["ALPHA_J2000"]] = ra_g
+    newtable[["DELTA_J2000"]] = dec_g
+    newtable[["X_IMAGE"]] = x_p
+    newtable[["Y_IMAGE"]] = y_p
+    newtable[["NX_PIX2EDGE"]] = dx_p
+    newtable[["NY_PIX2EDGE"]] = dy_p
+    newtable[["THETA_J2000"]] = theta_g
+    newtable[["MAJOR_ARCSEC"]] = a_g
+    newtable[["MINOR_ARCSEC"]] = b_g
+    newtable[["SumSA"]] = ssa
+    newtable[["SumSFA"]] = ssfa
+    newtable[["SumSFAsq"]] = ssfa2
+    newtable[["SumSFAxData"]] = ssfad
+    newtable[["SumSFAsqxErrorsq"]] = ssfa2e2
+    newtable[["SkyLocal"]] = skylocal
+    newtable[["SkyFlux_units"]] = skyflux
+    newtable[["SkyError_units"]] = skyerr
+    newtable[["SkyFlux_Jy"]] = skyflux*10^(-(magZP-8.9)/2.5)
+    newtable[["SkyError_Jy"]] = (skyerr)*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyRMS_units"]] = skyrms
+    newtable[["SkyRMS_Jy"]] = skyrms*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyRMSpval"]] = skypval
+    newtable[["DetecThres_5sig"]] = detecthres
+    newtable[["DetecThresMag_5sig"]] = detecthres.mag
+    newtable[["SFAFlux_units"]] = sfaflux
+    newtable[["SFAErr_units"]] = sfaerr
+    newtable[["SFAFlux_Jy"]] = sfaflux*10^(-(magZP-8.9)/2.5)
+    newtable[["SFAErr_Jy"]] = (sfaerr)*(10^(-(magZP-8.9)/2.5))
+    newtable[["SumDFA"]] = sdfa
+    newtable[["SumDFAsq"]] = sdfa2
+    newtable[["SumDFAxData"]] = sdfad
+    newtable[["SumDFAsqxErrorsq"]] = sdfa2e2
+    newtable[["DFAFlux_units"]] = dfaflux
+    newtable[["DFAErr_units"]] = dfaerr
+    newtable[["DFAFlux_Jy"]] = dfaflux*10^(-(magZP-8.9)/2.5)
+    newtable[["DFAErr_Jy"]] = (dfaerr)*(10^(-(magZP-8.9)/2.5))
+    newtable[["ABMagnitude"]] = mags
+    newtable[["ABMagErr"]] = (2.5/log(10))*(dfaerr/dfaflux)
+    newtable[["ApCorr"]] = 1+(abs(spsf-ssfap)/spsf)
+    newtable[["PixelFlux"]] = pixflux
+    write.csv(newtable,file=filename, na="-", row.names=FALSE)
   } else {
-  newtable = t(replicate(sz, list('CATA_INDEX'=0,
-                            'ALPHA_J2000'=0,
-                            'DELTA_J2000'=0,
-                            'X_IMAGE'=0,
-                            'Y_IMAGE'=0,
-                            'NX_PIX2EDGE'=0,
-                            'NY_PIX2EDGE'=0,
-                            'SkyLocal'=0.,
-                            'SkyFlux'=0.,
-                            'SkyError'=0.,
-                            'SkyRMS'=0.,
-                            'SkyRMSpval'=0.,
-                            'DetecThres_5sig'=0.,
-                            'DetecThresMag_5sig'=0.,
-                            'SumSFA'=0.,
-                            'SumDFA'=0.,
-                            'SFAFlux'=0.,
-                            'SFAErr'=0.,
-                            'DFAFlux'=0.,
-                            'DFAErr'=0.,
-                            'Magnitude'=0.,
-                            'PixelFlux'=0.)))
-
-    newtable[,"CATA_INDEX"] = as.integer(id_g)
-    newtable[,"ALPHA_J2000"] = ra_g
-    newtable[,"DELTA_J2000"] = dec_g
-    newtable[,"X_IMAGE"] = x_p
-    newtable[,"Y_IMAGE"] = y_p
-    newtable[,"NX_PIX2EDGE"] = dx_p
-    newtable[,"NY_PIX2EDGE"] = dy_p
-    newtable[,"SkyLocal"] = skylocal
-    newtable[,"SkyFlux"] = skyflux
-    newtable[,"SkyError"] = skyerr
-    newtable[,"SkyRMS"] = skyrms
-    newtable[,"SkyRMSpval"] = skypval
-    newtable[,"DetecThres_5sig"] = detecthres
-    newtable[,"DetecThresMag_5sig"] = detecthres.mag
-    newtable[,"SumSFA"] = ssfa
-    newtable[,"SumDFA"] = sdfa
-    newtable[,"SFAFlux"] = sfaflux
-    newtable[,"SFAErr"] = sfaerr
-    newtable[,"DFAFlux"] = dfaflux
-    newtable[,"Magnitude"] = mags
-    newtable[,"DFAErr"] = dfaerr
-    newtable[,"PixelFlux"] = pixflux
-    write.table(newtable,file=filename,sep=",", col.names=TRUE, na="-", dec=".", row.names=FALSE)
+    newtable=data.frame(CATA_INDEX=as.integer(id_g))
+    newtable[["ALPHA_J2000"]] = ra_g
+    newtable[["DELTA_J2000"]] = dec_g
+    newtable[["X_IMAGE"]] = x_p
+    newtable[["Y_IMAGE"]] = y_p
+    newtable[["NX_PIX2EDGE"]] = dx_p
+    newtable[["NY_PIX2EDGE"]] = dy_p
+    newtable[["SkyLocal"]] = skylocal
+    newtable[["SkyFlux_units"]] = skyflux
+    newtable[["SkyError_units"]] = skyerr
+    newtable[["SkyFlux_Jy"]] = skyflux*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyError_Jy"]] = skyerr*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyRMS_units"]] = skyrms
+    newtable[["SkyRMS_Jy"]] = skyrms*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyRMSpval"]] = skypval
+    newtable[["DetecThres_5sig"]] = detecthres
+    newtable[["DetecThresMag_5sig"]] = detecthres.mag
+    newtable[["SumSFA"]] = ssfa
+    newtable[["SumDFA"]] = sdfa
+    newtable[["SFAFlux_units"]] = sfaflux
+    newtable[["SFAErr_units"]] = sfaerr
+    newtable[["SFAFlux_Jy"]] = sfaflux*(10^(-(magZP-8.9)/2.5))
+    newtable[["SFAErr_Jy"]] = sfaerr*(10^(-(magZP-8.9)/2.5))
+    newtable[["DFAFlux_units"]] = dfaflux
+    newtable[["DFAErr_units"]] = dfaerr
+    newtable[["DFAFlux_Jy"]] = dfaflux*(10^(-(magZP-8.9)/2.5))
+    newtable[["DFAErr_Jy"]] = dfaerr*(10^(-(magZP-8.9)/2.5))
+    newtable[["ABMagnitude"]] = mags
+    newtable[["ABMagErr"]] = (2.5/log(10))*(dfaerr/dfaflux)
+    newtable[["ApCorr"]] = 1+(abs(spsf-ssfap)/spsf)
+    newtable[["PixelFlux"]] = pixflux
+    write.csv(newtable,file=filename, na="-", row.names=FALSE)
   }
 
-  detach(env)
+  if (!is.null(env)) { detach(env) }
   return=NULL
 }

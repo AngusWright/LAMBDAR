@@ -5,6 +5,8 @@
 Source Subtraction from FITS image
 }
 \description{
+__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+
 Perform a subtraction of sources and/or contaminants from a FITS image.
 }
 \usage{
@@ -38,8 +40,8 @@ logical (m) vector; if TRUE, then the object will be subtracted
 }
 }
 \details{
-Procedure performs a subtraction of the provided sfa_models from the 'image'. The models are normalised so that the
-integral of ith model is fluxes[i]. This means that the source subtraction is only going to accurately remove all
+Procedure performs a subtraction of the provided sfa_models from 'image'. The models are normalised so that the
+integral of the ith model is fluxes[i]. This means that the source subtraction is only going to accurately remove all
 object flux (leaving only noise) in cases where the object is perfectly modeled. As this is rarely the case, the
 result of this source subtraction is generally the creation of 'butterfly' patterns. This is an indication that objects
 are not being modeled perfectly by the aperture-psf convolution.

@@ -1,12 +1,15 @@
 readimage <-
-function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
+function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL){
 
   # Load Parameter Space {{{
-  if(is.null(env)) {
-    stop("No Parameter Space Environment Specified in function call")
+  if(!is.null(env)) {
+    attach(env, warn.conflicts=FALSE)
   }
-  if(is.null(outenv)) { outenv<-env }
-  attach(env, warn.conflicts=FALSE)
+  if(is.null(outenv)&!is.null(env)) { outenv<-env }
+  else if (is.null(outenv)) {
+    warning("Output Environment cannot be NULL; using parent env")
+    outenv<-parent.env(environment())
+  }
   #}}}
 
   #Read Data, Mask Map, and Error Map {{{
@@ -14,8 +17,26 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
   if (!quiet) { cat(paste("   Reading Data from Image",datamap,"   ")) }
   if (showtime) { timer<-proc.time() }
 
+  #Setup Astrometry Structure {{{
+  astr_struc<-read.astr(paste(pathroot,pathwork,datamap,sep=""))
+  # Check WCS {{{
+  if (any(is.na(astr_struc$CTYPE[c(1:2)]))) {
+  } else if (all(grepl("TAN", astr_struc$CTYPE[c(1:2)]))) {
+    #WCS is TAN Gnomonic; Continue without issue
+  } else if (all(grepl("SIN", astr_struc$CTYPE[c(1:2)]))) {
+    #WCS is SIN Orthographic; if no rotation, continue without error
+    if (!(astr_struc$CD[1,2]==0 && astr_struc$CD[2,1]==0)) {
+      #Error; WCS has rotation
+      stop("Fits file has WCS 'SIN' with Rotation; currently only TAN Gnomonic & SIN without rotation are compatible.")
+    }
+  } else {
+    #Error; WCS not compatible
+    stop("Fits file has an incompatible WCS; currently only TAN Gnomonic & SIN without rotation are compatible.")
+  }
+  #}}}
+
   #Test Read of Data Image for errors {{{
-  im_fits<-try(read.fits(paste(pathroot,datamap,sep=""),hdu=extn, comments=FALSE))
+  im_fits<-try(read.fits(paste(pathroot,pathwork,datamap,sep=""),hdu=extn, comments=FALSE))
   if (class(im_fits)=="try-error") {
     #Stop on Error
     geterrmessage()
@@ -33,10 +54,6 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
   im[which(!is.finite(im))]<-0.0
   #}}}
 
-  #Setup Astrometry Structure {{{
-  astr_struc<-read.astr(paste(pathroot,datamap,sep=""))
-  #}}}
-
   #Finished Setting Astrometry {{{
   if (showtime) { cat(paste(" - Done (Image Read took",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
   timer<-proc.time()
@@ -47,7 +64,7 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
   if ((wgtmap!="NONE")&(maskmap=="NONE"|errormap=="NONE")) {
     if (!quiet) { cat(paste("   Reading Data from Weight Map",wgtmap,"   ")) }
     #Try read weight map {{{
-    imwt_fits<-try(read.fits(paste(pathroot,wgtmap,sep=""),hdu=extnwgt,comments=FALSE))
+    imwt_fits<-try(read.fits(paste(pathroot,pathwork,wgtmap,sep=""),hdu=extnwgt,comments=FALSE))
     if (class(imwt_fits)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -89,7 +106,7 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
     #Mask Present, Read {{{
     if (!quiet) { cat(paste("   Reading Data from MaskMap",maskmap,"   ")) }
     #Test Read of Mask Map for errors {{{
-    imm_fits<-try(read.fits(paste(pathroot,maskmap,sep=""),hdu=extnmask, comments=FALSE))
+    imm_fits<-try(read.fits(paste(pathroot,pathwork,maskmap,sep=""),hdu=extnmask, comments=FALSE))
     if (class(imm_fits)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -131,12 +148,16 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
       #Gain Value {{{
       if (!quiet) { cat(paste("   Using Supplied Single Gain value of",errormap," for errors   ")) }
       ime<-abs(im)/sqrt(abs(im*as.numeric(errormap)))
+      hdr_err<-hdr_str
+      #Remove NA/NaN/Inf's {{{
+      ime[which(!is.finite(ime))]<-0.0
+      #}}}
       #}}}
     } else {
       #Sigma Map File {{{
       if (!quiet) { cat(paste("   Reading Data from ErrorMap",errormap,"   ")) }
       #Test Read of Error Map for errors {{{
-      ime_fits<-try(read.fits(paste(pathroot,errormap,sep=""),hdu=extnerr, comments=FALSE))
+      ime_fits<-try(read.fits(paste(pathroot,pathwork,errormap,sep=""),hdu=extnerr, comments=FALSE))
       if (class(ime_fits)=="try-error") {
         #Stop on Error
         geterrmessage()
@@ -155,6 +176,9 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
     }
     #}}}
   }
+  # Check if we can reduce the memory required {{{
+  if (length(unique(as.numeric(ime)))==1) { ime<-unique(as.numeric(ime)) }
+  #}}}
   #Scale error map by Efactor {{{
   ime=ime*Efactor
   #}}}
@@ -172,7 +196,7 @@ function(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL){
   }#}}}
 
   #Parse Parameter Space {{{
-  detach(env)
+  if (!is.null(env)) { detach(env) }
   assign("imm"       , imm       , envir = outenv)
   assign("ime"       , ime       , envir = outenv)
   assign("im"        , im        , envir = outenv)

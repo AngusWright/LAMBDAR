@@ -5,9 +5,14 @@
 Perform Flux Measurements
 }
 \description{
+__This Function is not designed to be called directly; it is a subroutine designed to be called directly from MeasureFluxes__
+
 Given an environment containing all the requisite parameters, the function output a FITS table containing measured
-fluxes. Setup to this procedure is performed by a host of functions, the main of which is 'MeasureFluxes'. Generally speaking,
-this function is not designed to be called directly.
+photometric fluxes measured from an input FITS file, and using input aperture parameters.
+Setup to this procedure is performed by a host of functions, the main of which is 'MeasureFluxes'.
+
+As with MeasureFluxes, this function will either return NULL or a list containing the measured fluxes, determined
+by the user in the parameter file.
 }
 \usage{
 fluxmeasurements(env=NULL)
@@ -22,29 +27,18 @@ environment; The environment where all parameters are stored. See 'readparfile' 
 %%  ~~ If necessary, more details than the description above ~~
 %%}
 \value{
+  NULL; or a list containing the following:
   \item{sfafluxout}{
 numeric (m) vector; object fluxes
 }
   \item{sfaerrout}{
 numeric (m) vector; object flux errors
 }
-  \item{sfafluxwout}{
-numeric (m) vector; weighted object fluxes
-}
-  \item{sfaerrwout}{
-numeric (m) vector; weighted object flux errors
-}
   \item{dfafluxout}{
 numeric (m) vector; deblended object fluxes
 }
   \item{dfaerrout}{
 numeric (m) vector; deblended object flux errors
-}
-  \item{dfafluxwout}{
-numeric (m) vector; deblended weighted object fluxes
-}
-  \item{dfaerrwout}{
-numeric (m) vector; deblended weighted object flux errors
 }
 }
 %%\references{
@@ -63,9 +57,9 @@ Angus H Wright{ ICRAR}
 \seealso{
 \link{MeasureFluxes}
 }
-\examples{
+%%\examples{
 
-}
+%%}
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
 \keyword{ ~kwd1 }

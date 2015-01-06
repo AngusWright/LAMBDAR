@@ -24,7 +24,7 @@ convolvepsf(arr1, arr2, normalise = TRUE, mag2 = TRUE, zapdig = NULL)
   \item{normalise}{
 logical; if TRUE, the normalised Fourier Transform will be calculated
 }
-  \item{nomag2}{
+  \item{mag2}{
 logical; if TRUE, then the magnitude information of arr2 is removed prior to FFT via normalisation
 }
   \item{zapdig}{

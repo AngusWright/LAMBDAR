@@ -5,6 +5,8 @@
 Read and Process PSF FITS Image
 }
 \description{
+__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+
 Reads an input fits image for a Point Spread Function (PSF) and performs calculations needed in MeasureFluxes.
 However, when a non-zero gaussian FWHM (in arcsec) is provided, a gaussian psf will be generated. This is useful
 if no PSF map is present.
@@ -29,6 +31,8 @@ numeric; SemiMajor axis of the largest aperture in catalogue
   \item{confidence}{
 numeric; desired maximum confidence percentage used in generating/saving the PSF and PSF convolved stamps.
          PSF limits beyond the radius corresponding to this confidence level will be truncated.
+         If confidence is 1 when a non-zero gaussian FWHM is present, confidence is instead forced to be
+         1-(1E-16); i.e. the highest non-unity value possible.
 }
   \item{normalize}{
 logical; if TRUE, PSF will be normalised to a height of 1

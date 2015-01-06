@@ -1,11 +1,9 @@
-get.confidence<-
-function(zdist,confidence=0.95, nsteps=100, value=FALSE){
+get.fwhm<-
+function(zdist, nsteps=100){
 #Details {{{
-#function returns the radius from the
-#*image maxima*, in pixels, that contains
-#<confidence> proportion of the image
-#if value=TRUE, then the value of the PSF
-#at that confidence radius is returned instead }}}
+#function returns the FHWM of the image from
+#*maxima*, in pixels.
+#}}}
 
   #Setup Radius-map {{{
   centre<-as.numeric(which(zdist==max(zdist), arr.ind=TRUE))
@@ -20,14 +18,11 @@ function(zdist,confidence=0.95, nsteps=100, value=FALSE){
   #Determine Confidence Radius {{{
   tmp.order<-order(r)
   zvec<-as.numeric(zdist[lim[1]:lim[2],lim[3]:lim[4]])
-  zcumsum<-cumsum(zvec[tmp.order])
-  rcut<-max(abs(r[tmp.order][zcumsum<=sum(zdist)*confidence]))
+  zbin<-zvec[tmp.order]
+  rcut<-max(abs(r[tmp.order][zbin>max(zdist,na.rm=TRUE)*0.5]))
   #}}}
-  #Return desired parameter {{{
-  if (value) {
-    return=zvec[which(r==rcut)]
-  } else {
-    return=ceiling(rcut)
-  }#}}}
+  #Return FWHM {{{
+  return=ceiling(rcut)*2
+  #}}}
 }
 

@@ -5,6 +5,8 @@
 Open and Read Catalogue
 }
 \description{
+__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+
 Open and read an input catalogue for the MeasureFluxes procedure.
 }
 \usage{

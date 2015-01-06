@@ -1,35 +1,41 @@
-skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3){
-  if(length(ra) != length(dec)){stop('ra and dec lengths do not much!')}
-  if(length(ra) != length(cutlo)){stop('ra and cutlo lengths do not much!')}
-  if(length(ra) != length(cuthi)){stop('ra and cuthi lengths do not much!')}
+skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3, mpiopts=""){
+  if(length(x_p) != length(y_p)){stop('x_pix and y_pix lengths do not much!')}
+  if(length(x_p) != length(cutlo)){stop('x_pix and cutlo lengths do not much!')}
+  if(length(x_p) != length(cuthi)){stop('x_pix and cuthi lengths do not much!')}
+  if(length(x_p) != length(im_mask)){stop('x_pix and im_mask lengths do not much!')}
   cutlo[cutlo<hardlo*PSFFWHMinPIX]<-hardlo*PSFFWHMinPIX
   cuthi[cuthi<hardhi*PSFFWHMinPIX]<-hardhi*PSFFWHMinPIX
-  ravec<-ra;decvec<-dec;cutlovec<-round(cutlo);cuthivec<-round(cuthi)
-  pixlocvec<-round(ad2xy(ra,dec,astrom))
-  count<-length(ra)
+  cutlovec<-round(cutlo)
+  cuthivec<-round(cuthi)
   probcut<-1-pnorm(probcut)
 
-  output<-NULL
-  estimated<-FALSE
-  for (i in 1:count){
-    ra<-ravec[i];dec<-decvec[i];cutlo<-cutlovec[i];cuthi<-cuthivec[i];pixloc<-pixlocvec[i,]
+  output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x_p, pixlocy=y_p, origim=im_mask, maskim=imm_mask, .options.mpi=mpiopts, .combine='rbind') %dopar% {
+  #browser()
+  #for (kk in 346:length(cutlovec)) {
+  #  cutlo=cutlovec[kk]
+  #  cuthi=cuthivec[kk]
+  #  pixlocx=x_p[kk]
+  #  pixlocy=y_p[kk]
+  #  origim=im_mask[[kk]]
+  #  maskim=imm_mask[[kk]]
+
     #Find extreme pixels to cut out
-    xlocs<-pixloc[1]+(-cuthi:cuthi)
-    ylocs<-pixloc[2]+(-cuthi:cuthi)
+    xlocs<-pixlocx+(-cuthi:cuthi)
+    ylocs<-pixlocy+(-cuthi:cuthi)
     #Find object location on new pixel grid
     xcen<-cuthi+1-length(which(xlocs<0))
     ycen<-cuthi+1-length(which(ylocs<0))
     #Select only pixels which are inside the image bounds
-    xsel<-which(xlocs>0 & xlocs<=astrom$NAXIS[1])
-    ysel<-which(ylocs>0 & ylocs<=astrom$NAXIS[2])
+    xsel<-which(xlocs>0 & xlocs<=length(origim[,1]))
+    ysel<-which(ylocs>0 & ylocs<=length(origim[1,]))
     #Trim to above
     xlocs<-xlocs[xsel]
     ylocs<-ylocs[ysel]
     #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
     if(remmask){
-      tempim<-origim$dat[[1]][xlocs,ylocs]*maskim$dat[[1]][xlocs,ylocs]
+      tempim<-origim*maskim
     }else{
-      tempim<-origim$dat[[1]][xlocs,ylocs]
+      tempim<-origim
     }
     #All ref pixels for new image
     tempref<-as.matrix(expand.grid(1:length(xsel),1:length(ysel)))
@@ -96,13 +102,12 @@ skyback<-function(ra,dec,cutlo=0,cuthi=100,origim,astrom,maskim,remmask=TRUE,rad
       #Find the number of running medians that agree with the final sky within error bounds (max=10)
       Nnearsky<-length(which(tempylims[,1]<=sky & tempylims[,2]>=sky))
       #Organise data into data.frame for foreach
-      output<-rbind(output,data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky,skyRMS=skyRMS,skyRMSpval=skyRMSpval))
+      return=data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky,skyRMS=skyRMS,skyRMSpval=skyRMSpval)
     } else {
       #No Sky estimate available - return NAs
-      output<-rbind(output,data.frame(sky=0,skyerr=0,Nnearsky=NA,skyRMS=NA,skyRMSpval=NA))
+      return=data.frame(sky=NA,skyerr=NA,Nnearsky=NA,skyRMS=NA,skyRMSpval=NA)
     }
   }
-  gc()
   #Output the foreach data
   return=output
 }

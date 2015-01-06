@@ -1,5 +1,5 @@
 writefitsout <-
-function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffset=NA, nochange=FALSE){
+function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffset=NA, nochange=FALSE,verbose=FALSE,diagnostic=FALSE){
   #Write out a fits file with associated astrometry
   #xcent and ycent are the position in the input image of what will become the central pixel in the output image
   #these are in the IDL convention where the first pixel is (0,0)

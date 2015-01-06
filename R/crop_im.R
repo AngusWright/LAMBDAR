@@ -63,6 +63,9 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
       pixsize[i]<-astr_struc$CD[1,1]
       #}}}
       # If needed, set ra0 and dec0 {{{
+      if ((ra0[i]==-999)||(dec0[i]==-999)) { locs<-xy2ad(floor(naxis1[i]/2), floor(naxis2[i]/2), astr_struc) }
+      if (ra0[i] ==-999) { ra0[i] <-locs[1] }
+      if (dec0[i]==-999) { dec0[i]<-locs[2] }
       if (ra0[i] ==-999) { ra0[i] <-as.numeric(astr_struc$CRVAL[1]) }
       if (dec0[i]==-999) { dec0[i]<-as.numeric(astr_struc$CRVAL[2]) }
       #}}}
@@ -117,15 +120,11 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
     upperx <- floor(xcen+cutradpix)
     lowery <- floor(ycen-cutradpix)
     uppery <- floor(ycen+cutradpix)
-    cutxcen <- abs(cutrad/pixsize)+1.5
-    cutycen <- abs(cutrad/pixsize)+1.5
+    #cutxcen <- abs(cutrad/pixsize)+1.5
+    #cutycen <- abs(cutrad/pixsize)+1.5
     #}}}
 
     #If pixel limits are beyond image limits... {{{
-    #Shift the cut-centre {{{
-    cutxcen[which(lowerx<1)] <- abs(cutrad[which(lowerx<1)]/pixsize[which(lowerx<1)])+1.5-(1-lowerx[which(lowerx<1)])
-    cutycen[which(lowery<1)] <- abs(cutrad[which(lowery<1)]/pixsize[which(lowery<1)])+1.5-(1-lowery[which(lowery<1)])
-    #}}}
     #Change the limits {{{
     lowerx[which(lowerx<1)]<-1
     lowery[which(lowery<1)]<-1
@@ -147,8 +146,8 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
       #Update header values for new image {{{
       header[which(header[,'key']=='NAXIS1'),'value']<-paste(ncol[i])
       header[which(header[,'key']=='NAXIS2'),'value']<-paste(nrow[i])
-      header[which(header[,'key']=='CRPIX1'),'value']<-paste(as.numeric(header[which(header[,'key']=='CRPIX1'),'value'])-lowerx)
-      header[which(header[,'key']=='CRPIX2'),'value']<-paste(as.numeric(header[which(header[,'key']=='CRPIX2'),'value'])-lowery)
+      header[which(header[,'key']=='CRPIX1'),'value']<-paste(as.numeric(header[which(header[,'key']=='CRPIX1'),'value'])+(1-lowerx[i]))
+      header[which(header[,'key']=='CRPIX2'),'value']<-paste(as.numeric(header[which(header[,'key']=='CRPIX2'),'value'])+(1-lowery[i]))
       #}}}
       #Write the new header to file {{{
       pipe<-file(file.path(pathroot,inpim[i]), 'rb')
@@ -166,6 +165,11 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
         writeBin(readBin(pipe,type[i],n=ncol[i],size[i],signed=signed[i],endian='big'),pipeout,size=size[i],endian='big')
         seek(pipe, where=(naxis1[i]-ncol[i])*size[i], origin='current')
       }
+      #}}}
+      #Pad with NULL to end on a 2880 boundary {{{
+      nbytes<-ncol[i]*nrow[i]*size[i]+headbytes
+      npad<-ceiling(nbytes/2880)*2880 - nbytes
+      writeBin(raw(npad),pipeout,endian='big')
       #}}}
       #Close Pipes {{{
       close(pipe)
