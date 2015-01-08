@@ -43,7 +43,7 @@ function(env=NULL,filename) {
   #}}}
 
   if (verbose|diagnostic) {
-    newtable<-data.frame(CATA_INDEX = as.integer(id_g))
+    newtable<-data.frame(CATA_INDEX = id_g)
     newtable[["ALPHA_J2000"]] = ra_g
     newtable[["DELTA_J2000"]] = dec_g
     newtable[["X_IMAGE"]] = x_p
@@ -86,7 +86,7 @@ function(env=NULL,filename) {
     newtable[["PixelFlux"]] = pixflux
     write.csv(newtable,file=filename, na="-", row.names=FALSE)
   } else {
-    newtable=data.frame(CATA_INDEX=as.integer(id_g))
+    newtable=data.frame(CATA_INDEX=id_g)
     newtable[["ALPHA_J2000"]] = ra_g
     newtable[["DELTA_J2000"]] = dec_g
     newtable[["X_IMAGE"]] = x_p
