@@ -80,7 +80,7 @@ At completion of the routine, these environments are all discarded, meaning that
 to the runtime environment (as per CRAN requirements).
 }
 \note{
-If using the MPI backend, LAMBDAR assumes that R is being launched using the above mpirun
+If using the MPI backend, LAMBDAR assumes that R is being launched within an mpirun
 wrapper, and will exit at the program end using mpi.quit(). Running LAMBDAR with MPIBackend=TRUE
 inside an Interactive R Shell may therefore have unintended consequences and cause R to exit without
 warning on exiting MeasureFluxes.
