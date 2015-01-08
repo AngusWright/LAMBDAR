@@ -32,6 +32,7 @@ arbitrary resolution.
 
 The program has many optional functions, and can be run in a standard threaded mode or in a Cluster-enabled
 MPI mode. Examples of how to run the program utilising the MPI backend are supplied in the examples below.
+__See note regarding MPI in Interactive R Shells__
 The many options available to the program are outined in the CreateParFile function's manual page, as well
 as being explained in greater detail in related manual pages.
 }
@@ -73,12 +74,16 @@ Additionally, if the Diagnostic flag is 1 in the parameter file, doReturn=TRUE w
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
-%\note{
-%}
 \note{
 All parameters and data used by MeasureFluxes are stored in environments created within the function.
 At completion of the routine, these environments are all discarded, meaning that there is no modification
 to the runtime environment (as per CRAN requirements).
+}
+\note{
+If using the MPI backend, LAMBDAR assumes that R is being launched using the above mpirun
+wrapper, and will exit at the program end using mpi.quit(). Running LAMBDAR with MPIBackend=TRUE
+inside an Interactive R Shell may therefore have unintended consequences and cause R to exit without
+warning on exiting MeasureFluxes.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
