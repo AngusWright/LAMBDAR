@@ -25,7 +25,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     suppressMessages(cl<-startMPIcluster())
     registerDoMPI(cl)
     on.exit(closeCluster(cl))
-    on.exit(mpi.quit(), add=TRUE)
+    on.exit(mpi.quit(),add=TRUE)
     if (!quiet) { cat("The Size of the MPI Universe is ",mpi.universe.size()," with Comm Size ",mpi.comm.size(0)) }
   }
   #}}}

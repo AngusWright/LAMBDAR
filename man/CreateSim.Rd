@@ -77,7 +77,12 @@ Angus H Wright{ ICRAR}
 \examples{
 
 #Create simulated image using parameter file '/path/to/parfile.par' and SDSS r-band observation parameters:
+
+\dontrun{
+
 CreateSim('/path/to/parfile.par',ObsParm=list(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165),convolveNoise=T)
+
+}
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

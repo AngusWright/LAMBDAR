@@ -78,7 +78,7 @@ function(outenv=parent.env(environment()), env=NULL){
   a_g<-a_g[which(insidemask)]
   b_g<-b_g[which(insidemask)]
   stamplen<-stamplen[which(insidemask)]
-  stamp_lims<-stamp_lims[which(insidemask),]
+  stamp_lims<-rbind(stamp_lims[which(insidemask),])
   if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
   if (filtcontam) { contams<-contams[which(insidemask)] }
   insidemask<-insidemask[which(insidemask)]
@@ -404,13 +404,13 @@ function(outenv=parent.env(environment()), env=NULL){
       a_g<-a_g[which(insidemask)]
       b_g<-b_g[which(insidemask)]
       stamplen<-stamplen[which(insidemask)]
-      stamp_lims<-stamp_lims[which(insidemask),]
-      image_lims<-image_lims[which(insidemask),]
-      mask_lims<-mask_lims[which(insidemask),]
-      error_lims<-error_lims[which(insidemask),]
-      im_stamp_lims<-im_stamp_lims[which(insidemask),]
-      imm_stamp_lims<-imm_stamp_lims[which(insidemask),]
-      ime_stamp_lims<-ime_stamp_lims[which(insidemask),]
+      stamp_lims<-rbind(stamp_lims[which(insidemask),])
+      image_lims<-rbind(image_lims[which(insidemask),])
+      mask_lims<-rbind(mask_lims[which(insidemask),])
+      error_lims<-rbind(error_lims[which(insidemask),])
+      im_stamp_lims<-rbind(im_stamp_lims[which(insidemask),])
+      imm_stamp_lims<-rbind(imm_stamp_lims[which(insidemask),])
+      ime_stamp_lims<-rbind(ime_stamp_lims[which(insidemask),])
       if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
       if (filtcontam) { contams<-contams[which(insidemask)] }
       insidemask<-insidemask[which(insidemask)]

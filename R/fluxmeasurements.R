@@ -138,7 +138,9 @@ function(env=NULL) {
   else if (length(which(insidemask==TRUE))==0) {
       warning("No Single Apertures are inside the image.")
       #Notify & Close Logfile {{{
-      on.exit(detach(env))
+      if (!is.null(env)) {
+        on.exit(detach(env), add=TRUE)
+      }
       message(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
       if (!quiet) {
         cat(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
@@ -151,17 +153,12 @@ function(env=NULL) {
   if (length(imm_mask)>1) { imm_mask<-imm_mask[which(insidemask)] }
   if (length(ime_mask)>1) { ime_mask<-ime_mask[which(insidemask)] }
   stamplen<-stamplen[which(insidemask)]
-  #Check if there is more than 1 aperture left (array dimension errors arise if not) {{{
-  if (length(which(insidemask))==1) {
-    stamp_lims<-rbind(stamp_lims[which(insidemask),],stamp_lims[which(insidemask),])
-  } else {
-    stamp_lims<-stamp_lims[which(insidemask),]
-  } #}}}
+  stamp_lims<-rbind(stamp_lims[which(insidemask),])
   #Remove object that failed aperture creation {{{
-  im_stamp_lims<-im_stamp_lims[which(insidemask),]
-  imm_stamp_lims<-imm_stamp_lims[which(insidemask),]
-  image_lims<-image_lims[which(insidemask),]
-  mask_lims<-mask_lims[which(insidemask),]
+  im_stamp_lims<-rbind(im_stamp_lims[which(insidemask),])
+  imm_stamp_lims<-rbind(imm_stamp_lims[which(insidemask),])
+  image_lims<-rbind(image_lims[which(insidemask),])
+  mask_lims<-rbind(mask_lims[which(insidemask),])
   x_p<-x_p[which(insidemask)]
   y_p<-y_p[which(insidemask)]
   x_g<-x_g[which(insidemask)]
@@ -597,6 +594,7 @@ function(env=NULL) {
     #For the number of desired iterations
     weightType='flux'
     quietbak<-quiet
+    fluxiters<-NULL
     for (iter in 1:nIterations) {
       #Calculate the flux per object {{{
       #Notify {{{
@@ -623,6 +621,9 @@ function(env=NULL) {
           message(paste('Sky Estimate - Done (',round(timer[3], digits=2),'sec )'))
         } else if (!quiet) { cat(" - Done\n") }
       }#}}}
+      #Save the values of the fluxes for output {{{
+      fluxiters<-cbind(fluxiters,sdfad)
+      #}}}
       #Re-calculate the weighted apertures {{{
       #Notify {{{
       message(paste("Calculating Weighting Apertures (#",iter,")"))
@@ -1222,6 +1223,7 @@ function(env=NULL) {
     sdfa   <-sdfa[which(contams==0)]
     sdfa2  <-sdfa2[which(contams==0)]
     sdfad  <-sdfad[which(contams==0)]
+    if (iterateFluxes) { fluxiters<-fluxiters[which(contams==0)] }
     sdfa2e2<-sdfa2e2[which(contams==0)]
     dfaflux<-dfaflux[which(contams==0)]
     dfaerr <-dfaerr[which(contams==0)]

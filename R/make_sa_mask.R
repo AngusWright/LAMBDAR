@@ -57,7 +57,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
 
   #Check that apertures do not cross image mask boundary {{{
-  if (((length(image.env$imm)!=1)&(length(which(image.env$imm!=1))!=0))) {
+  if (length(imm_mask)>1) {
     #Check Mask stamps for Aperture Acceptance {{{
     message('Combining Aps with Mask Stamps')
     sa_mask<-foreach(slen=stamplen, smask=s_mask,mmask=imm_mask, .export="useMaskLim", .inorder=TRUE, .options.mpi=mpiopts) %dopar% {

@@ -105,13 +105,21 @@ MeasureFluxes("--makepar", Catalogue="MyCat.csv")
 MeasureFluxes("--makepar", Catalogue="MyCat.csv", nProcessors=10)
 
 # To execute the program using the parameter file "Lambdar.par":
+\dontrun{
+
 MeasureFluxes("Lambdar.par")
+
+}
 
 # To execute the program using the MPI backend (provided that you have a functional
 # System installation of MPI, as well as the relevant R packages Rmpi, and doMPI)
 # you would execute:
 
-mpi -np <NUM_PROCESSORS> R --slave -e "MeasureFluxes('/path/to/parfile.par',MPIBackend=TRUE)"
+\dontrun{
+
+mpirun -np <NUM_PROCESSORS> R --slave -e "MeasureFluxes('/path/to/parfile.par',MPIBackend=TRUE)"
+
+}
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
