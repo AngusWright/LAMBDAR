@@ -1223,7 +1223,7 @@ function(env=NULL) {
     sdfa   <-sdfa[which(contams==0)]
     sdfa2  <-sdfa2[which(contams==0)]
     sdfad  <-sdfad[which(contams==0)]
-    if (iterateFluxes) { fluxiters<-fluxiters[which(contams==0)] }
+    if (iterateFluxes) { fluxiters<-fluxiters[which(contams==0),] }
     sdfa2e2<-sdfa2e2[which(contams==0)]
     dfaflux<-dfaflux[which(contams==0)]
     dfaerr <-dfaerr[which(contams==0)]

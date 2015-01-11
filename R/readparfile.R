@@ -944,11 +944,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
 
   #Sky Estimate Paramters {{{
-  if (any(doskyest||getskyrms)) {
+  if (any(doskyest|getskyrms)) {
     #Sourcemask needed for SkyEstimate. If not TRUE, set to TRUE {{{
     if (any(!sourcemask)) {
       warning("Source Mask creation being forced for all runs with Sky Estimate Flag TRUE")
-      sourcemask<-doskyest||getskyrms
+      sourcemask<-doskyest|getskyrms
     }
     #}}}
 
