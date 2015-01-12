@@ -86,13 +86,25 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Do we want to Convolve the apertures with a PSF {{{
   ID="PSFConvolve"
-  psffilt<-as.numeric(params[ID,1])
-  if (is.na(psffilt)) {
-    warning("PSF Convolve Flag not in Parameter File")
-    psffilt<-0
+  ind<-which(params[ID,]!="")
+  psffilt<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(psffilt))) {
+    if ((length(ind)==1)) {
+      psffilt<-try(as.numeric(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+        if (class(psffilt)=="try-error") {
+          psffilt<-0
+        }
+      if (is.na(psffilt)) {
+        psffilt<-0
+      }
+    } else {
+      warning("PSF Convolve Flag not in Parameter File")
+        psffilt<-0
+    }
   }
-  if (psffilt==1) { nopsf<-0 } else { nopsf <- 1 }
+  nopsf<-(psffilt==0)
   #}}}
+
 
   #PSF map filename {{{
   ID="PSFMap"
