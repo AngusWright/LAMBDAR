@@ -124,10 +124,17 @@ function(outenv=parent.env(environment()), env=NULL){
   if (((length(image.env$imm)!=1)&(length(which(image.env$imm!=1))!=0))) {
     #Get Mask Limits {{{
     #Get Pixel Locations in Mask {{{
-    astr_struc.mask<-read.astr(file.path(pathroot,pathwork,maskmap))
-    if (!(all(astr_struc$CRVAL==astr_struc.mask$CRVAL)&
-          all(astr_struc$CRPIX==astr_struc.mask$CRPIX)&
-          all(astr_struc$CD   ==astr_struc.mask$CD   ))){
+    if (maskmap=="NONE") {
+      #If mask map is NONE, it must have been created from the wgtmap
+      astr_struc.mask<-read.astr(file.path(pathroot,pathwork,wgtmap))
+    } else {
+      astr_struc.mask<-read.astr(file.path(pathroot,pathwork,maskmap))
+    }
+
+    if (!(all(astr_struc$CRVAL==astr_struc.mask$CRVAL,na.rm=T)&
+          all(astr_struc$CRPIX==astr_struc.mask$CRPIX,na.rm=T)&
+          all(astr_struc$CD   ==astr_struc.mask$CD   ,na.rm=T))){
+
       #Get object locations in pixel space {{{
       gamapos<-ad2xy(ra_g,dec_g,astr_struc.mask)
       x_mp<-floor(gamapos[,1])
