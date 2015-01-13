@@ -78,7 +78,7 @@ function(env=NULL,filename) {
     newtable[["SumDFAsqxErrorsq"]] = sdfa2e2
     newtable[["DFAFlux_units"]] = dfaflux
     newtable[["DFAErr_units"]] = dfaerr
-    if (iterateFluxes) { for (i in 1:dim(fluxiters)[2]) { newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*10^(-(magZP-8.9)/2.5) } }
+    if (iterateFluxes) { for (i in 1:length(fluxiters[1,])) { newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*10^(-(magZP-8.9)/2.5) } }
     newtable[["DFAFlux_Jy"]] = dfaflux*10^(-(magZP-8.9)/2.5)
     newtable[["DFAErr_Jy"]] = (dfaerr)*(10^(-(magZP-8.9)/2.5))
     newtable[["ABMagnitude"]] = mags

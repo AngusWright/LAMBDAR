@@ -19,6 +19,7 @@ function(env=NULL) {
   environment(make_deblended_weightmap)<-environment()
   environment(writesfatableout)<-environment()
   environment(writefitsout)<-environment()
+  environment(sourcesubtraction)<-environment()
   #}}}
 
   if (!quiet) { cat('Begining Flux Measurements\n') }
@@ -468,6 +469,9 @@ function(env=NULL) {
     #}}}
     #Get sky parameters {{{
     skylocal<-skyest[,'sky']
+    if (correl.noise==0) {
+      warning("Noise Correlation coefficient is set to 0; All flux errors will end up as 0")
+    }
     skyerr<-skyest[,'skyerr']*correl.noise
     skyrms<-skyest[,'skyRMS']
     skypval<-skyest[,'skyRMSpval']
@@ -839,8 +843,8 @@ function(env=NULL) {
   #Integral of the (convolved aperture * image error); ssfae {{{
   if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
   if (length(ime_mask)>1) {
-    ssfae<-foreach(sfam=sfa, ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-      sum(sfam*ime)
+    ssfae<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+      sum(sfam*ime[xlo:xup,ylo:yup])
     }
     ssfae<-array(unlist(ssfae),dim=c(dim(ssfae[[1]]),length(ssfae)))
   } else if (length(ime_mask)==1){
@@ -863,8 +867,8 @@ function(env=NULL) {
   #Integral of the (convolved aperture * (image error)^2); ssfae2 {{{
   if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
   if (length(ime_mask)>1) {
-    ssfae2<-foreach(sfam=sfa, ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-        sum(sfam*(ime)^2.)
+    ssfae2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+        sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
     }
     ssfae2<-array(unlist(ssfae2),dim=c(dim(ssfae2[[1]]),length(ssfae2)))
   } else if (length(ime_mask)==1){
@@ -887,8 +891,8 @@ function(env=NULL) {
   #Integral of the [(convolved aperture * image error)^2]; ssfa2e2 {{{
   if (verbose) { cat("      Integral of the [(convolved aperture * image error)^2]") }
   if (length(ime_mask)>1) {
-    ssfa2e2<-foreach(sfam=sfa, ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-        sum((sfam*ime)^2.)
+    ssfa2e2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+        sum((sfam*ime[xlo:xup,ylo:yup])^2.)
     }
     ssfa2e2<-array(unlist(ssfa2e2),dim=c(dim(ssfa2e2[[1]]),length(ssfa2e2)))
   } else if (length(ime_mask)==1){
@@ -911,8 +915,8 @@ function(env=NULL) {
   #Integral of the [(deblended convolved aperture * image error)^2]; sdfa2e2 {{{
   if (verbose) { cat("      Integral of the [(deblended convolved aperture * image error)^2]") }
   if (length(ime_mask)>1) {
-    sdfa2e2<-foreach(dfam=dfa, ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-        sum((dfam*ime)^2.)
+    sdfa2e2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+        sum((dfam*ime[xlo:xup,ylo:yup])^2.)
     }
     sdfa2e2<-array(unlist(sdfa2e2),dim=c(dim(sdfa2e2[[1]]),length(sdfa2e2)))
   } else if (length(ime_mask)==1){
@@ -935,8 +939,8 @@ function(env=NULL) {
   #Integral of the [(convolved aperture * image) / {(image error)^2} ]; ssfadw {{{
   if (verbose) { cat("      Integral of the [(convolved aperture * image) / {(image error)^2} ]") }
   if (length(ime_mask)>1) {
-    ssfadw<-foreach(sfam=sfa,im=im_mask, xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-        sum(sfam*(im[xlo:xup,ylo:yup])/((ime)^2.))
+    ssfadw<-foreach(sfam=sfa,im=im_mask, xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4], xelo=estamp_lims[,1],xeup=estamp_lims[,2],yelo=estamp_lims[,3],yeup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+        sum(sfam*(im[xlo:xup,ylo:yup])/((ime[xelo:xeup,yelo:yeup])^2.))
     }
     ssfadw<-array(unlist(ssfadw),dim=c(dim(ssfadw[[1]]),length(ssfadw)))
   } else if (length(ime_mask)==1){
@@ -959,8 +963,8 @@ function(env=NULL) {
   #Integral of the [convolved aperture / (image error)^2 ]; ssfaw {{{
   if (verbose) { cat("      Integral of the [convolved aperture / (image error)^2 ]") }
   if (length(ime_mask)>1) {
-    ssfaw<-foreach(sfam=sfa, ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-        sum(sfam/(ime)^2.)
+    ssfaw<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+        sum(sfam/(ime[xlo:xup,ylo:yup])^2.)
     }
     ssfaw<-array(unlist(ssfaw),dim=c(dim(ssfaw[[1]]),length(ssfaw)))
   } else if (length(ime_mask)==1){
@@ -983,8 +987,8 @@ function(env=NULL) {
   #Integral of the [(convolved aperture / image error)^2]; ssfa2w {{{
   if (verbose) { cat("      Integral of the [(convolved aperture / image error)^2]") }
   if (length(ime_mask)>1) {
-    ssfa2w<-foreach(sfam=sfa, ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-        sum((sfam/ime)^2.)
+    ssfa2w<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+        sum((sfam/ime[xlo:xup,ylo:yup])^2.)
     }
     ssfa2w<-array(unlist(ssfa2w),dim=c(dim(ssfa2w[[1]]),length(ssfa2w)))
   } else if (length(ime_mask)==1){
@@ -1115,12 +1119,19 @@ function(env=NULL) {
     layout(cbind(1,2,3,4))
     #}}}
     #Output a random 15 apertures to file {{{
+    ind1=which(a_g>0)
+    ind1=ind1[order(sdfad[ind1],decreasing=T)][1:15]
+    ind2=order(runif(1:npos))[1:15]
+    ind<-c(ind1, ind2)
+    rm(ind1)
+    rm(ind2)
+    ind<-ind[which(!is.na(ind))]
     for (i in ind) {
       xlims=round(max(abs(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, na.rm=TRUE))*c(-1,1)
-      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, col='blue', zlim=c(-3,1), useRaster=TRUE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims)
-      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=grey.colors(1000), zlim=c(-3,1), useRaster=TRUE,add=TRUE, xlab="", ylab="")
-      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10((sm[mask_lims[i,1]:mask_lims[i,2],mask_lims[i,3]:mask_lims[i,4]])), main="", asp=1, col=col2alpha('lightgreen',0.2), useRaster=TRUE,add=TRUE, xlab="", ylab="")
-      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=heat.colors(256), useRaster=TRUE,add=TRUE, xlab="", ylab="")
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, col='blue', zlim=c(-3,1), useRaster=TRUE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims))
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=grey.colors(1000), zlim=c(-3,1), useRaster=TRUE,add=TRUE, xlab="", ylab=""))
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10((sm[mask_lims[i,1]:mask_lims[i,2],mask_lims[i,3]:mask_lims[i,4]])), main="", asp=1, col=col2alpha('lightgreen',0.2), useRaster=TRUE,add=TRUE, xlab="", ylab=""))
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=heat.colors(256), useRaster=TRUE,add=TRUE, xlab="", ylab=""))
       #image(log10(sa[[i]]), main="Aperture Development", asp=1, col=col2alpha('darkgreen',0.5), zlim=c(-3,1), useRaster=TRUE,add=TRUE)
       points(x=(x_p-x_p[i]+1)*asperpix,y=(y_p-y_p[i]+1)*asperpix, pch=3)
       label("topleft",lab=id_g[i],cex=1.5, col='red')
@@ -1131,7 +1142,7 @@ function(env=NULL) {
       debl.cog_nosky<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2))
       if (Magnitudes) {
         ylim=c((-2.5*(log10(dfaflux[i])-log10(ABvegaflux))+magZP)+3, (-2.5*(log10(dfaflux[i])-log10(ABvegaflux))+magZP)-3)
-        if (!is.finite(ylim)) { ylim=mean(cog$y, na.rm=TRUE)+c(-1,3) }
+        if (!all(is.finite(ylim))) { ylim=median(cog$y, na.rm=TRUE)+c(-1,3) }
         magplot(x=cog$x*asperpix, y=-2.5*(log10(cog$y)-log10(ABvegaflux))+magZP, pch=20, col='grey', xlab="Radius (arcsec)", ylab="Enclosed Magnitude",
                 ylim=ylim,type='l',lty=2,main="Curve of Growth")
         abline(h=-2.5*(log10(sfaflux[i])-log10(ABvegaflux))+magZP, lwd=1, col='orange', lty=1)

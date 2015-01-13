@@ -134,28 +134,26 @@ function(outenv=parent.env(environment()), env=NULL){
     if (!(all(astr_struc$CRVAL==astr_struc.mask$CRVAL,na.rm=T)&
           all(astr_struc$CRPIX==astr_struc.mask$CRPIX,na.rm=T)&
           all(astr_struc$CD   ==astr_struc.mask$CD   ,na.rm=T))){
-
       #Get object locations in pixel space {{{
       gamapos<-ad2xy(ra_g,dec_g,astr_struc.mask)
       x_mp<-floor(gamapos[,1])
       y_mp<-floor(gamapos[,2])
       #}}}
-      #Calculate Mask limits in mask-pixel space {{{
-      imm_stamp_lims<-cbind(x_mp-factor, x_mp+factor, y_mp-factor, y_mp+factor)
-      imm_stamp_lims[which(imm_stamp_lims<1)]<-1
-      imm_stamp_lims[which(imm_stamp_lims[,4]>length(image.env$imm[1,])),4]<-length(image.env$imm[1,])
-      imm_stamp_lims[which(imm_stamp_lims[,2]>length(image.env$imm[,1])),2]<-length(image.env$imm[,1])
-      mask_lims<-cbind(x_mp-floor(stamplen/2), x_mp+floor(stamplen/2), y_mp-floor(stamplen/2), y_mp+floor(stamplen/2))
-      #}}}
-      #}}}
     } else {
       #Use Image pixel locations {{{
       x_mp<-x_p
       y_mp<-y_p
-      imm_stamp_lims<-im_stamp_lims
-      mask_lims<-image_lims
       #}}}
-    }#}}}
+    }
+    #}}}
+    #Calculate Mask limits in mask-pixel space {{{
+    imm_stamp_lims<-cbind(x_mp-factor, x_mp+factor, y_mp-factor, y_mp+factor)
+    imm_stamp_lims[which(imm_stamp_lims<1)]<-1
+    imm_stamp_lims[which(imm_stamp_lims[,4]>length(image.env$imm[1,])),4]<-length(image.env$imm[1,])
+    imm_stamp_lims[which(imm_stamp_lims[,2]>length(image.env$imm[,1])),2]<-length(image.env$imm[,1])
+    mask_lims<-cbind(x_mp-floor(stamplen/2), x_mp+floor(stamplen/2), y_mp-floor(stamplen/2), y_mp+floor(stamplen/2))
+    #}}}
+    #}}}
 
     #Create Mask Stamps {{{
     message('Creating Mask Stamps')
@@ -163,12 +161,14 @@ function(outenv=parent.env(environment()), env=NULL){
     for (i in 1:npos) {
       imm_mask[[i]]<-image.env$imm[imm_stamp_lims[i,1]:imm_stamp_lims[i,2],imm_stamp_lims[i,3]:imm_stamp_lims[i,4]]
     }
-    mask_lims<-mask_lims-(imm_stamp_lims[,c(1,1,3,3)]-1)
+    mstamp_lims<-mask_lims-(imm_stamp_lims[,c(1,1,3,3)]-1)
   } else {
     imm_mask<-1
     mask_lims<-image_lims
+    mstamp_lims<-stamp_lims
     imm_stamp_lims<-im_stamp_lims
   }#}}}
+  #}}}
 
   #Create Error Stamps {{{
   #Details {{{
@@ -176,32 +176,29 @@ function(outenv=parent.env(environment()), env=NULL){
   #If the error map is a single value everywhere (or is of length 1)
   #we don't need to use the ime mask at all; so skip}}}
   if (((length(image.env$ime)!=1)&(length(unique(image.env$ime))!=1)&(errormap!="NONE"))) {
-    #Check Mask Astrometry {{{
+    #Check Errormap Astrometry {{{
     astr_struc.err<-read.astr(file.path(pathroot,pathwork,errormap))
-    if (!(all(astr_struc$CRVAL==astr_struc.err$CRVAL)&
-          all(astr_struc$CRPIX==astr_struc.err$CRPIX)&
-          all(astr_struc$CD   ==astr_struc.err$CD   ))){
+    if (!(all(astr_struc$CRVAL==astr_struc.err$CRVAL,na.rm=T)&
+          all(astr_struc$CRPIX==astr_struc.err$CRPIX,na.rm=T)&
+          all(astr_struc$CD   ==astr_struc.err$CD   ,na.rm=T))){
       #Get object locations in pixel space {{{
       gamapos<-ad2xy(ra_g,dec_g,astr_struc.err)
       x_ep<-floor(gamapos[,1])
       y_ep<-floor(gamapos[,2])
-      #}}}
-      #Calculate Mask limits in mask-pixel space {{{
-      ime_stamp_lims<-cbind(x_ep-factor, x_ep+factor, y_ep-factor, y_ep+factor)
-      ime_stamp_lims[which(ime_stamp_lims<1)]<-1
-      ime_stamp_lims[which(ime_stamp_lims[,4]>length(image.env$ime[1,])),4]<-length(image.env$ime[1,])
-      ime_stamp_lims[which(ime_stamp_lims[,2]>length(image.env$ime[,1])),2]<-length(image.env$ime[,1])
-      error_lims<-cbind(x_ep-floor(stamplen/2), x_ep+floor(stamplen/2), y_ep-floor(stamplen/2), y_ep+floor(stamplen/2))
       #}}}
     } else {
       #Use Image pixel locations {{{
       x_ep<-x_p
       y_ep<-y_p
       #}}}
-      #Calculate Mask limits in mask-pixel space {{{
-      error_lims<-image_lims
-      #}}}
     }
+    #}}}
+    #Calculate Mask limits in mask-pixel space {{{
+    ime_stamp_lims<-cbind(x_ep-factor, x_ep+factor, y_ep-factor, y_ep+factor)
+    ime_stamp_lims[which(ime_stamp_lims<1)]<-1
+    ime_stamp_lims[which(ime_stamp_lims[,4]>length(image.env$ime[1,])),4]<-length(image.env$ime[1,])
+    ime_stamp_lims[which(ime_stamp_lims[,2]>length(image.env$ime[,1])),2]<-length(image.env$ime[,1])
+    error_lims<-cbind(x_ep-floor(stamplen/2), x_ep+floor(stamplen/2), y_ep-floor(stamplen/2), y_ep+floor(stamplen/2))
     #}}}
 
     #Create Error Stamps {{{
@@ -210,18 +207,7 @@ function(outenv=parent.env(environment()), env=NULL){
     for (i in 1:npos) {
         ime_mask[[i]]<-image.env$ime[ime_stamp_lims[i,1]:ime_stamp_lims[i,2],ime_stamp_lims[i,3]:ime_stamp_lims[i,4]]
     }
-    #ime_mask<-foreach(xlo=error_lims[,1],xup=error_lims[,2], ylo=error_lims[,3],yup=error_lims[,4], .export=c("imexpixmax","imeypixmax","image.env$ime"), .inorder=TRUE) %do% {
-    #  if ((xlo < 1) | (xup > imexpixmax) | (ylo < 1) | (yup > imeypixmax)) {
-    #    #Stamp Extends beyond mask image limits - set this mask to zero {{{
-    #    array(0, dim=c(length(xlo:xhi),length(ylo:yhi)))
-    #    #}}}
-    #  } else {
-    #    #Stamp is within mask image limits - return mask stamp {{{
-    #    image.env$ime[xlo:xup,ylo:yup]
-    #    #}}}
-    #  }
-    #}
-    #}}}
+    estamp_lims<-error_lims-(ime_stamp_lims[,c(1,1,3,3)]-1)
   } else if (errormap=="NONE") {
     #Use Image pixel locations {{{
     x_ep<-x_p
@@ -230,6 +216,7 @@ function(outenv=parent.env(environment()), env=NULL){
     #Calculate Mask limits in mask-pixel space {{{
     ime_stamp_lims<-im_stamp_lims
     error_lims<-image_lims
+    estamp_lims<-stamp_lims
     #}}}
     #Create Error Stamps {{{
     message('Creating Error Stamps')
@@ -242,11 +229,14 @@ function(outenv=parent.env(environment()), env=NULL){
     ime_mask<-image.env$ime
     ime_stamp_lims<-im_stamp_lims
     error_lims<-image_lims
+    estamp_lims<-stamp_lims
   } else if (length(unique(image.env$ime))==1) {
     ime_mask<-unique(image.env$ime)
     ime_stamp_lims<-im_stamp_lims
     error_lims<-image_lims
+    estamp_lims<-stamp_lims
   }#}}}
+  #}}}
 
   #If we've made multiple masks, Check that all arrays are conformable {{{
   if ((length(imm_mask)!=1)|(length(ime_mask)!=1)) {
@@ -394,7 +384,7 @@ function(outenv=parent.env(environment()), env=NULL){
     #Check that no stamps have become too small {{{
      insidemask<-!((stamp_lims[,1]<1)|(stamp_lims[,3]<1)|(stamp_lims[,2]>as.numeric(abs(diff(t(im_stamp_lims[,c(1,2)])))+1))|(stamp_lims[,4]>as.numeric(abs(diff(t(im_stamp_lims[,c(3,4)])))+1)))
     if (length(which(!insidemask))!=0) {
-      warning(paste("Mismatches in the edges of the input images (image, maskmap, errormap) means",length(insidemask),"stamps have to be discarded"))
+      warning(paste("Mismatches in the edges of the input images (image, maskmap, errormap) means",length(which(!insidemask)),"stamps have to be discarded"))
       #Remove stamps {{{
       if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Aperture Stamps are aligned enough to be valid.") }
       im_mask<-im_mask[which(insidemask)]
@@ -412,6 +402,8 @@ function(outenv=parent.env(environment()), env=NULL){
       b_g<-b_g[which(insidemask)]
       stamplen<-stamplen[which(insidemask)]
       stamp_lims<-rbind(stamp_lims[which(insidemask),])
+      mstamp_lims<-rbind(mstamp_lims[which(insidemask),])
+      estamp_lims<-rbind(estamp_lims[which(insidemask),])
       image_lims<-rbind(image_lims[which(insidemask),])
       mask_lims<-rbind(mask_lims[which(insidemask),])
       error_lims<-rbind(error_lims[which(insidemask),])
@@ -442,10 +434,14 @@ function(outenv=parent.env(environment()), env=NULL){
   assign("b_g",b_g,envir=outenv)
   assign("stamplen",stamplen,envir=outenv)
   assign("image_lims",image_lims,envir=outenv)
+  assign("mask_lims",mask_lims,envir=outenv)
+  assign("error_lims",error_lims,envir=outenv)
   assign("stamp_lims",stamp_lims,envir=outenv)
+  assign("mstamp_lims",mstamp_lims,envir=outenv)
+  assign("estamp_lims",estamp_lims,envir=outenv)
   assign("im_stamp_lims",im_stamp_lims,envir=outenv)
   assign("imm_stamp_lims",imm_stamp_lims,envir=outenv)
-  assign("mask_lims",mask_lims,envir=outenv)
+  assign("ime_stamp_lims",ime_stamp_lims,envir=outenv)
   assign("imm_mask",imm_mask,envir=outenv)
   assign("ime_mask",ime_mask,envir=outenv)
   assign("fluxweight",fluxweight,envir=outenv)

@@ -91,20 +91,19 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(psffilt))) {
     if ((length(ind)==1)) {
       psffilt<-try(as.numeric(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-        if (class(psffilt)=="try-error") {
-          psffilt<-0
-        }
+      if (class(psffilt)=="try-error") {
+        psffilt<-0
+      }
       if (is.na(psffilt)) {
         psffilt<-0
       }
     } else {
       warning("PSF Convolve Flag not in Parameter File")
-        psffilt<-0
+      psffilt<-0
     }
   }
   nopsf<-(psffilt==0)
   #}}}
-
 
   #PSF map filename {{{
   ID="PSFMap"
@@ -1004,7 +1003,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     skycutiters<-0
     skydefault<-0
     skyprobcut<-0
-    correl.noise<-0
+    correl.noise<-1
   }
   #}}}
 
