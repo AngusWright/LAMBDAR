@@ -49,7 +49,6 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #
 
   if (padGals) {
-    browser()
     #Pad the input catalogue with stellar contaminants down to below the magnitude limit
     dens<-density(inputmags,bw=0.5,kernel='rect',na.rm=TRUE)
     mag.mode<-dens$x[which.max(dens$y)]

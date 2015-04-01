@@ -146,7 +146,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
 
   #Initialise Loop Counter {{{
   results<-{}
-  nloops<-length(param.env$datamap)
+  nloops<-max(sapply(ls(envir=param.env), function(x) length(param.env[[x]])))
   if (!quiet) { cat("   There are ",nloops," files to analyse:\n") }
   #}}}
 

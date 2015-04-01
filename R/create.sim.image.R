@@ -14,7 +14,7 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
   timer<-proc.time()
   if (!quiet) { cat('Getting PSF details') }
   message('Getting PSF details')
-  if (!(nopsf)) {
+  if (psffilt) {
     #We are filtering apertures with the PSF {{{
     #Details {{{
     #Calculate PSF - if one has not be supplied,

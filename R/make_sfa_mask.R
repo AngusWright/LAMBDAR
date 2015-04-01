@@ -120,14 +120,14 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
   #}}}
 
   #Perform calculations {{{
-  if ((length(which(fluxweight != 1)) != 0)&(nopsf)) {
+  if ((length(which(fluxweight != 1)) != 0)&(!psffilt)) {
     #No Convolution, need Fluxweighting {{{
     #Details {{{
     #If we are not filtering apertures with PSFs, and the fluxweights
     #are not all unity, multiply each stamp by it's fluxweight }}}
     sfa_mask<-foreach(samask=sa_mask,fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts) %dopar%{ samask*fluxwgt  }
     #}}}
-  } else if (!(nopsf)) {
+  } else if (psffilt) {
     #Convolution with PSF & Fluxweighting {{{
     #Details {{{
     #Else if we are filtering apertures with the PSFs, perform the convolution and

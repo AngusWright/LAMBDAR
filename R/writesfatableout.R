@@ -8,6 +8,7 @@ function(env=NULL,filename) {
   #on.exit(detach('env'))
 
   sz=length(ra_g)
+  janskyConv<-10^(-(magZP-8.9)/2.5)
 
   #Get distance from image edge {{{
   #X-axis {{{
@@ -46,8 +47,8 @@ function(env=NULL,filename) {
     newtable<-data.frame(CATA_INDEX = id_g)
     newtable[["ALPHA_J2000"]] = ra_g
     newtable[["DELTA_J2000"]] = dec_g
-    newtable[["X_IMAGE"]] = x_p
-    newtable[["Y_IMAGE"]] = y_p
+    newtable[["X_IMAGE"]] = x_g
+    newtable[["Y_IMAGE"]] = y_g
     newtable[["NX_PIX2EDGE"]] = dx_p
     newtable[["NY_PIX2EDGE"]] = dy_p
     newtable[["THETA_J2000"]] = theta_g
@@ -56,22 +57,24 @@ function(env=NULL,filename) {
     newtable[["SumSA"]] = ssa
     newtable[["SumSFA"]] = ssfa
     newtable[["SumSFAsq"]] = ssfa2
+    newtable[["SumPSF"]] = spsf
+    newtable[["SumSFAxPSF"]] = ssfap
     newtable[["SumSFAxData"]] = ssfad
     newtable[["SumSFAsqxErrorsq"]] = ssfa2e2
     newtable[["SkyLocal"]] = skylocal
     newtable[["SkyFlux_units"]] = skyflux
     newtable[["SkyError_units"]] = skyerr
-    newtable[["SkyFlux_Jy"]] = skyflux*10^(-(magZP-8.9)/2.5)
-    newtable[["SkyError_Jy"]] = (skyerr)*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyFlux_Jy"]] = skyflux*janskyConv
+    newtable[["SkyError_Jy"]] = (skyerr)*janskyConv
     newtable[["SkyRMS_units"]] = skyrms
-    newtable[["SkyRMS_Jy"]] = skyrms*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyRMS_Jy"]] = skyrms*janskyConv
     newtable[["SkyRMSpval"]] = skypval
     newtable[["DetecThres_5sig"]] = detecthres
     newtable[["DetecThresMag_5sig"]] = detecthres.mag
     newtable[["SFAFlux_units"]] = sfaflux
     newtable[["SFAErr_units"]] = sfaerr
-    newtable[["SFAFlux_Jy"]] = sfaflux*10^(-(magZP-8.9)/2.5)
-    newtable[["SFAErr_Jy"]] = (sfaerr)*(10^(-(magZP-8.9)/2.5))
+    newtable[["SFAFlux_Jy"]] = sfaflux*janskyConv
+    newtable[["SFAErr_Jy"]] = (sfaerr)*janskyConv
     newtable[["SumDFA"]] = sdfa
     newtable[["SumDFAsq"]] = sdfa2
     newtable[["SumDFAxData"]] = sdfad
@@ -81,8 +84,8 @@ function(env=NULL,filename) {
     newtable[["DFAErr_units"]] = dfaerr
     if (iterateFluxes &  Magnitudes) {
       for (i in 1:length(fluxiters[1,])) {
-        newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*10^(-(magZP-8.9)/2.5)
-        newtable[[paste("DFAErr_Iter",i,"_Jy_DIFFERENT",sep="")]] = erriters[,i]*10^(-(magZP-8.9)/2.5)
+        newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*janskyConv
+        newtable[[paste("DFAErr_Iter",i,"_Jy",sep="")]] = erriters[,i]*janskyConv
         newtable[[paste("SumDFA_Iter",i,sep="")]] = sdfaiters[,i]
       }
     }
@@ -93,21 +96,21 @@ function(env=NULL,filename) {
         newtable[[paste("SumDFA_Iter",i,sep="")]] = sdfaiters[,i]
       }
     }
-    newtable[["DFAFlux_Jy"]] = dfaflux*10^(-(magZP-8.9)/2.5)
-    newtable[["DFAErr_Jy"]] = (dfaerr)*(10^(-(magZP-8.9)/2.5))
+    newtable[["DFAFlux_Jy"]] = dfaflux*janskyConv
+    newtable[["DFAErr_Jy"]] = (dfaerr)*janskyConv
     newtable[["ABMagnitude"]] = mags
     newtable[["ABMagErr"]] = (2.5/log(10))*(dfaerr/dfaflux)
-    newtable[["ApCorr"]] = 1+(abs(spsf-ssfap)/spsf)
+    newtable[["ApCorr"]] = ApCorr
     if (RanCor) {
       newtable[["RandomsMeanMean_Units"]] = randoms$randMean.mean
       newtable[["RandomsMeanSD_Units"]] = randoms$randMean.SD
       newtable[["RandomsMedMean_Units"]] = randoms$randMed.mean
       newtable[["RandomsMedSD_Units"]] = randoms$randMed.SD
       if (Magnitudes) {
-        newtable[["RandomsMeanMean_Jy"]] = randoms$randMean.mean*10^(-(magZP-8.9)/2.5)
-        newtable[["RandomsMeanSD_Jy"]] = randoms$randMean.SD*10^(-(magZP-8.9)/2.5)
-        newtable[["RandomsMedMean_Jy"]] = randoms$randMed.mean*10^(-(magZP-8.9)/2.5)
-        newtable[["RandomsMedSD_Jy"]] = randoms$randMed.SD*10^(-(magZP-8.9)/2.5)
+        newtable[["RandomsMeanMean_Jy"]] = randoms$randMean.mean*janskyConv
+        newtable[["RandomsMeanSD_Jy"]] = randoms$randMean.SD*janskyConv
+        newtable[["RandomsMedMean_Jy"]] = randoms$randMed.mean*janskyConv
+        newtable[["RandomsMedSD_Jy"]] = randoms$randMed.SD*janskyConv
       }
       #newtable[["Randoms_nNoMask"]] = randoms$nNoMask
       #newtable[["Randoms_meanMaskFrac"]] = randoms$meanMaskFrac
@@ -127,17 +130,17 @@ function(env=NULL,filename) {
     newtable=data.frame(CATA_INDEX=id_g)
     newtable[["ALPHA_J2000"]] = ra_g
     newtable[["DELTA_J2000"]] = dec_g
-    newtable[["X_IMAGE"]] = x_p
-    newtable[["Y_IMAGE"]] = y_p
+    newtable[["X_IMAGE"]] = x_g
+    newtable[["Y_IMAGE"]] = y_g
     newtable[["NX_PIX2EDGE"]] = dx_p
     newtable[["NY_PIX2EDGE"]] = dy_p
     newtable[["SkyLocal"]] = skylocal
     newtable[["SkyFlux_units"]] = skyflux
     newtable[["SkyError_units"]] = skyerr
-    newtable[["SkyFlux_Jy"]] = skyflux*(10^(-(magZP-8.9)/2.5))
-    newtable[["SkyError_Jy"]] = skyerr*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyFlux_Jy"]] = skyflux*janskyConv
+    newtable[["SkyError_Jy"]] = skyerr*janskyConv
     newtable[["SkyRMS_units"]] = skyrms
-    newtable[["SkyRMS_Jy"]] = skyrms*(10^(-(magZP-8.9)/2.5))
+    newtable[["SkyRMS_Jy"]] = skyrms*janskyConv
     newtable[["SkyRMSpval"]] = skypval
     newtable[["DetecThres_5sig"]] = detecthres
     newtable[["DetecThresMag_5sig"]] = detecthres.mag
@@ -145,14 +148,14 @@ function(env=NULL,filename) {
     newtable[["SumDFA"]] = sdfa
     newtable[["SFAFlux_units"]] = sfaflux
     newtable[["SFAErr_units"]] = sfaerr
-    newtable[["SFAFlux_Jy"]] = sfaflux*(10^(-(magZP-8.9)/2.5))
-    newtable[["SFAErr_Jy"]] = sfaerr*(10^(-(magZP-8.9)/2.5))
+    newtable[["SFAFlux_Jy"]] = sfaflux*janskyConv
+    newtable[["SFAErr_Jy"]] = sfaerr*janskyConv
     newtable[["DFAFlux_units"]] = dfaflux
     newtable[["DFAErr_units"]] = dfaerr
     if (iterateFluxes &  Magnitudes) {
       for (i in 1:length(fluxiters[1,])) {
-        newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*10^(-(magZP-8.9)/2.5)
-        newtable[[paste("DFAErr_Iter",i,"_Jy",sep="")]] = erriters[,i]*10^(-(magZP-8.9)/2.5)
+        newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*janskyConv
+        newtable[[paste("DFAErr_Iter",i,"_Jy",sep="")]] = erriters[,i]*janskyConv
         newtable[[paste("SumDFA_Iter",i,sep="")]] = sdfaiters[,i]
       }
     }
@@ -163,21 +166,21 @@ function(env=NULL,filename) {
         newtable[[paste("SumDFA_Iter",i,sep="")]] = sdfaiters[,i]
       }
     }
-    newtable[["DFAFlux_Jy"]] = dfaflux*(10^(-(magZP-8.9)/2.5))
-    newtable[["DFAErr_Jy"]] = dfaerr*(10^(-(magZP-8.9)/2.5))
+    newtable[["DFAFlux_Jy"]] = dfaflux*janskyConv
+    newtable[["DFAErr_Jy"]] = dfaerr*janskyConv
     newtable[["ABMagnitude"]] = mags
     newtable[["ABMagErr"]] = (2.5/log(10))*(dfaerr/dfaflux)
-    newtable[["ApCorr"]] = 1+(abs(spsf-ssfap)/spsf)
+    newtable[["ApCorr"]] = ApCorr
     if (RanCor) {
       newtable[["RandomsMeanMean_Units"]] = randoms$randMean.mean
       newtable[["RandomsMeanSD_Units"]] = randoms$randMean.SD
       newtable[["RandomsMedMean_Units"]] = randoms$randMed.mean
       newtable[["RandomsMedSD_Units"]] = randoms$randMed.SD
       if (Magnitudes) {
-        newtable[["RandomsMeanMean_Jy"]] = randoms$randMean.mean*10^(-(magZP-8.9)/2.5)
-        newtable[["RandomsMeanSD_Jy"]] = randoms$randMean.SD*10^(-(magZP-8.9)/2.5)
-        newtable[["RandomsMedMean_Jy"]] = randoms$randMed.mean*10^(-(magZP-8.9)/2.5)
-        newtable[["RandomsMedSD_Jy"]] = randoms$randMed.SD*10^(-(magZP-8.9)/2.5)
+        newtable[["RandomsMeanMean_Jy"]] = randoms$randMean.mean*janskyConv
+        newtable[["RandomsMeanSD_Jy"]] = randoms$randMean.SD*janskyConv
+        newtable[["RandomsMedMean_Jy"]] = randoms$randMed.mean*janskyConv
+        newtable[["RandomsMedSD_Jy"]] = randoms$randMed.SD*janskyConv
       }
       #newtable[["Randoms_nNoMask"]] = randoms$nNoMask
       #newtable[["Randoms_meanMaskFrac"]] = randoms$meanMaskFrac

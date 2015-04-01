@@ -57,7 +57,7 @@ rancor.par<-function(im_mask,imm_mask,ap_mask,stamplims,masklims,remask=TRUE,num
     }else{
       for (iter in 1:numIters) {
         #Calculate Shift Indicies
-        temp<-origim[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]
+        temp<-origim[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0)]
         #Sum shifted image and Aperture to return Flux
         flux[iter]<-mean(temp,na.rm=T)
         fluxmed[iter]<-median(temp,na.rm=T)

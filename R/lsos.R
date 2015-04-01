@@ -67,10 +67,18 @@ function (pattern="", envir=NULL, pos = 1, order.by="Size", decreasing=TRUE, hea
       } else if ((class(x)=="matrix")||class(x)=="array") {
         if (class(x[1])=="numeric") {
           #object is a numeric matrix/array
-          capture.output(cat(paste(paste(round(as.numeric(x[1:5]),digits=4),collapse=" "),"...")))
+          if (length(x)>5) {
+            capture.output(cat(paste(paste(round(as.numeric(x[1:5]),digits=4),collapse=" "),"...")))
+          } else {
+            capture.output(cat(paste(round(as.numeric(x[1:length(x)]),digits=4),collapse=" ")))
+          }
         } else {
           #object is a character matrix/array
-          capture.output(cat(paste(x[1:length(x)]),collapse=" "))
+          if (length(x)>5) {
+            capture.output(cat(paste(paste(x[1:5],collapse=" "),"...")))
+          } else {
+            capture.output(cat(paste(x[1:length(x)],collapse=" ")))
+          }
         }
       } else {
         #object is logical or integer
