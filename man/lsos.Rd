@@ -1,6 +1,5 @@
 \name{lsos}
 \alias{lsos}
-\alias{ls.objects}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 R Object List
@@ -9,16 +8,27 @@ R Object List
 A better object list
 }
 \usage{
-lsos(..., n = 10)
-ls.objects(pattern="", pos = 1, order.by, decreasing=FALSE, head=FALSE, n=5)
+lsos(pattern="", pos = 1, order.by="Size", decreasing=FALSE, head=FALSE, n=5)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{\dots}{
-arguments to be sent to 'ls.objects'
+  \item{pattern}{
+character; the pattern to search for in the object list
+}
+  \item{pos}{
+integer; environment position
+}
+  \item{order.by}{
+character; field name to order object list by. Options are "Type", "Size", "PrettySize", "Rows", "Columns", "Value".
+}
+  \item{decreasing}{
+logical; if TRUE, objects are listed in decreasing order
+}
+  \item{head}{
+logical; if TRUE, only the first 'n' objects are listed
 }
   \item{n}{
-integer; number of items to list
+integer; number of items to list when 'head' is specified
 }
 }
 \details{

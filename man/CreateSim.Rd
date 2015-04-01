@@ -24,7 +24,7 @@ as the MeasureFluxes Parameter File, however only some parameters are relevant.
 }
   \item{ObsParm}{
 List containing Observation Parameters needed in creating simulated galaxies; Exposure Time (sec; exp=),
-Collecting Area (m^2; area=), Effective wavelength of filter (Å; lamEff=), and Effective width of filter (Å; WEff=).
+Collecting Area (meters squared; area=), Effective wavelength of filter (Å; lamEff=), and Effective width of filter (Å; WEff=).
 For example, SDSS r-band has parameters ObsParm=list(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165).
 }
   \item{noNoise}{
@@ -44,7 +44,7 @@ order correction, and should be noted when determining the accuracy of simulatio
 SDSS r-band.
 }
   \item{quiet}{
-logical; if TRUE all output to screen is supressed
+logical; if TRUE all output to screen is suppressed
 }
 }
 \details{
@@ -52,7 +52,7 @@ CreateSim is an additional routine included in the LAMBDAR package for the purpo
 The LAMBDAR package is intended for use in astronomy, and other related fields, to determine photometry from
 input FITS photometric images of arbitrary resolution. As such, testing of the program is paramount. This
 function allows the user to generate simulated images from input galactic apertures and fluxes. Using the
-known input, the user may then test the MeasureFluxes routine with all its various options permutted, thus
+known input, the user may then test the MeasureFluxes routine with all its various options permuted, thus
 testing the programs accuracy. Results of this type of rigorous testing are demonstrated in Wright et al. 2015 (in prep).
 }
 \value{

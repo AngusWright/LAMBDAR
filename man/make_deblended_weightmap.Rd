@@ -2,7 +2,7 @@
 \alias{make_deblended_weightmap}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Deblend Photometeric Objects
+Deblend Photometric Objects
 }
 \description{
 Deblends objects which are overlapping in a photometric image. Procedure is called by fluxmeasurements, part of the MeasureFluxes routine.
@@ -26,7 +26,7 @@ The most relevant parameters to the execution of this function are the weighted 
 weighted & convolved full aperture mask (wfa):
 
 - wsfa: numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) weighted & convolved object aperture stamps
--  wfa: numeric (p,q) array; full mask of all weighted & convolved object apertures, placed in their approriate locations, coadded
+-  wfa: numeric (p,q) array; full mask of all weighted & convolved object apertures, placed in their appropriate locations, coadded
 
 The deblended weightmaps are determined by what fraction of each aperture contributes to the full mask model at each pixel
 in the objects stamp. I.e. Deblended weightmap @ (i,j)th pixel of an aperture stamp = wsfa[i,j]/wfa[n,m], where (n,m) is the

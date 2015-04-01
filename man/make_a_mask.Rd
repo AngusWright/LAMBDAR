@@ -33,7 +33,7 @@ environment; the environment where the returned values are to be stored. If not 
 %%  ~~ If necessary, more details than the description above ~~
 %%}
 \value{
-array; full mask, with dimesions fullmaskdim, of smaller masks placed in their appropriate locations.
+array; full mask, with dimensions fullmaskdim, of smaller masks placed in their appropriate locations.
 }
 %%\references{
 %% ~put references to the literature/web site here ~

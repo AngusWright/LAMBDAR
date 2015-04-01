@@ -184,31 +184,56 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     #If wanted, crop image prior to read {{{
     if (cropimage) {
       #Data Image {{{
-      if (verbose) { message(paste("Cropping Input Image: Outputting to", imfitsoutname)) }
-      crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname)
-      if (verbose) { message(paste("Using", imfitsoutname, "as data image")) }
-      datamap<-imfitsoutname
+      if (datamap!=imfitsoutname) {
+        if (verbose) { message(paste("Cropping Input Image: Outputting to", imfitsoutname)) }
+        if (!file.exists(file.path(pathroot,pathwork,datamap))) { stop("Data Image does not exist at location:",file.path(pathroot,pathwork,datamap)) }
+        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname)
+        if (verbose) { message(paste("Using", imfitsoutname, "as data image")) }
+        datamap<-imfitsoutname
+      } else {
+        message("Crop input and output are the same file. Crop will fail, so it is skipped")
+        warning("Crop input and output are the same file. Crop will fail, so it is skipped")
+      }
       #}}}
       #Mask Image {{{
       if (maskmap != "NONE") {
-        if (verbose) { message(paste("Cropping Input Mask Map: Outputting to", immfitsoutname)) }
-        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname)
-        if (verbose) { message(paste("Using", immfitsoutname, "as mask map")) }
-        maskmap<-immfitsoutname
+        if (maskmap!=immfitsoutname) {
+          if (verbose) { message(paste("Cropping Input Mask Map: Outputting to", immfitsoutname)) }
+          if (!file.exists(file.path(pathroot,pathwork,maskmap))) { stop("Mask Image does not exist at location:",file.path(pathroot,pathwork,maskmap)) }
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname)
+          if (verbose) { message(paste("Using", immfitsoutname, "as mask map")) }
+          maskmap<-immfitsoutname
+        } else {
+          message("Crop input and output are the same file. Crop will fail, so it is skipped")
+          warning("Crop input and output are the same file. Crop will fail, so it is skipped")
+        }
+      }
       #}}}
       #Or Weights Image {{{
-      } else if (wgtmap != "NONE") {
-        if (verbose) { message(paste("Cropping Input Weight Map: Outputting to", imwgtfitsoutname)) }
-        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname)
-        if (verbose) { message(paste("Using", imwgtfitsoutname, "as weight map")) }
-        wgtmap<-imwgtfitsoutname
+      if (wgtmap != "NONE") {
+        if (wgtmap!=imwgtfitsoutname) {
+          if (verbose) { message(paste("Cropping Input Weight Map: Outputting to", imwgtfitsoutname)) }
+          if (!file.exists(file.path(pathroot,pathwork,wgtmap))) { stop("Weight Image does not exist at location:",file.path(pathroot,pathwork,wgtmap)) }
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname)
+          if (verbose) { message(paste("Using", imwgtfitsoutname, "as weight map")) }
+          wgtmap<-imwgtfitsoutname
+        } else {
+          message("Crop input and output are the same file. Crop will fail, so it is skipped")
+          warning("Crop input and output are the same file. Crop will fail, so it is skipped")
+        }
       }#}}}
       #Error Image {{{
       if ((errormap != "NONE")&(is.na(as.numeric(errormap)))) {
-        if (verbose) { message(paste("Cropping Input Error Map: Outputting to", imefitsoutname)) }
-        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=errormap, cutrad=cutrad, fitsoutname=imefitsoutname)
-        if (verbose) { message(paste("Using", imefitsoutname, "as error map")) }
-        errormap<-imefitsoutname
+        if (errormap!=imefitsoutname) {
+          if (verbose) { message(paste("Cropping Input Error Map: Outputting to", imefitsoutname)) }
+          if (!file.exists(file.path(pathroot,pathwork,errormap))) { stop("Error Image does not exist at location:",file.path(pathroot,pathwork,errormap)) }
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=errormap, cutrad=cutrad, fitsoutname=imefitsoutname)
+          if (verbose) { message(paste("Using", imefitsoutname, "as error map")) }
+          errormap<-imefitsoutname
+        } else {
+          message("Crop input and output are the same file. Crop will fail, so it is skipped")
+          warning("Crop input and output are the same file. Crop will fail, so it is skipped")
+        }
       }#}}}
     }#}}}
 

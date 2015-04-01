@@ -27,7 +27,7 @@ as possible.
 }
 \value{
 numeric [[m]][n,n] list; stamps of the input image
-Further numeric [[m]][n,n] list may be generated, but are assigned to the output environement directly, and are not returned.
+Further numeric [[m]][n,n] list may be generated, but are assigned to the output environment directly, and are not returned.
 }
 %%\references{
 %% ~put references to the literature/web site here ~

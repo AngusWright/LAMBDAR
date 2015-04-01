@@ -33,14 +33,14 @@ the routine with no parameters specified.
 %- maybe also 'usage' for other objects documented here.
 \arguments{
  \item{RootDirectory}{ string; Path to Root Directory for program execution. Default is './'; i.e. the current R working directory}
- \item{Catalogue}{ string; Catalogue Filename and Path from Root }
+ \item{Catalogue}{ string; Catalogue Filename and Path from Root. Accepted formats are '.csv', '.fits', '.Rdata' }
  \item{PSFMap}{ string; PSF Filename and Path from Root (use 'NONE' if not wanted) }
  \item{DataMap}{ string; Image Filename and Path from Root }
  \item{ErrorMap}{ string; Error Map Filename and Path from Root (use 'NONE' if not wanted) }
  \item{MaskMap}{ string; Mask Filename and Path from Root (use 'NONE' if not wanted) }
  \item{WeightMap}{ string; Weightmap Filename and Path from Root (used if generating a mask from weightmap - use 'NONE' if not wanted) }
  \item{CatIDColumnLabel}{ string; Label for 'Catalogue ID' Column in input catalogue }
- \item{RAColumnLabel}{ string; Label for 'Right Ascention' Column in input catalogue }
+ \item{RAColumnLabel}{ string; Label for 'Right Ascension' Column in input catalogue }
  \item{DecColumnLabel}{ string; Label for 'Declination' Column in input catalogue }
  \item{ThetaColumnLabel}{ string; Label for 'Aperture Angle' Column in input catalogue (column may not be needed)}
  \item{SemiMinColumnLabel}{ string; Label for 'SemiMinor Axis' Column in input catalogue (column may not be needed)}
@@ -51,38 +51,38 @@ the routine with no parameters specified.
  \item{Confusion_Jy}{ float; Confusion Correction in Jy }
  \item{Gauss_FWHM_AS}{ float; Gaussian FWHM of Seeing in ArcSec (used if generating a PSF)}
  \item{BeamArea_SqAS}{ float; Beam area in Square Arcsec (used if MapJyPerBeam=1)}
- \item{FluxCorr}{ float; Flux Correction Factor }
- \item{EFactor}{ float; Error Map Scale Factor }
+ \item{FluxCorr}{ float; Flux Correction Factor (multiplicative) }
+ \item{EFactor}{ float; Error Map Scale Factor (multiplicative) }
  \item{DataExtn}{ integer; Fits header extension of Data in Image File }
  \item{ErrorExtn}{ integer; Fits header extension of Data in Errormap File (used if reading errormap from file)}
  \item{MaskExtn}{ integer; Fits header extension of Data in Maskmap File (used if reading mask from file)}
  \item{WeightExtn}{ integer; Fits header extension of Data in Weightmap File (used if generating mask from weightmap)}
  \item{WeightMapZP}{ float; Zero Point of the Weight Map. i.e. the value that corresponds to 'No Data' (used if generating mask) }
- \item{CropImage}{ Boolean 0/1; Do we want to crop the input image to a particular subsection? }
- \item{CropImRA0}{ float; RA that crop will centre around (deg; -999 will focus crop on image reference pixel) }
- \item{CropImDec0}{ float; Dec that crop will centre around (deg; -999 will focus crop on image reference pixel) }
+ \item{CropImage}{ boolean 0/1; Do we want to crop the input image to a particular subsection? [1/0] }
+ \item{CropImRA0}{ float; RA that crop will centre around (deg; -999 will focus crop around the centre of the input image) }
+ \item{CropImDec0}{ float; Dec that crop will centre around (deg; -999 will focus crop around the centre of the input image) }
  \item{CropImRad}{ float; Radius of crop (deg; NA will default to 1deg radius) }
  \item{CropFitsName}{ string; Name of the output cropped images (without '.fits' extension) }
- \item{RemoveContam}{ Boolean 0/1; Remove Contaminants (Catalogue must contain contaminant flag column) from the image? [1/0] }
- \item{PSFConvolve}{ Boolean 0/1; Convolve the Aperture with a PSF? [1/0] }
- \item{AngularOffset}{ Boolean 0/1; 0 if the catalogue is in N90E0 angular coords, 1 if it is in N0E90 coords }
- \item{PointSources}{ Boolean 0/1; Force point sources to be used? [1/0] }
- \item{SmoothAper}{ Boolean 0/1; Smooth Apertures by resampling? (Improves aperture surface integral accuracy) [1/0] }
+ \item{RemoveContam}{ boolean 0/1; Remove Contaminants (Catalogue must contain contaminant flag column) from the image? [1/0] }
+ \item{PSFConvolve}{ boolean 0/1; Convolve the Aperture with a PSF? [1/0] }
+ \item{AngularOffset}{ boolean 0/1; 0 if the catalogue is in N90E0 angular coords, 1 if it is in N0E90 coords [0/1]}
+ \item{PointSources}{ boolean 0/1; Force point sources to be used? [1/0] }
+ \item{SmoothAper}{ boolean 0/1; Smooth Apertures by resampling? (Improves aperture surface integral accuracy) [1/0] }
  \item{ResamplingRes}{ integer; Rate of Upscaling in Resolution during Aperture Resampling (final res is ResamplingRes^[nIters] higher) }
  \item{ResamplingIters}{ integer; Number of iterations to perform in resampling }
- \item{UseMaskLim}{ float; fraction of aperture stamp that must be within the mask. If less, aperture is discarded. }
+ \item{UseMaskLim}{ float in \{0,1\}; fraction of aperture stamp that must be within the mask. If less, aperture is discarded. }
  \item{Verbose}{ boolean 0/1; Verbose Output? [1/0] }
  \item{ShowTime}{ boolean 0/1; Display execution times & total elapsed time during run? [1/0] }
  \item{PlotSample}{ boolean 0/1; Plot a random sample of the Single Apertures to file, for Inspection? [1/0] }
  \item{Diagnostic}{ boolean 0/1; Diagnostic Output of Variable Values During Computation - Helpful in Understanding Code & debugging [1/0] }
  \item{Interactive}{ boolean 0/1; Interactive Mode - Allows user access to entire parameter-space after final calculations [1/0] }
  \item{Magnitudes}{ boolean 0/1; Output Flux Magnitudes? [1/0] }
- \item{ABVegaFlux}{ float; Flux of Vega in this band (used for calculation of Magnitudes) }
+ \item{ABVegaFlux}{ float; Flux of Vega in this band (used for calculation of AB Magnitudes) }
  \item{MagZeroPoint}{ float; Magnitude of the Image Zero Point. If -999, ZP will be read from FITS header }
  \item{MagZPLabel}{ string; Label used for the Zero Point Keyword in the FITS header, if reading from FITS }
- \item{DoSkyEst}{ boolean 0/1; Perform a subtraction of the local background for each aperture? }
+ \item{DoSkyEst}{ boolean 0/1; Perform a subtraction of the local background for each aperture? [1/0] }
  \item{SkyEstIters}{ integer; Number of iterative clips performed during sky estimation }
- \item{SkyEstProbCut}{ float; Probability limit used in iterative clipping of sky-pixels during sky estimation }
+ \item{SkyEstProbCut}{ float; Probability limit (specified as a sigma value) used in iterative clipping of sky-pixels during sky estimation }
  \item{SkyCorrelNoise}{ float; Multiplicative factor describing the amount of correlated noise in the datamap }
  \item{GetSkyRMS}{ boolean 0/1; Perform an estimation of the local sky background, without doing subtraction }
  \item{IterateFluxes}{ boolean 0/1; Perform an iteration of the flux measurements, to create improve photometric accuracy (generally, not always) }
@@ -90,12 +90,12 @@ the routine with no parameters specified.
  \item{OutputDirectory}{ string; Output directory Name and Path }
  \item{LogFile}{ string; Filename for Log }
  \item{SourceMaskOnly}{ boolean 0/1; Only Output Source Mask image to file, and stop (without calculating fluxes)? (Overrules all other Flags) [1/0] }
- \item{WriteTable}{ boolean 0/1; Output Results Table? }
+ \item{WriteTable}{ boolean 0/1; Output Results Table? [1/0]}
  \item{TableName}{ string; Filename for Results Table }
  \item{WriteAAMask}{ boolean 0/1; Write the All Apertures Mask image to file? [1/0] }
  \item{AllApersFile}{ string; Filename for All Apertures Mask }
  \item{WriteSourceMask}{ boolean 0/1; Write the Source Mask image to file? [1/0] }
- \item{SourceMaskConfLim}{ float; Confidence Limit used when making sourcemask of convolved apertures [1/0] }
+ \item{SourceMaskConfLim}{ float in \{0,1\}; Confidence Limit used when making sourcemask of convolved apertures }
  \item{SourceMaskFile}{ string; Filename for Source Mask }
  \item{WriteDFAMask}{ boolean 0/1; Write the Convolved Apertures Mask image to file? [1/0] }
  \item{DelbConvApersFile}{ string; Filename for All Convolved Apertures Mask }
@@ -105,12 +105,22 @@ the routine with no parameters specified.
  \item{ResidImageFile}{ string; Filename for Residual Image }
  \item{NoContamImage}{ string; Filename for Contaminant Subtracted Residual Image }
  \item{nProcessors}{ integer; Number of Processors Available for Use in Computations }
- \item{ApStampWidth}{ float; Width of the Aperture stamps in multiples of aperture major axis; Can be changed *with caution* if memory issues arise. }
- \item{PSFConfidence}{ float; Confidence level to which the PSF is generated, or to which aperture stamps are padded if reading PSF from File}
+ \item{ApStampWidth}{ float in \{1,Inf\}; Width of the Aperture stamps in multiples of aperture major axis; Can be changed *with caution* if memory issues arise. }
+ \item{PSFConfidence}{ float in \{0,1\}; Confidence level to which the PSF is generated, or to which aperture stamps are padded if reading PSF from File}
 }
-%%\details{
-%%  ~~ If necessary, more details than the description above ~~
-%%}
+\details{
+This function reads the various inputs from the LAMBDAR parameter file. Generally, if a particular parameter isn't found during parameter file read
+then the program will warn the user in the log file, and will continue on using the default values for that parameter. In this way a user that wishes to
+use all default values, and specify only one or two parameters explicitly, can provide a simply file containing only those parameters that they wish to
+modify.
+Exceptions to this rule are those parameters that are considered vital to the correct running of the program. These are:
+  > The Root Path (can be simply set to "./")
+  > The Working Directory Path (can be simply set to "./")
+  > The Input Image File
+  > The Input Catalogue
+
+Details of what is expected in the input catalogue are given in the \link{opencatalogue} manual page
+}
 \value{
 NULL; Procedure outputs the parameter file to 'LAMBDAR_default.par'
 }

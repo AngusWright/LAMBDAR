@@ -5,7 +5,7 @@
 Read Input Images
 }
 \description{
-Read the 3 FITS images (data, error map, mask map) that are input to the procedure MeasureFluxes. The procedure opens the files that are lsisted in the
+Read the 3 FITS images (data, error map, mask map) that are input to the procedure MeasureFluxes. The procedure opens the files that are listed in the
 MeasureFluxes parameter file, and generate the relevant default images in the event that one is not specified.
 }
 \usage{
