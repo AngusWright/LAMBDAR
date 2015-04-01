@@ -445,7 +445,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
 
   #Parse Parameter Space {{{
-  if (!is.null(env)) { detatch(env) }
+  if (!is.null(env)) { detach(env) }
   assign("x_p",x_p,envir=outenv)
   assign("y_p",y_p,envir=outenv)
   assign("x_g",x_g,envir=outenv)

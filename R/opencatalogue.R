@@ -60,7 +60,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
 
   #Check for Correct Column Syntax & Read Data {{{
-  #GAMA Catalogue ID {{{
+  #Catalogue ID {{{
   id_g<-try(fitstable[1:nrows,catalab])
   if ((class(id_g)=="try-error")||(is.null(id_g[1]))) {
     sink(type="message")

@@ -55,7 +55,7 @@ function (outenv=parent.env(environment()), masks, fullmaskdim, env=NULL){
   #}}}
 
   #Return the Full Mask {{{
-  if (!is.null(env)) { detatch(env) }
+  if (!is.null(env)) { detach(env) }
   return=a_mask
   #}}}
 }

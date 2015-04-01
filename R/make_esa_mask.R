@@ -354,7 +354,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   } #
 
   #Parse Parameter Space
-  if (!is.null(env)) { detatch(env) }
+  if (!is.null(env)) { detach(env) }
   assign("id_g",id_g,envir=outenv)
   assign("ra_g",ra_g,envir=outenv)
   assign("dec_g",dec_g,envir=outenv)

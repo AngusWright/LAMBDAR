@@ -6,7 +6,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Check Calling Syntax {{{
   if (is.na(parfile)) {
-    stop("Parameter file not supplied. To create the default parameter file, run MeasureGamaFluxes('--makepar').")
+    stop("Parameter file not supplied. To create the default parameter file, run MeasureFluxes('--makepar').")
   }
   if (is.na(starttime)) {
     warning("Start time not supplied - using current clock time")
@@ -16,7 +16,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Print Header {{{
   if (!quiet) { cat(paste('------------------------------------------------------\n'))
-                cat(paste('   LAMBDAR     version ',packageVersion("LAMBDAR"),': MeasureGamaFluxes\n'))
+                cat(paste('   LAMBDAR     version ',packageVersion("LAMBDAR"),': MeasureFluxes\n'))
                 cat(paste('------------------------------------------------------\n'))
                 cat('Initialising Workspace {\n')
                 cat('   Reading Parameter File   ') }

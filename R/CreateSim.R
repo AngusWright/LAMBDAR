@@ -1,6 +1,6 @@
 CreateSim <-
 function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=TRUE, colourCorr=0.0, quiet=FALSE, confuse=FALSE){
-#Proceedure measures GAMA object fluxes from an arbitrary fits image
+#Proceedure measures object fluxes from an arbitrary fits image
 
   #For Setup, warnings are handled internally - print nothing {{{
   options(warn=-1)

@@ -311,7 +311,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
   #}}}
 
   #Return array of Stamps {{{
-  if (!is.null(env)) { detatch(env) }
+  if (!is.null(env)) { detach(env) }
   return=sfa_mask
   #}}}
 }

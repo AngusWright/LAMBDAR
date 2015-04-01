@@ -87,7 +87,7 @@ function(outenv=parent.env(environment()), env=NULL){
   } #}}}
 
   #Parse Parameter Space {{{
-  if (!is.null(env)) { detatch(env) }
+  if (!is.null(env)) { detach(env) }
   assign("theta_g",theta_g,envir=outenv)
   assign("a_g_pix",a_g_pix,envir=outenv)
   #}}}

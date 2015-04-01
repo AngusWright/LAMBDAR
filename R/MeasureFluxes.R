@@ -1,6 +1,6 @@
 MeasureFluxes <-
 function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
-#Proceedure measures GAMA object fluxes from an arbitrary fits image
+#Proceedure measures object fluxes from an arbitrary fits image
 
   #If needed, register the parallel backend {{{
   if (MPIBackend) {

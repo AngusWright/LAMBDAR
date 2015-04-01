@@ -72,7 +72,7 @@ function(outenv=parent.env(environment()), env=NULL) {
   message('=========END=======Make_Deblended_Weightmap========END=================\n')
 
   #Return {{{
-  if (!is.null(env)) { detatch(env) }
+  if (!is.null(env)) { detach(env) }
   #Return Deblended Stamps
   return=dbw_map
   #}}}

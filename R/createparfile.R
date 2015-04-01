@@ -139,7 +139,7 @@ CropFitsName           ",CropFitsName       ,"    #Name of the output cropped im
 #                #--------Additional Options----------------#
 RemoveContam           ",RemoveContam      ,"    #Remove Contaminants from the image?         [1/0]
 PSFConvolve            ",PSFConvolve       ,"    #Convolve the Aperture with a PSF?                                              [1/0]
-ApertureConfLimit      ",ApertureConfLimit ,"    #Confidence limit used when converting PSF convolved apertures to binary apertures  [1/0]
+ApertureConfLimit      ",ApertureConfLimit ,"    #Confidence limit used when converting PSF convolved apertures to binary apertures
 AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N0E90 angular coords, 1 if it is in N90E0 coords
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
 MinApRad               ",MinApRad          ,"    #State minimum aperture to use for sources
