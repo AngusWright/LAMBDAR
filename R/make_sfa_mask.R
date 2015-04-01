@@ -257,17 +257,18 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
         #}}}
         #if ((xc%%1!=0.5)|(yc%%1!=0.5)) {
         #Reinterpolate the PSF at point source XcenYcen {{{
-        len<-length(lims[1]:lims[3])
+        lenx<-length(lims[1]:lims[3])
+        leny<-length(lims[2]:lims[4])
         #Make grid for psf at old pixel centres {{{
-        psf_obj<-list(x=seq(1,len), y=seq(1,len),z=psf[lims[1]:lims[3],lims[2]:lims[4]])
+        psf_obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[lims[1]:lims[3],lims[2]:lims[4]])
         #}}}
         #Make expanded grid of new pixel centres {{{
-        expanded<-expand.grid(seq(1,len),seq(1,len))
+        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
         xnew<-expanded[,1]-xc%%1
         ynew<-expanded[,2]-yc%%1
         #}}}
         #Interpolate {{{
-        ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=length(lims[1]:lims[3]))
+        ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
         #}}}
         #}}}
         #} else {
@@ -311,7 +312,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
   #}}}
 
   #Return array of Stamps {{{
-  if (!is.null(env)) { detach(env) }
+  if (!is.null(env)) { detatch(env) }
   return=sfa_mask
   #}}}
 }

@@ -66,6 +66,18 @@ function(outenv=parent.env(environment()), env=NULL){
     sink(type="message")
     stop(paste("Catalogue does not contain",catalab,"column"))
   }#}}}
+  #Make sure that there are no duplicate IDs {{{
+  if (any(is.na(id_g))|any(id_g=="",na.rm=T)) {
+    message("There are",length(which(is.na(id_g)|id_g=="")),"Missing IDs. These will be renamed NewID_%d")
+    ind<-which(is.na(id_g)|id_g=="")
+    id_g[ind]<-paste("NewID_",cbind(1:length(ind)),sep="")
+  }
+  if (any(duplicated(id_g))) {
+    message("There are",length(which(duplicated(id_g))),"duplicated IDs. These will be appended with DuplicID_%d")
+    ind<-which(duplicated(id_g))
+    id_g[ind]<-paste(id_g[ind],"_DuplicID_",c(1:length(ind)),sep="")
+  }
+  #}}}
   #Object RA {{{
   ra_g<-try(as.numeric(fitstable[1:nrows,ralab]))
   if ((class(ra_g)=="try-error")||(is.null(ra_g[1]))) {

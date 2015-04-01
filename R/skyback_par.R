@@ -63,14 +63,15 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
       tempylims<-tempmedian$ysd
       tempy<-tempmedian$y
       tempx<-tempmedian$x
-      #Remove bins with no skypixels present
-      if (any(is.na(tempylims))) {
-        tempy  <-tempy[which(!is.na(tempylims[,1]))]
-        tempx  <-tempx[which(!is.na(tempylims[,1]))]
-        temprad<-temprad[which(!is.na(tempylims[,1]))]
-        tempval<-tempval[which(!is.na(tempylims[,1]))]
-        tempref<-tempref[which(!is.na(tempylims[,1]))]
-        tempylims<-matrix(tempylims[which(!is.na(tempylims),arr.ind=TRUE)], ncol=2)
+      #Remove bins with 1 or less skypixels present
+      if (any(is.na(tempylims)|(tempylims[,2]==tempylims[,1]))) {
+        ind<-which((!is.na(tempylims[,1]))&(tempylims[,2]!=tempylims[,1]))
+        tempy  <-tempy[ind]
+        tempx  <-tempx[ind]
+        temprad<-temprad[ind]
+        tempval<-tempval[ind]
+        tempref<-tempref[ind]
+        tempylims<-matrix(tempylims[which((!is.na(tempylims))&(tempylims[,2]!=tempylims[,1]),arr.ind=TRUE)], ncol=2)
       }
       if (length(tempy)!=0) {
         #Calculate worst case sky error- the sd of the medians calculated

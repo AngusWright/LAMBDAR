@@ -552,25 +552,33 @@ function(env=NULL) {
   #}}}
   # If we have convolved with a PSF, convert back to tophat apertures (now expanded by PSF convolution) {{{
   sfabak<-NULL
-  if (!nopsf) {
+  if (!exists("PSFMatched")) { PSFMatched<-FALSE }
+  if (!nopsf & !PSFMatched) {
     #If we want the residual map, save the model apertures {{{
     if ((plotsample)|(makeresidmap)) {
       sfabak<-sfa
     }
     #}}}
-    psfvals<-rev(sort(psf))
-    tempsum<-cumsum(psfvals)
-    tempfunc<-approxfun(tempsum,psfvals)
-    psfLimit<-tempfunc(apLimit*max(tempsum, na.rm=TRUE))
-    message(paste("ApLimit:",apLimit,"; PSFLimit:",psfLimit))
     # For each aperture, Binary filter at aplim*max(ap)
-    for (i in 1:length(sfa)) {
-      sfa[[i]][which(sfa[[i]] <  psfLimit)]<-0
-      sfa[[i]][which(sfa[[i]] >= psfLimit)]<-1
+    sba<-foreach(sfam=sfa, .options.mpi=mpiopts, .noexport=ls(envir=environment()))%dopar%{
+      apvals<-rev(sort(sfam))
+      tempsum<-cumsum(apvals)
+      tempfunc<-approxfun(tempsum,apvals)
+      apLim<-tempfunc(apLimit*max(tempsum, na.rm=TRUE))
+      #message(paste("ApLimit:",apLimit,"; PSFLimit:",psfLimit))
+      sfam[which(sfam <  apLim)]<-0
+      sfam[which(sfam >= apLim)]<-1
+      return=sfam
     }
+    sfa<-sba
+    rm(sba)
     if (plotsample) {
       #PSF with Contours {{{
       pdf(file.path(pathroot,pathwork,pathout,"PSF.pdf"))
+      psfvals<-rev(sort(psf))
+      tempsum<-cumsum(psfvals)
+      tempfunc<-approxfun(tempsum,psfvals)
+      psfLimit<-tempfunc(apLimit*max(tempsum, na.rm=TRUE))
       image(log10(psf),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(1000),useRaster=TRUE)
       contour(psf, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       contour(psf, levels=c(psfLimit), labels=c(apLimit), col='green', add=TRUE)
@@ -645,14 +653,14 @@ function(env=NULL) {
       #}}}
       if (length(ime_mask)>1) {
         sdfae2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-            sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
+            sum((dfam*ime[xlo:xup,ylo:yup])^2.)
         }
         sdfae2<-array(unlist(sdfae2),dim=c(dim(sdfae2[[1]]),length(sdfae2)))
       } else if (length(ime_mask)==1){
         if (ime_mask==1) {
           sdfae2<-sdfa2
         } else if (ime_mask==0) {
-          sdfae2<-rep(0,length(ssfa))
+          sdfae2<-rep(0,length(sdfad))
         } else {
           sdfae2<-foreach(dfam=dfa, .export="ime_mask", .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
               sum((dfam*ime_mask)^2.)
@@ -886,7 +894,7 @@ function(env=NULL) {
      ynew<-expanded[,2]-yc%%1
      #}}}
      #Interpolate {{{
-     ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=length(ret[1]:ret[3]))
+     ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
      #}}}
      #}}}
      sum(sfam[aplims[1]:aplims[3],aplims[2]:aplims[4]]*ap)
@@ -1230,21 +1238,19 @@ function(env=NULL) {
     #sink(type="message")
     #stop("NaN or Infs Produced in calculations")
   #}#}}}
+  if (!quiet) { cat("} Galaxy Results Complete\n") }
+  #}}}
+  #PART FIVE: OUTPUT {{{
   #Do we want to plot a sample of the apertures? {{{
   if (plotsample) {
-    if (!quiet) { message("Plotting Aperture Development/COGs"); cat("   Plotting Aperture Development/COGs") }
     #Set output name {{{
     dir.create(file.path(pathroot,pathwork,pathout,"COGs"),showWarnings=FALSE)
-    nd<-ceiling(log10(length(a_g)))
-    #jpeg(file.path(pathroot,pathwork,pathout,paste("COGs/Aperture_Development%0",nd,"d.jpg",sep="")),width=14*240,height=3.5*240,res=240)
-    pdf(file.path(pathroot,pathwork,pathout,paste("COGs/Aperture_Development.pdf",sep="")),width=14,height=3.5,compress=T)
     #}}}
-    #Set Layout {{{
-    layout(cbind(1,2,3,4))
-    #}}}
-    #Output a random 15 apertures to file {{{
+    #Determine Sample to Plot {{{
     if (!exists("plotall")) { plotall<-FALSE }
     if (!plotall) {
+      if (!quiet) { message("Writing Sample of COGs to File"); cat("Writing Sample of COGs to File") }
+      #Output a random 15 apertures to file {{{
       ind1=which(a_g>0)
       ind1=ind1[order(sdfad[ind1],decreasing=T)][1:15]
       ind2=order(runif(1:npos))[1:15]
@@ -1252,72 +1258,169 @@ function(env=NULL) {
       rm(ind1)
       rm(ind2)
       ind<-ind[which(!is.na(ind))]
+      #}}}
     } else {
+      #All {{{
+      if (!quiet) { message("Writing All COGs to File"); cat("Writing All COGs to File") }
       ind=c(which(a_g>0),which(a_g==0))
+      #}}}
     }
     for (i in ind) {
+      #Open Device {{{
+      png(file.path(pathroot,pathwork,pathout,paste("COGs/",id_g[i],".png",sep="")),width=14*240,height=3.5*240,res=240)
+      #}}}
+      #Set Layout {{{
+      layout(cbind(1,2,3,4))
+      #}}}
+      #Axes Limits {{{
       xlims=round(max(abs(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, na.rm=TRUE))*c(-1,1)
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, col='blue', zlim=c(-3,1), useRaster=TRUE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims))
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10((sm[mask_lims[i,1]:mask_lims[i,2],mask_lims[i,3]:mask_lims[i,4]])), main="", asp=1, col=col2alpha('lightgreen',0.5), useRaster=TRUE,add=TRUE, xlab="", ylab=""))
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=grey.colors(1000), zlim=c(-3,1), useRaster=TRUE,add=TRUE, xlab="", ylab=""))
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=heat.colors(256), useRaster=TRUE,add=TRUE, xlab="", ylab=""))
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, col=col2alpha('black',0.5), zlim=c(-3,1), useRaster=TRUE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims,add=TRUE))
-      #image(log10(sa[[i]]), main="Aperture Development", asp=1, col=col2alpha('darkgreen',0.5), zlim=c(-3,1), useRaster=TRUE,add=TRUE)
+      #}}}
+      #Make Ap and Source Mask Block/Trans matricies {{{
+      apT<-sfa[[i]]
+      apT[which(sfa[[i]]==0)]<-NA
+      apT[which(sfa[[i]]!=0)]<-1
+      apB<-sfa[[i]]
+      apB[which(sfa[[i]]==0)]<-1
+      apB[which(sfa[[i]]!=0)]<-NA
+      smB<-sm[mask_lims[i,1]:mask_lims[i,2],mask_lims[i,3]:mask_lims[i,4]]
+      smB[which(smB==0)]<-NA
+      #}}}
+      #Plot Aperture in Blue {{{
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, col='blue', useRaster=FALSE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims))
+      #}}}
+      #Plot Image in greyscale {{{
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=grey.colors(1000), useRaster=FALSE,add=TRUE, xlab="", ylab=""))
+      #}}}
+      #Overlay Sourcemask in Green {{{
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(smB*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, useRaster=FALSE,add=TRUE, xlab="", ylab="",col=brewer.pal(9,"BuGn")))
+      #}}}
+      #Plot +ve flux in aperture in Heat Colours {{{
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(apT*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=brewer.pal(9,'YlOrRd'), useRaster=FALSE,add=TRUE, xlab="", ylab=""))
+      #}}}
+      #Overlay Aperture in Black {{{
+      #suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, useRaster=FALSE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims,add=TRUE))
+      #}}}
+      #Plot Sources {{{
       points(x=(x_p-x_p[i]+1)*asperpix,y=(y_p-y_p[i]+1)*asperpix, pch=3)
+      #}}}
+      #Label with ID {{{
       label("topleft",lab=id_g[i],cex=1.5, col='red')
+      #}}}
+      #Draw Axes {{{
       magaxis(frame.plot=T,main="Image & Aperture",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      #}}}
+      #Generate COGs {{{
+      #Sky Subtracted only {{{
       cog<-get.cog(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
+      #}}}
+      #Raw Image {{{
       cog_nosky<-get.cog(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i],centre=c(stamplen[i]/2, stamplen[i]/2))
+      #}}}
+      #Deblended only {{{
       debl.cog<-get.cog(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
+      #}}}
+      #Deblended and Sky Subtracted {{{
       debl.cog_nosky<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2))
+      #}}}
+      #}}}
+      #Plot COGs {{{
       if (Magnitudes) {
+        #Plot in Magnitude Space {{{
+        #Get y limits {{{
         ylim=c((-2.5*(log10(dfaflux[i])-log10(ABvegaflux))+magZP)+3, (-2.5*(log10(dfaflux[i])-log10(ABvegaflux))+magZP)-3)
+        #If a limit in ±Inf, plot around median
         if (!all(is.finite(ylim))) { ylim=median(cog$y, na.rm=TRUE)+c(-1,3) }
+        #}}}
+        #Plot Raw COG {{{
         magplot(x=cog$x*asperpix, y=-2.5*(log10(cog$y)-log10(ABvegaflux))+magZP, pch=20, col='grey', xlab="Radius (arcsec)", ylab="Enclosed Magnitude",
                 ylim=ylim,type='l',lty=2,main="Curve of Growth")
+        #}}}
+        #Add Lines showing fluxes {{{
+        #Undeblended
         abline(h=-2.5*(log10(sfaflux[i])-log10(ABvegaflux))+magZP, lwd=1, col='orange', lty=1)
+        #Deblended
         abline(h=-2.5*(log10(dfaflux[i])-log10(ABvegaflux))+magZP, lwd=1, col='green', lty=1)
+        #}}}
+        #Redraw Raw Cog {{{
         lines(x=cog$x*asperpix, y=-2.5*(log10(cog$y)-log10(ABvegaflux))+magZP, pch=20, col='grey',lty=2)
+        #}}}
+        #Draw Deblended Cog {{{
         lines(x=debl.cog$x*asperpix, y=-2.5*(log10(debl.cog$y)-log10(ABvegaflux))+magZP, pch=20, col='black',lty=2)
+        #}}}
+        #Draw Sky Subtracted Cog {{{
         lines(x=cog_nosky$x*asperpix, y=-2.5*(log10(cog_nosky$y)-log10(ABvegaflux))+magZP, pch=20, col='grey',lty=1)
+        #}}}
+        #Draw Sky Subtracted & Deblended Cog {{{
         lines(x=debl.cog_nosky$x*asperpix, y=-2.5*(log10(debl.cog_nosky$y)-log10(ABvegaflux))+magZP, pch=20, col='black',lty=1)
+        #}}}
+        #Draw Legend {{{
         legend('bottomright',legend=c("Image COG","Deblended COG","Sky removed COG","Deblended & Sky Rem. COG","Undeblended ApMag","Deblended ApMag"),lty=c(2,2,1,1,1,1),
                col=c('grey','black','grey','black','orange','green'),pch=-1, cex=0.5)
+        #}}}
+        #}}}
       } else {
+        #Plot in Flux Space {{{
+        #Plot Raw Cog {{{
         magplot(x=cog$x*asperpix, y=cog$y, pch=20, col='grey', xlab="Radius (arcsec)", ylab="Enclosed Flux",ylim=rev(range(cog$y)),main="Curve of Growth")
-        abline(h=dfaflux[i]+skyflux[i], lwd=1, col=col2alpha('green',0.5))
-        abline(h=sfaflux[i]+skyflux[i], lwd=1, col=col2alpha('orange',0.5), lty=2)
+        #}}}
+        #Draw Lines showing fluxes {{{
         abline(h=dfaflux[i], lwd=1, col='green')
         abline(h=sfaflux[i], lwd=1, col='orange', lty=2)
-        points(x=cog$x*asperpix, y=cog$y, pch=20, col='grey')
-        points(x=debl.cog$x*asperpix, y=debl.cog$y, pch=20, col='black')
+        #}}}
+        #Redraw Raw Cog {{{
+        lines(x=cog$x*asperpix, y=cog$y, pch=20, col='grey',lty=2)
+        #}}}
+        #Draw Deblended Cog {{{
+        lines(x=debl.cog$x*asperpix, y=debl.cog$y, pch=20, col='black',lty=2)
+        #}}}
+        #Draw Sky Subtracted Cog {{{
+        lines(x=cog_nosky$x*asperpix, y=cog_nosky$y, pch=20, col='grey',lty=1)
+        #}}}
+        #Draw Sky Subtracted & Deblended Cog {{{
+        lines(x=debl.cog_nosky$x*asperpix, y=debl.cog_nosky$y, pch=20, col='black',lty=1)
+        #}}}
         legend('topleft',legend=c("Undeblended COG","Deblended COG","Undeblended ApFlux","Undeblended ApFlux - Sky","Deblended ApFlux","Deblended ApFlux - Sky"),lty=c(-1,-1,2,1,2,1),
                col=c('grey','black',col2alpha('orange',0.5),'orange',col2alpha('green',0.5),'green'),pch=c(20,20,-1,-1,-1,-1,-1))
+        #}}}
       }
+      #}}}
+      #Plot the Deblended Image {{{
       z=log10(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]])
-      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=TRUE, xlab="", ylab="", axes=FALSE, zlim=c(-4,4), xlim=xlims, ylim=xlims)
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, col=col2alpha('black',0.5), zlim=c(-3,1), useRaster=TRUE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims,add=TRUE))
+      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apB, main="Image x Weight Matrix", asp=1, col=brewer.pal(9,'BuGn'), useRaster=FALSE, xlab="", ylab="", axes=FALSE, zlim=c(-4,4), xlim=xlims, ylim=xlims)
+      #}}}
+      #Overlay the Aperture {{{
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apT, main="Image x Weight Matrix", asp=1, col=brewer.pal(9,"YlOrRd"), useRaster=FALSE, xlab="", ylab="", axes=FALSE, zlim=c(-4,4), xlim=xlims, ylim=xlims,add=TRUE))
+      #}}}
+      #Draw the Axes and scalebar {{{
       magaxis(frame.plot=T,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
-      magbar("topright",col=rev(rainbow(256, start=0,end=2/3)), range=c(-4,4))
+      magbar("topright",col=brewer.pal(9,"YlOrRd"), range=c(-4,4),title='log(pixval)',titleshift=2)
+      #}}}
+      #Plot the Deblend Matrix {{{
       z=dbw[[i]]
-      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z, main="Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=TRUE, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=xlims)
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, col=col2alpha('black',0.5), zlim=c(-3,1), useRaster=TRUE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims,add=TRUE))
+      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apB, main="Weight Matrix", asp=1, col=brewer.pal(9,'BuGn'), useRaster=FALSE, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=xlims)
+      #}}}
+      #Overlay the Aperture {{{
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apT, main="Weight Matrix", asp=1, col=brewer.pal(9,'YlOrRd'), useRaster=FALSE, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=xlims,add=T))
+      #}}}
+      #Draw the Axes and scalebar {{{
       magaxis(frame.plot=T,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
-      magbar("topright",col=rev(rainbow(256, start=0,end=2/3)), range=c(0,1))
-    }#}}}
-    #Close the file {{{
-    dev.off()
-    #}}}
+      magbar("topright",col=brewer.pal(9,'YlOrRd'), range=c(0,1))
+      #}}}
+      #Close the file {{{
+      dev.off()
+      #}}}
+    }
+    #Remove unneeded Arrays {{{
     if (!makeresidmap) {
       sfabak<-NULL
     }
     rm(dbw)
+    #}}}
+    #Notify {{{
     if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
+    #}}}
   }
   #}}}
-  if (!quiet) { cat("} Galaxy Results Complete\n") }
-  #}}}
-  #PART FIVE: OUTPUT {{{
   #If map was input in Jy/bm we need to convert it back before output in SourceSubtraction {{{
   if (Jybm) { ba=beamarea } else { ba=1. }
   #}}}

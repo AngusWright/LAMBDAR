@@ -26,7 +26,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   params<-try(read.table(parfile, strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#", row.names=1, fill=TRUE), silent=TRUE)
   if (class(params)=="try-error") {
     #Stop on Error
-    stop("Parameter file read failed")
+    if (grepl("duplicate 'row.names'",params[1])) {
+      cause="Duplicate Parameters in Parameter File"
+    } else if (grepl("cannot open the connection",params[1])) {
+      cause="File not found"
+    } else {
+      cause="Cause unknown"
+    }
+    stop(paste("Parameter file read failed:",cause))
   }
   if (!quiet) { cat('- Done\n   Assigning Parameter Variables') }
   #}}}
@@ -105,6 +112,29 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   nopsf<-(psffilt==0)
   #}}}
 
+  #Do we want PSF Matched Photometry? {{{
+  ID="PSFMatched"
+  ind<-which(params[ID,]!="")
+  PSFMatched<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(PSFMatched))) {
+    if ((length(ind)==1)) {
+      PSFMatched<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(PSFMatched)=="try-error") {
+        warning("Randoms Correction Flag not in Parameter File")
+        PSFMatched<-0
+      }
+      if (is.na(PSFMatched)) {
+        warning("Randoms Correction Flag not in Parameter File")
+        PSFMatched<-0
+      }
+    } else {
+      warning("Randoms Correction Flag not in Parameter File")
+      PSFMatched<-0
+    }
+  }
+  PSFMatched<-(PSFMatched==1)
+  #}}}
+
   #PSF map filename {{{
   ID="PSFMap"
   ind<-which(params[ID,]!="")
@@ -170,6 +200,13 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     #If there is a PSF Map - set gauss fwhm to zero {{{
     gauss_fwhm_as<-0.0
     #}}}
+  }
+  #}}}
+
+  #Check for silly inputs {{{
+  if (any(PSFMatched & nopsf)) {
+    message("WARNING: You've asked for PSF Matched Photometry, and yet specified No PSF Convolution... You could be in for some funky results")
+    warning("You've asked for PSF Matched Photometry, and yet specified No PSF Convolution... You could be in for some funky results")
   }
   #}}}
 
@@ -440,6 +477,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   } else {
     forcepointsources<-(forcepointsources==1)
   }#}}}
+
+  #Check for silly inputs {{{
+  if (any(PSFMatched & !forcepointsources)) {
+    message("WARNING: You've asked for PSF Matched Photometry, and not forced Point Sources to be used. PSF matched is designed for Point Sources only, so this could behave poorly.")
+    warning("You've asked for PSF Matched Photometry, and not forced Point Sources to be used. PSF matched is designed for Point Sources only, so this could behave poorly.")
+  }
+  #}}}
+
 
   #Error Map scale factor #{{{
   ID="EFactor"
