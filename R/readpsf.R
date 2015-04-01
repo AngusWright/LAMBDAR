@@ -29,7 +29,7 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
     psf.clip<-ceiling(nsig*psfsigma.pix)
     psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
     psfwidth<-psf.clip*asperpix
-    stampsizepix=(floor((ceiling(defbuff*apsize*2/asperpix)+ceiling(psf.clip))/2)*2+1)
+    stampsizepix=(floor((ceiling(defbuff*apsize*2/asperpix)+ceiling(psf.clip))/2)*2+5)
 
     x0=ceiling(psf.clip/2.)
     y0=ceiling(psf.clip/2.)
@@ -81,7 +81,7 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
     psf.clip<-diff(range(which(im_psf>=psfLimit, arr.ind=TRUE)[,1]))
     psf.clip<-max(psf.clip,diff(range(which(im_psf>=psfLimit, arr.ind=TRUE)[,2])))
     psfwidth<-psf.clip*asperpix
-    stampsizepix<-(floor((ceiling(defbuff*apsize*2/asperpix)+ceiling(psf.clip))/2)*2+1)
+    stampsizepix<-(floor((ceiling(defbuff*apsize*2/asperpix)+ceiling(psf.clip))/2)*2+5)
     #}}}
     #If Needed, pad the PSF with 0s {{{
     if (any(dim(im_psf) < stampsizepix)) {

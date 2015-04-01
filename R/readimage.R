@@ -17,6 +17,12 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   if (!quiet) { cat(paste("   Reading Data from Image",datamap,"   ")) }
   if (showtime) { timer<-proc.time() }
 
+  #Check data file exists {{{
+  if (!file.exists(paste(pathroot,pathwork,datamap,sep=""))) {
+    stop("Data Image does not exist at location specified:",paste(pathroot,pathwork,datamap,sep=""))
+  }
+  #}}}
+
   #Setup Astrometry Structure {{{
   astr_struc<-read.astr(paste(pathroot,pathwork,datamap,sep=""))
   # Check WCS {{{
@@ -33,6 +39,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     #Error; WCS not compatible
     stop("Fits file has an incompatible WCS; currently only TAN Gnomonic & SIN without rotation are compatible.")
   }
+  #}}}
   #}}}
 
   #Test Read of Data Image for errors {{{

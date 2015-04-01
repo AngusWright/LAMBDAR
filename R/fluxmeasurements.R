@@ -155,9 +155,12 @@ function(env=NULL) {
   if (length(ime_mask)>1) { ime_mask<-ime_mask[which(insidemask)] }
   stamplen<-stamplen[which(insidemask)]
   stamp_lims<-rbind(stamp_lims[which(insidemask),])
+  mstamp_lims<-rbind(mstamp_lims[which(insidemask),])
+  estamp_lims<-rbind(estamp_lims[which(insidemask),])
   #Remove object that failed aperture creation {{{
   im_stamp_lims<-rbind(im_stamp_lims[which(insidemask),])
   imm_stamp_lims<-rbind(imm_stamp_lims[which(insidemask),])
+  ime_stamp_lims<-rbind(ime_stamp_lims[which(insidemask),])
   image_lims<-rbind(image_lims[which(insidemask),])
   mask_lims<-rbind(mask_lims[which(insidemask),])
   x_p<-x_p[which(insidemask)]
@@ -419,12 +422,21 @@ function(env=NULL) {
     #         a) set the sm array = image mask (0s outside image, 1s inside)
     #         b) set all nonzero locations in fa to 0 in sm array }}}
     #Make Sourcemask {{{
+    if (!exists("TransmissionMap")) { TransmissionMap<-FALSE }
     if (!quiet) { cat(paste("Creating Sourcemask    ")) }
     if (length(image.env$imm)>1) { sm<-image.env$imm } else { sm<-array(1, dim=dim(image.env$im)) }
     if (nopsf) {
-      sm[which(image.env$fa > 0)]<-0
+      if (TransmissionMap) {
+        sm[which(!image.env$fa > 0)]<-0
+      } else {
+        sm[which(image.env$fa > 0)]<-0
+      }
     } else {
-      sm[which(image.env$fa > max(psf, na.rm=TRUE)*(1-smConfidenceLim))]<-0
+      if (TransmissionMap) {
+        sm[which(!image.env$fa > max(psf, na.rm=TRUE)*(1-smConfidenceLim))]<-0
+      } else {
+        sm[which(image.env$fa > max(psf, na.rm=TRUE)*(1-smConfidenceLim))]<-0
+      }
     }
     if (doskyest||getskyrms) {
       imm_mask<-list(NULL)
@@ -440,7 +452,7 @@ function(env=NULL) {
       message(paste("OLDMethod - SourceMask Max/Min:",max(1-image.env$fa),min(1-image.env$fa)))
     }#}}}
     #If wanted, output the SourceMask {{{
-    if (!is.null(smfilename)){
+    if (sourcemaskout){
       if (!quiet) { cat(paste('Outputting Source Mask to',smfilename,"   ")) }
       writefitsout(file.path(pathroot,pathwork,pathout,smfilename),sm,image.env$hdr_str,nochange=TRUE)
       if (!quiet) { cat(" - Done\n") }
@@ -598,13 +610,14 @@ function(env=NULL) {
     #For the number of desired iterations
     weightType='flux'
     quietbak<-quiet
-    fluxiters<-NULL
+    fluxiters<-matrix(as.numeric(NA),ncol=nIterations,nrow=length(im_mask))
     for (iter in 1:nIterations) {
       #Calculate the flux per object {{{
       #Notify {{{
       message(paste("Calculating Flux (#",iter,")"))
       if (!quiet) { cat("  Calculating Flux (#",iter,")") }
       #}}}
+      timer<-proc.time()
       sdfad<-foreach(dfam=dfa,im=im_mask, xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4], .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
          sum(dfam*(im[xlo:xup,ylo:yup]))
       }
@@ -617,6 +630,7 @@ function(env=NULL) {
       #If wanted, remove sky estimates {{{
       if (doskyest) {
         if (!quiet) { message(paste("Perfoming Sky Estimation (#",iter,")")); cat(paste("  Performing Sky Estimation (#",iter,")")) }
+        timer<-proc.time()
         sdfa<-foreach(dfam=dfa, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { sum(dfam)  }
         sdfa<-array(unlist(sdfa),dim=c(dim(sdfa[[1]]),length(sdfa)))
         #Subrtract Sky Flux
@@ -626,7 +640,7 @@ function(env=NULL) {
         } else if (!quiet) { cat(" - Done\n") }
       }#}}}
       #Save the values of the fluxes for output {{{
-      fluxiters<-cbind(fluxiters,sdfad)
+      fluxiters[,iter]<-sdfad
       #}}}
       #Re-calculate the weighted apertures {{{
       #Notify {{{
@@ -635,10 +649,10 @@ function(env=NULL) {
       #}}}
       quiet<-TRUE
       timer=system.time(wsfa<-make_sfa_mask(outenv=environment(), sfa,fluxweightin=sdfad))
-      timer=system.time(image.env$wfa<-make_a_mask(outenv=environment(), wsfa, dim(image.env$im)))
+      timer2=system.time(image.env$wfa<-make_a_mask(outenv=environment(), wsfa, dim(image.env$im)))
       quiet<-quietbak
       #Notify {{{
-      if (showtime) { cat(" - Done (",round(timer[3],digits=2),"sec )\n")
+      if (showtime) { cat(" - Done (",round(timer[3]+timer2[3],digits=2),"sec )\n")
       } else if (!quiet) { cat(" - Done\n") }
       #}}}
       #}}}
@@ -648,11 +662,12 @@ function(env=NULL) {
       if (!quiet) { cat("  Calculating Deblend Matricies (#",iter,")") }
       #}}}
       quiet<-TRUE
-      timer=system.time(dbw<-make_deblended_weightmap(outenv=environment()))
+      timer2=system.time(dbw<-make_deblended_weightmap(outenv=environment()))
       quiet<-quietbak
+      timer<-proc.time()
       dfa<-foreach(dbwm=dbw, sfam=sfa, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { dbwm*sfam }
       #Notify {{{
-      if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+      if (showtime) { cat("   - Done (",round(timer[3]+timer2[3],digits=2),"sec )\n")
       } else if (!quiet) { cat("   - Done\n") }
       #}}}
       #}}}
@@ -1135,7 +1150,7 @@ function(env=NULL) {
       #image(log10(sa[[i]]), main="Aperture Development", asp=1, col=col2alpha('darkgreen',0.5), zlim=c(-3,1), useRaster=TRUE,add=TRUE)
       points(x=(x_p-x_p[i]+1)*asperpix,y=(y_p-y_p[i]+1)*asperpix, pch=3)
       label("topleft",lab=id_g[i],cex=1.5, col='red')
-      magaxis(box=T,main="Image & Aperture",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      magaxis(frame.plot=T,main="Image & Aperture",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
       cog<-get.cog(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
       cog_nosky<-get.cog(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i],centre=c(stamplen[i]/2, stamplen[i]/2))
       debl.cog<-get.cog(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
@@ -1166,11 +1181,11 @@ function(env=NULL) {
       }
       z=log10(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]])
       image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=TRUE, xlab="", ylab="", axes=FALSE, zlim=c(-4,4), xlim=xlims, ylim=xlims)
-      magaxis(box=T,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      magaxis(frame.plot=T,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
       magbar("topright",col=rev(rainbow(256, start=0,end=2/3)), range=c(-4,4))
       z=dbw[[i]]
       image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z, main="Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=TRUE, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=xlims)
-      magaxis(box=T,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      magaxis(frame.plot=T,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
       magbar("topright",col=rev(rainbow(256, start=0,end=2/3)), range=c(0,1))
     }#}}}
     #Close the file {{{

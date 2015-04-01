@@ -655,18 +655,47 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Do we want to output the source mask only? {{{
   ID="SourceMaskOnly"
-  sourcemaskonly<-params[ID,1]
-  if (is.na(sourcemaskonly)) {
+  ind<-which(params[ID,]!="")
+  sourcemaskonly<-params[ID,ind]
+  if (length(ind)==0||is.na(sourcemaskonly)) {
     warning("Output Source Mask Only Flag not in Parameter File")
     sourcemaskonly<-FALSE
-  } else { sourcemaskonly<-(sourcemaskonly==1) }
+  } else {
+    if (length(ind)==1) {
+      sourcemaskonly<-try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+      if (class(sourcemaskonly)=="try-error") {
+        #Warn on Error
+        sourcemaskonly<-params[ID,1]
+      }
+      if (is.na(sourcemaskonly)) {
+        sourcemaskonly<-params[ID,1]
+      }
+    }
+  }
+  sourcemaskonly<-(sourcemaskonly==1)
   #}}}
 
   #Sourcemask filename {{{
-  if (!(sourcemaskonly)) {
+  if (any(!sourcemaskonly)) {
     #Do we want to output the source mask at all?
     ID="WriteSourceMask"
-    sourcemaskout<-params[ID,1]
+    ind<-which(params[ID,]!="")
+    sourcemaskout<-params[ID,ind]
+    if (length(ind)==0||is.na(sourcemaskout)) {
+      warning("Output Source Mask Only Flag not in Parameter File")
+      sourcemaskout<-FALSE
+    } else {
+      if (length(ind)==1) {
+        sourcemaskout<-try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+        if (class(sourcemaskout)=="try-error") {
+          #Warn on Error
+          sourcemaskout<-params[ID,1]
+        }
+        if (is.na(sourcemaskout)) {
+          sourcemaskout<-params[ID,1]
+        }
+      }
+    }
     if (is.na(sourcemaskout)) {
       warning("Output Source Mask Flag not in Parameter File")
       sourcemaskout<-FALSE
@@ -783,13 +812,14 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   if ( writetab ) {
     #Name of output Flux Table
     ID="TableName"
-    tableoutname<-params[ID,1]
+    ind<-which(params[ID,]!="")
+    tableoutname<-params[ID,ind]
     if ((length(ind)==0)||(is.na(tableoutname))) {
-        #Warn on Error
-        warning("Output Table Filename not in Parameter File")
-        tableoutname<-"dfaResults"
-      } else {
-        if (length(ind)==1) {
+      #Warn on Error
+      warning("Output Table Filename not in Parameter File")
+      tableoutname<-"dfaResults"
+    } else {
+      if (length(ind)==1) {
         tableoutname<-try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
         if (class(tableoutname)=="try-error") {
           #Warn on Error
@@ -1021,11 +1051,51 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       }
     }
     #Name of SourceMask that is output
+    ID="TransmissionMap"
+    ind<-which(params[ID,]!="")
+    TransmissionMap<-as.numeric(params[ID,ind])
+    if (length(ind)==0||is.na(TransmissionMap)) {
+      if (length(ind)==1) {
+        TransmissionMap<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(TransmissionMap)=="try-error") {
+          #Warn on Error
+          warning("Transmission Map Flag not in Parameter File")
+          TransmissionMap<-0
+        }
+        if (is.na(TransmissionMap)) {
+          #Warn on Error
+          warning("Transmission Map Flag not in Parameter File")
+          TransmissionMap<-0
+        }
+      } else {
+        #Warn on Error
+        warning("Transmission Map Flag not in Parameter File")
+        TransmissionMap<-0
+      }
+    }
+    TransmissionMap<-(TransmissionMap==1)
+    #SourceMask Confidence Limit
     ID="SourceMaskConfLim"
-    smConfidenceLim<-as.numeric(params[ID,1])
-    if (is.na(smConfidenceLim)) {
-      warning("Source Mask Confidence Limit not in Parameter File")
-      smConfidenceLim<-0.95
+    ind<-which(params[ID,]!="")
+    smConfidenceLim<-as.numeric(params[ID,ind])
+    if (length(ind)==0||is.na(smConfidenceLim)) {
+      if (length(ind)==1) {
+        smConfidenceLim<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(smConfidenceLim)=="try-error") {
+          #Warn on Error
+          warning("Sourcemask Confidence Specification not in Parameter File")
+          smConfidenceLim<-0.95
+        }
+        if (is.na(smConfidenceLim)) {
+          #Warn on Error
+          warning("Sourcemask Confidence Specification not in Parameter File")
+          smConfidenceLim<-0.95
+        }
+      } else {
+        #Warn on Error
+        warning("Sourcemask Confidence Specification not in Parameter File")
+        smConfidenceLim<-0.95
+      }
     }
   }
   #}}}
@@ -1214,6 +1284,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("ralab"            , ralab            , envir = env) #
   assign("residmap"         , residmap         , envir = env) #
   assign("sourcemask"       , sourcemask       , envir = env) # S
+  assign("sourcemaskout"    , sourcemaskout    , envir = env) #
   assign("sourcemaskonly"   , sourcemaskonly   , envir = env) #
   assign("smConfidenceLim"  , smConfidenceLim  , envir = env) #
   assign("showtime"         , showtime         , envir = env) #
@@ -1225,6 +1296,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("smfilename"       , smfilename       , envir = env) #
   assign("tableoutname"     , tableoutname     , envir = env) # T
   assign("thetalab"         , thetalab         , envir = env) #
+  assign("TransmissionMap"  , TransmissionMap  , envir = env) #
   assign("upres"            , upres            , envir = env) # U
   assign("useMaskLim"       , useMaskLim       , envir = env)
   assign("usePixelFluxWeights", usePixelFluxWeights , envir = env)

@@ -10,14 +10,6 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
   probcut<-1-pnorm(probcut)
 
   output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x_p, pixlocy=y_p, origim=im_mask, maskim=imm_mask, .options.mpi=mpiopts, .combine='rbind') %dopar% {
-  #browser()
-  #for (kk in 346:length(cutlovec)) {
-  #  cutlo=cutlovec[kk]
-  #  cuthi=cuthivec[kk]
-  #  pixlocx=x_p[kk]
-  #  pixlocy=y_p[kk]
-  #  origim=im_mask[[kk]]
-  #  maskim=imm_mask[[kk]]
 
     #Find extreme pixels to cut out
     xlocs<-pixlocx+(-cuthi:cuthi)

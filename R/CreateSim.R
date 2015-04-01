@@ -1,5 +1,5 @@
 CreateSim <-
-function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=TRUE, colourCorr=0.0, quiet=FALSE){
+function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=TRUE, colourCorr=0.0, quiet=FALSE, confuse=FALSE){
 #Proceedure measures GAMA object fluxes from an arbitrary fits image
 
   #For Setup, warnings are handled internally - print nothing {{{
@@ -318,7 +318,7 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     #}}}
 
     #Create Simulated Image from Catalogue {{{
-    simcat<-create.sim.image(ObsParm=ObsParm,noNoise=noNoise,convolveNoise=convolveNoise,padGals=padGalaxies,col.corr=colourCorr)
+    simcat<-create.sim.image(ObsParm=ObsParm,noNoise=noNoise,convolveNoise=convolveNoise,padGals=padGalaxies,col.corr=colourCorr,confuse=confuse)
     #}}}
 
     #Notify & Close Logfile {{{

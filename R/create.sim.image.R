@@ -2,7 +2,7 @@
 #Create Simulated Image
 #
 create.sim.image<-
-function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, outenv=parent.env(environment()), env=NULL){
+function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, outenv=parent.env(environment()), confuse=FALSE, env=NULL){
 
   #Setup Environments {{{
   environment(make_esa_mask)<-environment()
@@ -69,7 +69,7 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
 
   #Create Simulated Profiles & Image {{{
   if (!quiet) { cat(paste('Creating Simulated Image  ')) }
-  timer=system.time(esa<-make_esa_mask(outenv=environment(),ObsParm=ObsParm,padGals=padGals,col.corr=col.corr))
+  timer=system.time(esa<-make_esa_mask(outenv=environment(),ObsParm=ObsParm,padGals=padGals,col.corr=col.corr,confuse=confuse))
   simFlux<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { sum(esam) }
   npix<-foreach(esam=esa, .combine='c', .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { length(esam) }
   simFlux<-array(unlist(simFlux),dim=c(dim(simFlux[[1]]),length(simFlux)))

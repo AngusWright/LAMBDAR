@@ -1,5 +1,5 @@
 make_esa_mask <-
-function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0){
+function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,confuse=FALSE){
 #Procedure creates exponential galaxy profiles, using input parameters
 #from the catalogue, and places them (in order) onto stamps
 #Procedure is parallelised to allow scaleability
@@ -54,15 +54,34 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0){
     dens<-density(inputmags,bw=0.5,kernel='rect',na.rm=TRUE)
     mag.mode<-dens$x[which.max(dens$y)]
     #Determine Number Counts using Driver et al r-band relation
-    ngal<-length(which(inputmags<=(mag.mode+0.25) & inputmags>=(mag.mode-0.25)))
+    ngal<-length(which(inputmags<=(mag.mode+0.25) & inputmags>=(mag.mode-0.25)))/(diff(range(ra_g))*diff(range(dec_g)))
     NDriver<-10^(0.38*(mag.mode+col.corr)-4.78)
     norm<-ngal/NDriver #Normalise to represent correct area
     #Magnitude Bin Values
-    x<-mag.mode+col.corr+seq(0,3,by=0.5)
+    x<-mag.mode+seq(-0.25,3.25,by=0.5)
     #Number of gals in each Bin
-    ndraws<-norm*10^(0.38*(x)-4.78)
+    ndraws<-norm*10^(0.38*(x+col.corr)-4.78)
+    if (confuse) {
+      #If we want confusion, increase this number so that
+      #source density ~= psf size
+      #Source Density / deg^2
+      sourceDens<-(sum(ndraws)+length(inputmags))/(diff(range(ra_g))*diff(range(dec_g)))
+      #Get source Density per PSF
+      sDensPSF<-sourceDens*((gauss_fwhm_as/3600)^2)
+      #If source density is less than probability of finding gal withing FWHM:
+      if (sDensPSF<1.5) {
+        ndraws<-ndraws*(1.5/sDensPSF)
+      }
+    }
     #Do Magnitude Draws
-    y<-foreach(draws=ndraws,lo=x-0.25,hi=x+0.25,.combine='c',.export='inputmags',.inorder=FALSE)%dopar%{ runif(draws-length(which(inputmags>lo & inputmags<hi)),min=lo,max=hi) }
+    y<-foreach(draws=ndraws,lo=x-0.25,hi=x+0.25,.combine='c',.export='inputmags',.inorder=FALSE)%dopar%{
+      n=draws-length(which(inputmags>lo & inputmags<hi))
+      if (n<=0) {
+        NULL
+      } else {
+        runif(draws-length(which(inputmags>lo & inputmags<hi)),min=lo,max=hi)
+      }
+    }
     #y<-NULL
     #for( i in 1:length(x)) {
     #  draws=ndraws[i]
