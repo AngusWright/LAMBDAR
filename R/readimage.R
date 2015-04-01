@@ -24,7 +24,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   #}}}
 
   #Setup Astrometry Structure {{{
-  astr_struc<-read.astr(paste(pathroot,pathwork,datamap,sep=""))
+  astr_struc<-read.astr(paste(pathroot,pathwork,datamap,sep=""),hdu=extn)
   # Check WCS {{{
   if (any(is.na(astr_struc$CTYPE[c(1:2)]))) {
   } else if (all(grepl("TAN", astr_struc$CTYPE[c(1:2)]))) {
@@ -184,7 +184,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     #}}}
   }
   # Check if we can reduce the memory required {{{
-  if (length(unique(as.numeric(ime)))==1) { ime<-unique(as.numeric(ime)) }
+  #if (length(unique(as.numeric(ime)))==1) { ime<-unique(as.numeric(ime)) }
   #}}}
   #Scale error map by Efactor {{{
   ime=ime*Efactor

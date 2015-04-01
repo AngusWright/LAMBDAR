@@ -57,6 +57,8 @@ createparfile <-
     SkyDefault="median",
     SkyCorrelNoise=1,
     GetSkyRMS=1,
+    RanCor=0,
+    nRandoms=1E2,
     FluxWgtType="flux",
     IterateFluxes=1,
     nIterations=2,
@@ -162,6 +164,8 @@ SkyEstProbCut          ",SkyEstProbCut     ,"    #Sigma Level used in sigma-cutt
 SkyDefault             ",SkyDefault        ,"    #Default Value to use for local sky if estimation fails. May be numeric, 'median', or 'mean'. Otherwise will be NA.
 SkyCorrelNoise         ",SkyCorrelNoise    ,"    #Level of Correlated noise in the image, if known (factor is multiplicative - 1 == no correlated noise)
 GetSkyRMS              ",GetSkyRMS         ,"    #As above without subtraction, and output the local sky RMS (if doing sky estimate, this happens automatically)
+RanCor                 ",RanCor            ,"    #Do you want to calculate mean & median confusion using randoms around every aperture? [1/0]
+nRandoms               ",nRandoms          ,"    #Number of randoms calculated *per aperture*
 UsePixelFluxWgts       ",UsePixelFluxWgts  ,"    #Do you want the pixel flux at the object RA DEC to be used for relative fluxweighting? [1/0]
 FluxWgtType            ",FluxWgtType       ,"    #What is the form of the input fluxweights ('flux', 'mag', or 'scale')?
 IterateFluxes          ",IterateFluxes     ,"    #Do you want to iterate the flux determination to improve deblending?

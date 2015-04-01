@@ -175,7 +175,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #For each catalogue entry, make a stamp of the error map at that position
   #If the error map is a single value everywhere (or is of length 1)
   #we don't need to use the ime mask at all; so skip}}}
-  if (((length(image.env$ime)!=1)&(length(unique(image.env$ime))!=1)&(errormap!="NONE"))) {
+  if ((length(image.env$ime)!=1)&(any(image.env$ime!=image.env$ime[1]))&(file.exists(file.path(pathroot,pathwork,errormap)))) {
     #Check Errormap Astrometry {{{
     astr_struc.err<-read.astr(file.path(pathroot,pathwork,errormap))
     if (!(all(astr_struc$CRVAL==astr_struc.err$CRVAL,na.rm=T)&
@@ -230,8 +230,8 @@ function(outenv=parent.env(environment()), env=NULL){
     ime_stamp_lims<-im_stamp_lims
     error_lims<-image_lims
     estamp_lims<-stamp_lims
-  } else if (length(unique(image.env$ime))==1) {
-    ime_mask<-unique(image.env$ime)
+  } else if (!any(image.env$ime!=image.env$ime[1])) {
+    ime_mask<-image.env$ime[1]
     ime_stamp_lims<-im_stamp_lims
     error_lims<-image_lims
     estamp_lims<-stamp_lims

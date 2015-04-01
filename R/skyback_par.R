@@ -11,94 +11,105 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
 
   output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x_p, pixlocy=y_p, origim=im_mask, maskim=imm_mask, .options.mpi=mpiopts, .combine='rbind') %dopar% {
 
-    #Find extreme pixels to cut out
-    xlocs<-pixlocx+(-cuthi:cuthi)
-    ylocs<-pixlocy+(-cuthi:cuthi)
-    #Find object location on new pixel grid
-    xcen<-cuthi+1-length(which(xlocs<0))
-    ycen<-cuthi+1-length(which(ylocs<0))
-    #Select only pixels which are inside the image bounds
-    xsel<-which(xlocs>0 & xlocs<=length(origim[,1]))
-    ysel<-which(ylocs>0 & ylocs<=length(origim[1,]))
-    #Trim to above
-    xlocs<-xlocs[xsel]
-    ylocs<-ylocs[ysel]
-    #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
-    if(remmask){
-      tempim<-origim*maskim
-    }else{
-      tempim<-origim
-    }
-    #All ref pixels for new image
-    tempref<-as.matrix(expand.grid(1:length(xsel),1:length(ysel)))
-    #Corresponding radii for new pixels from the object of interest
-    temprad<-sqrt((tempref[,1]-xcen)^2+(tempref[,2]-ycen)^2)
-    #Keep only pixels inside the radius bounds given by cutlo and cuthi
-    keep<-temprad>cutlo & temprad<cuthi
-    #Trim
-    tempref<-tempref[keep,]
-    tempval<-tempim[tempref]
-    temprad<-temprad[keep]
-    #If sourcemask is used ignore pixels that exactly equal 0 (since these will belong to masked pixels)
-    if(remmask){
-      temprad<-temprad[tempval!=0]
-      tempval<-tempval[tempval!=0]
-    }
-    #Do iterative <probcut>-sigma pixel clipping
-    if(clipiters>0){
-      for(j in 1:clipiters){
-        vallims<-2*median(tempval)-quantile(tempval,probcut, na.rm=TRUE)
-        temprad<-temprad[tempval<vallims]
-        tempval<-tempval[tempval<vallims]
+    for (run in 1:2) {
+      #Find extreme pixels to cut out
+      xlocs<-pixlocx+(-cuthi:cuthi)
+      ylocs<-pixlocy+(-cuthi:cuthi)
+      #Find object location on new pixel grid
+      xcen<-cuthi+1-length(which(xlocs<0))
+      ycen<-cuthi+1-length(which(ylocs<0))
+      #Select only pixels which are inside the image bounds
+      xsel<-which(xlocs>0 & xlocs<=length(origim[,1]))
+      ysel<-which(ylocs>0 & ylocs<=length(origim[1,]))
+      #Trim to above
+      xlocs<-xlocs[xsel]
+      ylocs<-ylocs[ysel]
+      #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
+      if(remmask){
+        tempim<-origim*maskim
+      }else{
+        tempim<-origim
       }
-    }
-    #Find the running medians for the data
-    tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T)
-    tempylims<-tempmedian$ysd
-    tempy<-tempmedian$y
-    tempx<-tempmedian$x
-    #Remove bins with no skypixels present
-    if (any(is.na(tempylims))) {
-      tempy  <-tempy[which(!is.na(tempylims[,1]))]
-      tempx  <-tempx[which(!is.na(tempylims[,1]))]
-      temprad<-temprad[which(!is.na(tempylims[,1]))]
-      tempval<-tempval[which(!is.na(tempylims[,1]))]
-      tempref<-tempref[which(!is.na(tempylims[,1]))]
-      tempylims<-matrix(tempylims[which(!is.na(tempylims),arr.ind=TRUE)], ncol=2)
-    }
-    if (length(tempy)!=0) {
-      #Calculate worst case sky error- the sd of the medians calculated
-      skyerr<-sd(tempy)
-      #Gen weights to use for weighted mean sky finding. This also weights by separation from the object of interest via radweight
-      weights<-1/((tempx^radweight)*(tempylims[,2]-tempylims[,1])/2)^2
-      #Generate Sky RMS
-      skyRMS<-as.numeric((quantile(tempval,0.5, na.rm=TRUE)-quantile(tempval,pnorm(-1),na.rm=TRUE)))
-      #Determine Pearsons Test for Normality p-value for sky
-      skyRMSpval<-pearson.test(tempval)$p.value
-      #Find the weighted mean of the medians
-      sky<-sum(tempy*weights)/(sum(weights))
-      #Now we iterate until no running medians are outside the 1-sigma bound of the sky
-      nloop<-0
-      while(any(!(tempylims[,1]<=sky & tempylims[,2]>=sky)) & all(!(tempylims[,1]<=sky & tempylims[,2]>=sky))==FALSE){
-        nloop<-nloop+1
-        tempy<-tempy[tempylims[,1]<=sky & tempylims[,2]>=sky]
-        weights<-weights[tempylims[,1]<=sky & tempylims[,2]>=sky]
-        tempylims<-rbind(tempylims[tempylims[,1]<=sky & tempylims[,2]>=sky,])
-        sky<-sum(tempy*weights)/(sum(weights))
-        if (nloop==1E8) {
-          warning("No running medians are inside the 1-sigma bound of the sky after 1E8 loops. Breaking.")
-          message("No running medians are inside the 1-sigma bound of the sky after 1E8 loops. Breaking.")
-          break
+      #All ref pixels for new image
+      tempref<-as.matrix(expand.grid(1:length(xsel),1:length(ysel)))
+      #Corresponding radii for new pixels from the object of interest
+      temprad<-sqrt((tempref[,1]-xcen)^2+(tempref[,2]-ycen)^2)
+      #Keep only pixels inside the radius bounds given by cutlo and cuthi
+      keep<-temprad>cutlo & temprad<cuthi
+      #Trim
+      tempref<-tempref[keep,]
+      tempval<-tempim[tempref]
+      temprad<-temprad[keep]
+      #If sourcemask is used ignore pixels that exactly equal 0 (since these will belong to masked pixels)
+      if(remmask){
+        temprad<-temprad[tempval!=0]
+        tempval<-tempval[tempval!=0]
+      }
+      #Do iterative <probcut>-sigma pixel clipping
+      if(clipiters>0){
+        for(j in 1:clipiters){
+          if (run==1) {
+            vallims<-2*median(tempval)-quantile(tempval,probcut, na.rm=TRUE)
+          } else {
+            vallims<-2*mean(tempval)-quantile(tempval,probcut, na.rm=TRUE)
+          }
+          temprad<-temprad[tempval<vallims]
+          tempval<-tempval[tempval<vallims]
         }
       }
-      #Find the number of running medians that agree with the final sky within error bounds (max=10)
-      Nnearsky<-length(which(tempylims[,1]<=sky & tempylims[,2]>=sky))
-      #Organise data into data.frame for foreach
-      return=data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky,skyRMS=skyRMS,skyRMSpval=skyRMSpval)
-    } else {
-      #No Sky estimate available - return NAs
-      return=data.frame(sky=NA,skyerr=NA,Nnearsky=NA,skyRMS=NA,skyRMSpval=NA)
+      #Find the running medians(run1) or means(run2) for the data
+      if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T) }
+      if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T,type='mean') }
+      tempylims<-tempmedian$ysd
+      tempy<-tempmedian$y
+      tempx<-tempmedian$x
+      #Remove bins with no skypixels present
+      if (any(is.na(tempylims))) {
+        tempy  <-tempy[which(!is.na(tempylims[,1]))]
+        tempx  <-tempx[which(!is.na(tempylims[,1]))]
+        temprad<-temprad[which(!is.na(tempylims[,1]))]
+        tempval<-tempval[which(!is.na(tempylims[,1]))]
+        tempref<-tempref[which(!is.na(tempylims[,1]))]
+        tempylims<-matrix(tempylims[which(!is.na(tempylims),arr.ind=TRUE)], ncol=2)
+      }
+      if (length(tempy)!=0) {
+        #Calculate worst case sky error- the sd of the medians calculated
+        skyerr<-sd(tempy)
+        #Gen weights to use for weighted mean sky finding. This also weights by separation from the object of interest via radweight
+        weights<-1/((tempx^radweight)*(tempylims[,2]-tempylims[,1])/2)^2
+        #Generate Sky RMS
+        skyRMS<-as.numeric((quantile(tempval,0.5, na.rm=TRUE)-quantile(tempval,pnorm(-1),na.rm=TRUE)))
+        #Determine Pearsons Test for Normality p-value for sky
+        skyRMSpval<-pearson.test(tempval)$p.value
+        #Find the weighted mean of the medians
+        sky<-sum(tempy*weights)/(sum(weights))
+        #Now we iterate until no running medians are outside the 1-sigma bound of the sky
+        nloop<-0
+        while(any(!(tempylims[,1]<=sky & tempylims[,2]>=sky)) & all(!(tempylims[,1]<=sky & tempylims[,2]>=sky))==FALSE){
+          nloop<-nloop+1
+          tempy<-tempy[tempylims[,1]<=sky & tempylims[,2]>=sky]
+          weights<-weights[tempylims[,1]<=sky & tempylims[,2]>=sky]
+          tempylims<-rbind(tempylims[tempylims[,1]<=sky & tempylims[,2]>=sky,])
+          sky<-sum(tempy*weights)/(sum(weights))
+          if (nloop==1E8) {
+            warning("No running medians are inside the 1-sigma bound of the sky after 1E8 loops. Breaking.")
+            message("No running medians are inside the 1-sigma bound of the sky after 1E8 loops. Breaking.")
+            break
+          }
+        }
+        #Find the number of running medians that agree with the final sky within error bounds (max=10)
+        Nnearsky<-length(which(tempylims[,1]<=sky & tempylims[,2]>=sky))
+        #Organise data into data.frame for foreach
+        if (run==1) { medianStat<-data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky,skyRMS=skyRMS,skyRMSpval=skyRMSpval) }
+        if (run==2) { meanStat  <-data.frame(sky=sky,skyerr=skyerr,Nnearsky=Nnearsky,skyRMS=skyRMS,skyRMSpval=skyRMSpval) }
+      } else {
+        #No Sky estimate available - return NAs
+        if (run==1) { medianStat<-data.frame(sky=NA,skyerr=NA,Nnearsky=NA,skyRMS=NA,skyRMSpval=NA) }
+        if (run==2) { meanStat  <-data.frame(sky=NA,skyerr=NA,Nnearsky=NA,skyRMS=NA,skyRMSpval=NA) }
+      }
     }
+    return=data.frame(sky=medianStat$sky,skyerr=medianStat$skyerr,Nnearsky=medianStat$Nnearsky,skyRMS=medianStat$skyRMS,skyRMSpval=medianStat$skyRMSpval,
+                      sky.mean=meanStat$sky,skyerr.mean=meanStat$skyerr,Nnearsky.mean=meanStat$Nnearsky,skyRMS.mean=meanStat$skyRMS,skyRMSpval.mean=meanStat$skyRMSpval)
   }
   #Output the foreach data
   return=output

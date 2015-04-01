@@ -1,3 +1,6 @@
+#
+#
+#
 iterapint <-
 function(x,y,xstep,ystep,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=T,upres=2,itersteps=9,pixscale=FALSE,peakscale=FALSE,peak=1){
 
@@ -44,6 +47,21 @@ if(majax>0){
   mastercat=mastercat[order(mastercat[,1]),2]
   mastercat=cbind(origx,origy,mastercat)
   if(pixscale){mastercat[,3]=mastercat[,3]*origxstep*origystep}
+ } else if(itersteps==0){
+
+  mastercat={}
+  weight=1
+
+  check=checkgrid(x=x,y=y,xstep=xstep,ystep=ystep,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax,deg=deg)
+  if(any(check$logic[,'empty'])){mastercat=rbind(mastercat,cbind(which(check$logic[,'empty']),0))} #Empty Pix
+  if(any(check$logic[,'full'])){mastercat=rbind(mastercat,cbind(which(check$logic[,'full']),1))} #Full Pix
+  if(any(check$logic[,'part'] & !(check$logic[,'mid'] & (check$Npart==0)))){mastercat=rbind(mastercat,cbind(which(check$logic[,'part'] & !(check$logic[,'mid'] & (check$Npart==0))),(check$Npart[which(check$logic[,'part'] & !(check$logic[,'mid'] & (check$Npart==0)))]/4)))} #Pix with Npart corners covered
+  if(any(check$logic[,'part'] & (check$logic[,'mid'] & (check$Npart==0)))){mastercat=rbind(mastercat,cbind(which(check$logic[,'part'] & (check$logic[,'mid'] & (check$Npart==0))),1))} #Pix with Middle covered and no corners covered (all ap in 1 pix)
+
+  mastercat=mastercat[order(mastercat[,1]),2]
+  mastercat=cbind(x,y,mastercat)
+  if(pixscale){mastercat[,3]=mastercat[,3]*xstep*ystep}
+
  }else{
   mastercat={}
   weight=1

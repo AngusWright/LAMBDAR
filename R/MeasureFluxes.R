@@ -211,7 +211,9 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
       #}}}
       #Or Weights Image {{{
       if (wgtmap != "NONE") {
-        if (wgtmap!=imwgtfitsoutname) {
+        if (!file.exists(file.path(pathroot,pathwork,wgtmap))) {
+          wgtmap<-"NONE"
+        } else if (wgtmap!=imwgtfitsoutname) {
           if (verbose) { message(paste("Cropping Input Weight Map: Outputting to", imwgtfitsoutname)) }
           if (!file.exists(file.path(pathroot,pathwork,wgtmap))) { stop("Weight Image does not exist at location:",file.path(pathroot,pathwork,wgtmap)) }
           crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname)

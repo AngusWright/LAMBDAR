@@ -75,16 +75,53 @@ function(env=NULL,filename) {
     newtable[["SumDFA"]] = sdfa
     newtable[["SumDFAsq"]] = sdfa2
     newtable[["SumDFAxData"]] = sdfad
+    newtable[["SumDFAxErrorsq"]] = sdfae2
     newtable[["SumDFAsqxErrorsq"]] = sdfa2e2
     newtable[["DFAFlux_units"]] = dfaflux
     newtable[["DFAErr_units"]] = dfaerr
-    if (iterateFluxes) { for (i in 1:length(fluxiters[1,])) { newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*10^(-(magZP-8.9)/2.5) } }
+    if (iterateFluxes &  Magnitudes) {
+      for (i in 1:length(fluxiters[1,])) {
+        newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*10^(-(magZP-8.9)/2.5)
+        newtable[[paste("DFAErr_Iter",i,"_Jy_DIFFERENT",sep="")]] = erriters[,i]*10^(-(magZP-8.9)/2.5)
+        newtable[[paste("SumDFA_Iter",i,sep="")]] = sdfaiters[,i]
+      }
+    }
+    if (iterateFluxes & !Magnitudes) {
+      for (i in 1:length(fluxiters[1,])) {
+        newtable[[paste("DFAFlux_Iter",i,"_units",sep="")]] = fluxiters[,i]
+        newtable[[paste("DFAErr_Iter",i,"_units",sep="")]] = erriters[,i]
+        newtable[[paste("SumDFA_Iter",i,sep="")]] = sdfaiters[,i]
+      }
+    }
     newtable[["DFAFlux_Jy"]] = dfaflux*10^(-(magZP-8.9)/2.5)
     newtable[["DFAErr_Jy"]] = (dfaerr)*(10^(-(magZP-8.9)/2.5))
     newtable[["ABMagnitude"]] = mags
     newtable[["ABMagErr"]] = (2.5/log(10))*(dfaerr/dfaflux)
     newtable[["ApCorr"]] = 1+(abs(spsf-ssfap)/spsf)
+    if (RanCor) {
+      newtable[["RandomsMeanMean_Units"]] = randoms$randMean.mean
+      newtable[["RandomsMeanSD_Units"]] = randoms$randMean.SD
+      newtable[["RandomsMedMean_Units"]] = randoms$randMed.mean
+      newtable[["RandomsMedSD_Units"]] = randoms$randMed.SD
+      if (Magnitudes) {
+        newtable[["RandomsMeanMean_Jy"]] = randoms$randMean.mean*10^(-(magZP-8.9)/2.5)
+        newtable[["RandomsMeanSD_Jy"]] = randoms$randMean.SD*10^(-(magZP-8.9)/2.5)
+        newtable[["RandomsMedMean_Jy"]] = randoms$randMed.mean*10^(-(magZP-8.9)/2.5)
+        newtable[["RandomsMedSD_Jy"]] = randoms$randMed.SD*10^(-(magZP-8.9)/2.5)
+      }
+      #newtable[["Randoms_nNoMask"]] = randoms$nNoMask
+      #newtable[["Randoms_meanMaskFrac"]] = randoms$meanMaskFrac
+    }
     newtable[["PixelFlux"]] = pixflux
+    newtable[["QuarteredPhot1_Units"]] = qssfad[,1]
+    newtable[["QuarteredPhot2_Units"]] = qssfad[,2]
+    newtable[["QuarteredPhot3_Units"]] = qssfad[,3]
+    newtable[["QuarteredPhot4_Units"]] = qssfad[,4]
+    newtable[["QuarteredPhot1_Deblended_Units"]] = qsdfad[,1]
+    newtable[["QuarteredPhot2_Deblended_Units"]] = qsdfad[,2]
+    newtable[["QuarteredPhot3_Deblended_Units"]] = qsdfad[,3]
+    newtable[["QuarteredPhot4_Deblended_Units"]] = qsdfad[,4]
+    #newtable[["PhotometryWarning"]] = ifelse(any(qssfad
     write.csv(newtable,file=filename, na="-", row.names=FALSE)
   } else {
     newtable=data.frame(CATA_INDEX=id_g)
@@ -112,13 +149,49 @@ function(env=NULL,filename) {
     newtable[["SFAErr_Jy"]] = sfaerr*(10^(-(magZP-8.9)/2.5))
     newtable[["DFAFlux_units"]] = dfaflux
     newtable[["DFAErr_units"]] = dfaerr
-    if (iterateFluxes) { for (i in 1:dim(fluxiters)[2]) { newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*10^(-(magZP-8.9)/2.5) } }
+    if (iterateFluxes &  Magnitudes) {
+      for (i in 1:length(fluxiters[1,])) {
+        newtable[[paste("DFAFlux_Iter",i,"_Jy",sep="")]] = fluxiters[,i]*10^(-(magZP-8.9)/2.5)
+        newtable[[paste("DFAErr_Iter",i,"_Jy",sep="")]] = erriters[,i]*10^(-(magZP-8.9)/2.5)
+        newtable[[paste("SumDFA_Iter",i,sep="")]] = sdfaiters[,i]
+      }
+    }
+    if (iterateFluxes & !Magnitudes) {
+      for (i in 1:length(fluxiters[1,])) {
+        newtable[[paste("DFAFlux_Iter",i,"_units",sep="")]] = fluxiters[,i]
+        newtable[[paste("DFAErr_Iter",i,"_units",sep="")]] = erriters[,i]
+        newtable[[paste("SumDFA_Iter",i,sep="")]] = sdfaiters[,i]
+      }
+    }
     newtable[["DFAFlux_Jy"]] = dfaflux*(10^(-(magZP-8.9)/2.5))
     newtable[["DFAErr_Jy"]] = dfaerr*(10^(-(magZP-8.9)/2.5))
     newtable[["ABMagnitude"]] = mags
     newtable[["ABMagErr"]] = (2.5/log(10))*(dfaerr/dfaflux)
     newtable[["ApCorr"]] = 1+(abs(spsf-ssfap)/spsf)
+    if (RanCor) {
+      newtable[["RandomsMeanMean_Units"]] = randoms$randMean.mean
+      newtable[["RandomsMeanSD_Units"]] = randoms$randMean.SD
+      newtable[["RandomsMedMean_Units"]] = randoms$randMed.mean
+      newtable[["RandomsMedSD_Units"]] = randoms$randMed.SD
+      if (Magnitudes) {
+        newtable[["RandomsMeanMean_Jy"]] = randoms$randMean.mean*10^(-(magZP-8.9)/2.5)
+        newtable[["RandomsMeanSD_Jy"]] = randoms$randMean.SD*10^(-(magZP-8.9)/2.5)
+        newtable[["RandomsMedMean_Jy"]] = randoms$randMed.mean*10^(-(magZP-8.9)/2.5)
+        newtable[["RandomsMedSD_Jy"]] = randoms$randMed.SD*10^(-(magZP-8.9)/2.5)
+      }
+      #newtable[["Randoms_nNoMask"]] = randoms$nNoMask
+      #newtable[["Randoms_meanMaskFrac"]] = randoms$meanMaskFrac
+    }
     newtable[["PixelFlux"]] = pixflux
+    newtable[["QuarteredPhot1_Units"]] = qssfad[,1]
+    newtable[["QuarteredPhot2_Units"]] = qssfad[,2]
+    newtable[["QuarteredPhot3_Units"]] = qssfad[,3]
+    newtable[["QuarteredPhot4_Units"]] = qssfad[,4]
+    newtable[["QuarteredPhot1_Deblended_Units"]] = qsdfad[,1]
+    newtable[["QuarteredPhot2_Deblended_Units"]] = qsdfad[,2]
+    newtable[["QuarteredPhot3_Deblended_Units"]] = qsdfad[,3]
+    newtable[["QuarteredPhot4_Deblended_Units"]] = qsdfad[,4]
+    #newtable[["PhotometryWarning"]] = ifelse(any(qssfad
     write.csv(newtable,file=filename, na="-", row.names=FALSE)
   }
 

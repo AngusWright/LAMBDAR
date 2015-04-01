@@ -893,6 +893,13 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     warning("Plot Sample Flag not in Parameter File")
     plotsample<-FALSE
   } else { plotsample<-(plotsample==1) }
+  ID="PlotAll"
+  plotall<-params[ID,1]
+  if (is.na(plotall)) {
+    warning("Plot All Flag not in Parameter File")
+    plotall<-FALSE
+  } else { plotall<-(plotall==1) }
+  if (plotall) { plotsample<-TRUE }
   #}}}
 
   #Make Magnitudes in Output? {{{
@@ -904,48 +911,99 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   } else { Magnitudes<-(Magnitudes==1) }
   #}}}
 
-  #AB Vega Magnitude {{{
-  ID="ABVegaFlux"
-  ind<-which(params[ID,]!="")
-  ABvegaflux<-as.numeric(params[ID,ind])
-  if (is.na(ABvegaflux)) {
-    warning("AB Vega Flux Value not present in the Parameter File; using 1.0")
+  #Magnitude Details {{{
+  if (Magnitudes) {
+    #AB Vega Magnitude {{{
+    ID="ABVegaFlux"
+    ind<-which(params[ID,]!="")
+    ABvegaflux<-as.numeric(params[ID,ind])
+    if (is.na(ABvegaflux)) {
+      warning("AB Vega Flux Value not present in the Parameter File; using 1.0")
+      ABvegaflux<-1.0
+    }
+    #}}}
+
+    #Magnitudes Zero Point {{{
+    ID="MagZeroPoint"
+    ind<-which(params[ID,]!="")
+    magZP<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(magZP))) {
+      if (length(ind)==1) {
+        magZP<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(magZP)=="try-error") {
+          #Warn on Error
+          warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
+          magZP<-0.0
+        }
+        if (is.na(magZP)) {
+          #Warn on Error
+          warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
+          magZP<-0.0
+        }
+      } else {
+        #Warn on Error
+        warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
+        magZP<-0.0
+      }
+    }
+    #}}}
+
+    #Magnitudes Zero Point {{{
+    ID="MagZPLabel"
+    ind<-which(params[ID,]!="")
+    magZPlabel<-params[ID,ind]
+    if ((length(ind)==0)||(is.na(magZPlabel))) {
+      warning("FITS Zero Point Label not present in the Parameter File")
+      magZPlabel<-"MagZP"
+    }
+    #}}}
+  } else {
+    magZP<-NA
+    magZPlabel<-"MagZP"
     ABvegaflux<-1.0
   }
   #}}}
 
-  #Magnitudes Zero Point {{{
-  ID="MagZeroPoint"
+  #Randoms Correction {{{
+  #Do we want to perform a randoms Correction to the errors of object fluxes?
+  ID="RanCor"
   ind<-which(params[ID,]!="")
-  magZP<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(magZP))) {
-    if (length(ind)==1) {
-      magZP<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(magZP)=="try-error") {
-        #Warn on Error
-        warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
-        magZP<-0.0
+  RanCor<-params[ID,ind]
+  if (length(ind)!=0){ if(RanCor!="execute") { RanCor<-as.numeric(RanCor) } }
+  if ((length(ind)==0)||(is.na(RanCor))) {
+    if ((length(ind)==1)) {
+      RanCor<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(RanCor)=="try-error") {
+        warning("Randoms Correction Flag not in Parameter File")
+        RanCor<-0
       }
-      if (is.na(magZP)) {
-        #Warn on Error
-        warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
-        magZP<-0.0
+      if (is.na(RanCor)) {
+        warning("Randoms Correction Flag not in Parameter File")
+        RanCor<-0
       }
     } else {
-      #Warn on Error
-      warning("Magnitudes Zero Point not present/bad in the Parameter File; using 0.0")
-      magZP<-0.0
+      warning("Randoms Correction Flag not in Parameter File")
+      RanCor<-0
     }
   }
-  #}}}
-
-  #Magnitudes Zero Point {{{
-  ID="MagZPLabel"
+  ID="nRandoms"
   ind<-which(params[ID,]!="")
-  magZPlabel<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(magZPlabel))) {
-    warning("FITS Zero Point Label not present in the Parameter File")
-    magZPlabel<-"MagZP"
+  nRandoms<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(nRandoms))) {
+    if ((length(ind)==1)) {
+      nRandoms<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(nRandoms)=="try-error") {
+        warning("Number of Randoms Flag not in Parameter File")
+        nRandoms<-0
+      }
+      if (is.na(nRandoms)) {
+        warning("Number of Randoms Flag not in Parameter File")
+        nRandoms<-0
+      }
+    } else {
+      warning("Number of Randoms Flag not in Parameter File")
+      nRandoms<-0
+    }
   }
   #}}}
 
@@ -1097,6 +1155,9 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
         smConfidenceLim<-0.95
       }
     }
+  } else {
+    TransmissionMap=FALSE
+    smConfidenceLim=NA
   }
   #}}}
 
@@ -1274,14 +1335,17 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("nopsf"            , nopsf            , envir = env) # N
   assign("nocontammap"      , nocontammap      , envir = env) #
   assign("ncores"           , ncores           , envir = env) #
+  assign("nRandoms"         , nRandoms         , envir = env) #
   assign("pathroot"         , pathroot         , envir = env) # P
   assign("pathwork"         , pathwork         , envir = env) #
   assign("pathout"          , pathout          , envir = env) #
   assign("plotsample"       , plotsample       , envir = env) #
+  assign("plotall"          , plotall          , envir = env) #
   assign("psfmap"           , psfmap           , envir = env) #
   assign("resampleaperture" , resampleaperture , envir = env) # QR
   assign("ra0"              , ra0              , envir = env) #
   assign("ralab"            , ralab            , envir = env) #
+  assign("RanCor"           , RanCor           , envir = env) #
   assign("residmap"         , residmap         , envir = env) #
   assign("sourcemask"       , sourcemask       , envir = env) # S
   assign("sourcemaskout"    , sourcemaskout    , envir = env) #

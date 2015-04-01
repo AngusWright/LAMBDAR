@@ -13,6 +13,9 @@ HxHy=inap(x+xstep/2,y+ystep/2,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=
 #Check if whole pixel is coveres {{{
 full= LxLy & LxHy & HxLy & HxHy & MxMy
 #}}}
+#The proportion of the pixel that is covered {{{
+Npart= LxLy + LxHy + HxLy + HxHy
+#}}}
 #Check if aperture breaches the pixel at all {{{
 LxLy=inap(x-xstep/2,y-ystep/2,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax+max(c(xstep,ystep)*sqrt(2)/2),deg=deg)
 LxHy=inap(x-xstep/2,y+ystep/2,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax+max(c(xstep,ystep)*sqrt(2)/2),deg=deg)
@@ -23,8 +26,7 @@ part= ((LxLy | LxHy | HxLy | HxHy) & full==F)
 #Check if the pixel is empty {{{
 empty= (! full) & (! part)
 #}}}
-#Return the proportion of the pixel that is covered {{{
-Npart= LxLy + LxHy + HxLy + HxHy
+#Return {{{
 return=list(logic=cbind(part=part,empty=empty,full=full,mid=MxMy),Npart=Npart)
 #}}}
 }

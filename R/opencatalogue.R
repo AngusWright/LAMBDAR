@@ -27,7 +27,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
   #Open Catalogue {{{
   if (csv) {
-    fitstable<-try(as.data.frame(read.csv(paste(pathroot,pathwork,catalogue,sep=""))))
+    fitstable<-try(as.data.frame(read.csv(paste(pathroot,pathwork,catalogue,sep=""),stringsAsFactors=F)))
     #Test Read of Catalogue for errors
     if (class(fitstable)=="try-error") {
       #Stop on Error
@@ -36,7 +36,7 @@ function(outenv=parent.env(environment()), env=NULL){
       stop("Catalogue File read failed")
     }
   } else if (fits) {
-    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,pathwork,catalogue,sep=""))))
+    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,pathwork,catalogue,sep="")),stringsAsFactors=F))
     if (class(fitstable)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -67,13 +67,13 @@ function(outenv=parent.env(environment()), env=NULL){
     stop(paste("Catalogue does not contain",catalab,"column"))
   }#}}}
   #Object RA {{{
-  ra_g<-try(fitstable[1:nrows,ralab])
+  ra_g<-try(as.numeric(fitstable[1:nrows,ralab]))
   if ((class(ra_g)=="try-error")||(is.null(ra_g[1]))) {
     sink(type="message")
     stop(paste("Catalogue does not contain",ralab,"column"))
   }#}}}
   #Object Dec {{{
-  dec_g<-try(fitstable[1:nrows,declab])
+  dec_g<-try(as.numeric(fitstable[1:nrows,declab]))
   if ((class(dec_g)=="try-error")||(is.null(dec_g[1]))) {
     sink(type="message")
     stop(paste("Catalogue does not contain",declab,"column"))
@@ -88,13 +88,13 @@ function(outenv=parent.env(environment()), env=NULL){
   } else {
     #Otherwise, Check Syntax & Read in Aperture Variables {{{
     #Aperture Angle {{{
-    theta_g<-try(fitstable[1:nrows,thetalab])  # theta
+    theta_g<-try(as.numeric(fitstable[1:nrows,thetalab]))  # theta
     if ((class(theta_g)=="try-error")||(is.null(theta_g))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",thetalab,"column"))
     }#}}}
     #Aperture Semi-Major Axis {{{
-    a_g<-try(fitstable[1:nrows,semimajlab]) # semimajor in arcsec
+    a_g<-try(as.numeric(fitstable[1:nrows,semimajlab])) # semimajor in arcsec
     if ((class(a_g)=="try-error")||(is.null(a_g))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",semimajlab,"column"))
@@ -102,7 +102,7 @@ function(outenv=parent.env(environment()), env=NULL){
     a_g[which(!is.finite(a_g))]<-0
     #}}}
     #Aperture Semi-Minor Axis {{{
-    b_g<-try(fitstable[1:nrows,semiminlab]) # semiminor in arcsec
+    b_g<-try(as.numeric(fitstable[1:nrows,semiminlab])) # semiminor in arcsec
     if ((class(b_g)=="try-error")||(is.null(b_g))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",semiminlab,"column"))
@@ -115,7 +115,7 @@ function(outenv=parent.env(environment()), env=NULL){
 
   #If wanted, read contaminants column {{{
   if (filtcontam) {
-    contams<-try(fitstable[1:nrows,contamlab] )
+    contams<-try(as.numeric(fitstable[1:nrows,contamlab]))
     if ((class(contams)=="try-error")||(is.null(contams))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",contamlab,"column"))
@@ -124,7 +124,7 @@ function(outenv=parent.env(environment()), env=NULL){
   }#}}}
 
   #If Weight Column exists, read values {{{
-  fluxweight<-try(fitstable[1:nrows,fluxweightlab] )
+  fluxweight<-try(as.numeric(fitstable[1:nrows,fluxweightlab] ))
   if ((class(fluxweight)=="try-error")||(is.null(fluxweight))) {
     #Otherwise, set all weights to unity
     fluxweight<-1
