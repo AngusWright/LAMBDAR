@@ -115,7 +115,11 @@ function(env=NULL,filename) {
       #newtable[["Randoms_nNoMask"]] = randoms$nNoMask
       #newtable[["Randoms_meanMaskFrac"]] = randoms$meanMaskFrac
     }
-    newtable[["PixelFlux"]] = pixflux
+    if (Magnitudes) {
+      newtable[["PixelFlux_Jy"]] = pixflux*janskyConv
+    } else {
+      newtable[["PixelFlux_Units"]] = pixflux
+    }
     newtable[["QuarteredPhot1_Units"]] = qssfad[,1]
     newtable[["QuarteredPhot2_Units"]] = qssfad[,2]
     newtable[["QuarteredPhot3_Units"]] = qssfad[,3]
@@ -185,7 +189,11 @@ function(env=NULL,filename) {
       #newtable[["Randoms_nNoMask"]] = randoms$nNoMask
       #newtable[["Randoms_meanMaskFrac"]] = randoms$meanMaskFrac
     }
-    newtable[["PixelFlux"]] = pixflux
+    if (Magnitudes) {
+      newtable[["PixelFlux_Jy"]] = pixflux*janskyConv
+    } else {
+      newtable[["PixelFlux_Units"]] = pixflux
+    }
     newtable[["QuarteredPhot1_Units"]] = qssfad[,1]
     newtable[["QuarteredPhot2_Units"]] = qssfad[,2]
     newtable[["QuarteredPhot3_Units"]] = qssfad[,3]

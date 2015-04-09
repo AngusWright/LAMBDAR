@@ -1645,6 +1645,8 @@ function(env=NULL) {
     ra_g   <-ra_g[which(contams==0)]
     dec_g  <-dec_g[which(contams==0)]
     theta_g<-theta_g[which(contams==0)]
+    x_g    <-x_g[which(contams==0)]
+    y_g    <-y_g[which(contams==0)]
     x_p    <-x_p[which(contams==0)]
     y_p    <-y_p[which(contams==0)]
     a_g    <-a_g[which(contams==0)]
