@@ -80,6 +80,8 @@ library(LAMBDAR)
 # > nortest
 # > foreach
 # > doParallel
+# > RANN
+# > seqinr
 #
 #as well as any packages that these depend on themselves.
 #To install these packages, in the R terminal, run
