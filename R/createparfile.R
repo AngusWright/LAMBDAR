@@ -33,8 +33,10 @@ createparfile <-
     CropImRad=NA,
     CropFitsName="cropped_im",
     RemoveContam=0,
+    CheckContam=1,
+    nNearestCheck=10,
     PSFConvolve=1,
-    PSFMatched=0,
+    PSFWeighted=0,
     ApertureConfLimit=0.8,
     AngularOffset=0,
     PointSources=0,
@@ -141,9 +143,11 @@ CropImRad              ",CropImRad          ,"    #Radius of crop (deg; NA will 
 CropFitsName           ",CropFitsName       ,"    #Name of the output cropped image (without '.fits' extension)
 #                #--------Additional Options----------------#
 RemoveContam           ",RemoveContam      ,"    #Remove Contaminants from the image?         [1/0]
+CheckContam            ",CheckContam       ,"    #Check Contaminants for ones that are irrelevant (do not overlap with main galaxies)?  [1/0]
+nNearestCheck          ",nNearestCheck     ,"    #Number of Nearest Neighbours to check when looking for Contaminant-Galaxy Overlaps
 PSFConvolve            ",PSFConvolve       ,"    #Convolve the Aperture with a PSF?                                              [1/0]
 ApertureConfLimit      ",ApertureConfLimit ,"    #Confidence limit used when converting PSF convolved apertures to binary apertures
-PSFMatched             ",PSFMatched        ,"    #Do you want PSF Matched Photometry [1]? or Aperture Photometry [0]?            [1/0]
+PSFWeighted            ",PSFWeighted       ,"    #Do you want PSF Weighted Photometry [1]? or Aperture Photometry [0]?            [1/0]
 AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N0E90 angular coords, 1 if it is in N90E0 coords
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
 MinApRad               ",MinApRad          ,"    #State minimum aperture to use for sources

@@ -111,10 +111,53 @@ function(env=NULL) {
   #Details {{{
   #Create apertures for every object remaining in
   #the catalogue. }}}
+  #Get StampLengths for every galaxy {{{
+  stamplen<-(floor((ceiling(defbuff*a_g*2/asperpix)+ceiling(psf.clip))/2)*2+5)
+  #}}}
+  #Discard any contaminants that are beyond their nearest neighbours stamp {{{
+  #Number of Nearest Neighbors to search {{{
+  if (!exists("nNNs")) { nNNs<-10 }
+  if (!exists("checkContam")) { checkContam<-TRUE }
+  #}}}
+  if (filtcontam & checkContam) {
+    if (!quiet) { cat("Removing Contaminants that are irrelevant ") }
+    catlen<-length(x_g)
+    nearest<-nn2(data.frame(x_g[which(contams==0)],y_g[which(contams==0)]),data.frame(x_g[which(contams==1)],y_g[which(contams==1)]),k=nNNs)
+    contam.inside<-NULL
+    for(ind in 1:length(which(contams==1))) {
+      #If any of the nearest neighbors overlap with the contaminant
+      contam.inside<-c(contam.inside,any(nearest$nn.dist[ind,] < (sqrt(2)/2*(stamplen[which(contams==0)][nearest$nn.idx[ind,]]+stamplen[which(contams==1)][ind]))))
+    }
+    insidemask<-rep(TRUE,catlen)
+    insidemask[which(contams==1)]<-contam.inside
+    #Remove object catalogue entries {{{
+    x_g<-x_g[which(insidemask)]
+    y_g<-y_g[which(insidemask)]
+    id_g<-id_g[which(insidemask)]
+    ra_g<-ra_g[which(insidemask)]
+    dec_g<-dec_g[which(insidemask)]
+    theta_g<-theta_g[which(insidemask)]
+    a_g<-a_g[which(insidemask)]
+    b_g<-b_g[which(insidemask)]
+    if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
+    if (filtcontam) { contams<-contams[which(insidemask)] }
+    chunkSize=length(id_g)/getDoParWorkers()
+    mpiopts<-list(chunkSize=chunkSize)
+    #}}}
+    #Notify how many objects remain {{{
+    if (verbose) { message(paste("There are",length(x_g),"supplied objects & contaminants that intersect (",
+                                  round(((catlen-length(x_g))/catlen)*100, digits=2),"% of objects were contaminants that didn't intersect galaxies)")) }
+    #}}}
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+      message(paste('Remove irrelevant contaminants - Done (',round(timer[3], digits=2),'sec )'))
+    } else if (!quiet) { cat("   - Done\n") }
+  }
+  #}}}
   #Convert decimal pixel values into actual pixel values {{{
   x_p<-floor(x_g)
   y_p<-floor(y_g)
   #}}}
+
   #Create an array of stamps containing the data image subsection for all objects {{{
   timer=system.time(im_mask<-make_data_mask(outenv=environment()))
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
@@ -550,16 +593,17 @@ function(env=NULL) {
   #Remove arrays that are no longer needed {{{
   rm(wfa, envir=image.env)
   #}}}
-  # If we have convolved with a PSF, convert back to tophat apertures (now expanded by PSF convolution) {{{
+  #Finalise SFA Apertures {{{
   sfabak<-NULL
-  if (!exists("PSFMatched")) { PSFMatched<-FALSE }
-  if (psffilt & !PSFMatched) {
+  if (!exists("PSFWeighted")) { PSFWeighted<-FALSE }
+  if (psffilt & !PSFWeighted) {
+    # If we have convolved with a PSF, & not doing PSF Weighting, convert back to tophat apertures (now expanded by PSF convolution) {{{
     #If we want the residual map, save the model apertures {{{
     if ((plotsample)|(makeresidmap)) {
       sfabak<-sfa
     }
     #}}}
-    # For each aperture, Binary filter at aplim*max(ap)
+    # For each aperture, Binary filter at aplim*max(ap) {{{
     sba<-foreach(sfam=sfa, .options.mpi=mpiopts, .noexport=ls(envir=environment()))%dopar%{
       apvals<-rev(sort(sfam))
       tempsum<-cumsum(apvals)
@@ -570,7 +614,53 @@ function(env=NULL) {
       sfam[which(sfam >= apLim)]<-1
       return=sfam
     }
+    #}}}
+    #Update the sfa {{{
     sfa<-sba
+    rm(sba)
+    #}}}
+    #If wanted, output the Convolved & Weighted Aperture Mask {{{
+    if (makefamask) {
+      if (!quiet) { cat(paste('Updated Apertures; ')) }
+      timer=system.time(image.env$wfa<-make_a_mask(outenv=environment(), sfa, dim(image.env$im)))
+      if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+        message(paste('Make FA Mask - Done (',round(timer[3], digits=2),'sec )'))
+      } else if (!quiet) { cat("   - Done\n") }
+      fafilename<-paste("final_",fafilename,sep="")
+      if (!quiet) { cat(paste('Outputting Re-Boxcar-ed All Convolved Apertures Mask to',fafilename,"   ")) }
+      timer=system.time(writefitsout(file.path(pathroot,pathwork,pathout,fafilename),image.env$wfa,image.env$hdr_str,nochange=TRUE) )
+      if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+        message(paste('Output FA Mask - Done (',round(timer[3], digits=2),'sec )'))
+      } else if (!quiet) { cat("   - Done\n") }
+      rm(wfa, envir=image.env)
+    }#}}}
+    #remove unneeded variables {{{
+    rm(psfvals)
+    rm(tempsum)
+    rm(tempfunc)
+    #}}}
+    #}}}
+  } else if (psffilt & PSFWeighted) {
+    #If we have convolved by the PSF & want PSF Weighting {{{
+    #If we want the residual map, save the model apertures {{{
+    if ((plotsample)|(makeresidmap)) {
+      sfabak<-sfa
+    }
+    #}}}
+    # For each resolved aperture, Binary filter the section out to the desired level, then fuzzy the edges {{{
+    chunkSize=ceiling(length(which(a_g>0))/getDoParWorkers())
+    tempopts<-list(chunkSize=chunkSize)
+    sba<-foreach(sfam=sfa[which(a_g>0)], .options.mpi=tempopts, .noexport=ls(envir=environment()))%dopar%{
+      apvals<-rev(sort(sfam))
+      tempsum<-cumsum(apvals)
+      tempfunc<-approxfun(tempsum,apvals)
+      apLim<-tempfunc(apLimit*max(tempsum, na.rm=TRUE))
+      #message(paste("ApLimit:",apLimit,"; PSFLimit:",psfLimit))
+      sfam[which(sfam >= apLim)]<-1
+      sfam[which(sfam <  apLim)]<-sfam[which(sfam <  apLim)]/apLim
+      return=sfam
+    }
+    sfa[which(a_g>0)]<-sba
     rm(sba)
     #If wanted, output the Convolved & Weighted Aperture Mask {{{
     if (makefamask) {
@@ -587,9 +677,13 @@ function(env=NULL) {
       } else if (!quiet) { cat("   - Done\n") }
       rm(wfa, envir=image.env)
     }#}}}
+    #remove unneeded variables {{{
     rm(psfvals)
     rm(tempsum)
     rm(tempfunc)
+    #}}}
+    #}}}
+    #}}}
   }
   #}}}
   #If PSF Supplied & sample wanted, Plot PSF and Min Aperture Correction {{{
@@ -605,75 +699,24 @@ function(env=NULL) {
     if (psffilt) { contour(psf, levels=c(psfLimit), labels=c(apLimit), col='green', add=TRUE) }
     dev.off()
     #}}}
-    if (!PSFMatched) {
+    if (!PSFWeighted) {
       #Plot Example of PS minimum aperture Correction{{{
       ind<-(which(a_g==0)[1])
       #If no point sources, use the minimum aperture
       if (is.na(ind)) { ind<-which.min(a_g) }
-      if (stamplen[ind]<length(psf[,1])){
-        #Recalculate Limits to make sure PSF is centred correctly {{{
-        #Aperture Stamp is smaller than PSF stamp {{{
-        #limits from PSF peak - 1/2 stampwidth {{{
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-        delta<-floor(stamplen[ind]/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        #}}}
-        aplims<-rbind(c(1,stamplen[ind]),c(1,stamplen[ind]))
-        #Check for -ve indexes or indexes above PSF width {{{
-        if (lims[1,1]<1) {
-          dx<-lims[1,1]-1
-          aplims[1,1]<-aplims[1,1]+(1-lims[1,1])
-          lims[1,1]<-1
-        } else { dx<-0 }
-        if (lims[2,1]<1) {
-          dy<-lims[2,1]-1
-          aplims[2,1]<-aplims[2,1]+(1-lims[2,1])
-          lims[2,1]<-1
-        } else { dy<-0 }
-        if (lims[1,2]>length(psf[1,])) {
-          aplims[1,2]<-(stamplen[ind]-(lims[1,2]-length(psf[1,])))
-          lims[1,2]<-length(psf[1,])
-        }
-        if (lims[2,2]>length(psf[,1])) {
-          aplims[2,2]<-(stamplen[ind]-(lims[2,2]-length(psf[,1])))
-          lims[2,2]<-length(psf[,1])
-        }
-        #}}}
-        ret<-as.numeric(lims)
-        #Check that arrays are conformable {{{
-        if (length(ret[1]:ret[3])!=length(aplims[1]:aplims[3])) {
-          stop(paste("PSF and Aperture Arrays are non-conformable. Lengths are:",length(psf[ret[1]:ret[3],1]),stamplen[ind]))
-        }
-        #}}}
-        #}}}
-      } else if (stamplen[ind]==length(psf[,1])){
-        #Make Sure PSF is centred on centre of stamp
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-        delta<-floor(stamplen[ind]/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        dx<-lims[1,1]-1
-        dy<-lims[2,1]-1
-        #dx<-dx-abs(length(psf[1,])-lims[1,2])-1
-        #dy<-dy-abs(length(psf[,1])-lims[2,2])-1
-        #Aperture stamp is same size as PSF stamp {{{
-        ret<-matrix(c(1,length(psf[,1]),1,length(psf[1,])), ncol=2, byrow=T)
-        aplims<-ret
-        #}}}
-      } else {
-        #Error: PSF stamp is smaller than aperture Stamp {{{
-        stop(paste("PSF Array is smaller than the Aperture Array. Lengths are:",length(psf[,1]),stamplen[ind]))
-        #}}}
-      }
-      xlo=ret[1]
-      xup=ret[3]
-      ylo=ret[2]
-      yup=ret[4]
-      #}}}
+      #Make Sure PSF is centred on centre of stamp
+      centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+      delta<-floor(stamplen[ind]/2)*c(-1,+1)
+      lims<-rbind(centre[1]+delta,centre[2]+delta)
+      dx<-lims[1,1]-1
+      dy<-lims[2,1]-1
       #Reinterpolate the PSF at point source XcenYcen {{{
-      lenx<-length(ret[1]:ret[3])
-      leny<-length(ret[2]:ret[4])
+      lenxpsf<-length(psf[,1])
+      lenypsf<-length(psf[1,])
+      lenx<-length(1:stamplen[ind])
+      leny<-length(1:stamplen[ind])
       #Make grid for psf at old pixel centres {{{
-      psf_obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[ret[1]:ret[3],ret[2]:ret[4]][(1:(lenx+1)+dx-1)%%(lenx+1),(1:(leny+1)+dy-1)%%(leny+1)])
+      psf_obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
       #}}}
       #Make expanded grid of new pixel centres {{{
       expanded<-expand.grid(seq(1,lenx),seq(1,leny))
@@ -688,9 +731,9 @@ function(env=NULL) {
       suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction", asp=1,col=heat.colors(256),useRaster=TRUE))
       contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       if (psffilt) { contour(psf, levels=c(psfLimit), labels=c(apLimit), col='green', add=TRUE) }
-      suppressWarnings(image(log10(sfa[[ind]][aplims[1]:aplims[3],aplims[2]:aplims[4]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=TRUE))
+      suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=TRUE))
       spsf<-sum(ap)
-      ssfap<-sum(sfa[[ind]][aplims[1]:aplims[3],aplims[2]:aplims[4]]*ap)
+      ssfap<-sum(sfa[[ind]]*ap)
       label("topright",lab=paste("SumPSF=",round(spsf,digits=2),"\nSum(PSF*Ap)=",round(ssfap,digits=2),"\nApCorr=",round((1+((spsf-ssfap)/spsf)),digits=2),sep=""))
       dev.off()
       #}}}
@@ -811,7 +854,7 @@ function(env=NULL) {
       timer<-proc.time()
       dfa<-foreach(dbwm=dbw, sfam=sfa, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { dbwm*sfam }
       #Notify {{{
-      if (showtime) { cat("   - Done (",round(timer[3]+timer2[3],digits=2),"sec )\n")
+      if (showtime) { cat("   - Done (",round(proc.time()[3]-timer[3]+timer2[3],digits=2),"sec )\n")
       } else if (!quiet) { cat("   - Done\n") }
       #}}}
       #}}}
@@ -925,81 +968,33 @@ function(env=NULL) {
     spsf<-foreach(slen=stamplen, xc=x_g, yc=y_g, .combine='rbind', .options.mpi=mpiopts, .export="psf", .noexport=ls(envir=environment())) %dopar% {
       #for (i in 1:npos) {
       #slen=stamplen[i]
-      if (slen<length(psf[,1])){
-        #Recalculate Limits to make sure PSF is centred correctly {{{
-        #Aperture Stamp is smaller than PSF stamp {{{
-        #limits from PSF peak - 1/2 stampwidth {{{
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        #}}}
-        aplims<-rbind(c(1,slen),c(1,slen))
-        #Check for -ve indexes or indexes above PSF width {{{
-        if (lims[1,1]<1) {
-          dx<-lims[1,1]-1
-          aplims[1,1]<-aplims[1,1]+(1-lims[1,1])
-          lims[1,1]<-1
-        } else { dx<-0 }
-        if (lims[2,1]<1) {
-          dy<-lims[2,1]-1
-          aplims[2,1]<-aplims[2,1]+(1-lims[2,1])
-          lims[2,1]<-1
-        } else { dy<-0 }
-        if (lims[1,2]>length(psf[1,])) {
-          aplims[1,2]<-(slen-(lims[1,2]-length(psf[1,])))
-          lims[1,2]<-length(psf[1,])
-        }
-        if (lims[2,2]>length(psf[,1])) {
-          aplims[2,2]<-(slen-(lims[2,2]-length(psf[,1])))
-          lims[2,2]<-length(psf[,1])
-        }
-        #}}}
-        ret<-as.numeric(lims)
-        #Check that arrays are conformable {{{
-        if (length(ret[1]:ret[3])!=length(aplims[1]:aplims[3])) {
-          stop(paste("PSF and Aperture Arrays are non-conformable. Lengths are:",length(psf[ret[1]:ret[3],1]),slen))
-        }
-        #}}}
-        #}}}
-     } else if (slen==length(psf[,1])){
-       #Aperture stamp is same size as PSF stamp {{{
-       centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-       delta<-floor(stamplen[ind]/2)*c(-1,+1)
-       lims<-rbind(centre[1]+delta,centre[2]+delta)
-       dx<-lims[1,1]-1
-       dy<-lims[2,1]-1
-       ret<-matrix(rep(c(1,length(psf[,1])),2), ncol=2, byrow=T)
-       aplims<-ret
-       #}}}
-     } else {
-       #Error: PSF stamp is smaller than aperture Stamp {{{
-       stop(paste("PSF Array is smaller than the Aperture Array. Lengths are:",length(psf[,1]),slen))
-       #}}}
-     }
-     xlo=ret[1]
-     xup=ret[3]
-     ylo=ret[2]
-     yup=ret[4]
-     #}}}
-     #Reinterpolate the PSF at point source XcenYcen {{{
-     lenx<-length(ret[1]:ret[3])
-     leny<-length(ret[2]:ret[4])
-     #Make grid for psf at old pixel centres {{{
-     psf_obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[ret[1]:ret[3],ret[2]:ret[4]][(1:(lenx+1)+dx-1)%%(lenx+1),(1:(leny+1)+dy-1)%%(leny+1)])
-     #}}}
-     #Make expanded grid of new pixel centres {{{
-     expanded<-expand.grid(seq(1,lenx),seq(1,leny))
-     xnew<-expanded[,1]-xc%%1
-     ynew<-expanded[,2]-yc%%1
-     #}}}
-     #Interpolate {{{
-     ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
-     #}}}
-     #}}}
-     sum(ap)
-   }
-   #}
-   spsf<-array(unlist(spsf),dim=c(dim(spsf[[1]]),length(spsf)))
+      #Make Sure PSF is centred on centre of stamp
+      centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+      delta<-floor(slen/2)*c(-1,+1)
+      lims<-rbind(centre[1]+delta,centre[2]+delta)
+      dx<-lims[1,1]-1
+      dy<-lims[2,1]-1
+      #Reinterpolate the PSF at point source XcenYcen {{{
+      lenxpsf<-length(psf[,1])
+      lenypsf<-length(psf[1,])
+      lenx<-length(1:slen)
+      leny<-length(1:slen)
+      #Make grid for psf at old pixel centres {{{
+      psf_obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+      #}}}
+      #Make expanded grid of new pixel centres {{{
+      expanded<-expand.grid(seq(1,lenx),seq(1,leny))
+      xnew<-expanded[,1]-xc%%1
+      ynew<-expanded[,2]-yc%%1
+      #}}}
+      #Interpolate {{{
+      ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
+      #}}}
+      #}}}
+      sum(ap)
+    }
+    #}
+    spsf<-array(unlist(spsf),dim=c(dim(spsf[[1]]),length(spsf)))
     if (verbose) { cat(" - Done\n") }
   } else {
     spsf<-rep(NA, length(sfa))
@@ -1012,81 +1007,33 @@ function(env=NULL) {
     ssfap<-foreach(sfam=sfa, slen=stamplen, xc=x_g, yc=y_g, .combine='rbind', .options.mpi=mpiopts, .export="psf", .noexport=ls(envir=environment())) %dopar% {
       #for (i in 1:npos) {
       #slen=stamplen[i]
-      if (slen<length(psf[,1])){
-        #Recalculate Limits to make sure PSF is centred correctly {{{
-        #Aperture Stamp is smaller than PSF stamp {{{
-        #limits from PSF peak - 1/2 stampwidth {{{
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        #}}}
-        aplims<-rbind(c(1,slen),c(1,slen))
-        #Check for -ve indexes or indexes above PSF width {{{
-        if (lims[1,1]<1) {
-          dx<-lims[1,1]-1
-          aplims[1,1]<-aplims[1,1]+(1-lims[1,1])
-          lims[1,1]<-1
-        } else { dx<-0 }
-        if (lims[2,1]<1) {
-          dy<-lims[2,1]-1
-          aplims[2,1]<-aplims[2,1]+(1-lims[2,1])
-          lims[2,1]<-1
-        } else { dy<-0 }
-        if (lims[1,2]>length(psf[1,])) {
-          aplims[1,2]<-(slen-(lims[1,2]-length(psf[1,])))
-          lims[1,2]<-length(psf[1,])
-        }
-        if (lims[2,2]>length(psf[,1])) {
-          aplims[2,2]<-(slen-(lims[2,2]-length(psf[,1])))
-          lims[2,2]<-length(psf[,1])
-        }
-        #}}}
-        ret<-as.numeric(lims)
-        #Check that arrays are conformable {{{
-        if (length(ret[1]:ret[3])!=length(aplims[1]:aplims[3])) {
-          stop(paste("PSF and Aperture Arrays are non-conformable. Lengths are:",length(psf[ret[1]:ret[3],1]),slen))
-        }
-        #}}}
-        #}}}
-     } else if (slen==length(psf[,1])){
-       #Aperture stamp is same size as PSF stamp {{{
-       centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-       delta<-floor(stamplen[ind]/2)*c(-1,+1)
-       lims<-rbind(centre[1]+delta,centre[2]+delta)
-       dx<-lims[1,1]-1
-       dy<-lims[2,1]-1
-       ret<-matrix(rep(c(1,length(psf[,1])),2), ncol=2, byrow=T)
-       aplims<-ret
-       #}}}
-     } else {
-       #Error: PSF stamp is smaller than aperture Stamp {{{
-       stop(paste("PSF Array is smaller than the Aperture Array. Lengths are:",length(psf[,1]),slen))
-       #}}}
-     }
-     xlo=ret[1]
-     xup=ret[3]
-     ylo=ret[2]
-     yup=ret[4]
-     #}}}
-     #Reinterpolate the PSF at point source XcenYcen {{{
-     lenx<-length(ret[1]:ret[3])
-     leny<-length(ret[2]:ret[4])
-     #Make grid for psf at old pixel centres {{{
-     psf_obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[ret[1]:ret[3],ret[2]:ret[4]][(1:(lenx+1)+dx-1)%%(lenx+1),(1:(leny+1)+dy-1)%%(leny+1)])
-     #}}}
-     #Make expanded grid of new pixel centres {{{
-     expanded<-expand.grid(seq(1,lenx),seq(1,leny))
-     xnew<-expanded[,1]-xc%%1
-     ynew<-expanded[,2]-yc%%1
-     #}}}
-     #Interpolate {{{
-     ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
-     #}}}
-     #}}}
-     sum(sfam[aplims[1]:aplims[3],aplims[2]:aplims[4]]*ap)
-   }
-   #}
-   ssfap<-array(unlist(ssfap),dim=c(dim(ssfap[[1]]),length(ssfap)))
+      #Make Sure PSF is centred on centre of stamp
+      centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+      delta<-floor(slen/2)*c(-1,+1)
+      lims<-rbind(centre[1]+delta,centre[2]+delta)
+      dx<-lims[1,1]-1
+      dy<-lims[2,1]-1
+      #Reinterpolate the PSF at point source XcenYcen {{{
+      lenxpsf<-length(psf[,1])
+      lenypsf<-length(psf[1,])
+      lenx<-length(1:slen)
+      leny<-length(1:slen)
+      #Make grid for psf at old pixel centres {{{
+      psf_obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+      #}}}
+      #Make expanded grid of new pixel centres {{{
+      expanded<-expand.grid(seq(1,lenx),seq(1,leny))
+      xnew<-expanded[,1]-xc%%1
+      ynew<-expanded[,2]-yc%%1
+      #}}}
+      #Interpolate {{{
+      ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
+      #}}}
+      #}}}
+      sum(sfam*ap)
+    }
+    #}
+    ssfap<-array(unlist(ssfap),dim=c(dim(ssfap[[1]]),length(ssfap)))
     if (verbose) { cat(" - Done\n") }
   } else {
     ssfap<-rep(NA, length(sfa))
@@ -1325,7 +1272,7 @@ function(env=NULL) {
   #Final Flux & Error Calculations {{{
   if (verbose) { cat("      Final Fluxes and Error Calculations ") }
   #Calculate Aperture Correction {{{
-  if (PSFMatched) {
+  if (PSFWeighted) {
     #spsf<-sum(psf, na.rm=TRUE)
     ApCorr<-ssfa/ssfa2
   } else {
@@ -1483,7 +1430,7 @@ function(env=NULL) {
       smB[which(smB==0)]<-NA
       #}}}
       #Plot Aperture in Blue {{{
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, col='blue', useRaster=FALSE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims))
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=(sfa[[i]]), main="Image & Aperture", asp=1, col=hsv(2/3,seq(0,1,length=256)), useRaster=FALSE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims))
       #}}}
       #Plot Image in greyscale {{{
       suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=grey.colors(1000), useRaster=FALSE,add=TRUE, xlab="", ylab=""))
@@ -1514,10 +1461,18 @@ function(env=NULL) {
       cog_nosky<-get.cog(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i],centre=c(stamplen[i]/2, stamplen[i]/2))
       #}}}
       #Deblended only {{{
-      debl.cog<-get.cog(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
+      if (PSFWeighted) {
+        debl.cog<-get.cog(sfa[[i]]*dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
+      } else {
+        debl.cog<-get.cog(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
+      }
       #}}}
       #Deblended and Sky Subtracted {{{
-      debl.cog_nosky<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2))
+      if (PSFWeighted) {
+        debl.cog_nosky<-get.cog(sfa[[i]]*dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2))
+      } else {
+        debl.cog_nosky<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2))
+      }
       #}}}
       #}}}
       #Plot COGs {{{
@@ -1645,10 +1600,10 @@ function(env=NULL) {
     ra_g   <-ra_g[which(contams==0)]
     dec_g  <-dec_g[which(contams==0)]
     theta_g<-theta_g[which(contams==0)]
-    x_g    <-x_g[which(contams==0)]
-    y_g    <-y_g[which(contams==0)]
     x_p    <-x_p[which(contams==0)]
     y_p    <-y_p[which(contams==0)]
+    x_g    <-x_g[which(contams==0)]
+    y_g    <-y_g[which(contams==0)]
     a_g    <-a_g[which(contams==0)]
     b_g    <-b_g[which(contams==0)]
     ssa    <-ssa[which(contams==0)]
@@ -1683,6 +1638,7 @@ function(env=NULL) {
     dfaerr <-dfaerr[which(contams==0)]
     pixflux<-pixflux[which(contams==0)]
     ApCorr <-ApCorr[which(contams==0)]
+    stamplen<-stamplen[which(contams==0)]
     mags   <-mags[which(contams==0)]
     if (length(fluxweight!=1)) { fluxweight<-fluxweight[which(contams==0)] }
     if (RanCor) { randoms<-randoms[which(contams==0),] }

@@ -51,6 +51,7 @@ function(env=NULL,filename) {
     newtable[["Y_IMAGE"]] = y_g
     newtable[["NX_PIX2EDGE"]] = dx_p
     newtable[["NY_PIX2EDGE"]] = dy_p
+    newtable[["StampDiameter_pix"]] = stamplen
     newtable[["THETA_J2000"]] = theta_g
     newtable[["MAJOR_ARCSEC"]] = a_g
     newtable[["MINOR_ARCSEC"]] = b_g

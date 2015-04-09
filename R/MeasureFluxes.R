@@ -304,7 +304,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     insidemask<-!((x_g <= 0) | (x_g >= length(image.env$im[,1])+1) | (y_g <= 0) | (y_g >= length(image.env$im[1,])+1))
     #Check that something is inside the image {{{
     if (length(which(insidemask==TRUE))==0) {
-      warning("No Single Apertures are inside the image.")
+      warning("No catalogue entries are centred within the limits of the input image.")
       #Notify & Close Logfile {{{
       message(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
       message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))

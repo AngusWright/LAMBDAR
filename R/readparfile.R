@@ -125,26 +125,26 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
 
   #Do we want PSF Matched Photometry? {{{
-  ID="PSFMatched"
+  ID="PSFWeighted"
   ind<-which(params[ID,]!="")
-  PSFMatched<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(PSFMatched))) {
+  PSFWeighted<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(PSFWeighted))) {
     if ((length(ind)==1)) {
-      PSFMatched<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(PSFMatched)=="try-error") {
+      PSFWeighted<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(PSFWeighted)=="try-error") {
         warning("Randoms Correction Flag not in Parameter File",call.=FALSE)
-        PSFMatched<-0
+        PSFWeighted<-0
       }
-      if (is.na(PSFMatched)) {
+      if (is.na(PSFWeighted)) {
         warning("Randoms Correction Flag not in Parameter File",call.=FALSE)
-        PSFMatched<-0
+        PSFWeighted<-0
       }
     } else {
       warning("Randoms Correction Flag not in Parameter File",call.=FALSE)
-      PSFMatched<-0
+      PSFWeighted<-0
     }
   }
-  PSFMatched<-(PSFMatched==1)
+  PSFWeighted<-(PSFWeighted==1)
   #}}}
 
   #PSF map filename {{{
@@ -222,14 +222,16 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
 
   #Check for problematic inputs {{{
-  if (any(PSFMatched & !psffilt)) {
+  #if (any(PSFWeighted & !psffilt)) {
     #message("WARNING: You've asked for PSF Matched Photometry, and yet specified No PSF Convolution... You could be in for some funky results",call.=FALSE)
-    warning("You've asked for PSF Matched Photometry, and yet specified No PSF Convolution... You could be in for some funky results",call.=FALSE)
-  }
+    #warning("You've asked for PSF Matched Photometry, and yet specified No PSF Convolution... You could be in for some funky results",call.=FALSE)
+  #}
   #}}}
 
   #Perform Contaminant removal? {{{
   nocontammap<-NULL
+  nNNs<-10
+  checkContam<-FALSE
   ID="RemoveContam"
   ind<-which(params[ID,]!="")
   filtcontam<-as.numeric(params[ID,ind])
@@ -251,9 +253,50 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   } else { filtcontam<-filtcontam==1 }
   #}}}
 
-  #Contaminant Image Filename {{{
   if ( filtcontam ) {
-    #Name of the output Residual image
+    #Check for irrelevant contaminants? {{{
+    ID="CheckContam"
+    ind<-which(params[ID,]!="")
+    checkContam<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(checkContam))) {
+      if ((length(ind)==1)) {
+        checkContam<-try(as.numeric(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(checkContam)=="try-error") {
+          warning("CheckContam Flag not in Parameter File",call.=FALSE)
+          checkContam<-FALSE
+        } else { checkContam<-(checkContam==1) }
+        if (is.na(checkContam)) {
+          warning("CheckContam Flag not in Parameter File",call.=FALSE)
+          checkContam<-FALSE
+        }
+      } else {
+        warning("CheckContam Flag not in Parameter File",call.=FALSE)
+        checkContam<-FALSE
+      }
+    } else { checkContam<-checkContam==1 }
+    #}}}
+    #Check for irrelevant contaminants? {{{
+    ID="nNearestCheck"
+    ind<-which(params[ID,]!="")
+    nNNs<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(nNNs))) {
+      if ((length(ind)==1)) {
+        nNNs<-try(as.numeric(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(nNNs)=="try-error") {
+          warning("nNearestCheck Flag not in Parameter File",call.=FALSE)
+          nNNs<-10
+        } else { nNNs<-(nNNs==1) }
+        if (is.na(nNNs)) {
+          warning("nNearestCheck Flag not in Parameter File",call.=FALSE)
+          nNNs<-10
+        }
+      } else {
+        warning("nNearestCheck Flag not in Parameter File",call.=FALSE)
+        nNNs<-10
+      }
+    }
+    #}}}
+    #Contaminant Image Filename {{{
     ID="NoContamImageFile"
     ind<-which(params[ID,]!="")
     nocontammap<-params[ID,ind]
@@ -261,8 +304,8 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       warning("Contaminant Subtracted Residual Map Filename not in Parameter File",call.=FALSE)
       nocontammap<-"NoContamResidualImage.fits"
     }
+    #}}}
   }
-  #}}}
 
   #Name of Source Catalogue {{{
   ID="Catalogue"
@@ -558,11 +601,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   forcepointsources<-(forcepointsources==1)
   #}}}
 
-  #Check for silly inputs {{{
-  if (any(PSFMatched & !forcepointsources)) {
+  #Check for wayward inputs {{{
+  #if (any(PSFWeighted & !forcepointsources)) {
     #message("WARNING: You've asked for PSF Matched Photometry, and not forced Point Sources to be used. PSF matched is designed for Point Sources only, so this could behave poorly.",call.=FALSE)
-    warning("You've asked for PSF Matched Photometry, and not forced Point Sources to be used. PSF matched is designed for Point Sources only, so this could behave poorly.",call.=FALSE)
-  }
+    #warning("You've asked for PSF Matched Photometry, and not forced Point Sources to be used. PSF matched is designed for Point Sources only, so this could behave poorly.",call.=FALSE)
+  #}
   #}}}
 
 
@@ -1658,6 +1701,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("apLimit"          , apLimit          , envir = env) #
   assign("beamarea_SOM_as"  , beamarea_SOM_as  , envir = env) # B
   assign("conf"             , conf             , envir = env) # C
+  assign("checkContam"      , checkContam      , envir = env) #
   assign("confidence"       , confidence       , envir = env) #
   assign("cropimage"        , cropimage        , envir = env) #
   assign("correl.noise"     , correl.noise     , envir = env) #
@@ -1706,6 +1750,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("MinApRad"         , MinApRad         , envir = env) #
   assign("memSafe"          , memSafe          , envir = env) #
   assign("nopsf"            , nopsf            , envir = env) # N
+  assign("nNNs"             , nNNs             , envir = env) #
   assign("nocontammap"      , nocontammap      , envir = env) #
   assign("ncores"           , ncores           , envir = env) #
   assign("nRandoms"         , nRandoms         , envir = env) #
@@ -1715,7 +1760,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("plotsample"       , plotsample       , envir = env) #
   assign("plotall"          , plotall          , envir = env) #
   assign("psfmap"           , psfmap           , envir = env) #
-  assign("PSFMatched"       , PSFMatched       , envir = env) #
+  assign("PSFWeighted"      , PSFWeighted      , envir = env) #
   assign("psffilt"          , psffilt          , envir = env) #
   assign("resampleaperture" , resampleaperture , envir = env) # QR
   assign("ra0"              , ra0              , envir = env) #
