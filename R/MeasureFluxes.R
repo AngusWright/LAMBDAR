@@ -173,10 +173,10 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     sink(sinkfile, type="message")
     on.exit(sink(type="message"), add=TRUE)
     #Print any warnings {{{
-    if ((!quiet)&(!(is.null(warnings())))) {
-    cat('\n')
-    print(warnings())
-    cat('\n')
+    if (!exists("parwarning")) { parwarning<-NULL }
+    if ((!(is.null(parwarning)))) {
+      message("Warnings in Parameter File Read:")
+      message(parwarning)
     }
     #}}}
     #}}}

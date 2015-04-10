@@ -84,12 +84,6 @@ function(env=NULL) {
   }#}}}
   #}}}
 
-  #Remove Contaminants which are beyond the largest apertures {{{
-  #if (filtcontam) {
-    #Perform circular match with radii of psf stamp and largest apertures
-  #}
-  #}}}
-
   #-----Diagnostic-----# {{{
   if (diagnostic) { message(paste('Beam area adopted: ',beamarea)) }
   #}}}
@@ -120,6 +114,7 @@ function(env=NULL) {
   if (!exists("checkContam")) { checkContam<-TRUE }
   #}}}
   if (filtcontam & checkContam) {
+    timer<-proc.time()
     if (!quiet) { cat("Removing Contaminants that are irrelevant ") }
     catlen<-length(x_g)
     nearest<-nn2(data.frame(x_g[which(contams==0)],y_g[which(contams==0)]),data.frame(x_g[which(contams==1)],y_g[which(contams==1)]),k=nNNs)
@@ -148,8 +143,8 @@ function(env=NULL) {
     if (verbose) { message(paste("There are",length(x_g),"supplied objects & contaminants that intersect (",
                                   round(((catlen-length(x_g))/catlen)*100, digits=2),"% of objects were contaminants that didn't intersect galaxies)")) }
     #}}}
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
-      message(paste('Remove irrelevant contaminants - Done (',round(timer[3], digits=2),'sec )'))
+    if (showtime) { cat("   - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+      message(paste('Remove irrelevant contaminants - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
   }
   #}}}
@@ -456,7 +451,7 @@ function(env=NULL) {
     } else if (!quiet) { cat("   - Done\n") }
   }#}}}
   #If wanted, create (& possibly output) the SourceMask {{{
-  if ((sourcemask)|(plotsample)) {
+  if (sourcemask) {
     #Details {{{
     #> In the case of flux measurements: we want SM to be 1 only where the sources are, and within the mask region
     #> In the case of creating a source mask: we want SM to be 1 within the mask region in between sources only
@@ -506,6 +501,11 @@ function(env=NULL) {
       if (!quiet) { cat("SourceMaskOnly Flag Set\n")  }
       return()
     } #}}}
+  } else if (plotsample) {
+    #Set the mask to 1 everywhere {{{
+    sm<-1
+    imm_mask<-1
+    #}}}
   }#}}}
   #Remove arrays that are no longer needed {{{
   rm(fa, envir=image.env)
@@ -1272,17 +1272,10 @@ function(env=NULL) {
   #Final Flux & Error Calculations {{{
   if (verbose) { cat("      Final Fluxes and Error Calculations ") }
   #Calculate Aperture Correction {{{
-  if (PSFWeighted) {
-    #spsf<-sum(psf, na.rm=TRUE)
-    ApCorr<-ssfa/ssfa2
+  if (!nopsf) {
+    ApCorr<-spsf/ssfap
   } else {
-    if (!nopsf) {
-      #spsf<-sum(psf, na.rm=TRUE)
-      ApCorr<-1+(abs(spsf-ssfap)/spsf)
-    } else {
-      #spsf<-NA
-      ApCorr<-1
-    }
+    ApCorr<-1
   }
   #}}}
 
@@ -1582,14 +1575,14 @@ function(env=NULL) {
     if (filtcontam) {
       if (!quiet) { cat(paste("Writing Contaminant-subtracted Map to",nocontammap,"   ")) }
       #Perform Source Subtraction
-      timer=system.time(sourcesubtraction(im,sfa,image_lims,dfaflux,file.path(pathroot,pathwork,pathout,nocontammap),hdr_str,ba,contams,diagnostic,verbose))
+      timer=system.time(sourcesubtraction(im,sfa,image_lims,dfaflux/ApCorr,file.path(pathroot,pathwork,pathout,nocontammap),hdr_str,ba,contams,diagnostic,verbose))
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Contam Subtraction - Done (',round(timer[3], digits=2),'sec )'))
       } else if (!quiet) { cat("   - Done\n") }
     }
     if (!quiet) { cat(paste("Writing Source-subtracted Map to",residmap,"   ")) }
     #Perform Source Subtraction
-    timer=system.time(sourcesubtraction(im,sfa,image_lims,dfaflux,file.path(pathroot,pathwork,pathout,residmap),hdr_str,ba,insidemask,diagnostic,verbose))
+    timer=system.time(sourcesubtraction(im,sfa,image_lims,dfaflux/ApCorr,file.path(pathroot,pathwork,pathout,residmap),hdr_str,ba,insidemask,diagnostic,verbose))
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Source Subtraction - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
