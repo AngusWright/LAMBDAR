@@ -10,7 +10,7 @@ __This function is not designed to be called directly, but rather is an internal
 Open and read an input catalogue for the MeasureFluxes procedure.
 }
 \usage{
-opencatalogue(env=NULL,outenv=NULL)
+opencatalogue(outenv = parent.env(environment()), env = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

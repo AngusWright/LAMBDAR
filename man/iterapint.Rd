@@ -15,9 +15,14 @@ resolution of the grid at the boundary, calculating the subpixel values, and sum
 The functions checkgrid(), inap(), and reexpand.grid() are low level functions called internally by iterapint().
 }
 \usage{
-iterapint(x, y, xstep, ystep, xcen = 0, ycen = 0, axrat = 1, axang = 0, majax = 1, deg = T, upres = 2, itersteps = 10, pixscale = FALSE, splitpart = TRUE)
-checkgrid(x, y, xstep, ystep, xcen = 0, ycen = 0, axrat = 1, axang = 0, majax = 1, deg = T)
-inap(x, y, xcen = 0, ycen = 0, axrat = 1, axang = 0, majax = 1, deg = T)
+iterapint(x, y, xstep, ystep, xcen = 0, ycen = 0,
+axrat = 1, axang = 0, majax = 1, deg = T, upres = 2,
+itersteps = 9, pixscale = FALSE, peakscale = FALSE,
+peak = 1)
+checkgrid(x, y, xstep, ystep, xcen = 0, ycen = 0,
+axrat = 1, axang = 0, majax = 1, deg = T)
+inap(x, y, xcen = 0, ycen = 0, axrat = 1, axang = 0,
+majax = 1, deg = T)
 reexpand.grid(x, y, xstep, ystep, id, upres = 2)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -52,6 +57,9 @@ numeric; length of the major axis in pixels/grid-units
   \item{deg}{
 character;
 }
+  \item{id}{
+character; id of parent pixel
+}
   \item{upres}{
 numeric; exponent used to increase resolution of boundary pixels. Must be > 1.
 }
@@ -60,20 +68,21 @@ numeric; number of iterations performed when increasing the resolution of bounda
          If itersteps=0, no increase in resolution of boundary pixels occurs.
 }
   \item{pixscale}{
-logical; if TRUE - aperture is scaled so that maximum pixel value is unity.
+logical; if TRUE - values are scaled to reflect pixel area, rather than pixel fraction
+         if FALSE - pixels are not scaled, and reflect piel fraction rather than area
+}
+  \item{peakscale}{
+logical; if TRUE - aperture is scaled so that maximum pixel value is 'peak'.
          if FALSE - aperture is normalised such that volume of aperture is equal to unity
 }
-  \item{splitpart}{
-logical; determines how aperture boundary pixels that are partially covered by the aperture are assigned.
-         if TRUE  - boundary pixels are assigned fractional values determined by the number of corners that
-                    the pixel has covered by the aperture.
-         if FALSE - boundary pixels are assigned unity if the pixel centre is covered, otherwise zero.
+  \item{peak}{
+numeric; the value used to rescale the peak
 }
 }
 \details{
 The function, at its most rudimentary, creates an eliptical aperture on a pixel-grid. The input values to
 the function are largely just the parameers needed to describe the eliptical aperture
-we wish to generate. There are additional paramters (upres, itersteps, pixscale, splitpart) that are
+we wish to generate. There are additional paramaters (upres, itersteps, pixscale) that are
 used specifically to improve the aperture generation for use in photometric measurements.
 
 As the procedure is designed for use in high precision photometric measurements, the aperture integral can be

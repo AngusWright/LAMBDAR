@@ -9,7 +9,8 @@ Maps a provided array of RAs and Decs to pixel locations X and Y using the TAN G
 when provided with calibrating central RA/Dec, X/Y, and scales.
 }
 \usage{
-radec2xy(ra, dec, ra0 = 0, dec0 = 0, x0 = 0, y0 = 0, xscale = 1, yscale = 1)
+radec2xy(ra, dec, ra0 = 0, dec0 = 0,
+x0 = 0, y0 = 0, xscale = 1, yscale = 1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

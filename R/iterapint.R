@@ -83,7 +83,7 @@ if(majax>0){
 }else{
  mastercat=cbind(x=x,y=y,mastercat=0)
  if(peakscale){
-  mastercat[x+xstep/2>xcen & x-xstep/2<xcen & y+ystep/2>ycen & y-ystep/2<ycen,3]=1
+  mastercat[x+xstep/2>=xcen & x-xstep/2<=xcen & y+ystep/2>=ycen & y-ystep/2<=ycen,3]=1/length(which(x+xstep/2>=xcen & x-xstep/2<=xcen & y+ystep/2>=ycen & y-ystep/2<=ycen))
  }
 }
 return=mastercat

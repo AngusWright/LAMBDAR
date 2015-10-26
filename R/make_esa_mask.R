@@ -21,11 +21,12 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #
 
   #Convert semi-major (Kron) axis in arcsec to Major Effective Radius in pixels
-  Reff_pix<-(a_g)*(1/(2.5*1.19))/(asperpix)
+  Reff_pix<-(a_g)*(1/(2.5*kronrad(1)))/(asperpix)
   #
 
   #Aperture Axis Ratio in [0,1]
   axrat<-b_g/a_g
+  axrat[which(!is.finite(axrat))]<-1
   #
 
   #Get input Magnitudes
@@ -46,6 +47,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   fluxweight<-fluxweight[index]
   axrat<-axrat[index]
   id_g<-id_g[index]
+  contams<-contams[index]
   #
 
   if (padGals) {
@@ -53,13 +55,15 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
     dens<-density(inputmags,bw=0.5,kernel='rect',na.rm=TRUE)
     mag.mode<-dens$x[which.max(dens$y)]
     #Determine Number Counts using Driver et al r-band relation
-    ngal<-length(which(inputmags<=(mag.mode+0.25) & inputmags>=(mag.mode-0.25)))/(diff(range(ra_g))*diff(range(dec_g)))
-    NDriver<-10^(0.38*(mag.mode+col.corr)-4.78)
-    norm<-ngal/NDriver #Normalise to represent correct area
+    ngal<-length(which(inputmags<=(mag.mode) & inputmags>=(mag.mode-0.5)))/(diff(range(ra_g))*diff(range(dec_g)))
+    NDriver<-10^(0.38*(mag.mode-0.25+col.corr)-4.78)
+    norm<-min(ngal/NDriver,1) #Normalise to represent correct area
+    cat("Normalisation of Driver Relation is:",norm,"\n")
     #Magnitude Bin Values
-    x<-mag.mode+seq(-0.25,3.25,by=0.5)
+    x<-seq(quantile(inputmags,c(0.01)),mag.mode+3.25,by=0.5)
     #Number of gals in each Bin
     ndraws<-norm*10^(0.38*(x+col.corr)-4.78)
+    cat("Source Density: ",(sum(ndraws)+length(inputmags))/(diff(range(ra_g))*diff(range(dec_g))),' Objects/sqDegree\n')
     if (confuse) {
       #If we want confusion, increase this number so that
       #source density ~= psf size
@@ -69,8 +73,21 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
       sDensPSF<-sourceDens*((gauss_fwhm_as/3600)^2)
       #If source density is less than probability of finding gal withing FWHM:
       if (sDensPSF<1.5) {
-        ndraws<-ndraws*(1.5/sDensPSF)
+        add=0
+        while (sDensPSF<1.5) {
+          add=add+0.5
+          #Get another bin of draws
+          x<-seq(quantile(inputmags,c(0.01)),mag.mode+3.25+add,by=0.5)
+          #Get new draws
+          ndraws<-norm*10^(0.38*(x+col.corr)-4.78)
+          #Source Density / deg^2
+          sourceDens<-(sum(ndraws)+length(inputmags))/(diff(range(ra_g))*diff(range(dec_g)))
+          #Get source Density per PSF
+          sDensPSF<-sourceDens*((gauss_fwhm_as/3600)^2)
+        }
+        #ndraws<-ndraws*(1.5/sDensPSF)
       }
+      cat("Confused Source Density: ",(sum(ndraws)+length(inputmags))/(diff(range(ra_g))*diff(range(dec_g))),' Objects/sqDegree\n')
     }
     #Do Magnitude Draws
     y<-foreach(draws=ndraws,lo=x-0.25,hi=x+0.25,.combine='c',.export='inputmags',.inorder=FALSE)%dopar%{
@@ -81,6 +98,10 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
         runif(draws-length(which(inputmags>lo & inputmags<hi)),min=lo,max=hi)
       }
     }
+    y<-y+rnorm(length(y),0,0.2)
+    photCount<-function(abmag,exp,area,Weff,lamEff) { return=10^((8.9-abmag)/2.5+7)*(1/1.51)*exp*area*(Weff/lamEff) }
+    N=photCount(x,ObsParm$exp,ObsParm$area,ObsParm$Weff,ObsParm$lamEff)
+    cat("Photon Counts in each x-bin:\nBin Centre: ",x,"\nN Phot: ",N,"\n")
     #y<-NULL
     #for( i in 1:length(x)) {
     #  draws=ndraws[i]
@@ -94,7 +115,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
     a_g.padgals<-a_g[runif(length(mag.padgals),min=1,max=length(a_g))]
     axrat.padgals<-runif(length(mag.padgals),min=min(axrat,na.rm=TRUE),max=max(axrat,na.rm=TRUE))
     b_g.padgals<-a_g.padgals*axrat.padgals
-    Reff.padgals<-(a_g.padgals)*(1/(2.5*1.19))/(asperpix)
+    Reff.padgals<-(a_g.padgals)*(1/(2.5*kronrad(1)))/(asperpix)
     theta.padgals<-runif(length(mag.padgals),min=min(theta_g),max=max(theta_g))
     #Add padding galaxies to the catalogue
     id_g<-c(id_g,9999000+1:length(mag.padgals))
@@ -115,6 +136,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
     } else {
       fluxweight<-fluxweight.new
     }
+    contams<-c(contams,rep(1,length(mag.padgals)))
   }
 
   #If needed, correct angluar coordinates
@@ -125,155 +147,144 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   if (!angoffset) { theta_off<-90-theta_g } else {theta_off<-theta_g}
   #Correct for any reversal of fits image
   if (astr_struc$CD[1,1]*astr_struc$CD[2,2]<0){ theta_off<-theta_off*-1 }
-  #
 
-  #ind<-order(Reff_pix)
-  #Reff_pix<-Reff_pix[ind]
-  #theta_off<-theta_off[ind]
-  #inputmags<-inputmags[ind]
-  #axrat<-axrat[ind]
-  #x_g<-x_g[ind]
-  #y_g<-y_g[ind]
+
+  #Reorder for faster parallelisation
+  #if (MPIBackend) {
+  #  nchild=getDoParWorkers()
+  #} else {
+    nchild<-ncores
+  #}
+  ind<-order(inputmags)
+  matdim<-c(ceiling(length(inputmags)/nchild),nchild)
+  ind<-c(ind,rep(NA,matdim[1]*matdim[2]-length(ind)))
+  ind<-matrix(ind,ncol=matdim[2],nrow=matdim[1],byrow=T)
+  ind<-as.numeric(ind)
+  ind<-ind[which(!is.na(ind))]
+
+  Reff_pix<-Reff_pix[ind]
+  theta_off<-theta_off[ind]
+  inputmags<-inputmags[ind]
+  axrat<-axrat[ind]
+  contams<-contams[ind]
+  ra_g<-ra_g[ind]
+  dec_g<-dec_g[ind]
+  x_g<-x_g[ind]
+  y_g<-y_g[ind]
+  id_g<-id_g[ind]
+  a_g<-a_g[ind]
+  b_g<-b_g[ind]
+  axrat<-axrat[ind]
+  theta_g<-theta_g[ind]
+  fluxweight<-fluxweight[ind]
 
   #Create Aperture Masks
   message("Creating Aperture Masks")
-  es_mask<-foreach(mag=inputmags, theta=theta_off,axr=axrat,Reff=Reff_pix,xdelt=(x_g%%1),ydelt=(y_g%%1), .export=c("psffwhm.pix"), .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
-  #es_mask<-NULL
-  #for (i in 1:length(inputmags)) {
-  #    mag=inputmags[i]
-  #    theta=theta_off[i]
-  #    axr=axrat[i]
-  #    Reff=Reff_pix[i]
-  #    xdelt=(x_g[i]%%1)
-  #    ydelt=(y_g[i]%%1)
-
-      #Generate Profile with Shot noise & Convolution
-      if (Reff!=0) {
-        #Galaxy
-        #Calculate Required number of Photons
-        #Formula for number of photons given magnitude, exposure time (s),
-        #telescope area (m^2), and filter Effective Width and Wavelength
-        photCount<-function(abmag,exp,area,Weff,lamEff) { return=10^((8.9-abmag)/2.5+7)*(1/1.51)*exp*area*(Weff/lamEff) }
-        #
-        #Calculate N Photons given magnitude and SDSS r-band stats
-        bn=1.678
-        #Get N photons
-        N=photCount(mag,ObsParm$exp,ObsParm$area,ObsParm$Weff,ObsParm$lamEff)
-
-        #Generate Image Data
-
-        #Get N random photons from desired exponential profile
-        tempr<-rexp(N, rate=bn/Reff)
-        tempang<-runif(N, min=0, max=2*pi)
-
-        #Convert from photon arrivals from Sperical to Cartesian Coords
-        tempxy<-sph2car(long=tempang, lat=0, radius=tempr, deg=FALSE)
-
-        #Stretch y-axis by ellipticity of profile
-        tempxy[,2]<-(tempxy[,2])*axr
-
-        #Rotate to desired theta
-        tempxy<-rotdata2d(tempxy[,1],tempxy[,2],theta)
-
-        #Convolve exponential profile with the PSF using bkde2D
-        range.x <- list(0, 0)
-        for (id in (1L:2L)) range.x[[id]] <- c(min(tempxy[, id]) - 9 * psffwhm.pix, max(tempxy[, id]) + 9 * psffwhm.pix)
-        im<-bkde2D(tempxy, bandwidth=rep(psffwhm.pix/2,2), gridsize = ceiling(c(diff(range.x[[1]]),diff(range.x[[2]]))), range.x=range.x,truncate = TRUE)
-        xval<-floor(im$x1)
-        yval<-floor(im$x2)
-        im<-zapsmall(im$fhat)
-        #Make stamp square
-        centre<-as.numeric(which(im==max(im), arr.ind=TRUE))
-        maxim<-max(abs(c(xval,yval)))
-        slen<-maxim*2+1
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        aplims<-rbind(c(1,slen),c(1,slen))
-        #Check for -ve indexes or indexes above PSF width {{{
-        if (lims[1,1]<1) {
-          aplims[1,1]<-aplims[1,1]+(1-lims[1,1])
-          lims[1,1]<-1
-        }
-        if (lims[2,1]<1) {
-          aplims[2,1]<-aplims[2,1]+(1-lims[2,1])
-          lims[2,1]<-1
-        }
-        if (lims[1,2]>length(im[,1])) {
-          aplims[1,2]<-(slen-(lims[1,2]-length(im[,1])))
-          lims[1,2]<-length(im[,1])
-        }
-        if (lims[2,2]>length(im[1,])) {
-          aplims[2,2]<-(slen-(lims[2,2]-length(im[1,])))
-          lims[2,2]<-length(im[1,])
-        }
-        #}}}
-        ap<-matrix(0, nrow=slen, ncol=slen)
-        ap[aplims[1]:aplims[3],aplims[2]:aplims[4]]<-im[lims[1]:lims[3],lims[2]:lims[4]]
-        im<-ap
-        xval<-1:length(im[,1])-ceiling(length(im[,1])/2)
-        yval<-xval
-      } else {
-       #{{{
-        #Point Source; place down PSF
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-        slen=length(psf[,1])
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        aplims<-rbind(c(1,slen),c(1,slen))
-        #Check for -ve indexes or indexes above PSF width {{{
-        if (lims[1,1]<1) {
-          aplims[1,1]<-aplims[1,1]+(1-lims[1,1])
-          lims[1,1]<-1
-        }
-        if (lims[2,1]<1) {
-          aplims[2,1]<-aplims[2,1]+(1-lims[2,1])
-          lims[2,1]<-1
-        }
-        if (lims[1,2]>length(psf[,1])) {
-          aplims[1,2]<-(slen-(lims[1,2]-length(psf[1,])))
-          lims[1,2]<-length(psf[1,])
-        }
-        if (lims[2,2]>length(psf[,1])) {
-          aplims[2,2]<-(slen-(lims[2,2]-length(psf[,1])))
-          lims[2,2]<-length(psf[,1])
-        }
-        #}}}
-        im<-matrix(0, nrow=slen, ncol=slen)
-        im[aplims[1]:aplims[3],aplims[2]:aplims[4]]<-psf[lims[1]:lims[3],lims[2]:lims[4]]
-        xval<-1:length(im[,1])-ceiling(length(im[,1])/2)
-        yval<-xval
-        # }}}
-        #range.x <- list(0, 0)
-        #tempxy<-cbind(x=0,y=0,z=0)
-        #for (id in (1L:2L)) range.x[[id]] <- c(min(tempxy[, id]) - 9 * psffwhm.pix, max(tempxy[, id]) + 9 * psffwhm.pix)
-        #im<-bkde2D(tempxy, bandwidth=rep(psffwhm.pix/2,2), gridsize = ceiling(c(diff(range.x[[1]]),diff(range.x[[2]]))), range.x=range.x,truncate = TRUE)
-        #xval<-floor(im$x1)
-        #yval<-floor(im$x2)
-        #im<-zapsmall(im$fhat)
-      }
-      #Scale to desired Input Magnitude
-      im<-im/sum(im)*10^((8.9-mag)/2.5)
-
-      #
-      #return=im
-      #If needed, Interpolate onto correct grid
-      if ((length(im)>1)) { # &((xdelt!=0.5)|(ydelt!=0.5))) {
-        len<-dim(im)
-        #Make grid at old pixel centres
-        old_obj<-list(x=seq(1,len[1]), y=seq(1,len[2]),z=im)
-        #Make expanded grid of new pixel centres
-        expanded<-expand.grid(seq(1,len[1]),seq(1,len[2]))
-        xnew<-expanded[,1]-xdelt
-        ynew<-expanded[,2]-ydelt
-        #
-        #Interpolate
-        im<-matrix(interp2D(xnew, ynew, old_obj), ncol=len[2])
-        #
-        #
-      }
-      return=im
-      #es_mask<-c(es_mask, list(im))
+  psfsigma.pix<-psffwhm.pix/(2*sqrt(2*log(2)))
+  if (confidence==1) {
+    warning("Cannot have PSF Confidence = Unity when analytically deriving PSF; Using Maximum double value (1-1E-16)")
+    confidence=1-1E-16
   }
+  nsig<-sqrt(qchisq(confidence,df=2)) #Determine nsigma for desired confidence using chisq distribution
+  psf.clip<-ceiling(nsig*psfsigma.pix)
+  psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
+  print(paste("PSFClip",psf.clip))
+  #es_mask<-foreach(mag=inputmags, theta=theta_off,axr=axrat,Reff=Reff_pix,xdelt=(x_g%%1),ydelt=(y_g%%1), .export=c("psf.clip","psfsigma.pix","psffwhm.pix",'saturation','gain'), .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+  es_mask<-NULL
+  pb<-txtProgressBar(min=1,max=length(inputmags),style=3)
+  for (i in 1:length(inputmags)) {
+      setTxtProgressBar(pb,i)
+      mag=inputmags[i]
+      theta=theta_off[i]
+      axr=axrat[i]
+      Reff=Reff_pix[i]
+      xdelt=(x_g[i]%%1)
+      ydelt=(y_g[i]%%1)
+
+      #Calculate Required number of Photons
+      #Formula for number of photons given magnitude, exposure time (s),
+      #telescope area (m^2), and filter Effective Width and Wavelength
+      photCount<-function(abmag,exp,area,Weff,lamEff) { return=10^((8.9-abmag)/2.5+7)*(1/1.51)*exp*area*(Weff/lamEff) }
+      #
+      #Calculate N Photons given magnitude and SDSS r-band stats
+      bn=1.678
+      #Get N photons
+      N=min(floor(photCount(mag,ObsParm$exp,ObsParm$area,ObsParm$Weff,ObsParm$lamEff)), 1E6)
+      N<-1E6
+      if (N==1E6) {
+      #Use Analytic {{{
+        stamplen<-(floor((ceiling(Reff*9)+ceiling(psf.clip))/2)*2+5)
+        xy<-expand.grid(1:(stamplen*2),1:(stamplen*2))
+        tempxy<-xy
+        xy[,1]<-xy[,1]-stamplen-0.5
+        xy[,2]<-xy[,2]-stamplen-0.5
+        tempxy[,1]<-tempxy[,1]-stamplen-0.5-xdelt
+        tempxy[,2]<-tempxy[,2]-stamplen-0.5-ydelt
+        if (Reff!=0) {
+          #Galaxy
+          tempxy<-rotdata2d(tempxy[,1],tempxy[,2],90-theta)
+          tempxy[,1]<-tempxy[,1]/axr
+          I<-exp(-bn*(sqrt((xy[,1])^2+(xy[,2])^2)/Reff-1))
+          I[which(I<max(I)*1E-5)]<-0
+          im<-zapsmall(matrix(interp2D(tempxy[,1],tempxy[,2], list(x=1:(stamplen*2)-stamplen-0.0,y=1:(stamplen*2)-stamplen-0.0,z=matrix(zapsmall(I),stamplen*2,stamplen*2))), ncol=stamplen*2,nrow=stamplen*2,byrow=F))
+          im<-im[(ceiling(stamplen*0.5)):(floor(stamplen*1.5)),(ceiling(stamplen*0.5)):(floor(stamplen*1.5))]
+          #Convert to Jy
+          im<-im/sum(im)*10^((8.9-mag)/2.5)
+        }
+        if (psffilt || Reff==0) {
+        #Point Source
+          ps<-matrix(dnorm(sqrt((xy[,1])^2+(xy[,2])^2),mean=0,sd=psfsigma.pix),stamplen*2,stamplen*2)
+          ps<-ps[(ceiling(stamplen*0.5)):(floor(stamplen*1.5)),(ceiling(stamplen*0.5)):(floor(stamplen*1.5))]
+          if (Reff==0) {
+            #Convert to Jy
+            im<-ps/sum(ps)*10^((8.9-mag)/2.5)
+          } else {
+            #Convert to Jy
+            im<-convolvepsf(ps,im)
+            im<-im/sum(im)*10^((8.9-mag)/2.5)
+          }
+        }
+      #}}}
+      } else {
+        #Generate Profile with Shot noise & Convolution
+        if (Reff!=0) {
+          #Galaxy
+          #Get N random photons from desired exponential profile
+          tempr<-rexp(N, rate=bn/Reff)
+          tempang<-runif(N, min=0, max=2*pi)
+
+          #Convert from photon arrivals from Sperical to Cartesian Coords
+          tempxy<-sph2car(long=tempang, lat=0, radius=tempr, deg=FALSE)
+
+          #Stretch y-axis by ellipticity of profile
+          tempxy[,2]<-(tempxy[,2])*axr
+
+          #Rotate to desired theta
+          tempxy<-rotdata2d(tempxy[,1],tempxy[,2],theta)
+
+          #Filter through Gaussian PSF
+          if (psffilt) {
+            tempxy[1:length(tempxy)]<-tempxy[1:length(tempxy)]+rnorm(length(tempxy),mean=0,sd=psfsigma.pix)
+          }
+        } else {
+          #Point Source; Use Gaussian with PSF FWHM
+          tempxy<-matrix(rnorm(2*N,mean=0,sd=psfsigma.pix),ncol=2)
+        }
+        #Centroid correctly
+        stamplen<-(floor((ceiling(Reff*9)+ceiling(psf.clip))/2)*2+5)
+        tempx<-(tempxy[,1]+xdelt+stamplen/2)+0.5
+        tempy<-(tempxy[,2]+ydelt+stamplen/2)+0.5
+        k<-kde2d(tempx,tempy,lims=c(1,stamplen,1,stamplen),n=stamplen)
+        im<-matrix(k$z,stamplen,stamplen)
+        #for (i in 1:stamplen) { for (j in 1:stamplen) {  im[i,j]<-length(which(tempx==i & tempy==j)) } }
+
+        #Convert from ADU to Jy
+        im<-im/sum(im)*10^((8.9-mag)/2.5)
+      }
+      #return=im
+      es_mask<-c(es_mask, list(im))
+  }
+  close(pb)
   message("Aperture Creation Complete")
   #
 
@@ -361,6 +372,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   assign("b_g",b_g,envir=outenv)
   assign("x_g",x_g,envir=outenv)
   assign("y_g",y_g,envir=outenv)
+  assign("contams",contams,envir=outenv)
   assign("theta_g",theta_g,envir=outenv)
   assign("Reff_pix",Reff_pix,envir=outenv)
   assign("axrat",axrat,envir=outenv)

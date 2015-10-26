@@ -1,5 +1,5 @@
 make_sfa_mask <-
-function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) {
+function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NULL, env=NULL,subs=NULL) {
 #Make the Single Filtered Aperture mask
 
   #Print appropriate banner  {{{
@@ -23,7 +23,13 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
   #}}}
 
   #Setup Sizes {{{
-  npos<-length(id_g)
+  if (is.null(subs)) {
+    npos<-length(id_g)
+    subs<-1:npos
+  } else {
+    npos<-length(subs)
+    message(paste("-> There are",npos,"apertures in this subset\n"))
+  }
   #}}}
 
   #Set Fluxweights {{{
@@ -37,8 +43,14 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
   } else { fluxweight<-fluxweightin }
   #}}}
 
-  #Check that number of Fluxweights == number of stamps {{{
-  if (!(length(fluxweight) == npos)) { sink(type="message") ; stop("Bad FluxWeightIn Array") }
+  #Check that number of Fluxweights == number of subs stamps or number of total stamps {{{
+  if (!(length(fluxweight) == npos)) {
+    if (length(fluxweight) == length(id_g)) {
+      fluxweight<-fluxweight[subs]
+    } else {
+      sink(type="message") ; stop("Bad FluxWeightIn Array")
+    }
+  }
   #}}}
 
   #If we have input fluxweights, Check their type {{{
@@ -57,14 +69,32 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
       #Bad values. Things with bad fluxweights will be removed in calcs{{{
       warning("Supplied Fluxweight has values that are not finite (NA/NaN/Inf). These objects will not be fit")
       ind<-which(!is.finite(fluxweight))
-      fluxweight[ind]<-0
+      fluxweight[ind]<-NA
+      #}}}
+    }#}}}
+    #Check Minima {{{
+    if (min(wgtRange)<=0) {
+      #Bad minima. Things less than 0 will be removed in calcs{{{
+      warning("Supplied Fluxweight has values less than or equal to 0. These objects will not be fit")
+      ind<-which(fluxweight<=0)
+      fluxweight[ind]<-NA
       #}}}
     }#}}}
     #Adjust Fluxweights by aperture integral
-    fluxweight<-foreach(samask=sa_mask,fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
+    fluxweight<-foreach(samask=sa_mask[subs],fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
     #}}}
-    #Map Fluxweights onto [0,1] {{{
-    fluxweight<-magmap(fluxweight,lo=min(fluxweight,na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
+    #Check for Errors & Fluxweight {{{
+    if (max(fluxweight,na.rm=T)<=0) {
+      message("WARNING: No fluxweights are > 0! Flux weighting has removed all objects from the image.")
+      fluxweight<-rep(0,length(subs))
+    } else if (length(which(fluxweight>0))<2) {
+      message("WARNING: only one fluxweight is > 0! Flux weighting has removed all other objects from the image.")
+      fluxweight<-rep(0,length(subs))
+    } else {
+      #Map Fluxweights onto [0,1] {{{
+      fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
+      #}}}
+    }
     #}}}
     #}}}
   } else if (weightType=="flux") {
@@ -72,49 +102,68 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
     #Get Range {{{
     wgtRange<-range(fluxweight, na.rm=TRUE)
     #}}}
-    #Check Minima {{{
-    if (min(wgtRange)<=0) {
-      #Bad minima. Things less than 0 will be removed in calcs{{{
-      warning("Supplied Fluxweight has values less than or equal to 0. These objects will not be fit")
-      ind<-which(fluxweight<=0)
-      fluxweight[ind]<-0
-      #}}}
-    }#}}}
     #Check Bad Values {{{
     if (any(!is.finite(fluxweight))) {
       #Bad values. Things with bad fluxweights will be removed in calcs{{{
       warning("Supplied Fluxweight has values that are not finite (NA/NaN/Inf). These objects will not be fit")
       ind<-which(!is.finite(fluxweight))
-      fluxweight[ind]<-0
+      fluxweight[ind]<-NA
+      #}}}
+    }#}}}
+    #Check Minima {{{
+    if (min(wgtRange)<=0) {
+      #Bad minima. Things less than 0 will be removed in calcs{{{
+      warning("Supplied Fluxweight has values less than or equal to 0. These objects will not be fit")
+      ind<-which(fluxweight<=0)
+      fluxweight[ind]<-NA
       #}}}
     }#}}}
     #Adjust Fluxweights by aperture integral
-    fluxweight<-foreach(samask=sa_mask,fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
+    fluxweight<-foreach(samask=sa_mask[subs],fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
     #}}}
-    #Map Fluxweights onto [0,1] {{{
-    fluxweight<-magmap(fluxweight,lo=min(fluxweight,na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
+    #Check for Errors & Fluxweight {{{
+    if (max(fluxweight,na.rm=T)<=0) {
+      message("WARNING: No fluxweights are > 0! Flux weighting has removed all objects from the image.")
+      fluxweight<-rep(NA,length(subs))
+    } else if (length(which(fluxweight>0))<2) {
+      message("WARNING: only one fluxweight is > 0! Flux weighting has removed all other objects from the image.")
+      fluxweight[which(fluxweight<=0)]<-NA
+    } else {
+      #Map Fluxweights onto [0,1] {{{
+      fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
+      #fluxweight<-magmap(fluxweight,lo=min(fluxweight,na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
+      #}}}
+    }
     #}}}
   } else {
     #Weight type must be scale i.e. [0,1] {{{
     #Get Range {{{
     wgtRange<-range(fluxweight, na.rm=TRUE)
     #}}}
-    #Check Minima {{{
-    if (min(wgtRange)<=0) {
-      #Bad minima. Things less than 0 will be removed in calcs{{{
-      warning("Supplied Fluxweight has values less than or equal to 0. These objects will not be fit")
-      ind<-which(fluxweight<=0)
-      fluxweight[ind]<-0
-      #}}}
-    }#}}}
     #Check Bad Values {{{
     if (any(!is.finite(fluxweight))) {
       #Bad values. Things with bad fluxweights will be removed in calcs{{{
       warning("Supplied Fluxweight has values that are not finite (NA/NaN/Inf). These objects will not be fit")
       ind<-which(!is.finite(fluxweight))
-      fluxweight[ind]<-0
+      fluxweight[ind]<-NA
       #}}}
     }#}}}
+    #Check Minima {{{
+    if (min(wgtRange)<=0) {
+      #Bad minima. Things less than 0 will be removed in calcs{{{
+      warning("Supplied Fluxweight has values less than or equal to 0. These objects will not be fit")
+      ind<-which(fluxweight<=0)
+      fluxweight[ind]<-NA
+      #}}}
+    }#}}}
+    #}}}
+    #Check for Errors & Fluxweight {{{
+    if (max(fluxweight,na.rm=T)<=0) {
+      message("WARNING: No fluxweights are > 0! Flux weighting has removed all objects from the image.")
+      fluxweight<-rep(NA,length(subs))
+    } else if (length(which(fluxweight>0))<2) {
+      message("WARNING: only one fluxweight is > 0! Flux weighting has removed all other objects from the image.")
+    }
     #}}}
   }
   #}}}
@@ -125,7 +174,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
     #Details {{{
     #If we are not filtering apertures with PSFs, and the fluxweights
     #are not all unity, multiply each stamp by it's fluxweight }}}
-    sfa_mask<-foreach(samask=sa_mask,fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts) %dopar%{ samask*fluxwgt  }
+    sfa_mask<-foreach(samask=sa_mask[subs],fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts) %dopar%{ samask*fluxwgt  }
     #}}}
   } else if (psffilt) {
     #Convolution with PSF & Fluxweighting {{{
@@ -133,7 +182,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
     #Else if we are filtering apertures with the PSFs, perform the convolution and
     #multiply by the fluxweight simultaneously }}}
     message('--------------------------Convolution----------------------------------')
-    sfa_mask<-foreach(samask=sa_mask, slen=stamplen, fluxwgt=fluxweight, i=1:npos, xc=x_g, yc=y_g, .inorder=TRUE,
+    sfa_mask<-foreach(samask=sa_mask[subs], slen=stamplen[subs], fluxwgt=fluxweight, i=1:npos, xc=x_g[subs], yc=y_g[subs], .inorder=TRUE,
     .export=c("psf", "diagnostic"), .options.mpi=mpiopts) %dopar% {
     #for( i in 1:npos) {
     #xc=x_g[i]
@@ -282,7 +331,10 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
         apfin[aplims[1]:aplims[3],aplims[2]:aplims[4]]<-ap
         #}}}
         #Make integral of interpolated source same as psf integral {{{
-        apfin<-(apfin*(sum(psf)/sum(apfin))*fluxwgt)
+        #apfin<-(apfin*(sum(psf)/sum(apfin))*fluxwgt)
+        #}}}
+        #Normalise PSF to 1 {{{
+        apfin<-(apfin/max(apfin))*fluxwgt
         #}}}
         #Return {{{
         return=apfin
@@ -305,14 +357,43 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, env=NULL) 
   }
   #}}}
 
+  #Check that apertures do not cross image mask boundary {{{
+  if (length(immask)>1) {
+    #Check Mask stamps for Aperture Acceptance {{{
+    message('Combining Aps with Mask Stamps')
+    sff_mask<-foreach(slen=stamplen[subs], smask=sfa_mask,mmask=immask[subs],mxl=mstamp_lims[subs,1],mxh=mstamp_lims[subs,2],myl=mstamp_lims[subs,3],myh=mstamp_lims[subs,4], .export="useMaskLim", .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+      #Check masking to determine if Aperture is acceptable {{{
+      check<-sum(mmask[mxl:mxh,myl:myh]*smask,na.rm=T)/sum(smask)
+      if (is.na(check)) {
+        #All pixels in mask are Na/NaN
+        array(0, dim=c(slen,slen))
+      } else if (check<useMaskLim) {
+        #Too much. Skip {{{
+        array(0, dim=c(slen,slen))
+        #}}}
+      } else {
+        #Not too much. Keep {{{
+        smask
+        #}}}
+      }
+      #}}}
+    }
+    message('Mask Combine Finished.')
+    #}}}
+  } else {
+    #No image mask, all can be kept {{{
+    sff_mask<-sfa_mask
+    #}}}
+  }#}}}
+
   #Check for production of NA/NaN/Infs in convolution {{{
-  if (diagnostic) { for (i in length(sfa_mask)) { if (length(which(is.na(as.numeric(sfa_mask[[i]]))))>0) {sink(type="message") ; stop("NAs produced in Convolution")} } }
+  if (diagnostic) { for (i in 1:length(sff_mask)) { if (length(which(is.na(as.numeric(sff_mask[[i]]))))>0) {sink(type="message") ; stop("NAs produced in Convolution")} } }
   if (length(fluxweightin) > 0 ) { message('===========END===========Make_WSFA_Mask============END=================\n')
   } else { message('===========END===========Make_SFA_MASK=============END=================\n') }
   #}}}
 
   #Return array of Stamps {{{
   if (!is.null(env)) { detatch(env) }
-  return=sfa_mask
+  return=sff_mask
   #}}}
 }

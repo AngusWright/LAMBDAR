@@ -27,7 +27,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
   #Open Catalogue {{{
   if (csv) {
-    fitstable<-try(as.data.frame(read.csv(paste(pathroot,pathwork,catalogue,sep=""),stringsAsFactors=F)))
+    fitstable<-try(as.data.frame(read.csv(paste(pathroot,pathwork,catalogue,sep=""),stringsAsFactors=F)),silent=TRUE)
     #Test Read of Catalogue for errors
     if (class(fitstable)=="try-error") {
       #Stop on Error
@@ -36,7 +36,7 @@ function(outenv=parent.env(environment()), env=NULL){
       stop("Catalogue File read failed")
     }
   } else if (fits) {
-    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,pathwork,catalogue,sep="")),stringsAsFactors=F))
+    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,pathwork,catalogue,sep="")),stringsAsFactors=F),silent=TRUE)
     if (class(fitstable)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -44,7 +44,7 @@ function(outenv=parent.env(environment()), env=NULL){
       stop("Catalogue File read failed")
     }
   } else if (rdat) {
-    names<-try(as.list(load(paste(pathroot,pathwork,catalogue,sep=""))))
+    names<-try(as.list(load(paste(pathroot,pathwork,catalogue,sep=""))),silent=TRUE)
     if (class(names)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -61,32 +61,32 @@ function(outenv=parent.env(environment()), env=NULL){
 
   #Check for Correct Column Syntax & Read Data {{{
   #Catalogue ID {{{
-  id_g<-try(fitstable[1:nrows,catalab])
-  if ((class(id_g)=="try-error")||(is.null(id_g[1]))) {
+  id_g<-try(fitstable[1:nrows,catalab],silent=TRUE)
+  if ((class(id_g)=="try-error")||(length(id_g)==0)||all(is.na(id_g))) {
     sink(type="message")
     stop(paste("Catalogue does not contain",catalab,"column"))
   }#}}}
   #Make sure that there are no duplicate IDs {{{
   if (any(is.na(id_g))|any(id_g=="",na.rm=T)) {
-    message("There are",length(which(is.na(id_g)|id_g=="")),"Missing IDs. These will be renamed NewID_%d")
+    message("There are ",length(which(is.na(id_g)|id_g==""))," Missing IDs. These will be renamed NewID_%d")
     ind<-which(is.na(id_g)|id_g=="")
     id_g[ind]<-paste("NewID_",cbind(1:length(ind)),sep="")
   }
   if (any(duplicated(id_g))) {
-    message("There are",length(which(duplicated(id_g))),"duplicated IDs. These will be appended with DuplicID_%d")
+    message("There are ",length(which(duplicated(id_g)))," duplicated IDs. These will be appended with DuplicID_%d")
     ind<-which(duplicated(id_g))
     id_g[ind]<-paste(id_g[ind],"_DuplicID_",c(1:length(ind)),sep="")
   }
   #}}}
   #Object RA {{{
-  ra_g<-try(as.numeric(fitstable[1:nrows,ralab]))
-  if ((class(ra_g)=="try-error")||(is.null(ra_g[1]))) {
+  ra_g<-try(as.numeric(fitstable[1:nrows,ralab]),silent=TRUE)
+  if ((class(ra_g)=="try-error")||(length(ra_g)==0)||all(is.na(ra_g))) {
     sink(type="message")
     stop(paste("Catalogue does not contain",ralab,"column"))
   }#}}}
   #Object Dec {{{
-  dec_g<-try(as.numeric(fitstable[1:nrows,declab]))
-  if ((class(dec_g)=="try-error")||(is.null(dec_g[1]))) {
+  dec_g<-try(as.numeric(fitstable[1:nrows,declab]),silent=TRUE)
+  if ((class(dec_g)=="try-error")||(length(dec_g)==0)||all(is.na(dec_g))) {
     sink(type="message")
     stop(paste("Catalogue does not contain",declab,"column"))
   }#}}}
@@ -100,22 +100,22 @@ function(outenv=parent.env(environment()), env=NULL){
   } else {
     #Otherwise, Check Syntax & Read in Aperture Variables {{{
     #Aperture Angle {{{
-    theta_g<-try(as.numeric(fitstable[1:nrows,thetalab]))  # theta
-    if ((class(theta_g)=="try-error")||(is.null(theta_g))) {
+    theta_g<-try(as.numeric(fitstable[1:nrows,thetalab]),silent=TRUE)  # theta
+    if ((class(theta_g)=="try-error")||(length(theta_g)==0)||all(is.na(theta_g))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",thetalab,"column"))
     }#}}}
     #Aperture Semi-Major Axis {{{
-    a_g<-try(as.numeric(fitstable[1:nrows,semimajlab])) # semimajor in arcsec
-    if ((class(a_g)=="try-error")||(is.null(a_g))) {
+    a_g<-try(as.numeric(fitstable[1:nrows,semimajlab]),silent=TRUE) # semimajor in arcsec
+    if ((class(a_g)=="try-error")||(length(a_g)==0)||all(is.na(a_g))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",semimajlab,"column"))
     }
     a_g[which(!is.finite(a_g))]<-0
     #}}}
     #Aperture Semi-Minor Axis {{{
-    b_g<-try(as.numeric(fitstable[1:nrows,semiminlab])) # semiminor in arcsec
-    if ((class(b_g)=="try-error")||(is.null(b_g))) {
+    b_g<-try(as.numeric(fitstable[1:nrows,semiminlab]),silent=TRUE) # semiminor in arcsec
+    if ((class(b_g)=="try-error")||(length(b_g)==0)||all(is.na(b_g))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",semiminlab,"column"))
     }
@@ -127,17 +127,17 @@ function(outenv=parent.env(environment()), env=NULL){
 
   #If wanted, read contaminants column {{{
   if (filtcontam) {
-    contams<-try(as.numeric(fitstable[1:nrows,contamlab]))
-    if ((class(contams)=="try-error")||(is.null(contams))) {
+    contams<-try(as.numeric(fitstable[1:nrows,contamlab]),silent=TRUE)
+    if ((class(contams)=="try-error")||(length(contams)==0)||all(is.na(contams))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",contamlab,"column"))
     }
-    message(paste("There are",length(which(contams==1)),"Contaminants to be subtracted"))
+    message(paste("There are ",length(which(contams==1))," Contaminants to be subtracted"))
   }#}}}
 
   #If Weight Column exists, read values {{{
-  fluxweight<-try(as.numeric(fitstable[1:nrows,fluxweightlab] ))
-  if ((class(fluxweight)=="try-error")||(is.null(fluxweight))) {
+  fluxweight<-try(as.numeric(fitstable[1:nrows,fluxweightlab] ),silent=TRUE)
+  if ((class(fluxweight)=="try-error")||(length(fluxweight)==0)||all(is.na(fluxweight))) {
     #Otherwise, set all weights to unity
     fluxweight<-1
   }#}}}

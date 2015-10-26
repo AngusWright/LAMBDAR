@@ -7,13 +7,13 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     #Check for MPI libraries
     if (!(any(grepl("doMPI", search()))&&any(grepl("Rmpi", search())))) {
       #MPI libraries are *not* already loaded
-      loadlibs<-try(require("Rmpi"))
+      loadlibs<-try(require("Rmpi"),silent=TRUE)
       if (class(loadlibs)=="try-error") {
         stop(cat("MPI backend requested, but Rmpi package could not be loaded.",
                  "\nPackage may be in a special library location not known to LAMBDAR.",
                  "\nTry loading it before running MeasureFluxes"))
       }
-      loadlibs<-try(require("doMPI"))
+      loadlibs<-try(require("doMPI"),silent=TRUE)
       if (class(loadlibs)=="try-error") {
         stop(cat("MPI backend requested, but doMPI package could not be loaded.",
                  "\nPackage may be in a special library location not known to LAMBDAR.",
@@ -59,15 +59,23 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     return()
   }#}}}
 
+  #If parameter file is NULL, run program using specified parameters and (all other) default parameters file and end {{{
+  if (parfile == "--run") {
+    if (!quiet) { cat("Running LAMBDAR with parameters specified here only\n") }
+    system(paste("echo -e '",paste(names(list(...)),list(...),sep=' ',collapse='\n'),"' > .tmpLam.par"))
+    parfile='.tmpLam.par'
+  }#}}}
+
   #If requested, resume LAMBDAR run from last loop state {{{
   if (parfile == "--resume") {
     if (file.exists(".LambdarParameters.Rdata")&file.exists(".LambdarActiveLoop.txt")) {
-      if (!quiet) { cat("Resuming from Previous Loop State\n") }
+      if (!quiet) { cat("Resuming from Previous Loop State ") }
       load(".LambdarParameters.Rdata")
       lstart<-as.numeric(read.csv(".LambdarActiveLoop.txt"))[1]
+      if (!quiet) { cat(paste0("(loop ",lstart,")\n")) }
       resume<-TRUE
     } else {
-      stop("Resume Requested, but one/both of the required resume files .LambdarParameters.Rdata & .LambdarLoopState.txt are missing")
+      stop("Resume Requested, but one/both of the required resume files .LambdarParameters.Rdata & .LambdarActiveLoop.txt are missing")
     }
   } else {
     lstart<-1
@@ -127,7 +135,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
   #Setup Parameter Space (read .par file) {{{
   if (!resume) {
     param.env<-new.env(parent=environment())
-    readparfile(parfile,starttime,quiet,env=param.env)
+    parwarning<-readparfile(parfile,starttime,quiet,env=param.env)
   }
   parameterList<-ls(envir=param.env)
   #}}}
@@ -169,7 +177,10 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     #}}}
 
     #Send Message output to logfile {{{
-    sinkfile<-file(file.path(pathroot,pathwork,pathout,logfile),open="wt")
+    sinkfile<-try(file(file.path(pathroot,pathwork,pathout,logfile),open="wt"),silent=TRUE)
+    if (any(class(sinkfile)=='try-error')) {
+      stop("Unable to open Log File. Likely the path is incorrect or you do not have permission to write there:\n   ",file.path(pathroot,pathwork,pathout,logfile))
+    }
     sink(sinkfile, type="message")
     on.exit(sink(type="message"), add=TRUE)
     #Print any warnings {{{
@@ -186,21 +197,37 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
       #Data Image {{{
       if (datamap!=imfitsoutname) {
         if (verbose) { message(paste("Cropping Input Image: Outputting to", imfitsoutname)) }
-        if (!file.exists(file.path(pathroot,pathwork,datamap))) { stop("Data Image does not exist at location:",file.path(pathroot,pathwork,datamap)) }
-        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname)
+        if (!file.exists(file.path(pathroot,pathwork,datamap))) { sink(type='message'); stop("Data Image does not exist at location:",file.path(pathroot,pathwork,datamap)) }
+        if (extn>1) { sink(type='message'); stop("Internal Crop routine is unable to crop multi-extension FITS (beyond extn 1)") }
+        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname,extn=extn)
         if (verbose) { message(paste("Using", imfitsoutname, "as data image")) }
         datamap<-imfitsoutname
       } else {
         message("Crop input and output are the same file. Crop will fail, so it is skipped")
         warning("Crop input and output are the same file. Crop will fail, so it is skipped")
       }
+      #If RA and/or DEC are -999, get RA and DEC of the data cutout {{{
+      if (ra0==-999 | dec0==-999) {
+        astrtmp<-read.astr(file.path(pathroot,pathwork,datamap),hdu=extn)
+        pos<-xy2ad(astrtmp$NAXIS[1]/2,astrtmp$NAXIS[2]/2,astrtmp)
+        if (ra0==-999) {
+          ra0<-pos[1]
+          message(paste("Setting RA0 to centre of datamap:",round(ra0,4)))
+        }
+        if (dec0==-999) {
+          dec0<-pos[2]
+          message(paste("Setting DEC0 to centre of datamap:",round(dec0,4)))
+        }
+      }
+      #}}}
       #}}}
       #Mask Image {{{
       if (maskmap != "NONE") {
         if (maskmap!=immfitsoutname) {
           if (verbose) { message(paste("Cropping Input Mask Map: Outputting to", immfitsoutname)) }
-          if (!file.exists(file.path(pathroot,pathwork,maskmap))) { stop("Mask Image does not exist at location:",file.path(pathroot,pathwork,maskmap)) }
-          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname)
+          if (!file.exists(file.path(pathroot,pathwork,maskmap))) { sink(type='message'); stop("Mask Image does not exist at location:",file.path(pathroot,pathwork,maskmap)) }
+          if (extnmask>1) { sink(type='message'); stop("Internal Crop routine is unable to crop multi-extension FITS (beyond extn 1)") }
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname,extn=extnmask)
           if (verbose) { message(paste("Using", immfitsoutname, "as mask map")) }
           maskmap<-immfitsoutname
         } else {
@@ -215,8 +242,9 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
           wgtmap<-"NONE"
         } else if (wgtmap!=imwgtfitsoutname) {
           if (verbose) { message(paste("Cropping Input Weight Map: Outputting to", imwgtfitsoutname)) }
-          if (!file.exists(file.path(pathroot,pathwork,wgtmap))) { stop("Weight Image does not exist at location:",file.path(pathroot,pathwork,wgtmap)) }
-          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname)
+          if (!file.exists(file.path(pathroot,pathwork,wgtmap))) { sink(type='message'); stop("Weight Image does not exist at location:",file.path(pathroot,pathwork,wgtmap)) }
+          if (extnwgt>1) { sink(type='message'); stop("Internal Crop routine is unable to crop multi-extension FITS (beyond extn 1)") }
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname,extn=extnwgt)
           if (verbose) { message(paste("Using", imwgtfitsoutname, "as weight map")) }
           wgtmap<-imwgtfitsoutname
         } else {
@@ -228,8 +256,9 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
       if ((errormap != "NONE")&(is.na(as.numeric(errormap)))) {
         if (errormap!=imefitsoutname) {
           if (verbose) { message(paste("Cropping Input Error Map: Outputting to", imefitsoutname)) }
-          if (!file.exists(file.path(pathroot,pathwork,errormap))) { stop("Error Image does not exist at location:",file.path(pathroot,pathwork,errormap)) }
-          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=errormap, cutrad=cutrad, fitsoutname=imefitsoutname)
+          if (!file.exists(file.path(pathroot,pathwork,errormap))) { sink(type='message'); stop("Error Image does not exist at location:",file.path(pathroot,pathwork,errormap)) }
+          if (extnerr>1) { sink(type='message'); stop("Internal Crop routine is unable to crop multi-extension FITS (beyond extn 1)") }
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=errormap, cutrad=cutrad, fitsoutname=imefitsoutname,extn=extnerr)
           if (verbose) { message(paste("Using", imefitsoutname, "as error map")) }
           errormap<-imefitsoutname
         } else {
@@ -253,13 +282,14 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     readimage(env=NULL,quiet,showtime,outenv=image.env)
     #Move Astrometry list from image env to main env {{{
     astr_struc<-image.env$astr_struc
+    saturation<-image.env$saturation
     rm(astr_struc, envir=image.env)
     #}}}
     #}}}
 
     #If needed, read ZP Magnitude from Image header {{{
     if ((Magnitudes) & (magZP==-999)){
-      magZP<-read.fitskey(magZPlabel,paste(pathroot,pathwork,datamap,sep=""))
+      magZP<-as.numeric(read.fitskey(magZPlabel,paste(pathroot,pathwork,datamap,sep=""),hdu=extn))
       #If Failed, do not output Magnitudes {{{
       if (!is.finite(magZP)) {
         message("Zero Point Magnitude determination failed - Not outputting Magnitudes")
@@ -333,7 +363,30 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     b_g<-b_g[which(insidemask)]
     if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
     if (filtcontam) { contams<-contams[which(insidemask)] }
+    insidemask<-insidemask[which(insidemask)]
     #}}}
+    if (filtcontam) {
+      insidemask<-insidemask & !contams
+      #Check that there is a science target inside the image {{{
+      if (length(which(insidemask==TRUE))==0) {
+        warning("No science targets are centred within the limits of the input image.")
+        #Notify & Close Logfile {{{
+        message(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
+        message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
+        message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
+        sink(type='message')
+        close(sinkfile)
+        if (!quiet) {
+          cat(paste('- Done\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
+          cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
+          cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
+          if (f!=nloops) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap (',f+1,' of ',nloops,')\nInitialising Workspace {\n',sep="")) }
+        }
+        next
+        #}}}
+      }
+      #}}}
+    }
     #Notify how many objects remain {{{
     if (verbose) { message(paste("There are",length(x_g),"supplied objects inside the image (",
                                   round(((catlen-length(x_g))/catlen)*100, digits=2),"% of supplied were outside the image )")) }
@@ -359,6 +412,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     if (filtcontam) { contams<-contams[which(insidemask)] }
     chunkSize=length(id_g)/getDoParWorkers()
     mpiopts<-list(chunkSize=chunkSize)
+    message("Number of objects per thread:",chunkSize)
     #}}}
     #Notify how many objects remain {{{
     if (verbose) { message(paste("There are",length(x_g),"supplied objects with physical aperture values (",
@@ -373,9 +427,9 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
     if (!quiet) { cat("   Setting Astrometry   ") }
 
     #Get pixel resolution from astrometry {{{
-    if (all(is.finite(astr_struc$CDELT))) {
+    if (all(is.finite(astr_struc$CDELT[1:2]))) {
       #Using CDELT keywords {{{
-      asperpix<-max(abs(astr_struc$CDELT))*3600.
+      asperpix<-max(abs(astr_struc$CDELT[1:2]))*3600.
       #}}}
     } else if (all(is.finite(astr_struc$CD[1:2,1:2]))) {
       #Using CD matrix keywords {{{
@@ -427,8 +481,8 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
       # approx aperture memory:
       #     apmem = napertures*apsizeinBits*nLists
       # where
-      #     nLists=4
-      #     apsizeinbits = (3rd Quantile{(semimajor.axis)}*2/asperpix)^2*bitsperpixel
+      #     nLists=12
+      #     apsizeinbits = (90th percentile{(semimajor.axis)}*2/asperpix)^2*bitsperpixel
       #
       # approx image memory during calculations:
       #     immem = nimages*imsizeinBytes*nThreads
@@ -481,65 +535,78 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
       #}}}
       #Aperture Memory requirements {{{
       catlen<-length(id_g)
-      #Use 3rd Quantile of aperture semimajor axes {{{
-      aprad.3rdquant<-as.numeric(summary(a_g[which(a_g>0)])[5])
-      if (is.na(aprad.3rdquant)) {
+      #Use 90th Quantile of aperture semimajor axes {{{
+      aprad.quant<-quantile(a_g[which(a_g>0)],0.9)
+      if (is.na(aprad.quant)) {
         #All apertures are point sources - make a default width @ 10 pix
-        aprad.3rdquant<-10
+        aprad.quant<-10
       }
       #}}}
-      apsizeinbits<-(2*aprad.3rdquant/asperpix)^2*64
-      apmem<-catlen*apsizeinbits*4
+      apsizeinbits<-(2*aprad.quant/asperpix)^2*64*2
+      apmem<-catlen*apsizeinbits*12
       #}}}
       #Image Memory requirements {{{
       nimage=4
       if (length(image.env$imm)>1){ nimage=nimage+1 }
       if (length(image.env$ime)>1){ nimage=nimage+1 }
       if (sourcemask){ nimage=nimage+1 }
-      immem<-nimage*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
+      immem<-nimage*lsos(pattern="im",envir=image.env)[1,'Size']
       #}}}
       #Check Memory Allocation is less than available free memory {{{
       if ((apmem+immem+memCur) >= memLim) {
-        #If not, try and continue by reducing the number of threads {{{
-        warning("Memory Required for this computation will exceed system RAM\n")
-        cat(paste("\n        Memory Required for this computation will exceed system RAM\n",
-                     "       Attempting to limit memory usage by lowering number of threads - "))
-        #Memory Required on 1 thread {{{
-        immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']
-        #}}}
-        if ((apmem+immem+memCur) >= memLim) {
           #If this is too much, less threads cannot help. Stop {{{
           cat("Failed\n")
           sink(type='message')
-          stop(paste("This computation is not possible on this machine,",
-                     "as the required memory (",(apmem+immem+memCur)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
+          stop(paste("This computation may exceed the available memory on this machine.",
+                     "The required memory (",(apmem+immem+memCur)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
                      "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
                      "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, ",round(immem*1E-9/8,digits=3),"Gb for images.",
                      "\n",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n"))
           #}}}
-        } else {
-        #Otherwise, determine the maximum number of threads that won't fail {{{
-          for( i in 2:ncores) {
-            immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*i
-            if ((apmem+immem) >= memLim) {
-              ncores<-i-1
-              immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
-              break
-            }
-          }
-          #}}}
-          #Update number of threads to be used, and notify {{{
-          cat(paste("Success. Continuing computations with",ncores,"threads\n"))
-          registerDoParallel(cores=ncores)
-          #}}}
-        }#}}}
+        ##If not, try and continue by reducing the number of threads {{{
+        #warning("Memory Required for this computation could possibly exceed system RAM\n")
+        #cat(paste("\n        Memory Required for this computation could possibly exceed system RAM\n",
+        #             "       Attempting to limiti memory usage by lowering number of threads - "))
+        ##Memory Required on 1 thread {{{
+        #immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']
+        ##}}}
+        #if ((apmem+immem+memCur) >= memLim) {
+        #  #If this is too much, less threads cannot help. Stop {{{
+        #  cat("Failed\n")
+        #  sink(type='message')
+        #  stop(paste("This computation is not possible on this machine,",
+        #             "as the required memory (",(apmem+immem+memCur)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
+        #             "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
+        #             "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, ",round(immem*1E-9/8,digits=3),"Gb for images.",
+        #             "\n",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n"))
+        #  #}}}
+        #} else {
+        ##Otherwise, determine the maximum number of threads that won't fail {{{
+        #  for( i in 2:ncores) {
+        #    immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*i
+        #    if ((apmem+immem) >= memLim) {
+        #      ncores<-i-1
+        #      immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
+        #      break
+        #    }
+        #  }
+        #  #}}}
+        #  #Update number of threads to be used, and notify {{{
+        #  cat(paste("Success. Continuing computations with",ncores,"threads\n"))
+        #  registerDoParallel(cores=ncores)
+        #  #}}}
+        #}#}}}
       }#}}}
       #Notify Memory Usage Status {{{
       if (!quiet) {
         cat(paste("\n       This computation will require approximately ",round((apmem+immem)*1E-9/8,digits=3)," Gb of memory.\n",
+                     "      The memory usage is ",round(apmem*1E-9/8,digits=3),"Gb for apertures/results/storage/etc, ",round(immem*1E-9/8,digits=3),"Gb for images.",
+                  "\n       ",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n",
                      "       Total memory available for the system is ",(memLim)*1E-9/8," Gb.\n",sep=""))
       }
       message(paste("This computation will require approximately",round((apmem+immem)*1E-9/8,digits=3),"Gb of memory.\n",
+                     "      The memory usage is ",round(apmem*1E-9/8,digits=3),"Gb for apertures, ",round(immem*1E-9/8,digits=3),"Gb for images.",
+                  "\n       ",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n",
                     "Total memory available for the system is",(memLim)*1E-9/8,"Gb."))
       #}}}
       #}}}
@@ -596,7 +663,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
       cat(paste('-----------------------------------------------------\nDatamap Complete\n'))
       cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
       cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
-      if (f!=nloops) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
+      if (f!=nloops) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap (',f+1,' of ',nloops,')\nInitialising Workspace {\n',sep="")) }
     }
     #}}}
   }#}}}

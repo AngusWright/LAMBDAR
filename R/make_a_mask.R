@@ -1,5 +1,5 @@
 make_a_mask <-
-function (outenv=parent.env(environment()), masks, fullmaskdim, env=NULL){
+function (outenv=parent.env(environment()), masks, fullmaskdim, env=NULL, subs=NULL){
 #Procedure makes the Full Mask of all apertures
 
   if (!quiet) { cat("Make_A_Mask   ") }
@@ -17,7 +17,12 @@ function (outenv=parent.env(environment()), masks, fullmaskdim, env=NULL){
   ##}}}
 
   #Setup sizes {{{
-  npos<-length(id_g)
+  if (is.null(subs)) {
+    npos<-length(id_g)
+    subs<-1:npos
+  } else {
+    npos<-length(subs)
+  }
   #}}}
 
   #Initialise Array {{{
@@ -25,7 +30,7 @@ function (outenv=parent.env(environment()), masks, fullmaskdim, env=NULL){
   #}}}
 
   #Position each individual mask stamp at the correct position above the full mask, and add it on {{{
-  for (i in 1:npos) {
+  for (i in subs) {
     #Check dimensions match {{{
     if (any(dim(a_mask[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]])!=dim(masks[[i]]))) {
       #Don't match, so don't add it & Notify {{{

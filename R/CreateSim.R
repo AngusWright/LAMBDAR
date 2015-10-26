@@ -142,6 +142,8 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     readimage(env=NULL,quiet,showtime,outenv=image.env)
     #Move Astrometry list from image env to main env {{{
     astr_struc<-image.env$astr_struc
+    saturation<-image.env$saturation
+    gain<-image.env$gain
     rm(astr_struc, envir=image.env)
     #}}}
     #}}}
@@ -236,6 +238,7 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     if (filtcontam) { contams<-contams[which(insidemask)] }
     chunkSize=length(id_g)/getDoParWorkers()
     mpiopts<-list(chunkSize=chunkSize)
+    message("Number of objects per thread:",chunkSize)
     #}}}
     #Notify how many objects remain {{{
     if (verbose) { message(paste("There are",length(x_g),"supplied objects with physical aperture values (",

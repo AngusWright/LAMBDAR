@@ -8,7 +8,8 @@ Crop FITS Image
 Crop a fits image to a sub-region determined by the input radius, RA, and Dec.
 }
 \usage{
-crop_im(ra0 = -999, dec0 = -999, pathroot = "", inpim = NA, cutrad = 1, fitsoutname = NA)
+crop_im(ra0 = -999, dec0 = -999, pathroot = "",
+inpim = NA, cutrad = 1,fitsoutname = NA)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

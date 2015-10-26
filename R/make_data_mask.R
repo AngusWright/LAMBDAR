@@ -3,6 +3,21 @@ function(outenv=parent.env(environment()), env=NULL){
 #Procedure creates data mask arrays, using input images and
 #location data from the catalogue
 #Procedure is parallelised to allow scaleability
+#
+# LIMITS NOMENCLATURE:
+#   > image_lims is the limits of the aperture stamp in the image.env$im space
+#   > stamp_lims is the limits of the aperture stamp in the im_mask space
+#   > im_stamp_lims is the limits of the im_mask in the image.env$im space
+#
+#   > mask_lims is the limits of the aperture stamp in the image.env$imm space
+#   > mstamp_lims is the limits of the aperture stamp in the imm_mask space
+#   > imm_stamp_lims is the limits of the imm_mask in the image.env$imm space
+#
+#   > error_lims is the limits of the aperture stamp in the image.env$ime space
+#   > estamp_lims is the limits of the aperture stamp in the ime_mask space
+#   > ime_stamp_lims is the limits of the ime_mask in the image.env$ime space
+#
+#
 
   if (!quiet) { cat('Make_Data_Masks   ') }
   message('--------------------------Make_Data_Mask---------------------------------')
@@ -48,11 +63,15 @@ function(outenv=parent.env(environment()), env=NULL){
   #PSF WIDHT determined by the desired confidence. Total axis length MUST be odd
   #If stamplen==1, then make the stamplen == smallest nonzero aperture by default
   #This happens when we have a point source and are not convolving with PSF
-  #If ALL apertures are point sources, then this will have length 3}}}
-  stamplen<-(floor((ceiling(defbuff*a_g*2/asperpix)+ceiling(psf.clip))/2)*2+5)
+  #If ALL apertures are point sources, then this will have length 5}}}
+  if (psffilt) {
+    stamplen<-(floor(ceiling(defbuff*a_g/asperpix)+(ceiling(psf.clip)/2))*2+5)
+  } else {
+    stamplen<-(floor(ceiling(defbuff*a_g/asperpix))*2+5)
+  }
   #Deal with Point Sources {{{
-  if      (all(stamplen==1)) { stamplen[which(stamplen==1)]<-5 }
-  else if (any(stamplen==1)) { stamplen[which(stamplen==1)]<-floor(min(a_g[which(a_g>0)],na.rm=TRUE))*2+5 }
+  if      (all(stamplen==5)) { stamplen[which(stamplen==5)]<-5 }
+  else if (any(stamplen==5)) { stamplen[which(stamplen==5)]<-floor(min(a_g[which(a_g>0)],na.rm=TRUE))*2+5 }
   #}}}
   #Calculate Stamp limits in image-pixel space {{{
   stamp_lims<-cbind(x_p-floor(stamplen/2), x_p+floor(stamplen/2), y_p-floor(stamplen/2), y_p+floor(stamplen/2))
@@ -99,17 +118,42 @@ function(outenv=parent.env(environment()), env=NULL){
   im_stamp_lims[which(im_stamp_lims[,2]>length(image.env$im[,1])),2]<-length(image.env$im[,1])
   #}}}
 
-  #Create image stamps {{{
   im_mask<-list(NULL)
-  for (i in 1:npos) {
-    im_mask[[i]]<-image.env$im[im_stamp_lims[i,1]:im_stamp_lims[i,2],im_stamp_lims[i,3]:im_stamp_lims[i,4]]
+  #Determine if cutting up the images is worthwhile {{{
+  nchild<-getDoParWorkers()
+  #Memory of Cutups {{{
+  cutmem<-sum(stamplen^2)*3+sum((factor*2+1)^2)
+  #}}}
+  if ((cutmem)>(length(image.env$im[,1])*length(image.env$im[1,])*nchild)) {
+    cutup<-FALSE
+    message("Memory required by cutting up image is more than parsing whole image to children\n>  USE INDIVIDUAL STAMPS: FALSE")
+  } else {
+    cutup<-TRUE
+    message("Memory required by parsing whole image to children is more than cutting into individual stamps\n>  USE INDIVIDUAL STAMPS: TRUE")
   }
-  #}}}
-
-  #Calculate Stamp limits in image-stamp space {{{
-  image_lims<-stamp_lims
-  stamp_lims<-stamp_lims-(im_stamp_lims[,c(1,1,3,3)]-1)
-  #}}}
+  if (!cutup) {
+    #total memory from stamps is larger than total memory of moving whole image around; Not worth cutting up {{{
+    im_mask<-NULL
+    #}}}
+    #Calculate Stamp limits in image-stamp space {{{
+    im_stamp_lims<-cbind(rep(1,npos),rep(length(image.env$im[,1]),npos),rep(1,npos),rep(length(image.env$im[1,]),npos))
+    image_lims<-stamp_lims
+    stamp_lims<-stamp_lims
+    #}}}
+  } else {
+    #Total memory of stamps is less that total memory of moving whole image around; Cut up image {{{
+    #Create image stamps {{{
+    for (i in 1:npos) {
+      im_mask[[i]]<-image.env$im[im_stamp_lims[i,1]:im_stamp_lims[i,2],im_stamp_lims[i,3]:im_stamp_lims[i,4]]
+    }
+    #}}}
+    #}}}
+    #Calculate Stamp limits in image-stamp space {{{
+    image_lims<-stamp_lims
+    stamp_lims<-stamp_lims-(im_stamp_lims[,c(1,1,3,3)]-1)
+    #}}}
+  }
+  # }}}
 
   #Notify {{{
   if (verbose) { message(paste("There are",length(x_g),"supplied objects have stamps entirely inside the image (",
@@ -158,11 +202,19 @@ function(outenv=parent.env(environment()), env=NULL){
     #Create Mask Stamps {{{
     message('Creating Mask Stamps')
     imm_mask<-list(NULL)
-    for (i in 1:npos) {
-      imm_mask[[i]]<-image.env$imm[imm_stamp_lims[i,1]:imm_stamp_lims[i,2],imm_stamp_lims[i,3]:imm_stamp_lims[i,4]]
+    if (!cutup) {
+      imm_mask<-1
+      mstamp_lims<-mask_lims
+      imm_stamp_lims<-cbind(rep(1,npos),rep(length(image.env$imm[,1]),npos),rep(1,npos),rep(length(image.env$imm[1,]),npos))
+    } else {
+      for (i in 1:npos) {
+        imm_mask[[i]]<-image.env$imm[imm_stamp_lims[i,1]:imm_stamp_lims[i,2],imm_stamp_lims[i,3]:imm_stamp_lims[i,4]]
+      }
+      mstamp_lims<-mask_lims-(imm_stamp_lims[,c(1,1,3,3)]-1)
     }
-    mstamp_lims<-mask_lims-(imm_stamp_lims[,c(1,1,3,3)]-1)
   } else {
+    x_mp<-x_p
+    y_mp<-y_p
     imm_mask<-1
     mask_lims<-image_lims
     mstamp_lims<-stamp_lims
@@ -204,10 +256,16 @@ function(outenv=parent.env(environment()), env=NULL){
     #Create Error Stamps {{{
     message('Creating Error Stamps')
     ime_mask<-list(NULL)
-    for (i in 1:npos) {
-        ime_mask[[i]]<-image.env$ime[ime_stamp_lims[i,1]:ime_stamp_lims[i,2],ime_stamp_lims[i,3]:ime_stamp_lims[i,4]]
+    if (!cutup) {
+      ime_mask<-NULL
+      estamp_lims<-error_lims
+      ime_stamp_lims<-cbind(rep(1,npos),rep(length(image.env$ime[,1]),npos),rep(1,npos),rep(length(image.env$ime[1,]),npos))
+    } else {
+      for (i in 1:npos) {
+          ime_mask[[i]]<-image.env$ime[ime_stamp_lims[i,1]:ime_stamp_lims[i,2],ime_stamp_lims[i,3]:ime_stamp_lims[i,4]]
+      }
+      estamp_lims<-error_lims-(ime_stamp_lims[,c(1,1,3,3)]-1)
     }
-    estamp_lims<-error_lims-(ime_stamp_lims[,c(1,1,3,3)]-1)
   } else if (errormap=="NONE") {
     #Use Image pixel locations {{{
     x_ep<-x_p
@@ -221,16 +279,24 @@ function(outenv=parent.env(environment()), env=NULL){
     #Create Error Stamps {{{
     message('Creating Error Stamps')
     ime_mask<-list(NULL)
-    for (i in 1:npos) {
-        ime_mask[[i]]<-image.env$ime[ime_stamp_lims[i,1]:ime_stamp_lims[i,2],ime_stamp_lims[i,3]:ime_stamp_lims[i,4]]
+    if (!cutup) {
+      ime_mask<-NULL
+    } else {
+      for (i in 1:npos) {
+          ime_mask[[i]]<-image.env$ime[ime_stamp_lims[i,1]:ime_stamp_lims[i,2],ime_stamp_lims[i,3]:ime_stamp_lims[i,4]]
+      }
     }
     #}}}
   } else if (length(image.env$ime)==1) {
+    x_ep<-x_p
+    y_ep<-y_p
     ime_mask<-image.env$ime
     ime_stamp_lims<-im_stamp_lims
     error_lims<-image_lims
     estamp_lims<-stamp_lims
   } else if (!any(image.env$ime!=image.env$ime[1])) {
+    x_ep<-x_p
+    y_ep<-y_p
     ime_mask<-image.env$ime[1]
     ime_stamp_lims<-im_stamp_lims
     error_lims<-image_lims
@@ -239,20 +305,50 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
 
   #If we've made multiple masks, Check that all arrays are conformable {{{
-  if ((length(imm_mask)!=1)|(length(ime_mask)!=1)) {
+  check<-FALSE
+  if (cutup) {
+    if ((length(imm_mask)!=1)|(length(ime_mask)!=1)) { check<-TRUE }
+  } else {
+    l1<-length(image.env$im)!=1
+    l2<-length(image.env$imm)!=1
+    l3<-length(image.env$ime)!=1
+    d1<-dim(image.env$im)
+    d2<-dim(image.env$imm)
+    d3<-dim(image.env$ime)
+    if (l1&l2&(any(d1!=d2)|any(x_p!=x_mp)|any(y_p!=y_mp))) { check<-TRUE }
+    if (l1&l3&(any(d1!=d3)|any(x_p!=x_ep)|any(y_p!=y_ep))) { check<-TRUE }
+    if (l2&l3&(any(d2!=d3)|any(x_mp!=x_ep)|any(y_mp!=y_ep))) { check<-TRUE }
+  }
+
+  if (check) {
     for (i in 1:npos) {
+      if (!cutup) {
+        im.mk<-matrix(0,ncol=length(im_stamp_lims[i,1]:im_stamp_lims[i,2]),nrow=length(im_stamp_lims[i,3]:im_stamp_lims[i,4]))
+      } else {
+        im.mk<-im_mask[[i]]
+      }
       #Get the masks' dimensions {{{
-      dims<-rbind(dim(im_mask[[i]]))
+      dims<-rbind(dim(im.mk))
       index<-1
       if (length(imm_mask)!=1) {
+        if (!cutup) {
+          imm.mk<-matrix(0,ncol=length(imm_stamp_lims[i,1]:imm_stamp_lims[i,2]),nrow=length(imm_stamp_lims[i,3]:imm_stamp_lims[i,4]))
+        } else {
+          imm.mk<-imm_mask[[i]]
+        }
         #If the imm_mask exists, get its dimension {{{
-        dims<-rbind(dims,dim(imm_mask[[i]]))
+        dims<-rbind(dims,dim(imm.mk))
         index<-c(index,2)
         #}}}
       }
       if (length(ime_mask)!=1) {
-        #If the imm_mask exists, get its dimension{{{
-        dims<-rbind(dims,dim(ime_mask[[i]]))
+        if (!cutup) {
+          ime.mk<-matrix(0,ncol=length(ime_stamp_lims[i,1]:ime_stamp_lims[i,2]),nrow=length(ime_stamp_lims[i,3]:ime_stamp_lims[i,4]))
+        } else {
+          ime.mk<-ime_mask[[i]]
+        }
+        #If the ime_mask exists, get its dimension{{{
+        dims<-rbind(dims,dim(ime.mk))
         index<-c(index,3)
         #}}}
       }#}}}
@@ -287,37 +383,43 @@ function(outenv=parent.env(environment()), env=NULL){
             #Matrix is cutoff at the high end; modify the high matrix {{{
             if (hi==1) {
              #Image matrix
-             im_mask[[i]]<-im_mask[[i]][1:(dims[which(index==hi),1]-differ),]
+             im.mk<-im.mk[1:(dims[which(index==hi),1]-differ),]
+             if (cutup) { im_mask[[i]]<-im_mask[[i]][1:(dims[which(index==hi),1]-differ),] }
              im_stamp_lims[i,2]<-im_stamp_lims[i,2]-differ
-             dims[which(index==hi),]<-dim(im_mask[[i]])
+             dims[which(index==hi),]<-dim(im.mk)
             } else if (hi==2) {
              #Mask matrix
-             imm_mask[[i]]<-imm_mask[[i]][1:(dims[which(index==hi),1]-differ),]
+             imm.mk<-imm.mk[1:(dims[which(index==hi),1]-differ),]
+             if (cutup) { imm_mask[[i]]<-imm_mask[[i]][1:(dims[which(index==hi),1]-differ),] }
              imm_stamp_lims[i,2]<-imm_stamp_lims[i,2]-differ
-             dims[which(index==hi),]<-dim(imm_mask[[i]])
+             dims[which(index==hi),]<-dim(imm.mk)
             } else {
              #error matrix
-             ime_mask[[i]]<-ime_mask[[i]][1:(dims[which(index==hi),1]-differ),]
+             ime.mk<-ime.mk[1:(dims[which(index==hi),1]-differ),]
+             if (cutup) { ime_mask[[i]]<-ime_mask[[i]][1:(dims[which(index==hi),1]-differ),] }
              ime_stamp_lims[i,2]<-ime_stamp_lims[i,2]-differ
-             dims[which(index==hi),]<-dim(ime_mask[[i]])
+             dims[which(index==hi),]<-dim(ime.mk)
             }#}}}
           } else {
           #Matrix is cutoff at the low end {{{
             if (hi==1) {
              #Image matrix
-             im_mask[[i]]<-im_mask[[i]][(differ+1):dims[which(index==hi),1],]
+             im.mk<-im.mk[(differ+1):dims[which(index==hi),1],]
+             if (cutup) { im_mask[[i]]<-im_mask[[i]][(differ+1):dims[which(index==hi),1],] }
              im_stamp_lims[i,1]<-im_stamp_lims[i,1]+differ
-             dims[which(index==hi),]<-dim(im_mask[[i]])
+             dims[which(index==hi),]<-dim(im.mk)
             } else if (hi==2) {
              #Mask matrix
-             imm_mask[[i]]<-imm_mask[[i]][(differ+1):dims[which(index==hi),1],]
+             imm.mk<-imm.mk[(differ+1):dims[which(index==hi),1],]
+             if (cutup) { imm_mask[[i]]<-imm_mask[[i]][(differ+1):dims[which(index==hi),1],] }
              imm_stamp_lims[i,1]<-imm_stamp_lims[i,1]+differ
-             dims[which(index==hi),]<-dim(imm_mask[[i]])
+             dims[which(index==hi),]<-dim(imm.mk)
             } else {
              #error matrix
-             ime_mask[[i]]<-ime_mask[[i]][(differ+1):dims[which(index==hi),1],]
+             ime.mk<-ime.mk[(differ+1):dims[which(index==hi),1],]
+             if (cutup) { ime_mask[[i]]<-ime_mask[[i]][(differ+1):dims[which(index==hi),1],] }
              ime_stamp_lims[i,1]<-ime_stamp_lims[i,1]+differ
-             dims[which(index==hi),]<-dim(ime_mask[[i]])
+             dims[which(index==hi),]<-dim(ime.mk)
             }
           }#}}}
         }
@@ -353,37 +455,43 @@ function(outenv=parent.env(environment()), env=NULL){
             #Matrix is cutoff at the high end; modify the high matrix {{{
             if (hi==1) {
              #Image matrix
-             im_mask[[i]]<-im_mask[[i]][,1:(dims[which(index==hi),2]-differ)]
+             im.mk<-im.mk[,1:(dims[which(index==hi),2]-differ)]
+             if (cutup) { im_mask[[i]]<-im_mask[[i]][,1:(dims[which(index==hi),2]-differ)] }
              im_stamp_lims[i,4]<-im_stamp_lims[i,4]-differ
-             dims[which(index==hi),]<-dim(im_mask[[i]])
+             dims[which(index==hi),]<-dim(im.mk)
             } else if (hi==2) {
              #Mask matrix
-             imm_mask[[i]]<-imm_mask[[i]][,1:(dims[which(index==hi),2]-differ)]
+             imm.mk<-imm.mk[,1:(dims[which(index==hi),2]-differ)]
+             if (cutup) { imm_mask[[i]]<-imm_mask[[i]][,1:(dims[which(index==hi),2]-differ)] }
              imm_stamp_lims[i,4]<-imm_stamp_lims[i,4]-differ
-             dims[which(index==hi),]<-dim(imm_mask[[i]])
+             dims[which(index==hi),]<-dim(imm.mk)
             } else {
              #error matrix
-             ime_mask[[i]]<-ime_mask[[i]][,1:(dims[which(index==hi),2]-differ)]
+             ime.mk<-ime.mk[,1:(dims[which(index==hi),2]-differ)]
+             if (cutup) { ime_mask[[i]]<-ime_mask[[i]][,1:(dims[which(index==hi),2]-differ)] }
              ime_stamp_lims[i,4]<-ime_stamp_lims[i,4]-differ
-             dims[which(index==hi),]<-dim(ime_mask[[i]])
+             dims[which(index==hi),]<-dim(ime.mk)
             }#}}}
           } else {
           #Matrix is cutoff at the low end #{{{
             if (hi==1) {
              #Image matrix
-             im_mask[[i]]<-im_mask[[i]][,(differ+1):dims[which(index==hi),2]]
+             im.mk<-im.mk[,(differ+1):dims[which(index==hi),2]]
+             if (cutup) { im_mask[[i]]<-im_mask[[i]][,(differ+1):dims[which(index==hi),2]] }
              im_stamp_lims[i,3]<-im_stamp_lims[i,3]+differ
-             dims[which(index==hi),]<-dim(im_mask[[i]])
+             dims[which(index==hi),]<-dim(im.mk)
             } else if (hi==2) {
              #Mask matrix
-             imm_mask[[i]]<-imm_mask[[i]][,(differ+1):dims[which(index==hi),2]]
+             imm.mk<-imm.mk[,(differ+1):dims[which(index==hi),2]]
+             if (cutup) { imm_mask[[i]]<-imm_mask[[i]][,(differ+1):dims[which(index==hi),2]] }
              imm_stamp_lims[i,3]<-imm_stamp_lims[i,3]+differ
-             dims[which(index==hi),]<-dim(imm_mask[[i]])
+             dims[which(index==hi),]<-dim(imm.mk)
             } else {
              #error matrix
-             ime_mask[[i]]<-ime_mask[[i]][,(differ+1):dims[which(index==hi),2]]
+             ime.mk<-ime.mk[,(differ+1):dims[which(index==hi),2]]
+             if (cutup) { ime_mask[[i]]<-ime_mask[[i]][,(differ+1):dims[which(index==hi),2]] }
              ime_stamp_lims[i,3]<-ime_stamp_lims[i,3]+differ
-             dims[which(index==hi),]<-dim(ime_mask[[i]])
+             dims[which(index==hi),]<-dim(ime.mk)
             }
           }#}}}
         }
@@ -446,6 +554,7 @@ function(outenv=parent.env(environment()), env=NULL){
 
   #Parse Parameter Space {{{
   if (!is.null(env)) { detach(env) }
+  assign("cutup",cutup,envir=outenv)
   assign("x_p",x_p,envir=outenv)
   assign("y_p",y_p,envir=outenv)
   assign("x_g",x_g,envir=outenv)

@@ -11,7 +11,8 @@ apertures in photometric measurements. As such, the positional information of th
 more accurately the phase information of the first array's fft) is discarded.
 }
 \usage{
-convolvepsf(arr1, arr2, normalise = TRUE, mag2 = TRUE, zapdig = NULL)
+convolvepsf(arr1, arr2, normalise = TRUE, mag2 = TRUE,
+zapdig = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

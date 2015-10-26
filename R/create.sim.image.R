@@ -14,7 +14,7 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
   timer<-proc.time()
   if (!quiet) { cat('Getting PSF details') }
   message('Getting PSF details')
-  if (psffilt) {
+  #if (psffilt) {
     #We are filtering apertures with the PSF {{{
     #Details {{{
     #Calculate PSF - if one has not be supplied,
@@ -24,17 +24,17 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
       gauss_fwhm_as=get.fwhm(read.fits(file.path(pathroot,pathwork,psfmap))$dat[[1]])*asperpix
     }
     #Get PSF {{{
-    psf<-readpsf(outenv=environment(),"NONE",asperpix,0,1-(1E-14),gauss_fwhm_as=gauss_fwhm_as)
+    psf<-readpsf(outenv=environment(),"NONE",asperpix,max(a_g,na.rm=T),1-(1E-14),gauss_fwhm_as=gauss_fwhm_as)
     #}}}
     #Get radius of FWHM using FWHM confidence value = erf(2*sqrt(2*log(2))/sqrt(2)) {{{
     psffwhm.pix<-get.fwhm(psf)
     #}}}
     #}}}
-  } else {
-    #If no PSF, set FWHM to 0 {{{
-    psffwhm.pix<-0
-    #}}}
-  }
+  #} else {
+  #  #If no PSF, set FWHM to 0 {{{
+  #  psffwhm.pix<-0
+  #  #}}}
+  #}
   #}}}
   #Notify {{{
   if (showtime) { cat(paste(' - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )\n'))
@@ -69,15 +69,17 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
 
   #Create Simulated Profiles & Image {{{
   if (!quiet) { cat(paste('Creating Simulated Image  ')) }
+  if (!exists('contams')) { contams<-rep(0,length(id_g)) }
   timer=system.time(esa<-make_esa_mask(outenv=environment(),ObsParm=ObsParm,padGals=padGals,col.corr=col.corr,confuse=confuse))
   simFlux<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { sum(esam) }
   npix<-foreach(esam=esa, .combine='c', .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { length(esam) }
   simFlux<-array(unlist(simFlux),dim=c(dim(simFlux[[1]]),length(simFlux)))
-  write.csv(file=file.path(pathroot,pathwork,pathout,"SimFlux.csv"), data.frame(CATAID=id_g,RA=ra_g,DEC=dec_g,X_IM=x_g,Y_IM=y_g,REff=Reff_pix*asperpix,SEMIMAJ_AS=a_g,SEMIMIN_AS=b_g,THETA=theta_g,inputFlux=fluxweight,StampFlux=simFlux,nPix=npix), row.names=FALSE,quote=FALSE)
+  write.csv(file=file.path(pathroot,pathwork,pathout,"SimFlux.csv"), data.frame(CATAID=id_g,RA=ra_g,DEC=dec_g,X_IM=x_g,Y_IM=y_g,REff=Reff_pix*asperpix,SEMIMAJ_AS=a_g,SEMIMIN_AS=b_g,THETA=theta_g,inputFlux=fluxweight,StampFlux=simFlux,nPix=npix,CONTAM=contams), row.names=FALSE,quote=FALSE)
   timer1=system.time(image.env$ea<-make_a_mask(outenv=environment(), esa, dim(image.env$im)))
   if (showtime) { cat("   - Done (",round(timer[3]+timer1[3],digits=2),"sec )\n")
     message(paste('Create Sim Image - Done (',round(timer[3]+timer1[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }
+  if (!quiet) { cat(paste('Making Noisemap  ')) }
   noisemap<-image.env$ea*0
   if (!noNoise) { noisemap[1:length(noisemap)]<-rnorm(length(image.env$ea),mean=0,sd=1) }
   if (convolveNoise) {
@@ -91,6 +93,7 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
   if (!noNoise) { noisemap<-(noisemap*(stdev/sd(as.numeric(noisemap))))+x.mode }
   message("Noise Properties in input Image (Jy): mode=",x.mode,"; sd=",stdev)
   message("Noise Properties in Sim Image (Jy): mean=",mean(as.numeric(noisemap)),"; sd=",sd(as.numeric(noisemap)))
+  if (!quiet) { cat("   - Done\n") }
   if (!quiet) { cat(paste('Outputting Simulate Image to',"sim_image.fits","   ")) }
   timer=system.time(writefitsout(file.path(pathroot,pathwork,pathout,"sim_image.fits"),(image.env$ea+noisemap),image.env$hdr_str,nochange=TRUE) )
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")

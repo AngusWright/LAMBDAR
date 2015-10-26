@@ -9,7 +9,8 @@ Read the 3 FITS images (data, error map, mask map) that are input to the procedu
 MeasureFluxes parameter file, and generate the relevant default images in the event that one is not specified.
 }
 \usage{
-readimage(env=NULL, quiet=FALSE, showtime=FALSE, outenv=NULL)
+readimage(outenv=parent.env(environment()),
+quiet=FALSE, showtime=FALSE, env=NULL)
 }
 \arguments{
   \item{env}{

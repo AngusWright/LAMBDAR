@@ -10,7 +10,7 @@ The procedure takes individual weighted object apertures, and determines what pr
 It performs this analysis on all apertures from the input catalogue.
 }
 \usage{
-make_deblended_weightmap(env=NULL, outenv=NULL)
+make_deblended_weightmap(outenv=parent.env(environment()),env=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

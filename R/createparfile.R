@@ -2,91 +2,99 @@ createparfile <-
   function(
     RootDirectory="./",
     WorkingDirectory="./",
-    Catalogue="./catalogue.fits",
-    PSFMap="NONE",
-    DataMap="./datamap.fits",
-    ErrorMap="NONE",
-    MaskMap="NONE",
-    WeightMap="NONE",
-    CatIDColumnLabel="CATAID",
-    RAColumnLabel="ALPHA_J2000",
-    DecColumnLabel="DELTA_J2000",
-    ThetaColumnLabel="THETA_J2000",
-    SemiMinColumnLabel="SEMIMIN_AS",
-    SemiMajColumnLabel="SEMIMAJ_AS",
-    ContamColumnLabel="CONTAMS",
-    FluxWgtColumnLabel="FLUXWEIGHT",
-    MapJyPerBeam=0,
-    Confusion_Jy=0.0,
-    Gauss_FWHM_AS=0.0,
-    BeamArea_SqAS=0.0,
-    FluxCorr=1.0,
-    EFactor=1.0,
+    OutputDirectory="./",
+    Catalogue="catalogue.csv",
+    DataMap="image.fits",
+    BeamArea_SqAS=0,
+    PSFConvolve=0,
+    PSFWeighted=0,
+    PSFMap='NONE',
+    Gauss_FWHM_AS=0,
+    RemoveContam=0,
+    CheckContam=0,
+    nNearestCheck=10,
+    NoContamImageFile='NoContamResidualImage.fits',
+    CatIDColumnLabel='CATAID',
+    RAColumnLabel='ALPHA_J2000',
+    DecColumnLabel='DELTA_J2000',
+    ThetaColumnLabel='THETA_J2000',
+    SemiMajColumnLabel='SEMIMAJ_AS',
+    SemiMinColumnLabel='SEMIMIN_AS',
+    ContamColumnLabel='CONTAM',
+    FluxWgtColumnLabel='FLUXWEIGHT',
+    ErrorMap='NONE',
+    MaskMap='NONE',
+    WeightMap='NONE',
+    WeightMapZP=0,
+    Saturation=Inf,
+    SaturationLabel='SATUR',
+    GainLabel='GAIN',
     DataExtn=0,
     ErrorExtn=0,
     MaskExtn=0,
     WeightExtn=0,
-    WeightMapZP=0,
+    PointSources=0,
+    EFactor=0,
+    FluxCorr=1,
     CropImage=0,
+    CropFitsName='croppedimage',
     CropImRA0=-999,
     CropImDec0=-999,
-    CropImRad=NA,
-    CropFitsName="cropped_im",
-    RemoveContam=0,
-    CheckContam=1,
-    nNearestCheck=10,
-    PSFConvolve=1,
-    PSFWeighted=0,
-    ApertureConfLimit=0.8,
+    CropImRad=0.5,
+    Confusion_Jy=1,
+    nProcessors=1,
     AngularOffset=0,
-    PointSources=0,
-    MinApRad=0,
+    MapJyPerBeam=0,
     SmoothAper=1,
     ResamplingRes=3,
-    ResamplingIters=4,
-    UseMaskLim=0.95,
-    Verbose=0,
-    ShowTime=1,
-    PlotSample=0,
-    Diagnostic=0,
+    ResamplingIters=5,
+    PSFConfidence=1,
+    ApStampWidth=1.05,
+    SourceMaskOnly=0,
+    WriteSourceMask=0,
+    WriteAAMask=0,
+    AllApersFile='AllApertures_Mask.fits',
+    WriteFAMask=0,
+    ConvApersFile='AllConvolvedApertures_Mask.fits',
+    WriteDFAMask=0,
+    DeblConvApersFile='AllDeblConvolvedApertures_Mask.fits',
+    WriteResidMap=0,
+    ResidImageFile='ResidualImage.fits',
+    WriteTable=1,
+    TableName='LAMBDAR_Results',
+    ShowTime=0,
     Interactive=0,
-    Magnitudes=0,
+    UseMaskLim=0.2,
+    Diagnostic=0,
+    Verbose=0,
+    PlotSample=0,
+    PlotAll=0,
+    Magnitudes=1,
+    MagZPLabel='MagZP',
     ABVegaFlux=1.0,
-    MagZeroPoint=-999,
-    MagZPLabel="MagZP",
+    MagZeroPoint=0.0,
+    BlankCor=0,
+    nBlanks=10,
+    RanCor=0,
+    nRandoms=10,
     DoSkyEst=0,
+    GetSkyRMS=0,
     SkyEstIters=5,
     SkyEstProbCut=3,
-    SkyDefault="median",
     SkyCorrelNoise=1,
-    GetSkyRMS=1,
-    RanCor=0,
-    nRandoms=1E2,
-    FluxWgtType="flux",
-    IterateFluxes=1,
+    SkyDefault='median',
+    SourceMaskFile='SourceMask.fits',
+    TransmissionMap=0,
+    GetDeblFrac=0,
+    SourceMaskConfLim=0.95,
+    MinApRad=0,
+    MemorySafe=0,
+    ApertureConfLimit=0.9,
+    IterateFluxes=0,
     nIterations=2,
-    UsePixelFluxWgts=1,
-    OutputDirectory="./Output/",
-    LogFile="LAMBDARlog.txt",
-    SourceMaskOnly=0,
-    WriteTable=1,
-    TableName="dfaResults.csv",
-    WriteAAMask=1,
-    AllApersFile="AllAps_Mask.fits",
-    WriteSourceMask=1,
-    SourceMaskConfLim=0.98,
-    SourceMaskFile="SourceMask.fits",
-    WriteDFAMask=1,
-    DelbConvApersFile="AllDbCnvAps_Mask.fits",
-    WriteFAMask=1,
-    ConvApersFile="AllConvAps_Mask.fits",
-    WriteResidMap=1,
-    ResidImageFile="ResidualImage.fits",
-    NoContamImage="NoContamResIm.fits",
-    MemorySafe=1,
-    nProcessors=1,
-    ApStampWidth=1.05,
-    PSFConfidence=0.95 ) {
+    FluxWgtType='scale',
+    UsePixelFluxWgts=0,
+    LogFile='LAMBDAR_Log.txt') {
 
 #Sink Output to File {{{
 sink(file="Lambdar_default.par")
@@ -130,6 +138,9 @@ BeamArea_SqAS          ",BeamArea_SqAS     ,"    #Beam area in Square Arcsec
 FluxCorr               ",FluxCorr          ,"    #Flux Correction Factor
 EFactor                ",EFactor           ,"    #Error Map Scale Factor
 WeightMapZP            ",WeightMapZP       ,"    #Zero Point of the Weight Map - used for masking Data if no mask is supplied
+Saturation             ",Saturation        ,"    #Saturation value of the Map - used for Flagging bad fluxes. If unknown, use Inf
+SaturationLabel        ",SaturationLabel   ,"    #Saturation Label in FITS header - used for reading saturation value if none supplied
+GainLabel              ",GainLabel         ,"    #Gain Label in FITS header - used for generating error map if no errormap/gain supplied
 #                #-------Fits Extension Values--------------#
 DataExtn               ",DataExtn          ,"    #Fits header extension of Data in Image File
 ErrorExtn              ",ErrorExtn         ,"    #Fits header extension of Data in Error File
@@ -157,10 +168,11 @@ ResamplingIters        ",ResamplingIters   ,"    #Number of iterations to perfor
 UseMaskLim             ",UseMaskLim        ,"    #Limit for determining whether or not to use an object overlapping the mask edge
 Verbose                ",Verbose           ,"    #Verbose Output?
 ShowTime               ",ShowTime          ,"    #Display execution & total elapsed time during run?
-PlotSample             ",PlotSample        ,"    #Plot a sample of the Single Apertures for Inspection?
+PlotSample             ",PlotSample        ,"    #Plot a sample of the Object Apertures & Fluxes for Inspection? Includes Aperture Images and object COGs
+PlotAll                ",PlotAll           ,"    #Plot All of the Object Apertures & Fluxes for Inspection? Includes Aperture Images and object COGs
 Diagnostic             ",Diagnostic        ,"    #Diagnostic Output of Variable Values During Computation - Helpful in Understanding Code
 Interactive            ",Interactive       ,"    #Interactive Mode - Allows user access to entire parameter-space after final calculations
-Magnitudes             ",Magnitudes        ,"    #Output Fluxes as ABVega Magnitudes
+Magnitudes             ",Magnitudes        ,"    #Output Fluxes as Magnitudes
 ABVegaFlux             ",ABVegaFlux        ,"    #Flux of ABVega in this band - only used if outputting Magnitudes
 MagZeroPoint           ",MagZeroPoint      ,"    #Magnitude of the Image Zero Point. If -999, ZP will be read from FITS header
 MagZPLabel             ",MagZPLabel        ,"    #Label used for the Zero Point Keyword in the FITS header
@@ -170,8 +182,10 @@ SkyEstProbCut          ",SkyEstProbCut     ,"    #Sigma Level used in sigma-cutt
 SkyDefault             ",SkyDefault        ,"    #Default Value to use for local sky if estimation fails. May be numeric, 'median', or 'mean'. Otherwise will be NA.
 SkyCorrelNoise         ",SkyCorrelNoise    ,"    #Level of Correlated noise in the image, if known (factor is multiplicative - 1 == no correlated noise)
 GetSkyRMS              ",GetSkyRMS         ,"    #As above without subtraction, and output the local sky RMS (if doing sky estimate, this happens automatically)
-RanCor                 ",RanCor            ,"    #Do you want to calculate mean & median confusion using randoms around every aperture? [1/0]
+RanCor                 ",RanCor            ,"    #Do you want to calculate mean & median sky-flux using randoms around every aperture? [1/0]
 nRandoms               ",nRandoms          ,"    #Number of randoms calculated *per aperture*
+BlankCor               ",BlankCor          ,"    #Do you want to calculate mean & median confusion using blanks around every aperture? [1/0]
+nBlanks                ",nBlanks           ,"    #Number of blanks calculated *per aperture*
 UsePixelFluxWgts       ",UsePixelFluxWgts  ,"    #Do you want the pixel flux at the object RA DEC to be used for relative fluxweighting? [1/0]
 FluxWgtType            ",FluxWgtType       ,"    #What is the form of the input fluxweights ('flux', 'mag', or 'scale')?
 IterateFluxes          ",IterateFluxes     ,"    #Do you want to iterate the flux determination to improve deblending?
@@ -179,21 +193,23 @@ nIterations            ",nIterations       ,"    #How many iterations do you wan
 #                #---------------Outputs--------------------#
 OutputDirectory        ",OutputDirectory   ,"    #Output directory Name and Path
 LogFile                ",LogFile           ,"    #Filename for Log
-SourceMaskOnly         ",SourceMaskOnly    ,"    #Only Output Source Mask image to file? (Overrules all other Flags)            [1/0]
+GetDeblFrac            ",GetDeblFrac       ,"    #Only Output Deblend Fractions for each aperture to file? (Overrules all other Flags)            [1/0]
+SourceMaskOnly         ",SourceMaskOnly    ,"    #Only Output Source Mask image to file? (Overrules all other Flags except the above)            [1/0]
 WriteTable             ",WriteTable        ,"    #Output Results Table?
 TableName              ",TableName         ,"    #Filename for Results Table
 WriteAAMask            ",WriteAAMask       ,"    #Write the All Apertures Mask image to file?                                   [1/0]
 AllApersFile           ",AllApersFile      ,"    #Filename for All Apertures Mask
-WriteSourceMask        ",WriteSourceMask   ,"    #Write the Source Mask image to file?                                          [1/0]
-SourceMaskConfLim      ",SourceMaskConfLim ,"    #When convolving with PSF, to what confidence should the Sourcemask extend when Blocking Apertures?
-SourceMaskFile         ",SourceMaskFile    ,"    #Filename for Source Mask
-WriteDFAMask           ",WriteDFAMask      ,"    #Write the Convolved Apertures Mask image to file?                             [1/0]
-DelbConvApersFile      ",DelbConvApersFile ,"    #Filename for All Convolved Apertures Mask
 WriteFAMask            ",WriteFAMask       ,"    #Write the Convolved Apertures Mask image to file?                             [1/0]
 ConvApersFile          ",ConvApersFile     ,"    #Filename for All Convolved Apertures Mask
+WriteDFAMask           ",WriteDFAMask      ,"    #Write the Deblended Convolved Apertures Mask image to file?                   [1/0]
+DeblConvApersFile      ",DeblConvApersFile ,"    #Filename for Deblended Convolved Apertures Mask
+WriteSourceMask        ",WriteSourceMask   ,"    #Write the Source Mask image to file?                                          [1/0]
+SourceMaskConfLim      ",SourceMaskConfLim ,"    #When convolving with PSF, to what confidence should the Sourcemask extend when masking Apertures?
+SourceMaskFile         ",SourceMaskFile    ,"    #Filename for Source Mask
+TransmissionMap        ",TransmissionMap   ,"    #Do you want to produce a Transmission Map instead of a Sourcemask (transparent over sources instead of opaque)? [0/1]
 WriteResidMap          ",WriteResidMap     ,"    #Write the Residual Image Map to file?                                         [1/0]
 ResidImageFile         ",ResidImageFile    ,"    #Filename for Residual Image
-NoContamImage          ",NoContamImage     ,"    #Filename for Contaminant Subtracted Residual Image
+NoContamImageFile      ",NoContamImageFile ,"    #Filename for Contaminant Subtracted Residual Image
 #                #-------Computational Management-----------#
 MemorySafe             ",MemorySafe        ,"    #Do we want to perform checks to ensure the program does not use more memory than is available? [1/0]
 nProcessors            ",nProcessors       ,"    #Number of Processors Available for Use in Computations

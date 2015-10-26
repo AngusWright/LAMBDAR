@@ -59,11 +59,7 @@ function (pattern="", envir=NULL, pos = 1, order.by="Size", decreasing=TRUE, hea
           capture.output(print(x))
       } else if (class(x)=="character") {
         #object is a character string
-        if (length(x)>5) {
-          capture.output(cat(gsub("\n","",paste(paste(x[1:5],collapse=" "),"..."))))
-        } else {
-          capture.output(cat(gsub("\n","",paste(x[1:length(x)],collapse=" "))))
-        }
+        capture.output(cat(gsub("\n","",paste(strtrim(paste(x,collapse=" "),35),"..."))))
       } else if ((class(x)=="matrix")||class(x)=="array") {
         if (class(x[1])=="numeric") {
           #object is a numeric matrix/array

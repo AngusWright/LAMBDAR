@@ -1,5 +1,6 @@
 \name{writesfatableout}
 \alias{writesfatableout}
+\alias{writedeblfractableout}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
 Write MeasureFluxes Results

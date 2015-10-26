@@ -8,7 +8,9 @@ Write FITS Image to File
 Write an input image to file, using the standard FITS format.
 }
 \usage{
-writefitsout(filename, image, header_in, xsize = NA, ysize = NA, xcent = NA, ycent = NA, pixeloffset = NA, nochange = FALSE)
+writefitsout(filename, image, header_in, xsize = NA,
+ysize = NA, xcent = NA, ycent = NA, pixeloffset = NA,
+nochange = FALSE, verbose = FALSE, diagnostic = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -38,6 +40,12 @@ numeric; The magnitude of the offset between the original pixel location paramte
 }
   \item{nochange}{
 logical; if TRUE, the new image will be output with the header_in header. Otherwise, new values will be added as above.
+}
+  \item{diagnostic}{
+logical; if TRUE, then perform diagnostic checks and outputs
+}
+  \item{verbose}{
+logical; if TRUE, then perform verbose outputs
 }
 }
 %%\details{

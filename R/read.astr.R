@@ -6,6 +6,7 @@ function(fitsname, hdu=1){
   #Initialise List {{{
   astr_struc<-NULL
   #}}}
+  oldwarn<-options(warn=-1)
   #Check for Typical Keywords of known Lengths {{{
   astr_struc<-c(astr_struc, list(BITPIX  =read.fitskey("BITPIX",fitsname,hdu=hdu)))
   astr_struc<-c(astr_struc, list(CTYPE   =as.numeric(c(read.fitskey(c("CTYPE1","CTYPE2","CTYPE3"),fitsname,hdu=hdu)))))
@@ -35,6 +36,7 @@ function(fitsname, hdu=1){
                        as.numeric(c(astr_struc$CROTA[2],astr_struc$CDELT[2],astr_struc$CROTA[2])),
                        as.numeric(c(astr_struc$CROTA[3],astr_struc$CROTA[3],astr_struc$CDELT[3])))
   }#}}}
+  options(oldwarn)
   #Return {{{
   return(astr_struc)
   #}}}

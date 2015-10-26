@@ -13,8 +13,11 @@ as specified by the user or as determined empirically from the input PSF.
 create.sim.image is a subroutine within CreateSim and is not designed to be called directly.
 }
 \usage{
-CreateSim(parfile, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=TRUE, colourCorr=0.0, quiet=FALSE)
-create.sim.image(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, outenv=parent.env(environment()), env=NULL)
+CreateSim(parfile=NA, ObsParm=NA, noNoise=FALSE,convolveNoise=TRUE,
+padGalaxies=TRUE, colourCorr=0, quiet=FALSE, confuse=FALSE)
+create.sim.image(ObsParm, noNoise=FALSE, convolveNoise=TRUE,
+padGals=TRUE, col.corr=0,outenv=parent.env(environment()),
+confuse=FALSE, env=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -43,8 +46,23 @@ This is needed when padding galaxies because our power law is defined in the r-b
 order correction, and should be noted when determining the accuracy of simulations that are well beyond the
 SDSS r-band.
 }
+  \item{confuse}{
+logical; do you want to confuse the simulation such that the source density is greater than 1 object per FWHM^2
+}
+  \item{col.corr}{
+same as the colourCorr argument above
+}
+  \item{padGals}{
+same as the padGalaxies argument above
+}
+  \item{outenv}{
+environment; parameter space to output variables to
+}
   \item{quiet}{
 logical; if TRUE all output to screen is suppressed
+}
+  \item{env}{
+environment;; parameter space containing the input MeasureFluxes/LAMBDAR core variables
 }
 }
 \details{

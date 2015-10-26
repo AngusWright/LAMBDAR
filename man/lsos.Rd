@@ -8,12 +8,16 @@ R Object List
 A better object list
 }
 \usage{
-lsos(pattern="", pos = 1, order.by="Size", decreasing=FALSE, head=FALSE, n=5)
+lsos(pattern="", envir=NULL, pos = 1, order.by="Size",
+decreasing=TRUE, head=TRUE, n=10)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{pattern}{
 character; the pattern to search for in the object list
+}
+  \item{envir}{
+environment; the environment to list
 }
   \item{pos}{
 integer; environment position

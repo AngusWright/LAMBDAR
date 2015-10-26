@@ -19,6 +19,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
 
   #Check data file exists {{{
   if (!file.exists(paste(pathroot,pathwork,datamap,sep=""))) {
+    sink(type='message')
     stop("Data Image does not exist at location specified:",paste(pathroot,pathwork,datamap,sep=""))
   }
   #}}}
@@ -33,19 +34,23 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     #WCS is SIN Orthographic; if no rotation, continue without error
     if (!(astr_struc$CD[1,2]==0 && astr_struc$CD[2,1]==0)) {
       #Error; WCS has rotation
+      sink(type='message')
       stop("Fits file has WCS 'SIN' with Rotation; currently only TAN Gnomonic & SIN without rotation are compatible.")
     }
   } else {
     #Error; WCS not compatible
+    sink(type='message')
     stop("Fits file has an incompatible WCS; currently only TAN Gnomonic & SIN without rotation are compatible.")
   }
   #}}}
   #}}}
 
   #Test Read of Data Image for errors {{{
-  im_fits<-try(read.fits(paste(pathroot,pathwork,datamap,sep=""),hdu=extn, comments=FALSE))
+  im_fits<-try(read.fits(paste(pathroot,pathwork,datamap,sep=""),hdu=extn, comments=FALSE),silent=TRUE)
+  #im_fits<-try(readFITS(paste(pathroot,pathwork,datamap,sep=""),hdu=extn),silent=TRUE)
   if (class(im_fits)=="try-error") {
     #Stop on Error
+    sink(type='message')
     geterrmessage()
     stop("Data Image File read failed")
   }
@@ -55,6 +60,16 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   hdr=im_fits$hdr[[1]][which(im_fits$hdr[[1]][,"key"]!="COMMENT"),]
   hdr_str<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
   im<-im_fits$dat[[1]]
+  #}}}
+
+  #Read Saturation Level {{{
+  if (!is.finite(saturation)) {
+    saturation<-try(as.numeric(read.fitskey(saturlabel,paste(pathroot,pathwork,datamap,sep=""),hdu=extn)),silent=TRUE)
+    if (class(saturation)=='try-error' | is.na(saturation)) {
+      saturation<-Inf
+    }
+  }
+  message(paste0("Using Saturation level: ",saturation))
   #}}}
 
   #Remove NA/NaN/Inf's {{{
@@ -71,9 +86,11 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   if ((wgtmap!="NONE")&(maskmap=="NONE"|errormap=="NONE")) {
     if (!quiet) { cat(paste("   Reading Data from Weight Map",wgtmap,"   ")) }
     #Try read weight map {{{
-    imwt_fits<-try(read.fits(paste(pathroot,pathwork,wgtmap,sep=""),hdu=extnwgt,comments=FALSE))
+    imwt_fits<-try(read.fits(paste(pathroot,pathwork,wgtmap,sep=""),hdu=extnwgt,comments=FALSE),silent=TRUE)
+    #imwt_fits<-try(readFITS(paste(pathroot,pathwork,wgtmap,sep=""),hdu=extnwgt),silent=TRUE)
     if (class(imwt_fits)=="try-error") {
       #Stop on Error
+      sink(type='message')
       geterrmessage()
       stop("Weight Map read failed")
     }
@@ -113,9 +130,11 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     #Mask Present, Read {{{
     if (!quiet) { cat(paste("   Reading Data from MaskMap",maskmap,"   ")) }
     #Test Read of Mask Map for errors {{{
-    imm_fits<-try(read.fits(paste(pathroot,pathwork,maskmap,sep=""),hdu=extnmask, comments=FALSE))
+    imm_fits<-try(read.fits(paste(pathroot,pathwork,maskmap,sep=""),hdu=extnmask, comments=FALSE),silent=TRUE)
+    #imm_fits<-try(readFITS(paste(pathroot,pathwork,maskmap,sep=""),hdu=extnmask),silent=TRUE)
     if (class(imm_fits)=="try-error") {
       #Stop on Error
+      sink(type='message')
       geterrmessage()
       stop("Mask Map read failed")
     }
@@ -139,20 +158,37 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     #If no error map, generate the sigma-map using the provided gain and the image_map {{{
     if (!quiet) { cat(paste("   Generating Error Map ")) }
     if (wgtmap=="NONE") {
-      #No Weightmap; sigma map is poisson-like {{{
-      ime<-sqrt(abs(im))
+      #Try reading gain from header {{{
+      gain<-try(as.numeric(read.fitskey(gainlabel,file=paste(pathroot,pathwork,datamap,sep=""),hdu=extn)),silent=TRUE)
+      if ((class(gain)=="try-error")|is.na(gain)){
+        #No Gain; No Weightmap; SNR map is poisson-like {{{
+        message(paste0("No Gain supplied or able to be read from header; making Poisson Error Map"))
+        ime<-sqrt(abs(im))
+        #}}}
+      } else {
+        message(paste0("Using Gain level from header: ",gain))
+        #No Gain; No Weightmap; SNR map is abs(image)/sqrt(abs(image*gain)) {{{
+        ime<-abs(im)/sqrt(abs(im*(gain)))
+        #}}}
+      }
       #}}}
     } else {
-      #Weightmap present; sigma map is image/image*gain {{{
+      message(paste0("Using Pixel-Varying Gain from weightmap"))
+      gain<-mean(1/imwt,na.rm=T)
+      #Weightmap present; SNR map is image/sqrt(image*gain) {{{
       ime<-abs(im)/sqrt(abs(im*(1/imwt)))
       #}}}
     }
     hdr_err<-hdr_str
     #}}}
+    #Convert SNR map to Sigma Map
+    ime<-1/ime
+    #}}}
   } else {
     #Check if Gain value or Error map File {{{
-    if (!is.na(as.numeric(errormap))) {
+    if (!is.na(suppressWarnings(as.numeric(errormap)))) {
       #Gain Value {{{
+      gain<-errormap
       if (!quiet) { cat(paste("   Using Supplied Single Gain value of",errormap," for errors   ")) }
       ime<-abs(im)/sqrt(abs(im*as.numeric(errormap)))
       hdr_err<-hdr_str
@@ -160,13 +196,19 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
       ime[which(!is.finite(ime))]<-0.0
       #}}}
       #}}}
+      #Convert SNR map to Varience Map
+      ime<-1/ime
+      #}}}
     } else {
       #Sigma Map File {{{
       if (!quiet) { cat(paste("   Reading Data from ErrorMap",errormap,"   ")) }
+      gain<-NA
       #Test Read of Error Map for errors {{{
-      ime_fits<-try(read.fits(paste(pathroot,pathwork,errormap,sep=""),hdu=extnerr, comments=FALSE))
+      ime_fits<-try(read.fits(paste(pathroot,pathwork,errormap,sep=""),hdu=extnerr, comments=FALSE),silent=TRUE)
+      #ime_fits<-try(readFITS(paste(pathroot,pathwork,errormap,sep=""),hdu=extnerr, comments=FALSE),silent=TRUE)
       if (class(ime_fits)=="try-error") {
         #Stop on Error
+        sink(type='message')
         geterrmessage()
         stop("Error Map File read failed: Provided Entry is neither a file, nor NONE, nor a numeric Gain")
       }
@@ -181,7 +223,6 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
       #}}}
       #}}}
     }
-    #}}}
   }
   # Check if we can reduce the memory required {{{
   #if (length(unique(as.numeric(ime)))==1) { ime<-unique(as.numeric(ime)) }
@@ -211,6 +252,8 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   assign("hdr_err"   , hdr_err   , envir = outenv)
   assign("hdr_mask"  , hdr_mask  , envir = outenv)
   assign("astr_struc", astr_struc, envir = outenv)
+  assign("saturation", saturation, envir = outenv)
+  assign("gain"      , gain      , envir = outenv)
   return=NULL
   #}}}
 

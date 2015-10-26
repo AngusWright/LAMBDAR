@@ -8,11 +8,11 @@ Generate Curve of Growth
 When provided with an image matrix, generate the 2D curve of growth.
 }
 \usage{
-get.cog(z, centre = NULL)
+get.cog(zdist, centre = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{z}{
+  \item{zdist}{
 numeric (n,m) matrix; image
 }
   \item{centre}{

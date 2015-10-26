@@ -29,7 +29,11 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
     psf.clip<-ceiling(nsig*psfsigma.pix)
     psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
     psfwidth<-psf.clip*asperpix
-    stampsizepix=(floor((ceiling(defbuff*apsize*2/asperpix)+ceiling(psf.clip))/2)*2+5)
+    if (psffilt) {
+      stampsizepix=(floor(ceiling(defbuff*apsize/asperpix)+(ceiling(psf.clip)/2))*2+5)
+    } else {
+      stampsizepix=(floor(ceiling(defbuff*apsize/asperpix))*2+5)
+    }
 
     x0=ceiling(psf.clip/2.)
     y0=ceiling(psf.clip/2.)
@@ -49,17 +53,32 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
   } else {
     #Read PSF from File {{{
     if (verbose) { message(paste("Reading PSF from file",filename)) }
-    psf<-read.fits(filename,hdu=0)
+    #Check psf file exists {{{
+    if (!file.exists(filename)) {
+      sink(type='message')
+      stop("PSF Image does not exist at location specified:",filename)
+    }#}}}
+    psf<-try(read.fits(filename,hdu=0),silent=TRUE)
+    if (class(psf)=="try-error") {
+      sink(type='message')
+      stop("PSF file read failed")
+    }
     im_psf<-psf$dat[[1]]
     hdr_psf<-read.astr(filename)
     #}}}
     #Check that psf pixel scale is the same as the image {{{
     hdr_psf$CD<-abs(hdr_psf$CD)
-    if (is.na(hdr_psf$CD[1,1])) {
+    if (is.na(hdr_psf$CD[1,1])&is.na(hdr_psf$CD[2,2])) {
       warning("No astrometry present in PSF Header. ASSUMING EQUIVALENT PIXEL SCALES")
       hdr_psf$CD[1:2,1:2]<-asperpix/3600
+    } else if (is.na(hdr_psf$CD[1,1])) {
+      warning("Incomplete astrometry present in PSF Header. Assuming Symmetry.")
+      hdr_psf$CD[1,1]<-hdr_psf$CD[2,2]
+    } else if (is.na(hdr_psf$CD[2,2])) {
+      warning("Incomplete astrometry present in PSF Header. Assuming Symmetry.")
+      hdr_psf$CD[2,2]<-hdr_psf$CD[1,1]
     }
-    if ((hdr_psf$CD[1,1]*3600!=asperpix)||(hdr_psf$CD[2,2]*3600!=asperpix)) {
+    if ((abs(1-(hdr_psf$CD[1,1]*3600/asperpix))>1E-3)||(abs(1-(hdr_psf$CD[2,2]*3600/asperpix)>1E-3))) {
       #If it isn't, reinterpolate the psf onto the same pixel spacing
       narcsec_x<-((hdr_psf$NAXIS[1]-1)*hdr_psf$CD[1,1]*3600)
       narcsec_y<-((hdr_psf$NAXIS[2]-1)*hdr_psf$CD[2,2]*3600)
@@ -81,7 +100,11 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
     psf.clip<-diff(range(which(im_psf>=psfLimit, arr.ind=TRUE)[,1]))
     psf.clip<-max(psf.clip,diff(range(which(im_psf>=psfLimit, arr.ind=TRUE)[,2])))
     psfwidth<-psf.clip*asperpix
-    stampsizepix<-(floor((ceiling(defbuff*apsize*2/asperpix)+ceiling(psf.clip))/2)*2+5)
+    if (psffilt) {
+      stampsizepix=(floor(ceiling(defbuff*apsize/asperpix)+(ceiling(psf.clip)/2))*2+5)
+    } else {
+      stampsizepix=(floor(ceiling(defbuff*apsize/asperpix))*2+5)
+    }
     #}}}
     #If Needed, pad the PSF with 0s {{{
     if (any(dim(im_psf) < stampsizepix)) {

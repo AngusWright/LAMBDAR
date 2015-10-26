@@ -10,7 +10,8 @@ __This function is not designed to be called directly, but rather is an internal
 Convolve the input aperture stamps with the PSF, and weight the resultant apertures by the input fluxweightin.
 }
 \usage{
-make_sfa_mask(env=NULL,sa_mask,fluxweightin=NULL,outenv=NULL)
+make_sfa_mask(outenv = parent.env(environment()),
+sa_mask, fluxweightin = NULL, immask = NULL, env = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -22,6 +23,9 @@ numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) aperture sta
 }
   \item{fluxweightin}{
 numeric vector; can be either a length (m) vector of aperture weights, or a single numeric applied to all apertures as a scale-factor.
+}
+  \item{immask}{
+numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) mask stamps
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.

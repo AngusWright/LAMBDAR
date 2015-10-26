@@ -49,7 +49,7 @@ function(outenv=parent.env(environment()), env=NULL){
       #}}}
       #For each stamp, place down the relevant aperture {{{
       expanded<-iterapint(x=grid[,1],y=grid[,2],xstep=1,ystep=1,xcen=ceiling(slen/2)+0.5+xdelt,ycen=ceiling(slen/2)+0.5+ydelt,axang=axa,
-                          axrat=axr,majax=maj,upres=upres,itersteps=itersteps, peakscale=TRUE)
+                          axrat=axr,majax=maj,upres=upres,itersteps=ifelse(maj==0,0,itersteps), peakscale=TRUE)
       matrix(expanded[,3],ncol=slen,byrow=FALSE)
       #}}}
   }
@@ -60,9 +60,10 @@ function(outenv=parent.env(environment()), env=NULL){
   if (length(imm_mask)>1) {
     #Check Mask stamps for Aperture Acceptance {{{
     message('Combining Aps with Mask Stamps')
-    sa_mask<-foreach(slen=stamplen, smask=s_mask,mmask=imm_mask, .export="useMaskLim", .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+    sa_mask<-foreach(slen=stamplen, smask=s_mask,mmask=imm_mask,mxl=mstamp_lims[,1],mxh=mstamp_lims[,2],myl=mstamp_lims[,3],myh=mstamp_lims[,4],.export="useMaskLim", .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
       #Check masking to determine if Aperture is acceptable {{{
-      if (mean(mmask)<useMaskLim) {
+      check<-sum(mmask[mxl:mxh,myl:myh]*smask)/sum(smask)
+      if (check<useMaskLim) {
         #Too much. Skip {{{
         array(0, dim=c(slen,slen))
         #}}}
@@ -80,6 +81,16 @@ function(outenv=parent.env(environment()), env=NULL){
     sa_mask<-s_mask
     #}}}
   }#}}}
+
+  #Check for Foreach errors {{{
+  if (class(s_mask[[1]])=="try-error") {
+    stop(paste("Fatal Error in Foreach's Multi-Core Application.\n",
+    "This seems to at random, but is more likely\n",
+    "to happen with increasing numbers of objects\n",
+    "per thread. Try increasing the number of\n",
+    "doParallel cores being used by the program.",sep=""))
+  }
+  #}}}
 
   #-----Diagnostic-----# {{{
   if (diagnostic) {

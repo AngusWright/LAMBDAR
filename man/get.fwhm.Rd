@@ -1,29 +1,26 @@
-\name{read.astr}
-\alias{read.astr}
+\name{get.fwhm}
+\alias{get.fwhm}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Read Astrometry
+Get PSF FWHM in pixels
 }
 \description{
-Read the header of a provided FITS file, and return the astrometry associated with that file.
+Returns the pixel Full Width Half Max of an input image matrix
 }
 \usage{
-read.astr(fitsname,hdu=1)
+get.fwhm(zdist)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{fitsname}{
-string; relative path and filename of the FITS file to be analysed.
-}
-  \item{hdu}{
-integer; fits extension number
+  \item{zdist}{
+numeric (n,m) array; image for which FWHM is desired
 }
 }
 \details{
-This procedure is designed to read all common astrometry keywords. Nonetheless, the source should be checked to ensure that your fits file keywords are included.
+The function determines the full width at half max of the input image, by searching outwards from the image maxima.
 }
 \value{
-list; contains all keywords needed for determining locations in the fits image using astrometry.
+numeric; value of the FWHM in pixels
 }
 %%\references{
 %% ~put references to the literature/web site here ~
@@ -42,6 +39,12 @@ Angus H Wright{ ICRAR}
 \link{MeasureFluxes}, \link{fluxmeasurements}
 }
 \examples{
+
+  #Make Gaussian data: stdev 5 pix
+  sd<-5
+  x<-matrix(-10:10,21,21,byrow=TRUE)
+  zdist<-matrix(exp(-1*(t(x)^2/(2*sd^2)+x^2/(2*sd^2))),21,21)
+  print(paste(2*sqrt(2*log(2))*sd,"~",get.fwhm(zdist)))
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

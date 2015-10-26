@@ -12,7 +12,9 @@ However, when a non-zero gaussian FWHM (in arcsec) is provided, a gaussian psf w
 if no PSF map is present.
 }
 \usage{
-readpsf(env=NULL,filename,asperpix,apsize,confidence,normalize=TRUE,gauss_fwhm_as=0,outenv=NULL)
+readpsf(outenv = parent.env(environment()), filename,
+asperpix, apsize, confidence, normalize = TRUE,
+gauss_fwhm_as = 0, env = NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

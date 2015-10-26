@@ -1,5 +1,5 @@
 crop_im <-
-function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
+function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA,extn=0){
 #Details {{{
 # Procedure takes a fits image and produces a new
 # image, cropped to a region <cutrad> in diameter
@@ -26,7 +26,7 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
        (((length(cutrad     )-len)!=0)&(length(cutrad  )!=1))| # Must be exactly the same length or 1
        (((length(pathroot   )-len)!=0)&(length(pathroot)!=1))| # Must be exactly the same length or 1
        (((length(inpim      )-len)!=0)&(length(inpim   )!=1))) # Must be exactly the same length or 1
-    { stop("Mismatched Vector Dimensions in Inputs") }
+    { sink(type='message'); stop("Mismatched Vector Dimensions in Inputs") }
     #}}}
 
     # Check Other input dimensions {{{
@@ -57,7 +57,8 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
     # Get header & cut radius values {{{
     for (i in 1:len) {
       #Get astrometry values {{{
-      astr_struc<-read.astr(image[i])
+      astr_struc<-read.astr(image[i],hdu=extn)
+      if (all(is.na(astr_struc$CD))) { sink(type='message'); stop("FITS extension does not have a valid WCS astrometry") }
       naxis1[i]<-astr_struc$NAXIS[1]
       naxis2[i]<-astr_struc$NAXIS[2]
       pixsize[i]<-astr_struc$CD[1,1]
@@ -141,7 +142,7 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA){
     #Crop Image(s) {{{
     for (i in 1:len) {
       #Get the Image header {{{
-      header<-read.fitshdr(file.path(pathroot,inpim[i]))
+      header<-read.fitshdr(file.path(pathroot,inpim[i]),hdu=extn)
       #}}}
       #Update header values for new image {{{
       header[which(header[,'key']=='NAXIS1'),'value']<-paste(ncol[i])

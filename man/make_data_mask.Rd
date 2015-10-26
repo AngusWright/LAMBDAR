@@ -10,7 +10,7 @@ __This function is not designed to be called directly, but rather is an internal
 Create a series of length (m) list of (n,n) arrays, containing the data cutouts around all input catalogue objects.
 }
 \usage{
-make_data_mask(env=NULL,outenv=NULL)
+make_data_mask(outenv=parent.env(environment()),env=NULL)
 }
 \arguments{
   \item{env}{

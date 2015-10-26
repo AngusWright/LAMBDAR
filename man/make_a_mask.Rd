@@ -12,7 +12,8 @@ Pixel locations for the placement of smaller masks on large mask are determined 
 input variables x, y.
 }
 \usage{
-make_a_mask(env=NULL, masks, fullmaskdim, outenv=NULL)
+make_a_mask(outenv=parent.env(environment()),
+masks, fullmaskdim, env=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

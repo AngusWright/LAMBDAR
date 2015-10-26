@@ -21,6 +21,12 @@ Path to, and name of, the Input Parameter file (ie. '/path/to/parfile.par').
   \item{quiet}{
 logical; if TRUE all output to screen is suppressed
 }
+  \item{MPIBackend}{
+logical; if TRUE, will use Rmpi and doMPI backends to foreach.
+}
+  \item{doReturn}{
+logical; if TRUE, a set of core outputs (for every object) will be passed to the R console on program completion.
+}
   \item{...}{
 Any arguments that are intended to be passed to the 'createparfile' routine; see examples below.
 }

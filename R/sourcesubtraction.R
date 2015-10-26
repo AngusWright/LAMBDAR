@@ -26,6 +26,7 @@ function(image,sfa_models,stamp_lims,fluxes,outputfile,outputheader,beamarea,ins
   #Get MPI options {{{
   chunkSize=ceiling(npos/getDoParWorkers())
   mpiopts<-list(chunkSize=chunkSize)
+  message("Number of objects per thread:",chunkSize)
   #}}}
 
   #Perform Subtraction {{{

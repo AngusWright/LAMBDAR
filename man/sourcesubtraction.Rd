@@ -10,7 +10,9 @@ __This function is not designed to be called directly, but rather is an internal
 Perform a subtraction of sources and/or contaminants from a FITS image.
 }
 \usage{
-sourcesubtraction(image, sfa_models, stamp_lims, fluxes, outputfile, outputheader, beamarea, insidemask)
+sourcesubtraction(image, sfa_models, stamp_lims,
+fluxes, outputfile, outputheader, beamarea, insidemask,
+diagnostic = FALSE, verbose = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -37,6 +39,12 @@ numeric; the beam area for the input image
 }
   \item{insidemask}{
 logical (m) vector; if TRUE, then the object will be subtracted
+}
+  \item{diagnostic}{
+logical; if TRUE, then perform diagnostic checks and outputs
+}
+  \item{verbose}{
+logical; if TRUE, then perform verbose outputs
 }
 }
 \details{

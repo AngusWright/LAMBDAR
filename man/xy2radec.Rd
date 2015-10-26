@@ -9,7 +9,8 @@ Convert pixel locations to RA and Dec by using a calibrating pixel and known pix
 in the TAN Gnomonic coordinate system.
 }
 \usage{
-xy2radec(x, y, ra0 = 0, dec0 = 0, x0 = 0, y0 = 0, xscale = 1, yscale = 1)
+xy2radec(x, y, ra0 = 0, dec0 = 0,
+x0 = 0, y0 = 0, xscale = 1, yscale = 1)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

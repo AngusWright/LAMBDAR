@@ -1,5 +1,5 @@
 make_deblended_weightmap <-
-function(outenv=parent.env(environment()), env=NULL) {
+function(outenv=parent.env(environment()), env=NULL,subs=NULL) {
 #Procedure produces an array of stamps with apertures that
 #have been weighted according to their amount of blending.
 #This provides a launchpad for the final determination of
@@ -20,7 +20,12 @@ function(outenv=parent.env(environment()), env=NULL) {
   #}}}
 
   #Setup Sizes {{{
-  ngal<-length(id_g)
+  if (is.null(subs)) {
+    ngal<-length(id_g)
+    subs<-1:ngal
+  } else {
+    ngal<-length(subs)
+  }
   #}}}
 
   #Produce Deblended Stamps {{{
@@ -29,7 +34,7 @@ function(outenv=parent.env(environment()), env=NULL) {
   #in full (weighted) mask array-space, and divide stamp
   #by the full value. }}}
   #Perform Calculation and assignment {{{
-  dbw_map<-foreach(wsfam=wsfa, i=1:ngal,xlo=image_lims[,1],xup=image_lims[,2],ylo=image_lims[,3],yup=image_lims[,4], .export="image.env$wfa", .inorder=TRUE)%do%{
+  dbw_map<-foreach(wsfam=wsfa[subs], i=1:ngal,xlo=image_lims[subs,1],xup=image_lims[subs,2],ylo=image_lims[subs,3],yup=image_lims[subs,4], .export="image.env$wfa", .inorder=TRUE)%do%{
       #Check for errors and create deblended stamps {{{
       if ((sum(wsfam) > 0)&&(sum(image.env$wfa[xlo:xup,ylo:yup])>0)) {
         #Aperture stamps are error free {{{
