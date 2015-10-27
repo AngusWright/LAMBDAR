@@ -45,10 +45,12 @@ list; the MPI options to be passed to the MPI backend, if it is in use.
 %%  ~~ If necessary, more details than the description above ~~
 %%}
 \value{
-%randMean.mean=mean(flux,na.rm=T),randMed.mean=mean(fluxmed,na.rm=T),randMean.SD=sd(flux,na.rm=T),randMed.SD=sd(fluxmed,na.rm=T),nRand=length(which(is.finite(flux))))
-Returns a data frame with 5 columns for randoms/blanks, containing the mean of the mean pixel values per aperture (___Mean.mean),
-the mean of the median pixel values per aperture (___Med.mean), the standard deviation of the mean pixel values (___Mean.SD), the
-standard deviation of the median pixel values (___Med.SD), and the number of randoms/blanks that had finite measurements within the aperture (n____).
+%return=data.frame(randMean.mean=mean(flux,na.rm=T),randMean.SD=sd(flux,na.rm=T),randMean.MAD=mad(flux,na.rm=T),nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T),randAp.MAD=mad(sumap,na.rm=T))
+Returns a data frame with 7 columns for randoms/blanks, containing the mean of the mean pixel values per aperture (___Mean.mean),
+the standard deviation of the mean pixel values (___Mean.SD), the median absolute deviation from median of the mean pixel values (___Mean.MAD),
+the mean area (after masking) of the apertures used for randoms/blanks measurements (___Ap.mean), the standard deviation of the aperture areas used
+for randoms/blanks measurements (___Ap.SD), the median absolute deviation from median of the aperture areas used for randoms/blanks measurements
+(___Ap.MAD), and the number of randoms/blanks that had finite measurements within the aperture (n____).
 }
 \author{
 Angus H Wright
