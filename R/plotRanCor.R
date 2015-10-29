@@ -177,7 +177,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-origim[as.matrix(ind)]*gdapv
           #Sum shifted image and Aperture to return Flux
-          sumap[iter]<-sum(gdapv[which(!is.na(tempim[as.matrix(ind)]))])
+          sumap[iter]<-sum(gdapv[which(!is.na(origim[as.matrix(ind)]))])
           flux[iter]<-sum(tempvec[iter,],na.rm=T)/sumap[iter]
         }
         ranaps[which(ranaps>1)]<-1

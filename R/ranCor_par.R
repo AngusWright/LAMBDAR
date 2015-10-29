@@ -83,7 +83,7 @@ rancor.par<-function(im_mask,imm_mask,ap_mask,stamplims,masklims,remask=TRUE,num
           ind<-expand.grid(xind,yind)[gdap,]
           temp<-origim[as.matrix(ind)]*gdapv
           #Sum shifted image and Aperture to return Flux
-          sumap[iter]<-sum(gdapv[which(!is.na(tempim[as.matrix(ind)]))])
+          sumap[iter]<-sum(gdapv[which(!is.na(origim[as.matrix(ind)]))])
           flux[iter]<-sum(temp,na.rm=T)/sumap[iter]
         }
         #Return Result
@@ -150,7 +150,7 @@ rancor.par<-function(im_mask,imm_mask,ap_mask,stamplims,masklims,remask=TRUE,num
           ind<-expand.grid(xind,yind)[gdap,]
           temp<-im_mask[as.matrix(ind)]*gdapv
           #Sum shifted image and Aperture to return Flux
-          sumap[iter]<-sum(gdapv[which(!is.na(tempim[as.matrix(ind)]))])
+          sumap[iter]<-sum(gdapv[which(!is.na(im_mask[as.matrix(ind)]))])
           flux[iter]<-sum(temp,na.rm=T)/sumap[iter]
         }
         #Return Result
