@@ -199,7 +199,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
         if (verbose) { message(paste("Cropping Input Image: Outputting to", imfitsoutname)) }
         if (!file.exists(file.path(pathroot,pathwork,datamap))) { sink(type='message'); stop("Data Image does not exist at location:",file.path(pathroot,pathwork,datamap)) }
         if (extn>1) { sink(type='message'); stop("Internal Crop routine is unable to crop multi-extension FITS (beyond extn 1)") }
-        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname,extn=extn)
+        crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname,extn=1)
         if (verbose) { message(paste("Using", imfitsoutname, "as data image")) }
         datamap<-imfitsoutname
       } else {
@@ -227,7 +227,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
           if (verbose) { message(paste("Cropping Input Mask Map: Outputting to", immfitsoutname)) }
           if (!file.exists(file.path(pathroot,pathwork,maskmap))) { sink(type='message'); stop("Mask Image does not exist at location:",file.path(pathroot,pathwork,maskmap)) }
           if (extnmask>1) { sink(type='message'); stop("Internal Crop routine is unable to crop multi-extension FITS (beyond extn 1)") }
-          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname,extn=extnmask)
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=maskmap, cutrad=cutrad, fitsoutname=immfitsoutname,extn=1)
           if (verbose) { message(paste("Using", immfitsoutname, "as mask map")) }
           maskmap<-immfitsoutname
         } else {
@@ -244,7 +244,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
           if (verbose) { message(paste("Cropping Input Weight Map: Outputting to", imwgtfitsoutname)) }
           if (!file.exists(file.path(pathroot,pathwork,wgtmap))) { sink(type='message'); stop("Weight Image does not exist at location:",file.path(pathroot,pathwork,wgtmap)) }
           if (extnwgt>1) { sink(type='message'); stop("Internal Crop routine is unable to crop multi-extension FITS (beyond extn 1)") }
-          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname,extn=extnwgt)
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=wgtmap, cutrad=cutrad, fitsoutname=imwgtfitsoutname,extn=1)
           if (verbose) { message(paste("Using", imwgtfitsoutname, "as weight map")) }
           wgtmap<-imwgtfitsoutname
         } else {
@@ -258,7 +258,7 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
           if (verbose) { message(paste("Cropping Input Error Map: Outputting to", imefitsoutname)) }
           if (!file.exists(file.path(pathroot,pathwork,errormap))) { sink(type='message'); stop("Error Image does not exist at location:",file.path(pathroot,pathwork,errormap)) }
           if (extnerr>1) { sink(type='message'); stop("Internal Crop routine is unable to crop multi-extension FITS (beyond extn 1)") }
-          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=errormap, cutrad=cutrad, fitsoutname=imefitsoutname,extn=extnerr)
+          crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=errormap, cutrad=cutrad, fitsoutname=imefitsoutname,extn=1)
           if (verbose) { message(paste("Using", imefitsoutname, "as error map")) }
           errormap<-imefitsoutname
         } else {
