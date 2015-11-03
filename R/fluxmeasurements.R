@@ -953,6 +953,7 @@ function(env=NULL) {
     if (!quiet) { cat("Iterating Flux Determination",nIterations,"times {\n") }
     # /*fend*/ }}}
     #For the number of desired iterations /*fold*/ {{{
+    #Setup for iteration /*fold*/ {{{
     weightType='flux'
     quietbak<-quiet
     fluxiters<-matrix(as.numeric(NA),ncol=nIterations,nrow=length(id_g))
@@ -969,10 +970,12 @@ function(env=NULL) {
     sdfad<-sdfa*NA
     sdfa2e2<-sdfa*NA
     attach(image.env)
+    #/*fend*/ }}}
     for (iter in 1:nIterations) {
       #Determine objects to iterate over /*fold*/ {{{
       if (iter!=1) {
         xind<-which(sdfa!=ssfa & sdfa!=0)
+        iterateLost<-sdfa==0
       } else {
         xind<-1:length(sdfa)
       }
@@ -2047,6 +2050,11 @@ function(env=NULL) {
   #Bad Sky Estimate /*fold*/ {{{
   if (doskyest|getskyrms) {
     photWarnFlag<-paste0(photWarnFlag,ifelse(skyNBinNear<=3,"S",""))
+  }
+  # /*fend*/ }}}
+  #Iterative Deblend Warning /*fold*/ {{{
+  if (iterateFluxes) {
+    photWarnFlag<-paste0(photWarnFlag,ifelse(iterateLost,"I",""))
   }
   # /*fend*/ }}}
   # /*fend*/ }}}

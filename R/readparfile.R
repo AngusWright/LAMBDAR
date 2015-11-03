@@ -790,23 +790,23 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
-  #Confusion noise factor (in Janskys) {{{
-  ID="Confusion_Jy"
+  #Confusion noise factor (in Units) {{{
+  ID="Confusion_units"
   ind<-which(params[ID,]!="")
   conf<-as.numeric(params[ID,ind])
   if ((length(ind)==0)||(is.na(conf))) {
     if ((length(ind)==1)) {
       conf<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(conf)=='try-error') {
-        parwarning<-c(parwarning,"Confusion_Jy Parameter table read failed; Using 1")
+        parwarning<-c(parwarning,"Confusion_units Parameter table read failed; Using 1")
         conf<-1
       }
       if (is.na(conf)) {
-        parwarning<-c(parwarning,"Confusion_Jy Parameter not in Parameter File; Using 1")
+        parwarning<-c(parwarning,"Confusion_units Parameter not in Parameter File; Using 1")
         conf<-1
       }
     } else {
-      parwarning<-c(parwarning,"Confusion_Jy Parameter not in Parameter File; Using 1")
+      parwarning<-c(parwarning,"Confusion_units Parameter not in Parameter File; Using 1")
       conf<-1
     }
   }
@@ -847,22 +847,22 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
 
   #Is the map in Jy per Beam? {{{
-  ID="MapJyPerBeam"
+  ID="MapUnitsPerBeam"
   ind<-which(params[ID,]!="")
   Jybm<-as.numeric(params[ID,ind])
   if ((length(ind)==0)||(is.na(Jybm))) {
     if ((length(ind)==1)) {
       Jybm<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(Jybm)=='try-error') {
-        parwarning<-c(parwarning,"MapJyPerBeam Parameter table read failed; Using 0 (FALSE)")
+        parwarning<-c(parwarning,"MapUnitsPerBeam Parameter table read failed; Using 0 (FALSE)")
         Jybm<-0
       }
       if (is.na(Jybm)) {
-        parwarning<-c(parwarning,"MapJyPerBeam Parameter not in Parameter File; Using 0 (FALSE)")
+        parwarning<-c(parwarning,"MapUnitsPerBeam Parameter not in Parameter File; Using 0 (FALSE)")
         Jybm<-0
       }
     } else {
-      parwarning<-c(parwarning,"MapJyPerBeam Parameter not in Parameter File; Using 0 (FALSE)")
+      parwarning<-c(parwarning,"MapUnitsPerBeam Parameter not in Parameter File; Using 0 (FALSE)")
       Jybm<-0
     }
   }
@@ -1920,7 +1920,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
 
   # Print any warnings {{{
-  if (!is.null(parwarning)) {
+  if (!is.null(parwarning) & !quiet) {
     parwarning<-paste(parwarning,collapse="\n     > ")
     cat("{\n    Warnings in Parameter File read:\n     > ")
     cat(parwarning)

@@ -264,6 +264,10 @@ function(env=NULL,filename) {
       newtable[["PixelFlux_units"]] = pixflux; cat(paste0("PixelFlux_units"," #Pixel Flux at the object RA/DEC, in image units\n"))
     }
     newtable[["PhotometryWarning"]] = photWarnFlag; cat(paste0(""," #Some Rudimentary Photometry Warnings. Read Carefully and Take Note!\n"))
+    cat(paste0(""," #PhotometryWarnings: Q - Quartered Photometry Warning; 70+% of source flux contained in a single quadrant\n"))
+    cat(paste0("","                      S - Sky Estimate Warning; Sky estimate determined in by 3 or less bins\n"))
+    cat(paste0("","                      X - Saturation Warning; Pixels in this object aperture are saturated\n"))
+    cat(paste0("","                      I - Iteration Warning; This object was lost during iteration because its flux was measured to be <= 0.\n"))
     write.csv(newtable,file=filename, na="-", row.names=FALSE)
   } else {
 ####CATALOGUE PARAMETER
@@ -400,6 +404,7 @@ function(env=NULL,filename) {
     cat(paste0(""," #PhotometryWarnings: Q - Quartered Photometry Warning; 70+% of source flux contained in a single quadrant\n"))
     cat(paste0("","                      S - Sky Estimate Warning; Sky estimate determined in by 3 or less bins\n"))
     cat(paste0("","                      X - Saturation Warning; Pixels in this object aperture are saturated\n"))
+    cat(paste0("","                      I - Iteration Warning; This object was lost during iteration because its flux was measured to be <= 0.\n"))
     write.csv(newtable,file=filename, na="-", row.names=FALSE)
   }
 

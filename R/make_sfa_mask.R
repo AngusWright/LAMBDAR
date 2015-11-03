@@ -92,7 +92,8 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
       fluxweight<-rep(0,length(subs))
     } else {
       #Map Fluxweights onto [0,1] {{{
-      fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
+      #fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
+      fluxweight<-magmap(fluxweight,lo=0,hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
       #}}}
     }
     #}}}
@@ -130,7 +131,8 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
       fluxweight[which(fluxweight<=0)]<-NA
     } else {
       #Map Fluxweights onto [0,1] {{{
-      fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
+      #fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
+      fluxweight<-magmap(fluxweight,lo=0,hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
       #fluxweight<-magmap(fluxweight,lo=min(fluxweight,na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
       #}}}
     }

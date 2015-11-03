@@ -41,7 +41,7 @@ createparfile <-
     CropImRA0=-999,
     CropImDec0=-999,
     CropImRad=0.5,
-    Confusion_Jy=1,
+    Confusion_units=0,
     nProcessors=1,
     AngularOffset=0,
     MapJyPerBeam=0,
@@ -131,8 +131,8 @@ SemiMajColumnLabel     ",SemiMajColumnLabel,"    #Label for designating the Semi
 ContamColumnLabel      ",ContamColumnLabel ,"    #Label for designating the Contaminants ID Column of the supplied catalogue
 FluxWgtColumnLabel     ",FluxWgtColumnLabel,"    #Label for designating the FluxWeights Column of the supplied catalogue
 #                #-------Telescope Specific Variables-------#
-MapJyPerBeam           ",MapJyPerBeam      ,"    #Is the Image Flux measured in Jyperbeam (as opposed to JyPerPixel)?            [1/0]
-Confusion_Jy           ",Confusion_Jy      ,"    #Confusion in Jy
+MapUnitsPerBeam        ",MapJyPerBeam      ,"    #Is the Image in units per beam (as opposed to UnitsPerPixel)?            [1/0]
+Confusion_units        ",Confusion_units   ,"    #Image Confusion in units
 Gauss_FWHM_AS          ",Gauss_FWHM_AS     ,"    #Gaussian FWHM of Seeing in ArcSec
 BeamArea_SqAS          ",BeamArea_SqAS     ,"    #Beam area in Square Arcsec
 FluxCorr               ",FluxCorr          ,"    #Flux Correction Factor

@@ -1,5 +1,5 @@
 crop_im <-
-function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA,extn=0){
+function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA,extn=1){
 #Details {{{
 # Procedure takes a fits image and produces a new
 # image, cropped to a region <cutrad> in diameter
