@@ -956,6 +956,7 @@ function(env=NULL) {
     #Setup for iteration /*fold*/ {{{
     weightType='flux'
     quietbak<-quiet
+    psffiltbak<-psffilt
     fluxiters<-matrix(as.numeric(NA),ncol=nIterations,nrow=length(id_g))
     erriters<-fluxiters
     sdfaiters<-fluxiters
@@ -1066,8 +1067,19 @@ function(env=NULL) {
       if (!quiet) { cat("  Calculating Weighting Apertures (#",iter,")") }
       # /*fend*/ }}}
       quiet<-TRUE
-      timer=system.time(wsfa[xind]<-make_sfa_mask(outenv=environment(), sfa,fluxweightin=sdfad,subs=xind))
+      if (PSFWeighted) {
+        #If using PSFWeighted, we may be able to skip an unnecessary convolution /*fold*/ {{{
+        psffilt<-FALSE
+        timer=system.time(wsfa[xind]<-make_sfa_mask(outenv=environment(), sfa,fluxweightin=sdfad,subs=xind))
+        # /*fend*/ }}}
+      } else {
+        #If not using PSFWeighted, we may need to re-convolve /*fold*/ {{{
+        psffilt<-psffiltbak
+        timer=system.time(wsfa[xind]<-make_sfa_mask(outenv=environment(), sa,fluxweightin=sdfad,subs=xind))
+        # /*fend*/ }}}
+      }
       timer2=system.time(image.env$wfa<-make_a_mask(outenv=environment(), wsfa, dimim,subs=xind))
+      psffilt<-psffiltbak
       quiet<-quietbak
       #Notify /*fold*/ {{{
       if (showtime) { cat(" - Done (",round(timer[3]+timer2[3],digits=2),"sec )\n")
