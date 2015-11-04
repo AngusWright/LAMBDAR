@@ -60,7 +60,7 @@ function(env=NULL,filename) {
         "# The image-to-jansky conversion factor is ",janskyConv,"\n"))
   }
 
-  if (verbose|diagnostic) {
+  if (verboseout) {
 ####CATALOGUE PARAMETER
     newtable<-data.frame(CATA_INDEX = id_g)
     colnames(newtable)<-catalab; cat(paste0(catalab," #Catalogue ID. Duplicates are prepended with 'DuplicatedID_'\n"))
@@ -217,8 +217,8 @@ function(env=NULL,filename) {
       newtable[["DetecThres_5sig_units"]] = detecthres; cat(paste0("DetecThres_5sig"," #Flux contained in this aperture, assuming a 5-sigma Detection, in image units\n"))
     }
     if (Magnitudes) {
-      cat(paste0("QuarteredPhot1_Jy"," #Flux contained in Four Quadrants of the Post-Convolution aperture, split along the stamp centre in x & y directions, in Jansky. Useful in diagnosis of bad apertures/deblends.\n"))
-      cat(paste0("QuarteredPhot1_Deblended_Jy"," #Flux contained in Four Quadrants of the Deblended Post-Convolution aperture, split along the stamp centre in x & y directions, in Jansky. Useful in diagnosis of bad apertures/deblends.\n"))
+      cat(paste0("QuarteredPhot#_Jy"," #Flux contained in Four Quadrants of the Post-Convolution aperture, split along the stamp centre in x & y directions, in Jansky. Useful in diagnosis of bad apertures/deblends.\n"))
+      cat(paste0("QuarteredPhot#_Deblended_Jy"," #Flux contained in Four Quadrants of the Deblended Post-Convolution aperture, split along the stamp centre in x & y directions, in Jansky. Useful in diagnosis of bad apertures/deblends.\n"))
       if (length(dim(qssfad))>1) {
         newtable[["QuarteredPhot1_Jy"]] = qssfad[,1]*janskyConv;
         newtable[["QuarteredPhot2_Jy"]] = qssfad[,2]*janskyConv;
@@ -240,8 +240,8 @@ function(env=NULL,filename) {
       }
       newtable[["PixelFlux_Jy"]] = pixflux*janskyConv; cat(paste0("PixelFlux_Jy"," #Pixel Flux at the object RA/DEC, in Jansky.\n"))
     } else {
-      cat(paste0("QuarteredPhot1_units"," #Flux contained in Four Quadrants of the Post-Convolution aperture, split along the stamp centre in x & y directions, in image units. Useful in diagnosis of bad apertures/deblends.\n"))
-      cat(paste0("QuarteredPhot1_Deblended_units"," #Flux contained in Four Quadrants of the Deblended Post-Convolution aperture, split along the stamp centre in x & y directions, in image units. Useful in diagnosis of bad apertures/deblends.\n"))
+      cat(paste0("QuarteredPhot#_units"," #Flux contained in Four Quadrants of the Post-Convolution aperture, split along the stamp centre in x & y directions, in image units. Useful in diagnosis of bad apertures/deblends.\n"))
+      cat(paste0("QuarteredPhot#_Deblended_units"," #Flux contained in Four Quadrants of the Deblended Post-Convolution aperture, split along the stamp centre in x & y directions, in image units. Useful in diagnosis of bad apertures/deblends.\n"))
       if (length(dim(qssfad))>1) {
         newtable[["QuarteredPhot1_units"]] = qssfad[,1];
         newtable[["QuarteredPhot2_units"]] = qssfad[,2];

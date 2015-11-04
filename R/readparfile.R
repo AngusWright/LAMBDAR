@@ -1248,6 +1248,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
       verbose<-FALSE
     } else { verbose<-(verbose==1) }
   }
+  verboseout<-verbose
+  if (quiet) {
+    verbose<-FALSE
+    diagnostic<-FALSE
+  }
   #}}}
 
   #Do we want a sample of the apertures to be output? {{{
@@ -2026,6 +2031,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("useMaskLim"       , useMaskLim       , envir = env)
   assign("usePixelFluxWeights", usePixelFluxWeights , envir = env)
   assign("verbose"          , verbose          , envir = env) # V
+  assign("verboseout"       , verboseout       , envir = env) #
   assign("writetab"         , writetab         , envir = env) # W
   assign("weightType"       , weightType       , envir = env) #
   assign("wgtmap"           , wgtmap           , envir = env) #
