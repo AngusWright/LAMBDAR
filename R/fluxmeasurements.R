@@ -318,11 +318,15 @@ function(env=NULL) {
     #Determine Noise Characteristics /*fold*/ {{{
     if (verbose) { cat("Determine Image Noise Characteristics ") }
     if (any(pixflux==-99)) { warning("Some pixel flux determinations failed"); pixflux[which(pixflux==-99)]<-NA }
-    if (length(which(pixflux>0))<2) {
-      message("WARNING: There are less than two pixel flux measurements that are > 0. Pixel Flux weighting cannot be used\n")
-      fluxweight<-1
+    quan<-quantile(image.env$im,c(0.1,0.9),na.rm=T)
+    mode<-density(as.numeric(image.env$im),from=quan[1],to=quan[2],kernel='rect',bw=abs(quan[2]-quan[1])/100/sqrt(12),na.rm=T)
+    mode<-mode$x[which.max(mode$y)]
+    mad<-median(abs(image.env$im-mode),na.rm=T)
+    if (length(which(pixflux>mode+mad))==0) {
+      message("WARNING: No objects have pixel flux measurements that are > Pixel Mode+MAD. Pixel Flux weighting cannot be used\n")
+        fluxweight<-1
     } else {
-      fluxweight<-magmap(pixflux, lo=min(pixflux[which(pixflux>0)]), hi=max(pixflux), range=c(0.0001,1), type="num", stretch='log',bad=min(pixflux[which(pixflux>0)]))$map
+      fluxweight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='lin',bad=0.01)$map
     }
     cat(" - Done\n")
     # /*fend*/ }}}
@@ -1380,7 +1384,7 @@ function(env=NULL) {
   if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
 #-----
   #Quartered Photometry - Quartered Integral of the (deblended convolved aperture * image); qsdfad /*fold*/ {{{
-  if (verbose) { cat("      Quartered Integral of the (convolved aperture * image)") }
+  if (verbose) { cat("      Quartered Integral of the (deblended convolved aperture * image)") }
   if (cutup) {
     qsdfad<-foreach(dfam=dfa, im=im_mask, x1=stamp_lims[,1], x2=stamp_lims[,1]+floor((stamp_lims[,2]-stamp_lims[,1])/2), x3=stamp_lims[,1]+floor((stamp_lims[,2]-stamp_lims[,1])/2)+1, x4=stamp_lims[,2],
                                           y1=stamp_lims[,3], y2=stamp_lims[,3]+floor((stamp_lims[,4]-stamp_lims[,3])/2), y3=stamp_lims[,3]+floor((stamp_lims[,4]-stamp_lims[,3])/2)+1, y4=stamp_lims[,4],
