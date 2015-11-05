@@ -81,17 +81,23 @@ function(env=NULL,filename) {
     newtable[["SumSA"]] = ssa; cat(paste0("SumSA"," #Integral of the Catalogue Aperture (i.e. the 'Prior') in pixels\n"))
     newtable[["SumSFA"]] = ssfa; cat(paste0("SumSFA"," #Integral of the Post-Convolution Aperture.\n"))
     newtable[["SumDFA"]] = sdfa; cat(paste0("SumDFA"," #Integral of the Deblended Post-Convolution Aperture.\n"))
-    newtable[["SumSFAsq"]] = ssfa2; cat(paste0("SumSFAsq"," #Integral of the Post-Convolution Aperture squared.\n"))
-    newtable[["SumDFAsq"]] = sdfa2; cat(paste0("SumDFAsq"," #Integral of the Deblended Post-Convolution Aperture squared.\n"))
+    if (diagnostic) {
+      newtable[["SumSFAsq"]] = ssfa2; cat(paste0("SumSFAsq"," #Integral of the Post-Convolution Aperture squared.\n"))
+      newtable[["SumDFAsq"]] = sdfa2; cat(paste0("SumDFAsq"," #Integral of the Deblended Post-Convolution Aperture squared.\n"))
+    }
     newtable[["SumSFAxPSF"]] = ssfap; cat(paste0("SumSFAxPSF"," #Integral of the Post-Convolution Aperture times the PSF. Used in calculating the Minimum Aperture Correction.\n"))
     newtable[["SumSFAxData"]] = ssfad; cat(paste0("SumSFAxData"," #Integral of the Post-Convolution Aperture times the Data Image. The simplest flux LAMBDAR provides.\n"))
     newtable[["SumDFAxData"]] = sdfad; cat(paste0("SumDFAxData"," #Integral of the Deblended Post-Convolution Aperture times the Data Image. The raw deblended flux LAMBDAR.\n"))
-    newtable[["SumSFAxError"]] = ssfae; cat(paste0("SumSFAxError"," #Integral of the Post-Convolution Aperture times the Error Image.\n"))
-    newtable[["SumDFAxError"]] = sdfae; cat(paste0("SumDFAxError"," #Integral of the Deblended Post-Convolution Aperture times the Error Image\n"))
+    if (diagnostic) {
+      newtable[["SumSFAxError"]] = ssfae; cat(paste0("SumSFAxError"," #Integral of the Post-Convolution Aperture times the Error Image.\n"))
+      newtable[["SumDFAxError"]] = sdfae; cat(paste0("SumDFAxError"," #Integral of the Deblended Post-Convolution Aperture times the Error Image\n"))
+    }
     newtable[["SumSFAxErrorsq"]] = ssfae2; cat(paste0("SumSFAxErrorsq"," #Integral of the Post-Convolution Aperture times the Error Image squared\n"))
     newtable[["SumDFAxErrorsq"]] = sdfae2; cat(paste0("SumDFAxErrorsq"," #Integral of the Deblended Post-Convolution Aperture times the Error Image squared\n"))
-    newtable[["SumSFAsqxErrorsq"]] = ssfa2e2; cat(paste0("SumSFAsqxErrorsq"," #Integral of the Post-Convolution Aperture squared times the Error Image squared\n"))
-    newtable[["SumDFAsqxErrorsq"]] = sdfa2e2; cat(paste0("SumDFAsqxErrorsq"," #Integral of the Deblended Post-Convolution Aperture squared times the Error Image squared\n"))
+    if (diagnostic) {
+      newtable[["SumSFAsqxErrorsq"]] = ssfa2e2; cat(paste0("SumSFAsqxErrorsq"," #Integral of the Post-Convolution Aperture squared times the Error Image squared\n"))
+      newtable[["SumDFAsqxErrorsq"]] = sdfa2e2; cat(paste0("SumDFAsqxErrorsq"," #Integral of the Deblended Post-Convolution Aperture squared times the Error Image squared\n"))
+    }
     if (doskyest | getskyrms) {
       if (Magnitudes) {
 #       SKY PARAMETERS: Jansky
@@ -123,9 +129,9 @@ function(env=NULL,filename) {
     if (!Magnitudes) {
 #   FLUXES: Units
       newtable[["SFAFlux_units"]] = sfaflux; cat(paste0("SFAFlux_units"," #Final Blended Flux, in image units.\n"))
-      newtable[["SFAErr_units"]] = sfaerr; cat(paste0("SFAErr_units"," #Error on Final Blended Flux, in image units.\n"))
+      newtable[["SFAErr_units"]] = sfaerr; cat(paste0("SFAErr_units"," #Error on Final Blended Flux, in image units. Incorporates Shot Noise, Sky Subtraction, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DFAFlux_units"]] = dfaflux; cat(paste0("DFAFlux_units"," #Final Deblended Flux, in image units.\n"))
-      newtable[["DFAErr_units"]] = dfaerr; cat(paste0("DFAErr_units"," #Error on Final Deblended Flux, in image units.\n"))
+      newtable[["DFAErr_units"]] = dfaerr; cat(paste0("DFAErr_units"," #Error on Final Deblended Flux, in image units. Incorporates Shot Noise, Sky Subtraction, Deblending, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DeblendErr_units"]] = deblerr; cat(paste0("DeblendErr_units"," #Absolute Flux Uncertainty caused by the Deblend of the Deblended Post-Convolution Aperture.\n"))
       if (iterateFluxes) {
         cat(paste0(paste("DFAFlux_Iter<i>_units",sep="")," #Deblended Flux after <i> iterations of Measurement, Fluxweighting, and Deblending. NB: These values are *not* sky subtracted and/or aperture corrected. In image units.\n"))
@@ -148,9 +154,9 @@ function(env=NULL,filename) {
     } else {
 #     FLUXES: Jansky
       newtable[["SFAFlux_Jy"]] = sfaflux*janskyConv; cat(paste0("SFAFlux_Jy"," #Final Blended Flux, in Jansky.\n"))
-      newtable[["SFAErr_Jy"]] = sfaerr*janskyConv; cat(paste0("SFAErr_Jy"," #Error on Final Blended Flux, in Jansky.\n"))
+      newtable[["SFAErr_Jy"]] = sfaerr*janskyConv; cat(paste0("SFAErr_Jy"," #Error on Final Blended Flux, in Jansky. Incorporates Shot Noise, Sky Subtraction, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DFAFlux_Jy"]] = dfaflux*janskyConv; cat(paste0("DFAFlux_Jy"," #Final Deblended Flux, in Jansky.\n"))
-      newtable[["DFAErr_Jy"]] = dfaerr*janskyConv; cat(paste0("DFAErr_Jy"," #Error on Final Deblended Flux, in Jansky.\n"))
+      newtable[["DFAErr_Jy"]] = dfaerr*janskyConv; cat(paste0("DFAErr_Jy"," #Error on Final Deblended Flux, in Jansky. Incorporates Shot Noise, Sky Subtraction, Deblending, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DeblendErr_Jy"]] = deblerr*janskyConv; cat(paste0("DeblendErr_Jy"," #Absolute Flux Uncertainty caused by the Deblend of the Deblended Post-Convolution Aperture, in Jansky.\n"))
       if (iterateFluxes) {
         cat(paste0(paste("DFAFlux_Iter<i>_Jy",sep="")," #Deblended Flux after <i> iterations of Measurement, Fluxweighting, and Deblending. NB: These values are *not* sky subtracted and/or aperture corrected. In Jansky.\n"))
@@ -313,9 +319,9 @@ function(env=NULL,filename) {
     if (!Magnitudes) {
 #   FLUXES: Units
       newtable[["SFAFlux_units"]] = sfaflux; cat(paste0("SFAFlux_units"," #Final Blended Flux, in image units.\n"))
-      newtable[["SFAErr_units"]] = sfaerr; cat(paste0("SFAErr_units"," #Error on Final Blended Flux, in image units.\n"))
+      newtable[["SFAErr_units"]] = sfaerr; cat(paste0("SFAErr_units"," #Error on Final Blended Flux, in image units. Incorporates Shot Noise, Sky Subtraction, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DFAFlux_units"]] = dfaflux; cat(paste0("DFAFlux_units"," #Final Deblended Flux, in image units.\n"))
-      newtable[["DFAErr_units"]] = dfaerr; cat(paste0("DFAErr_units"," #Error on Final Deblended Flux, in image units.\n"))
+      newtable[["DFAErr_units"]] = dfaerr; cat(paste0("DFAErr_units"," #Error on Final Deblended Flux, in image units. Incorporates Shot Noise, Sky Subtraction, Deblending, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DeblendErr_units"]] = deblerr; cat(paste0("DeblendErr_units"," #Absolute Flux Uncertainty caused by the Deblend of the Deblended Post-Convolution Aperture.\n"))
       if (iterateFluxes) {
         cat(paste0(paste("DFAFlux_Iter<i>_units",sep="")," #Deblended Flux after <i> iterations of Measurement, Fluxweighting, and Deblending. NB: These values are *not* sky subtracted and/or aperture corrected. In image units.\n"))
@@ -338,9 +344,9 @@ function(env=NULL,filename) {
     } else {
 #     FLUXES: Jansky
       newtable[["SFAFlux_Jy"]] = sfaflux*janskyConv; cat(paste0("SFAFlux_Jy"," #Final Blended Flux, in Jansky.\n"))
-      newtable[["SFAErr_Jy"]] = sfaerr*janskyConv; cat(paste0("SFAErr_Jy"," #Error on Final Blended Flux, in Jansky.\n"))
+      newtable[["SFAErr_Jy"]] = sfaerr*janskyConv; cat(paste0("SFAErr_Jy"," #Error on Final Blended Flux, in Jansky. Incorporates Shot Noise, Sky Subtraction, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DFAFlux_Jy"]] = dfaflux*janskyConv; cat(paste0("DFAFlux_Jy"," #Final Deblended Flux, in Jansky.\n"))
-      newtable[["DFAErr_Jy"]] = dfaerr*janskyConv; cat(paste0("DFAErr_Jy"," #Error on Final Deblended Flux, in Jansky.\n"))
+      newtable[["DFAErr_Jy"]] = dfaerr*janskyConv; cat(paste0("DFAErr_Jy"," #Error on Final Deblended Flux, in Jansky. Incorporates Shot Noise, Sky Subtraction, Deblend, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DeblendErr_Jy"]] = deblerr*janskyConv; cat(paste0("DeblendErr_Jy"," #Absolute Flux Uncertainty caused by the Deblend of the Deblended Post-Convolution Aperture, in Jansky.\n"))
       if (iterateFluxes) {
         cat(paste0(paste("DFAFlux_Iter<i>_Jy",sep="")," #Deblended Flux after <i> iterations of Measurement, Fluxweighting, and Deblending. NB: These values are *not* sky subtracted and/or aperture corrected. In Jansky.\n"))
@@ -408,7 +414,6 @@ function(env=NULL,filename) {
     write.csv(newtable,file=filename, na="-", row.names=FALSE)
   }
 
-  sink(type='output')
   if (!is.null(env)) { detach(env) }
   return=NULL
 }
