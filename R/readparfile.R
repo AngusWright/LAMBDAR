@@ -798,16 +798,16 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==1)) {
       conf<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(conf)=='try-error') {
-        parwarning<-c(parwarning,"Confusion_units Parameter table read failed; Using 1")
-        conf<-1
+        parwarning<-c(parwarning,"Confusion_units Parameter table read failed; Using 0")
+        conf<-0
       }
       if (is.na(conf)) {
-        parwarning<-c(parwarning,"Confusion_units Parameter not in Parameter File; Using 1")
-        conf<-1
+        parwarning<-c(parwarning,"Confusion_units Parameter not in Parameter File; Using 0")
+        conf<-0
       }
     } else {
-      parwarning<-c(parwarning,"Confusion_units Parameter not in Parameter File; Using 1")
-      conf<-1
+      parwarning<-c(parwarning,"Confusion_units Parameter not in Parameter File; Using 0")
+      conf<-0
     }
   }
   #}}}
