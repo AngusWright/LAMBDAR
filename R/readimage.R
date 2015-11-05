@@ -167,21 +167,34 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
         #}}}
       } else {
         message(paste0("Using Gain level from header: ",gain))
-        #No Gain; No Weightmap; SNR map is abs(image)/sqrt(abs(image*gain)) {{{
+        #Max Gain; No Weightmap; SNR map is abs(image)/sqrt(abs(image*gain)) {{{
         ime<-abs(im)/sqrt(abs(im*(gain)))
         #}}}
       }
       #}}}
     } else {
       message(paste0("Using Pixel-Varying Gain from weightmap"))
-      gain<-mean(1/imwt,na.rm=T)
-      #Weightmap present; SNR map is image/sqrt(image*gain) {{{
-      ime<-abs(im)/sqrt(abs(im*(1/imwt)))
-      #}}}
+      gain<-try(as.numeric(read.fitskey(gainlabel,file=paste(pathroot,pathwork,datamap,sep=""),hdu=extn)),silent=TRUE)
+      if ((class(gain)=="try-error")|is.na(gain)){
+        message(paste0("No Gain supplied or able to be read from header; Using Weight-map as it is to generate the Error Map."))
+        gain<-max(1/imwt,na.rm=T)
+        message(paste0("Implied Max Equivalent Gain level from Weight Map: ",gain))
+        #No Max gain; Weightmap present; SNR map is image/sqrt(image*(1/imwt)) {{{
+        ime<-abs(im)/sqrt(abs(im*(1/imwt)))
+        #}}}
+      } else {
+        message(paste0("Using Max Equiv. Gain from header to scale Weight Map when generating the Error Map."))
+        message(paste0("Max Equivalent Gain level from Header: ",gain))
+        #Max Gain; Weightmap present; SNR map is image/sqrt(image*f(gain,imwt)) {{{
+        imwt<-1/imwt
+        imwt<-imwt/max(imwt,na.rm=T)*gain
+        ime<-abs(im)/sqrt(abs(im*(imwt)))
+        #}}}
+      }
     }
     hdr_err<-hdr_str
     #}}}
-    #Convert SNR map to Sigma Map
+    #Convert SNR map to Sigma Map {{{
     ime<-1/ime
     #}}}
   } else {
@@ -233,6 +246,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
   timer<-proc.time()
   } else if (!quiet) { cat(" - Done\n") }
+  #}}}
   #}}}
 
   #Notify {{{
