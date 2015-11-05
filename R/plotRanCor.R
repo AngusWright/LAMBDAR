@@ -158,7 +158,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         #arrows(x0=magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,
         #       y0=rep(10^(log10(max(pix$counts))-1),length(flux)),y1=rep(10^(log10(max(pix$counts))-1.2),length(flux)),length=0.05,lwd=1.5,col=col2alpha('purple',alpha=0.5))
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),sep=""),"\nStd Dev = ",round(dat$randMean.SD,digit=3),cex=0.6)
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),"\nStd Dev = ",round(dat$randMean.SD,digit=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         dev.off()
