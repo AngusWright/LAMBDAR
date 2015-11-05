@@ -1953,6 +1953,7 @@ function(env=NULL) {
       fluxiters<-fluxiters[which(contams==0),]
       erriters<-erriters[which(contams==0),]
       sdfaiters<-sdfaiters[which(contams==0),]
+      iterateLost<-iterateLost[which(contams==0)]
     }
     sdfae2<-sdfae2[which(contams==0)]
     dfaflux<-dfaflux[which(contams==0)]
