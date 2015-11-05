@@ -89,7 +89,8 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
       fluxweight<-rep(0,length(subs))
     } else if (length(which(fluxweight>0))<2) {
       message("WARNING: only one fluxweight is > 0! Flux weighting has removed all other objects from the image.")
-      fluxweight<-rep(0,length(subs))
+      fluxweight[which(fluxweight<=0)]<-NA
+      fluxweight<-magmap(fluxweight,lo=0,hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
     } else {
       #Map Fluxweights onto [0,1] {{{
       #fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
@@ -125,10 +126,11 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
     #Check for Errors & Fluxweight {{{
     if (max(fluxweight,na.rm=T)<=0) {
       message("WARNING: No fluxweights are > 0! Flux weighting has removed all objects from the image.")
-      fluxweight<-rep(NA,length(subs))
+      fluxweight<-rep(0,length(subs))
     } else if (length(which(fluxweight>0))<2) {
       message("WARNING: only one fluxweight is > 0! Flux weighting has removed all other objects from the image.")
       fluxweight[which(fluxweight<=0)]<-NA
+      fluxweight<-magmap(fluxweight,lo=0,hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
     } else {
       #Map Fluxweights onto [0,1] {{{
       #fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
@@ -147,7 +149,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
       #Bad values. Things with bad fluxweights will be removed in calcs{{{
       warning("Supplied Fluxweight has values that are not finite (NA/NaN/Inf). These objects will not be fit")
       ind<-which(!is.finite(fluxweight))
-      fluxweight[ind]<-NA
+      fluxweight[ind]<-0
       #}}}
     }#}}}
     #Check Minima {{{
@@ -155,14 +157,14 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
       #Bad minima. Things less than 0 will be removed in calcs{{{
       warning("Supplied Fluxweight has values less than or equal to 0. These objects will not be fit")
       ind<-which(fluxweight<=0)
-      fluxweight[ind]<-NA
+      fluxweight[ind]<-0
       #}}}
     }#}}}
     #}}}
     #Check for Errors & Fluxweight {{{
     if (max(fluxweight,na.rm=T)<=0) {
       message("WARNING: No fluxweights are > 0! Flux weighting has removed all objects from the image.")
-      fluxweight<-rep(NA,length(subs))
+      fluxweight<-rep(0,length(subs))
     } else if (length(which(fluxweight>0))<2) {
       message("WARNING: only one fluxweight is > 0! Flux weighting has removed all other objects from the image.")
     }
