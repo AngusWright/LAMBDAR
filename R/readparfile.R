@@ -1395,11 +1395,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     #One file provided
     gainlabel<-try(c(t(read.table(file.path(pathroot,gainlabel), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(gainlabel)=="try-error") {
-      parwarning<-c(parwarning,"SaturationLabel Parameter table read failed; Using 'SATUR'")
+      parwarning<-c(parwarning,"GainLabel Parameter table read failed; Using 'GAIN'")
       gainlabel<-"GAIN"
     }
     if (is.na(gainlabel)) {
-      parwarning<-c(parwarning,"SaturationLabel Parameter not in Parameter File; Using 'SATUR'")
+      parwarning<-c(parwarning,"GainLabel Parameter not in Parameter File; Using 'GAIN'")
       gainlabel<-"GAIN"
     }
   }
