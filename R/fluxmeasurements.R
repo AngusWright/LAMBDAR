@@ -1405,48 +1405,48 @@ function(env=NULL) {
   }
   if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
 #-----
-  #Integral of the (convolved aperture * (image error)^2); ssfae2 /*fold*/ {{{
-  if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
+  #Integral of the [(convolved aperture * image error)^2]; ssfa2e2 /*fold*/ {{{
+  if (verbose) { cat("      Integral of the [(convolved aperture * image error)^2]") }
   if (length(ime_mask)>1|(length(ime_mask)==1 & is.list(ime_mask))) {
-    ssfae2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-        sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
+    ssfa2e2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+        sum((sfam*ime[xlo:xup,ylo:yup])^2.)
     }
   } else if (length(ime_mask)==1){
     if (ime_mask==1) {
-      ssfae2<-ssfa
+      ssfa2e2<-ssfa2
     } else if (ime_mask==0) {
-      ssfae2<-rep(0,length(ssfa))
+      ssfa2e2<-rep(0,length(ssfa))
     } else {
-      ssfae2<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="ime_mask", .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-          sum(sfam*(ime_mask)^2.)
+      ssfa2e2<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="ime_mask", .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+          sum((sfam*ime_mask)^2.)
       }
     }
   } else {
-    ssfae2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-        sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
+    ssfa2e2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+        sum((sfam*ime[xlo:xup,ylo:yup])^2.)
     }
   }
   if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
 #-----
-  #Integral of the [deblended convolved aperture * (image error)^2]; sdfae2 /*fold*/ {{{
-  if (verbose) { cat("      Integral of the [deblended convolved aperture * (image error)^2]") }
+  #Integral of the [(deblended convolved aperture * image error)^2]; sdfa2e2 /*fold*/ {{{
+  if (verbose) { cat("      Integral of the [(deblended convolved aperture * image error)^2]") }
   if (length(ime_mask)>1|(length(ime_mask)==1 & is.list(ime_mask))) {
-    sdfae2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-        sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
+    sdfa2e2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+        sum((dfam*ime[xlo:xup,ylo:yup])^2.)
     }
   } else if (length(ime_mask)==1){
     if (ime_mask==1) {
-      sdfae2<-sdfa2
+      sdfa2e2<-sdfa2
     } else if (ime_mask==0) {
-      sdfae2<-rep(0,length(ssfa))
+      sdfa2e2<-rep(0,length(ssfa))
     } else {
-      sdfae2<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="ime_mask", .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-          sum(dfam*(ime_mask)^2.)
+      sdfa2e2<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="ime_mask", .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+          sum((dfam*ime_mask)^2.)
       }
     }
   } else {
-    sdfae2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-        sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
+    sdfa2e2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+        sum((dfam*ime[xlo:xup,ylo:yup])^2.)
     }
   }
   if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
@@ -1454,14 +1454,50 @@ function(env=NULL) {
 #----- DIAGNOSTIC ITEMS -----# /*fold*/ {{{
   if (diagnostic) {
   #-----
-    #Integral of the [(convolved aperture)^2]; ssfa2 /*fold*/ {{{
-    if (verbose) { cat("      Integral of the [(convolved aperture)^2]") }
-    ssfa2<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { sum((sfam)^2.)  }
+    #Integral of the (convolved aperture * (image error)^2); ssfae2 /*fold*/ {{{
+    if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
+    if (length(ime_mask)>1|(length(ime_mask)==1 & is.list(ime_mask))) {
+      ssfae2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+          sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
+      }
+    } else if (length(ime_mask)==1){
+      if (ime_mask==1) {
+        ssfae2<-ssfa
+      } else if (ime_mask==0) {
+        ssfae2<-rep(0,length(ssfa))
+      } else {
+        ssfae2<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="ime_mask", .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+            sum(sfam*(ime_mask)^2.)
+        }
+      }
+    } else {
+      ssfae2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+          sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
+      }
+    }
     if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
   #-----
-    #Integral of the [(deblended convolved aperture)^2]; sdfa2 /*fold*/ {{{
-    if (verbose) { cat("      Integral of the [(deblended convolved aperture)^2]") }
-    sdfa2<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { sum((dfam)^2.)  }
+    #Integral of the [deblended convolved aperture * (image error)^2]; sdfae2 /*fold*/ {{{
+    if (verbose) { cat("      Integral of the [deblended convolved aperture * (image error)^2]") }
+    if (length(ime_mask)>1|(length(ime_mask)==1 & is.list(ime_mask))) {
+      sdfae2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
+          sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
+      }
+    } else if (length(ime_mask)==1){
+      if (ime_mask==1) {
+        sdfae2<-sdfa2
+      } else if (ime_mask==0) {
+        sdfae2<-rep(0,length(ssfa))
+      } else {
+        sdfae2<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="ime_mask", .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+            sum(dfam*(ime_mask)^2.)
+        }
+      }
+    } else {
+      sdfae2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+          sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
+      }
+    }
     if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
   #-----
     #Integral of the (convolved aperture * image error); ssfae /*fold*/ {{{
@@ -1510,50 +1546,14 @@ function(env=NULL) {
     }
     if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
   #-----
-    #Integral of the [(convolved aperture * image error)^2]; ssfa2e2 /*fold*/ {{{
-    if (verbose) { cat("      Integral of the [(convolved aperture * image error)^2]") }
-    if (length(ime_mask)>1|(length(ime_mask)==1 & is.list(ime_mask))) {
-      ssfa2e2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-          sum((sfam*ime[xlo:xup,ylo:yup])^2.)
-      }
-    } else if (length(ime_mask)==1){
-      if (ime_mask==1) {
-        ssfa2e2<-ssfa2
-      } else if (ime_mask==0) {
-        ssfa2e2<-rep(0,length(ssfa))
-      } else {
-        ssfa2e2<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="ime_mask", .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-            sum((sfam*ime_mask)^2.)
-        }
-      }
-    } else {
-      ssfa2e2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-          sum((sfam*ime[xlo:xup,ylo:yup])^2.)
-      }
-    }
+    #Integral of the [(convolved aperture)^2]; ssfa2 /*fold*/ {{{
+    if (verbose) { cat("      Integral of the [(convolved aperture)^2]") }
+    ssfa2<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { sum((sfam)^2.)  }
     if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
   #-----
-    #Integral of the [(deblended convolved aperture * image error)^2]; sdfa2e2 /*fold*/ {{{
-    if (verbose) { cat("      Integral of the [(deblended convolved aperture * image error)^2]") }
-    if (length(ime_mask)>1|(length(ime_mask)==1 & is.list(ime_mask))) {
-      sdfa2e2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], ime=ime_mask, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% {
-          sum((dfam*ime[xlo:xup,ylo:yup])^2.)
-      }
-    } else if (length(ime_mask)==1){
-      if (ime_mask==1) {
-        sdfa2e2<-sdfa2
-      } else if (ime_mask==0) {
-        sdfa2e2<-rep(0,length(ssfa))
-      } else {
-        sdfa2e2<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="ime_mask", .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-            sum((dfam*ime_mask)^2.)
-        }
-      }
-    } else {
-      sdfa2e2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-          sum((dfam*ime[xlo:xup,ylo:yup])^2.)
-      }
-    }
+    #Integral of the [(deblended convolved aperture)^2]; sdfa2 /*fold*/ {{{
+    if (verbose) { cat("      Integral of the [(deblended convolved aperture)^2]") }
+    sdfa2<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { sum((dfam)^2.)  }
     if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
   #-----
   }
@@ -1582,7 +1582,7 @@ function(env=NULL) {
   # /*fend*/ }}}
 
   #Convolved aperture error /*fold*/ {{{
-  sfaerr<-(ssfae2)*ApCorr^2 + ((conf*beamarea)^2.*sqrt(ssfa))
+  sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(ssfa)*ApCorr)^2
   if (BlankCor) { sfaerr<-sfaerr+(blanks$randMean.MAD*sqrt(ssfa)*ApCorr)^2 }
   # /*fend*/ }}}
 
@@ -1591,7 +1591,7 @@ function(env=NULL) {
   # /*fend*/ }}}
 
   #Deblended Convolved aperture error /*fold*/ {{{
-  dfaerr<-(sdfae2)*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)) + (deblerr)^2
+  dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)*ApCorr)^2 + (deblerr)^2
   if (BlankCor) { dfaerr<-dfaerr+(blanks$randMean.MAD*sqrt(ssfa)*ApCorr)^2 }
   # /*fend*/ }}}
 
@@ -1942,7 +1942,8 @@ function(env=NULL) {
     skylocal.mean <- skylocal.mean[which(contams==0)]
     skypval.mean  <- skypval.mean[which(contams==0)]
     skyrms.mean   <- skyrms.mean[which(contams==0)]
-    ssfae2 <- ssfae2[which(contams==0)]
+    ssfa2e2<-ssfa2e2[which(contams==0)]
+    sdfa2e2<-sdfa2e2[which(contams==0)]
     detecthres<-detecthres[which(contams==0)]
     detecthres.mag<-detecthres.mag[which(contams==0)]
     sfaerr <-sfaerr[which(contams==0)]
@@ -1955,7 +1956,6 @@ function(env=NULL) {
       sdfaiters<-sdfaiters[which(contams==0),]
       iterateLost<-iterateLost[which(contams==0)]
     }
-    sdfae2<-sdfae2[which(contams==0)]
     dfaflux<-dfaflux[which(contams==0)]
     deblerr <-deblerr[which(contams==0)]
     dfaerr <-dfaerr[which(contams==0)]
@@ -1969,12 +1969,12 @@ function(env=NULL) {
     if (RanCor) { randoms<-randoms[which(contams==0),] }
     if (BlankCor) { blanks<-blanks[which(contams==0),] }
     if (diagnostic) {
-      ssfa2  <-ssfa2[which(contams==0)]
-      sdfa2  <-sdfa2[which(contams==0)]
-      ssfae  <- ssfae[which(contams==0)]
+      ssfa2 <-ssfa2[which(contams==0)]
+      sdfa2 <-sdfa2[which(contams==0)]
+      ssfae <-ssfae[which(contams==0)]
       sdfae <-sdfae[which(contams==0)]
-      ssfa2e2<-ssfa2e2[which(contams==0)]
-      sdfa2e2<-sdfa2e2[which(contams==0)]
+      ssfae2<-ssfae2[which(contams==0)]
+      sdfae2<-sdfae2[which(contams==0)]
     }
     contams <-contams[which(contams==0)]
   }# /*fend*/ }}}

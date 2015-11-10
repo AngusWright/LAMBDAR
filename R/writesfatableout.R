@@ -91,13 +91,11 @@ function(env=NULL,filename) {
     if (diagnostic) {
       newtable[["SumSFAxError"]] = ssfae; cat(paste0("SumSFAxError"," #Integral of the Post-Convolution Aperture times the Error Image.\n"))
       newtable[["SumDFAxError"]] = sdfae; cat(paste0("SumDFAxError"," #Integral of the Deblended Post-Convolution Aperture times the Error Image\n"))
+      newtable[["SumSFAxErrorsq"]] = ssfae2; cat(paste0("SumSFAxErrorsq"," #Integral of the Post-Convolution Aperture times the Error Image squared\n"))
+      newtable[["SumDFAxErrorsq"]] = sdfae2; cat(paste0("SumDFAxErrorsq"," #Integral of the Deblended Post-Convolution Aperture times the Error Image squared\n"))
     }
-    newtable[["SumSFAxErrorsq"]] = ssfae2; cat(paste0("SumSFAxErrorsq"," #Integral of the Post-Convolution Aperture times the Error Image squared\n"))
-    newtable[["SumDFAxErrorsq"]] = sdfae2; cat(paste0("SumDFAxErrorsq"," #Integral of the Deblended Post-Convolution Aperture times the Error Image squared\n"))
-    if (diagnostic) {
-      newtable[["SumSFAsqxErrorsq"]] = ssfa2e2; cat(paste0("SumSFAsqxErrorsq"," #Integral of the Post-Convolution Aperture squared times the Error Image squared\n"))
-      newtable[["SumDFAsqxErrorsq"]] = sdfa2e2; cat(paste0("SumDFAsqxErrorsq"," #Integral of the Deblended Post-Convolution Aperture squared times the Error Image squared\n"))
-    }
+    newtable[["SumSFAsqxErrorsq"]] = ssfa2e2; cat(paste0("SumSFAsqxErrorsq"," #Integral of the Post-Convolution Aperture squared times the Error Image squared\n"))
+    newtable[["SumDFAsqxErrorsq"]] = sdfa2e2; cat(paste0("SumDFAsqxErrorsq"," #Integral of the Deblended Post-Convolution Aperture squared times the Error Image squared\n"))
     if (doskyest | getskyrms) {
       if (Magnitudes) {
 #       SKY PARAMETERS: Jansky
