@@ -88,7 +88,7 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
         tempylims<-tempmedian$ysd
         tempy<-tempmedian$y
         tempx<-tempmedian$x
-        templty<-rep(1:2,length(tempx)/2)[1:length(tempx)]
+        templty<-rep(1:2,ceiling(length(tempx)/2))[1:length(tempx)]
         #Remove bins with 1 or less skypixels present
         if (any(is.na(tempylims)|(tempylims[,2]==tempylims[,1]))) {
           ind<-which((!is.na(tempylims[,1]))&(tempylims[,2]!=tempylims[,1]))
@@ -193,14 +193,18 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
       #image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,magmap(origim,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(0,0,seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE)
       image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,magmap(origim,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE,xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
       image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,log10(1-maskim),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
-      for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col='darkgrey',lty=templtybak[bin],lwd=3) }
-      for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=3) }
+      if (length(tempxbak)!=0 & !any(is.na(templtybak))) {
+        for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col='darkgrey',lty=templtybak[bin],lwd=3) }
+      }
+      if (length(tempx)!=0 & !any(is.na(templty))) {
+        for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=3) }
+      }
       magaxis(side=1:4,labels=F)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
       points(x=(x_p-pixloc[1]+1),y=(y_p-pixloc[2]+1), pch=3)
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
-      magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(is.na(sky),0,sky)+c(-1.5,1.5)*skyRMS,col=hsv(inten))
+      magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.5,1.5)*ifelse(!is.finite(skyRMS),sd(origim),skyRMS),col=hsv(inten))
       #points(x=temprad,y=tempval,pch=20,col=hsv(magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map))
       abline(v=tempxbak,col='darkgrey',lty=templtybak,lwd=3)
       abline(v=tempx,col='purple',lty=templty,lwd=3)
@@ -278,7 +282,7 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
         tempylims<-tempmedian$ysd
         tempy<-tempmedian$y
         tempx<-tempmedian$x
-        templty<-rep(1:2,length(tempx)/2)[1:length(tempx)]
+        templty<-rep(1:2,ceiling(length(tempx)/2))[1:length(tempx)]
         #Remove bins with 1 or less skypixels present
         if (any(is.na(tempylims)|(tempylims[,2]==tempylims[,1]))) {
           ind<-which((!is.na(tempylims[,1]))&(tempylims[,2]!=tempylims[,1]))
@@ -384,25 +388,31 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
       #image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,magmap(tempim,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE,add=TRUE)
       image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,magmap(im_mask,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE, xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
       image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,log10(1-imm_mask),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
-      for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col='darkgrey',lty=templtybak[bin],lwd=3) }
-      for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=3) }
+      if (length(tempxbak)!=0 & !any(is.na(templtybak))) {
+        for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col='darkgrey',lty=templtybak[bin],lwd=3) }
+      }
+      if (length(tempx)!=0 & !any(is.na(templty))) {
+        for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=3) }
+      }
       magaxis(side=1:4,labels=F)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
       points(x=(x_p-pixloc[1]+1),y=(y_p-pixloc[2]+1), pch=3)
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
-      magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(is.na(sky),0,sky)+c(-1.5,1.5)*skyRMS,col=hsv(inten))
-      abline(v=tempxbak,col='darkgrey',lty=templtybak,lwd=3)
-      abline(v=tempx,col='purple',lty=templty,lwd=3)
-      lines(x=tempxbak,y=tempybak,lwd=1,col='darkgrey')
-      lines(x=tempx,y=tempy,lwd=2)
-      lines(x=tempxbak,y=tempylimsbak[,1],lwd=1,lty=2,col='darkgrey')
-      lines(x=tempxbak,y=tempylimsbak[,2],lwd=1,lty=2,col='darkgrey')
-      lines(x=tempx,y=tempylims[,1],lwd=2,lty=2)
-      lines(x=tempx,y=tempylims[,2],lwd=2,lty=2)
-      abline(h=0,col='darkgreen')
-      abline(h=meanStat$sky,col='red')
-      abline(h=medianStat$sky,col='red',lty=4)
+      magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.5,1.5)*ifelse(!is.finite(skyRMS),sd(im_mask),skyRMS),col=hsv(inten))
+      if (!any(is.na(templtybak))) {
+        abline(v=tempxbak,col='darkgrey',lty=templtybak,lwd=3)
+        abline(v=tempx,col='purple',lty=templty,lwd=3)
+        lines(x=tempxbak,y=tempybak,lwd=1,col='darkgrey')
+        lines(x=tempx,y=tempy,lwd=2)
+        lines(x=tempxbak,y=tempylimsbak[,1],lwd=1,lty=2,col='darkgrey')
+        lines(x=tempxbak,y=tempylimsbak[,2],lwd=1,lty=2,col='darkgrey')
+        lines(x=tempx,y=tempylims[,1],lwd=2,lty=2)
+        lines(x=tempx,y=tempylims[,2],lwd=2,lty=2)
+        abline(h=0,col='darkgreen')
+        abline(h=meanStat$sky,col='red')
+        abline(h=medianStat$sky,col='red',lty=4)
+      }
       dev.off()
     }
   }
