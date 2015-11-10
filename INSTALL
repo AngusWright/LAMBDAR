@@ -82,6 +82,7 @@ library(LAMBDAR)
 # > doParallel
 # > RANN
 # > seqinr
+# > matrixStats
 #
 #as well as any packages that these depend on themselves.
 #To install these packages, in the R terminal, run
