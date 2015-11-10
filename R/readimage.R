@@ -166,36 +166,41 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
         ime<-sqrt(abs(im))
         #}}}
       } else {
+        #Max Gain; No Weightmap; Sigma map is sqrt(abs(image/gain)) {{{
         message(paste0("Using Gain level from header: ",gain))
-        #Max Gain; No Weightmap; SNR map is abs(image)/sqrt(abs(image*gain)) {{{
-        ime<-abs(im)/sqrt(abs(im*(gain)))
+        ime<-sqrt(abs(im/(gain)))
         #}}}
       }
       #}}}
     } else {
-      message(paste0("Using Pixel-Varying Gain from weightmap"))
+      #Use Weight Map in generating Error Map {{{
+      message(paste0("Generating Errormap from Weightmap"))
       gain<-try(as.numeric(read.fitskey(gainlabel,file=paste(pathroot,pathwork,datamap,sep=""),hdu=extn)),silent=TRUE)
       if ((class(gain)=="try-error")|is.na(gain)){
-        message(paste0("No Gain supplied or able to be read from header; Using Weight-map as it is to generate the Error Map."))
-        gain<-max(1/imwt,na.rm=T)
-        message(paste0("Implied Max Equivalent Gain level from Weight Map: ",gain))
-        #No Max gain; Weightmap present; SNR map is image/sqrt(image*(1/imwt)) {{{
-        ime<-abs(im)/sqrt(abs(im*(1/imwt)))
+        #No Max gain; Weightmap present; sigma map is 1/sqrt(wgtmap) {{{
+        message(paste0("No Gain supplied or able to be read from header; Using Weight-map as absolute 1/Var(x) to generate the Error Map."))
+        #sigma map = 1/sqrt(wgtmap)
+        ime<-1/sqrt(imwt)
+        #Determine Implied Gain: gain=abs(im)/(sigma)^2
+        gain<-abs(im)/ime^2
+        message(paste0("Implied Median (Max) Equivalent Gain level from Weight Map: ",median(gain,na.rm=T), "(",max(gain,na.rm=T),")"))
+        gain<-max(gain,na.rm=T)
         #}}}
       } else {
+        #Max Gain; Weightmap present; sigma map is 1/sqrt(image/gain) {{{
         message(paste0("Using Max Equiv. Gain from header to scale Weight Map when generating the Error Map."))
         message(paste0("Max Equivalent Gain level from Header: ",gain))
-        #Max Gain; Weightmap present; SNR map is image/sqrt(image*f(gain,imwt)) {{{
-        imwt<-1/imwt
+        #convert from wt ~ 1/var(x) to ~ sig(x)
+        imwt<-1/sqrt(imwt)
+        #use relative sigma to get absolute pixel varying gain
         imwt<-imwt/max(imwt,na.rm=T)*gain
-        ime<-abs(im)/sqrt(abs(im*(imwt)))
+        #sigma map = sqrt(abs(im)/gain)
+        ime<-sqrt(abs(im/(imwt)))
         #}}}
       }
+      #}}}
     }
     hdr_err<-hdr_str
-    #}}}
-    #Convert SNR map to Sigma Map {{{
-    ime<-1/ime
     #}}}
   } else {
     #Check if Gain value or Error map File {{{
@@ -203,14 +208,12 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
       #Gain Value {{{
       gain<-errormap
       if (!quiet) { cat(paste("   Using Supplied Single Gain value of",errormap," for errors   ")) }
-      ime<-abs(im)/sqrt(abs(im*as.numeric(errormap)))
+      #Sigma map is sqrt(abs(im)/gain)
+      ime<-sqrt(abs(im/as.numeric(errormap)))
       hdr_err<-hdr_str
       #Remove NA/NaN/Inf's {{{
       ime[which(!is.finite(ime))]<-0.0
       #}}}
-      #}}}
-      #Convert SNR map to Varience Map
-      ime<-1/ime
       #}}}
     } else {
       #Sigma Map File {{{
@@ -218,7 +221,6 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
       gain<-NA
       #Test Read of Error Map for errors {{{
       ime_fits<-try(read.fits(paste(pathroot,pathwork,errormap,sep=""),hdu=extnerr, comments=FALSE),silent=TRUE)
-      #ime_fits<-try(readFITS(paste(pathroot,pathwork,errormap,sep=""),hdu=extnerr, comments=FALSE),silent=TRUE)
       if (class(ime_fits)=="try-error") {
         #Stop on Error
         sink(type='message')
@@ -236,10 +238,8 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
       #}}}
       #}}}
     }
+    #}}}
   }
-  # Check if we can reduce the memory required {{{
-  #if (length(unique(as.numeric(ime)))==1) { ime<-unique(as.numeric(ime)) }
-  #}}}
   #Scale error map by Efactor {{{
   ime=ime*Efactor
   #}}}
