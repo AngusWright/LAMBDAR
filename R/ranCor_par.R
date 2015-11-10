@@ -72,9 +72,9 @@ rancor.par<-function(im_mask,imm_mask,ap_mask,stamplims,masklims,remask=TRUE,num
           flux[iter]<-sum(temp,na.rm=T)/sumap[iter]
         }
         #Return Result
-        wflux<-sum(flux*sumap,na.rm=T)/sum(sumap,na.rm=T)
-        wsd<-sqrt(sum(sumap^2,na.rm=T)/sum(sumap,na.rm=T)^2*var(flux*sumap,na.rm=T))
-        wmad<-sqrt(sum(sumap^2,na.rm=T)/(sum(sumap,na.rm=T)^2)*mad(flux*sumap,na.rm=T)^2)
+        wflux<-weightedMean(flux,sumap,na.rm=T)
+        wsd<-weightedSd(flux,sumap,centre=wflux,na.rm=T)
+        wmad<-weightedMad(flux,sumap,centre=wflux,na.rm=T)
         return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T),randAp.MAD=mad(sumap,na.rm=T))
       }else{
         for (iter in 1:numIters) {
@@ -90,9 +90,9 @@ rancor.par<-function(im_mask,imm_mask,ap_mask,stamplims,masklims,remask=TRUE,num
           flux[iter]<-sum(temp,na.rm=T)/sumap[iter]
         }
         #Return Result
-        wflux<-sum(flux*sumap,na.rm=T)/sum(sumap,na.rm=T)
-        wsd<-sqrt(sum(sumap^2,na.rm=T)/sum(sumap,na.rm=T)^2*var(flux*sumap,na.rm=T))
-        wmad<-sqrt(sum(sumap^2,na.rm=T)/(sum(sumap,na.rm=T)^2)*mad(flux*sumap,na.rm=T)^2)
+        wflux<-weightedMean(flux,sumap,na.rm=T)
+        wsd<-weightedSd(flux,sumap,centre=wflux,na.rm=T)
+        wmad<-weightedMad(flux,sumap,centre=wflux,na.rm=T)
         return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T),randAp.MAD=mad(sumap,na.rm=T))
       }
     }
@@ -145,9 +145,9 @@ rancor.par<-function(im_mask,imm_mask,ap_mask,stamplims,masklims,remask=TRUE,num
           flux[iter]<-sum(temp,na.rm=T)/sumap[iter]
         }
         #Return Result
-        wflux<-sum(flux*sumap,na.rm=T)/sum(sumap,na.rm=T)
-        wsd<-sqrt(sum(sumap^2,na.rm=T)/sum(sumap,na.rm=T)^2*var(flux*sumap,na.rm=T))
-        wmad<-sqrt(sum(sumap^2,na.rm=T)/(sum(sumap,na.rm=T)^2)*mad(flux*sumap,na.rm=T)^2)
+        wflux<-weightedMean(flux,sumap,na.rm=T)
+        wsd<-weightedSd(flux,sumap,centre=wflux,na.rm=T)
+        wmad<-weightedMad(flux,sumap,centre=wflux,na.rm=T)
         return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T),randAp.MAD=mad(sumap,na.rm=T))
       }else{
         for (iter in 1:numIters) {
@@ -163,9 +163,9 @@ rancor.par<-function(im_mask,imm_mask,ap_mask,stamplims,masklims,remask=TRUE,num
           flux[iter]<-sum(temp,na.rm=T)/sumap[iter]
         }
         #Return Result
-        wflux<-sum(flux*sumap,na.rm=T)/sum(sumap,na.rm=T)
-        wsd<-sqrt(sum(sumap^2,na.rm=T)/sum(sumap,na.rm=T)^2*var(flux*sumap,na.rm=T))
-        wmad<-sqrt(sum(sumap^2,na.rm=T)/(sum(sumap,na.rm=T)^2)*mad(flux*sumap,na.rm=T)^2)
+        wflux<-weightedMean(flux,sumap,na.rm=T)
+        wsd<-weightedSd(flux,sumap,centre=wflux,na.rm=T)
+        wmad<-weightedMad(flux,sumap,centre=wflux,na.rm=T)
         return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T),randAp.MAD=mad(sumap,na.rm=T))
       }
     }
