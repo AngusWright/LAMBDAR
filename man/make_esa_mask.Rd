@@ -1,13 +1,13 @@
-\name{make_esa_mask}
-\alias{make_esa_mask}
-\alias{rotdata2d}
-\alias{makerotmat2d}
+\name{make.exponential.apertures}
+\alias{make.exponential.apertures}
+\alias{rotate.data.2d}
+\alias{make.rotation.matrix.2d}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Exponential Profile Stamps
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to CreateSim__
+__This function is not designed to be called directly, but rather is an internal function to create.sim__
 
 Create a length (m) list of (n,n) arrays, containing exponential profiles determined by the input aperture parameters.
 The exponential profiles are constructed assuming that the input apertures are 2.5*Kron apertures, such as those
@@ -17,14 +17,14 @@ models the central region of the exponential profile, while simultaneously gener
 Objects that are supplied with zero width (ie. point sources) are simulated as perfect gaussians.
 }
 \usage{
-make_esa_mask(outenv = parent.env(environment()),
+make.exponential.apertures(outenv = parent.env(environment()),
 env = NULL, ObsParm, padGals, col.corr = 0, confuse = FALSE)
-rotdata2d(x,y,theta)
-makerotmat2d(theta)
+rotate.data.2d(x,y,theta)
+make.rotation.matrix.2d(theta)
 }
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in `MeasureFluxes'
+environment; the environment containing the parameters used in `measure.fluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
@@ -75,7 +75,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 %%\examples{
 

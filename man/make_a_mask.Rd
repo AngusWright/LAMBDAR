@@ -1,18 +1,18 @@
-\name{make_a_mask}
-\alias{make_a_mask}
+\name{make.aperture.map}
+\alias{make.aperture.map}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Create a Full Mask
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
 Create a full image mask of all smaller masks/apertures which are input. The full mask is of dimension fullmaskdim.
 Pixel locations for the placement of smaller masks on large mask are determined from the
 input variables x, y.
 }
 \usage{
-make_a_mask(outenv=parent.env(environment()),
+make.aperture.map(outenv=parent.env(environment()),
 masks, fullmaskdim, env=NULL, subs=NULL)
 }
 %- maybe also `usage' for other objects documented here.
@@ -27,7 +27,7 @@ numeric length(m) list of (n,n) arrays; length (m) list of (n,n) stamps, each co
 numeric (2) vector; fullmaskdim[1] is the x-dimension of the full mask. fullmaskdim[2] is the y-dimension. fullmaskdim values must be > submask width.
 }
   \item{env}{
-environment; the environment containing the parameters used in `MeasureFluxes'
+environment; the environment containing the parameters used in `measure.fluxes'
 }
   \item{subs}{
 numeric length(k) vector; the subset of apertures to add to the image. Default NULL is treated as 1:length(m).
@@ -53,7 +53,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 %%\examples{
 

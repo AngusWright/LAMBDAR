@@ -1,4 +1,4 @@
-make_a_mask <-
+make.aperture.map <-
 function (outenv=parent.env(environment()), masks, fullmaskdim, env=NULL, subs=NULL){
 #Procedure makes the Full Mask of all apertures
 
@@ -18,7 +18,7 @@ function (outenv=parent.env(environment()), masks, fullmaskdim, env=NULL, subs=N
 
   #Setup sizes {{{
   if (is.null(subs)) {
-    npos<-length(id_g)
+    npos<-length(cat.id)
     subs<-1:npos
   } else {
     npos<-length(subs)
@@ -32,14 +32,14 @@ function (outenv=parent.env(environment()), masks, fullmaskdim, env=NULL, subs=N
   #Position each individual mask stamp at the correct position above the full mask, and add it on {{{
   for (i in subs) {
     #Check dimensions match {{{
-    if (any(dim(a_mask[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]])!=dim(masks[[i]]))) {
+    if (any(dim(a_mask[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]])!=dim(masks[[i]]))) {
       #Don't match, so don't add it & Notify {{{
-      message(paste("Dimensions of the ",i,"th entries do not match. They are [",paste(dim(a_mask[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]),collapse=','),"] and [",paste(dim(masks[[i]]),collapse=','),"]", sep=""))
+      message(paste("Dimensions of the ",i,"th entries do not match. They are [",paste(dim(a_mask[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]),collapse=','),"] and [",paste(dim(masks[[i]]),collapse=','),"]", sep=""))
       #}}}
     }else {
       #Add the stamp to the full mask {{{
-      a_mask[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]<-
-      a_mask[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]+masks[[i]]
+      a_mask[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]<-
+      a_mask[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]+masks[[i]]
       #}}}
     }#}}}
   }#}}}

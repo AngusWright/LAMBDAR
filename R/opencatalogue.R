@@ -1,4 +1,4 @@
-opencatalogue <-
+open.catalogue <-
 function(outenv=parent.env(environment()), env=NULL){
 
   # Load Parameter Space {{{
@@ -27,7 +27,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
   #Open Catalogue {{{
   if (csv) {
-    fitstable<-try(as.data.frame(read.csv(paste(pathroot,pathwork,catalogue,sep=""),stringsAsFactors=FALSE)),silent=TRUE)
+    fitstable<-try(as.data.frame(read.csv(paste(path.root,path.work,catalogue,sep=""),stringsAsFactors=FALSE)),silent=TRUE)
     #Test Read of Catalogue for errors
     if (class(fitstable)=="try-error") {
       #Stop on Error
@@ -36,7 +36,7 @@ function(outenv=parent.env(environment()), env=NULL){
       stop("Catalogue File read failed")
     }
   } else if (fits) {
-    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,pathwork,catalogue,sep="")),stringsAsFactors=FALSE),silent=TRUE)
+    fitstable<-try(as.data.frame(read.fitstab(paste(path.root,path.work,catalogue,sep="")),stringsAsFactors=FALSE),silent=TRUE)
     if (class(fitstable)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -44,7 +44,7 @@ function(outenv=parent.env(environment()), env=NULL){
       stop("Catalogue File read failed")
     }
   } else if (rdat) {
-    names<-try(as.list(load(paste(pathroot,pathwork,catalogue,sep=""))),silent=TRUE)
+    names<-try(as.list(load(paste(path.root,path.work,catalogue,sep=""))),silent=TRUE)
     if (class(names)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -55,104 +55,104 @@ function(outenv=parent.env(environment()), env=NULL){
   }
   #}}}
   #Get catalogue size {{{
-  nrows<-length(fitstable[,1])
+  num.rows<-length(fitstable[,1])
   #}}}
   #}}}
 
   #Check for Correct Column Syntax & Read Data {{{
   #Catalogue ID {{{
-  id_g<-try(fitstable[1:nrows,catalab],silent=TRUE)
-  if ((class(id_g)=="try-error")||(length(id_g)==0)||all(is.na(id_g))) {
+  cat.id<-try(fitstable[1:num.rows,cata.lab],silent=TRUE)
+  if ((class(cat.id)=="try-error")||(length(cat.id)==0)||all(is.na(cat.id))) {
     sink(type="message")
-    stop(paste("Catalogue does not contain",catalab,"column"))
+    stop(paste("Catalogue does not contain",cata.lab,"column"))
   }#}}}
   #Make sure that there are no duplicate IDs {{{
-  if (any(is.na(id_g))|any(id_g=="",na.rm=TRUE)) {
-    message("There are ",length(which(is.na(id_g)|id_g==""))," Missing IDs. These will be renamed NewID_%d")
-    ind<-which(is.na(id_g)|id_g=="")
-    id_g[ind]<-paste("NewID_",cbind(1:length(ind)),sep="")
+  if (any(is.na(cat.id))|any(cat.id=="",na.rm=TRUE)) {
+    message("There are ",length(which(is.na(cat.id)|cat.id==""))," Missing IDs. These will be renamed NewID_%d")
+    ind<-which(is.na(cat.id)|cat.id=="")
+    cat.id[ind]<-paste("NewID_",cbind(1:length(ind)),sep="")
   }
-  if (any(duplicated(id_g))) {
-    message("There are ",length(which(duplicated(id_g)))," duplicated IDs. These will be appended with DuplicID_%d")
-    ind<-which(duplicated(id_g))
-    id_g[ind]<-paste(id_g[ind],"_DuplicID_",c(1:length(ind)),sep="")
+  if (any(duplicated(cat.id))) {
+    message("There are ",length(which(duplicated(cat.id)))," duplicated IDs. These will be appended with DuplicID_%d")
+    ind<-which(duplicated(cat.id))
+    cat.id[ind]<-paste(cat.id[ind],"_DuplicID_",c(1:length(ind)),sep="")
   }
   #}}}
   #Object RA {{{
-  ra_g<-try(as.numeric(fitstable[1:nrows,ralab]),silent=TRUE)
-  if ((class(ra_g)=="try-error")||(length(ra_g)==0)||all(is.na(ra_g))) {
+  cat.ra<-try(as.numeric(fitstable[1:num.rows,ra.lab]),silent=TRUE)
+  if ((class(cat.ra)=="try-error")||(length(cat.ra)==0)||all(is.na(cat.ra))) {
     sink(type="message")
-    stop(paste("Catalogue does not contain",ralab,"column"))
+    stop(paste("Catalogue does not contain",ra.lab,"column"))
   }#}}}
   #Object Dec {{{
-  dec_g<-try(as.numeric(fitstable[1:nrows,declab]),silent=TRUE)
-  if ((class(dec_g)=="try-error")||(length(dec_g)==0)||all(is.na(dec_g))) {
+  cat.dec<-try(as.numeric(fitstable[1:num.rows,dec.lab]),silent=TRUE)
+  if ((class(cat.dec)=="try-error")||(length(cat.dec)==0)||all(is.na(cat.dec))) {
     sink(type="message")
-    stop(paste("Catalogue does not contain",declab,"column"))
+    stop(paste("Catalogue does not contain",dec.lab,"column"))
   }#}}}
   #Setup Aperture Variables {{{
-  if (forcepointsources) {
+  if (force.point.sources) {
     #If forcing point sources, set standardised aperture values {{{
-    theta_g<-array(0, dim=c(nrows))
-    a_g<-array(0, dim=c(nrows))
-    b_g<-array(0, dim=c(nrows))
+    cat.theta<-array(0, dim=c(num.rows))
+    cat.a<-array(0, dim=c(num.rows))
+    cat.b<-array(0, dim=c(num.rows))
     #}}}
   } else {
     #Otherwise, Check Syntax & Read in Aperture Variables {{{
     #Aperture Angle {{{
-    theta_g<-try(as.numeric(fitstable[1:nrows,thetalab]),silent=TRUE)  # theta
-    if ((class(theta_g)=="try-error")||(length(theta_g)==0)||all(is.na(theta_g))) {
+    cat.theta<-try(as.numeric(fitstable[1:num.rows,theta.lab]),silent=TRUE)  # theta
+    if ((class(cat.theta)=="try-error")||(length(cat.theta)==0)||all(is.na(cat.theta))) {
       sink(type="message")
-      stop(paste("Catalogue does not contain",thetalab,"column"))
+      stop(paste("Catalogue does not contain",theta.lab,"column"))
     }#}}}
     #Aperture Semi-Major Axis {{{
-    a_g<-try(as.numeric(fitstable[1:nrows,semimajlab]),silent=TRUE) # semimajor in arcsec
-    if ((class(a_g)=="try-error")||(length(a_g)==0)||all(is.na(a_g))) {
+    cat.a<-try(as.numeric(fitstable[1:num.rows,semimaj.lab]),silent=TRUE) # semimajor in arcsec
+    if ((class(cat.a)=="try-error")||(length(cat.a)==0)||all(is.na(cat.a))) {
       sink(type="message")
-      stop(paste("Catalogue does not contain",semimajlab,"column"))
+      stop(paste("Catalogue does not contain",semimaj.lab,"column"))
     }
-    a_g[which(!is.finite(a_g))]<-0
+    cat.a[which(!is.finite(cat.a))]<-0
     #}}}
     #Aperture Semi-Minor Axis {{{
-    b_g<-try(as.numeric(fitstable[1:nrows,semiminlab]),silent=TRUE) # semiminor in arcsec
-    if ((class(b_g)=="try-error")||(length(b_g)==0)||all(is.na(b_g))) {
+    cat.b<-try(as.numeric(fitstable[1:num.rows,semimin.lab]),silent=TRUE) # semiminor in arcsec
+    if ((class(cat.b)=="try-error")||(length(cat.b)==0)||all(is.na(cat.b))) {
       sink(type="message")
-      stop(paste("Catalogue does not contain",semiminlab,"column"))
+      stop(paste("Catalogue does not contain",semimin.lab,"column"))
     }
-    b_g[which(!is.finite(b_g))]<-0
+    cat.b[which(!is.finite(cat.b))]<-0
     #}}}
     #}}}
   }
   #}}}
 
   #If wanted, read contaminants column {{{
-  if (filtcontam) {
-    contams<-try(as.numeric(fitstable[1:nrows,contamlab]),silent=TRUE)
+  if (filt.contam) {
+    contams<-try(as.numeric(fitstable[1:num.rows,contam.lab]),silent=TRUE)
     if ((class(contams)=="try-error")||(length(contams)==0)||all(is.na(contams))) {
       sink(type="message")
-      stop(paste("Catalogue does not contain",contamlab,"column"))
+      stop(paste("Catalogue does not contain",contam.lab,"column"))
     }
     message(paste("There are ",length(which(contams==1))," Contaminants to be subtracted"))
   }#}}}
 
   #If Weight Column exists, read values {{{
-  fluxweight<-try(as.numeric(fitstable[1:nrows,fluxweightlab] ),silent=TRUE)
-  if ((class(fluxweight)=="try-error")||(length(fluxweight)==0)||all(is.na(fluxweight))) {
+  flux.weight<-try(as.numeric(fitstable[1:num.rows,flux.weight.lab] ),silent=TRUE)
+  if ((class(flux.weight)=="try-error")||(length(flux.weight)==0)||all(is.na(flux.weight))) {
     #Otherwise, set all weights to unity
-    fluxweight<-1
+    flux.weight<-1
   }#}}}
   #}}}
 
   #Parse Parameter Space {{{
-  assign("id_g"      ,id_g      ,envir=outenv)
-  assign("ra_g"      ,ra_g      ,envir=outenv)
-  assign("dec_g"     ,dec_g     ,envir=outenv)
-  assign("a_g"       ,a_g       ,envir=outenv)
-  assign("b_g"       ,b_g       ,envir=outenv)
-  assign("theta_g"   ,theta_g   ,envir=outenv)
-  if (filtcontam) { assign("contams"   ,contams   ,envir=outenv) }
-  assign("fluxweight",fluxweight,envir=outenv)
-  assign("nrows"     ,nrows     ,envir=outenv)
+  assign("cat.id"      ,cat.id      ,envir=outenv)
+  assign("cat.ra"      ,cat.ra      ,envir=outenv)
+  assign("cat.dec"     ,cat.dec     ,envir=outenv)
+  assign("cat.a"       ,cat.a       ,envir=outenv)
+  assign("cat.b"       ,cat.b       ,envir=outenv)
+  assign("cat.theta"   ,cat.theta   ,envir=outenv)
+  if (filt.contam) { assign("contams"   ,contams   ,envir=outenv) }
+  assign("flux.weight",flux.weight,envir=outenv)
+  assign("num.rows"     ,num.rows     ,envir=outenv)
   #}}}
 
   #Finished Reading Catalogue, return {{{

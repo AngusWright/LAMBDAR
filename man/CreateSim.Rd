@@ -1,5 +1,5 @@
-\name{CreateSim}
-\alias{CreateSim}
+\name{create.sim}
+\alias{create.sim}
 \alias{create.sim.image}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
@@ -7,13 +7,13 @@ Create Simulated Image
 }
 \description{
 Create Simulate Photometric Image from an arbitrary FITS image. This function takes the input
-image and catalogue from the MeasureFluxes Parameter File and uses them to generate a simulated
+image and catalogue from the measure.fluxes Parameter File and uses them to generate a simulated
 image. Objects that are point sources are modelled with a perfect analytical gaussian, with FWHM
 as specified by the user or as determined empirically from the input PSF.
-create.sim.image is a subroutine within CreateSim and is not designed to be called directly.
+create.sim.image is a subroutine within create.sim and is not designed to be called directly.
 }
 \usage{
-CreateSim(parfile=NA, ObsParm=NA, noNoise=FALSE,convolveNoise=TRUE,
+create.sim(par.file=NA, ObsParm=NA, noNoise=FALSE,convolveNoise=TRUE,
 padGalaxies=TRUE, colourCorr=0, quiet=FALSE, confuse=FALSE)
 create.sim.image(ObsParm, noNoise=FALSE, convolveNoise=TRUE,
 padGals=TRUE, col.corr=0,outenv=parent.env(environment()),
@@ -21,9 +21,9 @@ confuse=FALSE, env=NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
-  \item{parfile}{
-Path to, and name of, the Input Parameter file (ie. `/path/to/parfile.par'). This is of the same
-as the MeasureFluxes Parameter File, however only some parameters are relevant.
+  \item{par.file}{
+Path to, and name of, the Input Parameter file (ie. `/path/to/par.file.par'). This is of the same
+as the measure.fluxes Parameter File, however only some parameters are relevant.
 }
   \item{ObsParm}{
 Data frame containing Observation Parameters needed in creating simulated galaxies; Exposure Time (sec; exp=),
@@ -62,19 +62,19 @@ environment; parameter space to output variables to
 logical; if TRUE all output to screen is suppressed
 }
   \item{env}{
-environment;; parameter space containing the input MeasureFluxes/LAMBDAR core variables
+environment;; parameter space containing the input measure.fluxes/LAMBDAR core variables
 }
 }
 \details{
-CreateSim is an additional routine included in the LAMBDAR package for the purposes of testing.
+create.sim is an additional routine included in the LAMBDAR package for the purposes of testing.
 The LAMBDAR package is intended for use in astronomy, and other related fields, to determine photometry from
 input FITS photometric images of arbitrary resolution. As such, testing of the program is paramount. This
 function allows the user to generate simulated images from input galactic apertures and fluxes. Using the
-known input, the user may then test the MeasureFluxes routine with all its various options permuted, thus
+known input, the user may then test the measure.fluxes routine with all its various options permuted, thus
 testing the programs accuracy. Results of this type of rigorous testing are demonstrated in Wright et al. 2015 (in prep).
 }
 \value{
-NULL; CreateSim will output a simulated image to "sim_image.fits", and a catalogue of the created objects
+NULL; create.sim will output a simulated image to "sim_image.fits", and a catalogue of the created objects
 called "SimFlux.csv".
 }
 %%\references{
@@ -90,7 +90,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{createparfile}\link{lsos}\link{write.fits}\link{MeasureFluxes}
+\link{create.par.file}\link{lsos}\link{write.fits}\link{measure.fluxes}
 }
 \examples{
 
@@ -104,19 +104,19 @@ write.fits(file="SampleImage.fits",SDSS.sample)
 #Write Sample Catalogue to File
 write.csv(file="SampleCat.csv",ApCat.sample,row.names=FALSE,quote=FALSE)
 #Generate Parameter File
-createparfile(file="Lambdar_Sample.par",DataMap="SampleImage.fits",Catalogue="SampleCat.csv",IterateFluxes=1,nIterations=2,
+create.par.file(file="Lambdar_Sample.par",DataMap="SampleImage.fits",Catalogue="SampleCat.csv",IterateFluxes=1,nIterations=2,
 Gauss_FWHM_AS=2,PSFConvolve=1)
 
 #Measure Photometry
-MeasureFluxes("Lambdar_Sample.par")
+measure.fluxes("Lambdar_Sample.par")
 
 #Generate Simulation Parameter File
-createparfile(file="Lambdar_Simulation.par",DataMap="SampleImage.fits",Catalogue="LAMBDAR_Results.csv",
+create.par.file(file="Lambdar_Simulation.par",DataMap="SampleImage.fits",Catalogue="LAMBDAR_Results.csv",
 Gauss_FWHM_AS=2,SimGauss_AS=1.1,FluxWgtColumnLabel="DFAFlux_Jy",OutputDirectory="Simulation/",
 PSFConvolve=1)
 
 #Create Simulation from Catalogued objects only
-CreateSim('Lambdar_Simulation.par',ObsParm=data.frame(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165),convolveNoise=TRUE,padGalaxies=TRUE)
+create.sim('Lambdar_Simulation.par',ObsParm=data.frame(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165),convolveNoise=TRUE,padGalaxies=TRUE)
 
 #Read the Input Image
 inp.im<-read.fits("SampleImage.fits")
@@ -126,8 +126,8 @@ sim.im<-read.fits("Simulation/sim_image.fits")
 #Plot the Input and Simulation Images
 layout(matrix(1:4,2,2,byrow=TRUE))
 #Get Object Positions
-xy<-ad2xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,read.astr("SampleImage.fits"))
-aspp<-abs(read.astr("SampleImage.fits")$CD[1,1])*3600
+xy<-ad.to.xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,read.astrometry("SampleImage.fits"))
+aspp<-abs(read.astrometry("SampleImage.fits")$CD[1,1])*3600
 #Plot Input & Aperture Ellipses
 image(x=1:length(inp.im$dat[[1]][,1]),y=1:length(inp.im$dat[[1]][1,]),inp.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
 xlab='X (pix)',ylab="Y (pix)")
@@ -151,9 +151,9 @@ xlab='X (pix)',ylab="Y (pix)",xlim=c(800,1200),ylim=c(800,1200))
 points(xy,pch=3,cex=0.5,col='red');
 
 #Measure Simulation Fluxes
-createparfile(file="Lambdar_SimAnalysis.par",DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
+create.par.file(file="Lambdar_SimAnalysis.par",DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
 Gauss_FWHM_AS=2,OutputDirectory="SimResults/",PSFConvolve=1,BlankCor=1)
-MeasureFluxes('Lambdar_SimAnalysis.par')
+measure.fluxes('Lambdar_SimAnalysis.par')
 
 #Read simulation results
 sim.out.cat<-read.csv("SimResults/LAMBDAR_Results.csv",stringsAsFactors=FALSE)
@@ -172,9 +172,9 @@ abline(h=0.96,col='blue',lty=2)
 legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),col='blue',lty=2)
 
 #Improve Flux Measurement by Iterating
-createparfile(file="Lambdar_SimAnalysis.par",DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
+create.par.file(file="Lambdar_SimAnalysis.par",DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
 Gauss_FWHM_AS=2,OutputDirectory="SimResults/",IterateFluxes=1,nIterations=5,BlankCor=1)
-MeasureFluxes('Lambdar_SimAnalysis.par')
+measure.fluxes('Lambdar_SimAnalysis.par')
 
 #Read simulation results
 sim.out.cat<-read.csv("SimResults/LAMBDAR_Results.csv",stringsAsFactors=FALSE)

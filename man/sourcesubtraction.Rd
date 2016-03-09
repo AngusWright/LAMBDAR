@@ -1,17 +1,17 @@
-\name{sourcesubtraction}
-\alias{sourcesubtraction}
+\name{source.subtraction}
+\alias{source.subtraction}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Source Subtraction from FITS image
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
 Perform a subtraction of sources and/or contaminants from a FITS image.
 }
 \usage{
-sourcesubtraction(image, sfa_models, stamp_lims,
-fluxes, outputfile, outputheader, beamarea, insidemask,
+source.subtraction(image, sfa_models, ap.lims.data.stamp,
+fluxes, outputfile, outputheader, beamarea, inside.mask,
 diagnostic = FALSE, verbose = FALSE)
 }
 %- maybe also `usage' for other objects documented here.
@@ -22,7 +22,7 @@ numeric (j,k) array; the image to be used for subtraction
   \item{sfa_models}{
 numeric length (m) list of (n,n) arrays; length (m) list of (n,n) stamps containing the apertures to be subtracted
 }
-  \item{stamp_lims}{
+  \item{ap.lims.data.stamp}{
 numeric (m,4) array; limits of where the aperture stamps are to be placed, in image pixel space; [,1]=x_lo, [,2]=x_up, [,3]=y_lo, [,4]=y_up.
 }
   \item{fluxes}{
@@ -37,7 +37,7 @@ list; the FITS header for the output image
   \item{beamarea}{
 numeric; the beam area for the input image
 }
-  \item{insidemask}{
+  \item{inside.mask}{
 logical (m) vector; if TRUE, then the object will be subtracted
 }
   \item{diagnostic}{
@@ -71,7 +71,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 %\examples{
 %

@@ -100,7 +100,7 @@ xy<-expand.grid(1:(2*n),1:(2*n))
 xy[,1]<-xy[,1]-n
 xy[,2]<-xy[,2]-n
 #Generate Exponential Profile
-xy<-rotdata2d(xy[,1],xy[,2],pa)
+xy<-rotate.data.2d(xy[,1],xy[,2],pa)
 xy[,2]<-xy[,2]*axel.ratio
 exp.val<-exp(-bn*(sqrt((xy[,1])^2+(xy[,2])^2)/R.Eff.pix-1))
 z<-matrix(exp.val,n*2,n*2)

@@ -1,25 +1,25 @@
-\name{readparfile}
-\alias{readparfile}
+\name{read.par.file}
+\alias{read.par.file}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Read Parameter File
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
-Reads the Parameter file required for the execution of the MeasureFluxes procedure. This parameter file can be
-generated using the `createparfile' routine, or by calling createparfile through `MeasureFluxes'.
+Reads the Parameter file required for the execution of the measure.fluxes procedure. This parameter file can be
+generated using the `create.par.file' routine, or by calling create.par.file through `measure.fluxes'.
 }
 \usage{
-readparfile(parfile=NA, starttime=NA,
+read.par.file(par.file=NA, start.time=NA,
 quiet=FALSE, env=NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
-  \item{parfile}{
+  \item{par.file}{
 string; relative path to, and filename of, the parameter file
 }
-  \item{starttime}{
+  \item{start.time}{
 numeric; CPU start time of the calling procedure, in seconds. Used for output of elapsed times; if not supplied, current CPU time is used.
 }
   \item{quiet}{
@@ -49,7 +49,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{createparfile}
+\link{measure.fluxes}, \link{create.par.file}
 }
 \examples{
 

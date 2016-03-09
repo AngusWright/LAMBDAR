@@ -1,41 +1,41 @@
-plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims,masklims,remask=TRUE,numIters=1E3,path="./",plotall=FALSE,sigclip=3,nclip=3,res=120){
-  if(length(ap_mask) != length(stamplims[,1])){stop('ap_mask and stamplim lengths do not match!')}
-  if (remask) { if(length(ap_mask) != length(masklims[,1])){stop('ap_mask and masklim lengths do not match!')} }
+plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stamplims,imstamplims,masklims,remask=TRUE,numIters=1E3,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120){
+  if(length(ap.stamp) != length(stamplims[,1])){stop('ap.stamp and stamplim lengths do not match!')}
+  if (remask) { if(length(ap.stamp) != length(masklims[,1])){stop('ap.stamp and masklim lengths do not match!')} }
   cutup<-TRUE
-  if(length(ap_mask) != length(im_mask)){
-    if (is.matrix(im_mask)) {
+  if(length(ap.stamp) != length(data.stamp)){
+    if (is.matrix(data.stamp)) {
       cutup<-FALSE
     } else {
-      stop("ap_mask and im_mask lengths do not match!")
+      stop("ap.stamp and data.stamp lengths do not match!")
     }
   }
   if (remask) {
-    if(length(ap_mask) != length(imm_mask)) {
+    if(length(ap.stamp) != length(mask.stamp)) {
       if (cutup){
-        stop("ap_mask and imm_mask lengths do not match!")
-      } else if (!is.matrix(imm_mask)) {
-        stop("im_mask and imm_mask are not of the same form (both matrix or both list)")
+        stop("ap.stamp and mask.stamp lengths do not match!")
+      } else if (!is.matrix(mask.stamp)) {
+        stop("data.stamp and mask.stamp are not of the same form (both matrix or both list)")
       }
     }
   }
   if (!remask) {
-    dir.create(file.path(path,"RanCorIms"),showWarnings=FALSE)
-    path=file.path(path,"RanCorIms")
+    dir.create(file.path(path,"ran.corIms"),showWarnings=FALSE)
+    path=file.path(path,"ran.corIms")
   } else {
     dir.create(file.path(path,"BlanksCorIms"),showWarnings=FALSE)
     path=file.path(path,"BlanksCorIms")
   }
 
-  if(plotall) {
-    rand<-1:length(x_p)
+  if(plot.all) {
+    rand<-1:length(x.pix)
   } else {
-    rand<-sample(length(x_p),min(10,length(x_p)))
+    rand<-sample(length(x.pix),min(10,length(x.pix)))
   }
   if (cutup) {
     for (i in rand) {
-     origim=im_mask[[i]]
-    maskim=imm_mask[[i]]
-         ap=ap_mask[[i]]
+     origim=data.stamp[[i]]
+    maskim=mask.stamp[[i]]
+         ap=ap.stamp[[i]]
      sxl=stamplims[i,1]
      sxh=stamplims[i,2]
      syl=stamplims[i,3]
@@ -105,15 +105,15 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(floor(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        CairoPNG(file=file.path(path,paste(id_g[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res)
+        CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res)
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
-        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
-        points(x=(x_p-x_p[i]+1),y=(y_p-y_p[i]+1), pch=3)
+        points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
         #Convert pix values onto asinh scale
         #X-Axis Limits; focus on 0 with ± limits around there
         #Stretch data to a useful scale
@@ -219,15 +219,15 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        CairoPNG(file=file.path(path,paste(id_g[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res)
+        CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res)
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),magmap(origim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
-        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),magmap(origim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
-        points(x=(x_p-x_p[i]+1),y=(y_p-y_p[i]+1), pch=3)
+        points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
         #Convert pix values onto asinh scale
         #X-Axis Limits; focus on 0 with ± limits around there
         #Stretch data to a useful scale
@@ -290,7 +290,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),"\nStd Dev = ",round(dat$randMean.SD,digit=3),sep=""),cex=0.6)
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))+0.5),boxwex=2)
         dev.off()
@@ -298,7 +298,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
     }
   } else {
     for (i in rand) {
-         ap=ap_mask[[i]]
+         ap=ap.stamp[[i]]
      sxl=stamplims[i,1]
      sxh=stamplims[i,2]
      syl=stamplims[i,3]
@@ -309,8 +309,8 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
      imsyh=imstamplims[i,4]
 
       #Get number of cols & rows in image stamp
-      nc<-ncol(im_mask)
-      nr<-nrow(im_mask)
+      nc<-ncol(data.stamp)
+      nr<-nrow(data.stamp)
       #Get shift numbers
       dx<-round(runif(numIters, min=1,max=nr))
       dy<-round(runif(numIters, min=1,max=nc))
@@ -318,7 +318,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
       flux<-rep(NA,numIters)
       sumap<-rep(NA,numIters)
       #Mask object aperture
-      tempim<-im_mask
+      tempim<-data.stamp
       tempim[sxl:sxh,syl:syh][which(zapsmall(ap)!=0,arr.ind=TRUE)]<-NA
       #Get Aperture details
       gdap<-which(ap!=0)
@@ -326,9 +326,9 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
       #If Remasking
       if(remask){
         #Set mask 0s to NA
-        imm_mask[which(imm_mask==0)]<-NA
+        mask.stamp[which(mask.stamp==0)]<-NA
         #Multiply Image and Mask together
-        tempim<-tempim*imm_mask
+        tempim<-tempim*mask.stamp
         #Ftempimers, calculate random Flux
         ranaps<-tempim*0
         tempvec<-matrix(NA,ncol=length(which(ap!=0)),nrow=numIters)
@@ -366,17 +366,17 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           }
         }
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
-        lim<-(floor(log10(max(abs(quantile(im_mask,c(0.001,0.999),na.rm=TRUE))))))
+        lim<-(floor(log10(max(abs(quantile(data.stamp,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        CairoPNG(file=file.path(path,paste(id_g[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res)
+        CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res)
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
-        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
-        points(x=(x_p-x_p[i]+1),y=(y_p-y_p[i]+1), pch=3)
+        points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
         #Convert pix values onto asinh scale
         #X-Axis Limits; focus on 0 with ± limits around there
         #Stretch data to a useful scale
@@ -439,7 +439,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),"\nStd Dev = ",round(dat$randMean.SD,digit=3),sep=""),cex=0.6)
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         dev.off()
@@ -483,15 +483,15 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(floor(log10(max(abs(quantile(tempim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        CairoPNG(file=file.path(path,paste(id_g[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res)
+        CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res)
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
-        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
-        points(x=(x_p-x_p[i]+1),y=(y_p-y_p[i]+1), pch=3)
+        points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
         #Convert pix values onto asinh scale
         #X-Axis Limits; focus on 0 with ± limits around there
         #Stretch data to a useful scale
@@ -554,7 +554,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),"\nStd Dev = ",round(dat$randMean.SD,digit=3),sep=""),cex=0.6)
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         dev.off()

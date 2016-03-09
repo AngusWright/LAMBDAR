@@ -1,22 +1,22 @@
-\name{writesfatableout}
-\alias{writesfatableout}
-\alias{writedeblfractableout}
+\name{write.flux.measurements.table}
+\alias{write.flux.measurements.table}
+\alias{write.deblend.fraction.table}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
-Write MeasureFluxes Results
+Write measure.fluxes Results
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
-Output a CSV table, to file, containing the MeasureFluxes results
+Output a CSV table, to file, containing the measure.fluxes results
 }
 \usage{
-writesfatableout(env=NULL, filename)
+write.flux.measurements.table(env=NULL, filename)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
-environment; the enovironment containing the parameters and results of MeasureFluxes.
+environment; the enovironment containing the parameters and results of measure.fluxes.
 }
   \item{filename}{
 string; path to, and filename of, output filename
@@ -42,7 +42,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 \examples{
 

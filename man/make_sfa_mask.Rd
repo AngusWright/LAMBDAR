@@ -1,27 +1,27 @@
-\name{make_sfa_mask}
-\alias{make_sfa_mask}
+\name{make.convolved.apertures}
+\alias{make.convolved.apertures}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Weighted and Convolved Apertures
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
-Convolve the input aperture stamps with the PSF, and weight the resultant apertures by the input fluxweightin.
+Convolve the input aperture stamps with the PSF, and weight the resultant apertures by the input flux.weightin.
 }
 \usage{
-make_sfa_mask(outenv = parent.env(environment()),
-sa_mask, fluxweightin = NULL, immask = NULL, env = NULL, subs = NULL)
+make.convolved.apertures(outenv = parent.env(environment()),
+sa_mask, flux.weightin = NULL, immask = NULL, env = NULL, subs = NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in `MeasureFluxes'
+environment; the environment containing the parameters used in `measure.fluxes'
 }
   \item{sa_mask}{
 numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) aperture stamps
 }
-  \item{fluxweightin}{
+  \item{flux.weightin}{
 numeric vector; can be either a length (m) vector of aperture weights, or a single numeric applied to all apertures as a scale-factor.
 }
   \item{immask}{
@@ -51,7 +51,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}, \link{convolvepsf}
+\link{measure.fluxes}, \link{flux.measurements}, \link{convolve.psf}
 }
 %%\examples{
 

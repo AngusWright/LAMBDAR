@@ -1,19 +1,19 @@
-readparfile <-
-function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
+read.par.file <-
+function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   #Procedure to setup Parameter Space (Read .par File) {{{
   if (is.null(env)) { env<-environment() }
   #}}}
 
   #Initialise Warning Variable {{{
-  parwarning<-NULL
+  param.warnings<-NULL
   #}}}
   #Check Calling Syntax {{{
-  if (is.na(parfile)) {
-    stop("Parameter file not supplied. To create the default parameter file, run MeasureFluxes('--makepar').")
+  if (is.na(par.file)) {
+    stop("Parameter file not supplied. To create the default parameter file, run measure.fluxes('--makepar').")
   }
-  if (is.na(starttime)) {
-    parwarning<-c(parwarning,"Start time not supplied - Using current clock time")
-    starttime=proc.time()[3]
+  if (is.na(start.time)) {
+    param.warnings<-c(param.warnings,"Start time not supplied - Using current clock time")
+    start.time=proc.time()[3]
   }
   #}}}
 
@@ -26,7 +26,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
 
   #Test Reading of Parameter File {{{
-  no.params<-try(max(count.fields(parfile)),silent=TRUE)
+  no.params<-try(max(count.fields(par.file)),silent=TRUE)
   if (class(no.params)=="try-error") {
   #Stop on Error
     if (grepl("cannot open the connection",no.params[1])) {
@@ -39,7 +39,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     cause="Parameter File Empty"
     stop(paste("Parameter file read failed:",cause))
   }
-  params<-try(read.table(parfile, strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#", row.names=1, fill=TRUE, col.names=1:no.params), silent=TRUE)
+  params<-try(read.table(par.file, strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#", row.names=1, fill=TRUE, col.names=1:no.params), silent=TRUE)
   if (class(params)=="try-error") {
     #Stop on Error
     if (grepl("duplicate 'row.names'",params[1])) {
@@ -57,252 +57,252 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   ## Assign Parameter File values to variables {{{
   #Root Directory path {{{
   ID="RootDirectory"
-  pathroot<-params[ID,1]
-  if ((length(pathroot)==0)||(is.na(pathroot))) {
+  path.root<-params[ID,1]
+  if ((length(path.root)==0)||(is.na(path.root))) {
     stop("RootDirectory Parameter not in Parameter File")
   }
   #Ensure path ends in a '/'
-  if (lastnchar(pathroot,1) != '/') { pathroot<-paste(pathroot,'/',sep="") }
+  if (last.n.char(path.root,1) != '/') { path.root<-paste(path.root,'/',sep="") }
   #}}}
 
   #Root Directory path {{{
   ID="WorkingDirectory"
   ind<-which(params[ID,]!="")
-  pathwork<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(pathroot))) {
+  path.work<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(path.root))) {
     stop("WorkingDirectory Parameter not in Parameter File")
   } else {
-    pathwork<-try(suppressWarnings(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
-    if (class(pathwork)=="try-error") {
-      pathwork<-params[ID,ind]
+    path.work<-try(suppressWarnings(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
+    if (class(path.work)=="try-error") {
+      path.work<-params[ID,ind]
     }
   }
   #Ensure path ends in a '/'
-  if (any(lastnchar(pathwork,1) != '/')) { pathwork<-paste(pathwork,'/',sep="") }
+  if (any(last.n.char(path.work,1) != '/')) { path.work<-paste(path.work,'/',sep="") }
   #}}}
 
   #Output Directory path {{{
   ID="OutputDirectory"
   ind<-which(params[ID,]!="")
-  pathout<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(pathout))) {
+  path.out<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(path.out))) {
     stop("OutputDirectory not in Parameter File")
   } else {
-    pathout<-try(suppressWarnings(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
-    if (class(pathout)=="try-error") {
-      pathout<-params[ID,ind]
+    path.out<-try(suppressWarnings(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
+    if (class(path.out)=="try-error") {
+      path.out<-params[ID,ind]
     }
   }
   #Ensure path ends in a '/'
-  if (lastnchar(pathout,1) != '/') { pathout<-paste(pathout,'/',sep="") }
+  if (last.n.char(path.out,1) != '/') { path.out<-paste(path.out,'/',sep="") }
   #}}}
 
   #Beam area in square arcsec {{{
   ID="BeamArea_SqAS"
   ind<-which(params[ID,]!="")
-  beamarea_SOM_as<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(beamarea_SOM_as))) {
-    parwarning<-c(parwarning,"BeamArea_SqAS Parameter not present in Parameter File; Using 0")
-    beamarea_SOM_as<-0
+  beam.area.input.as<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(beam.area.input.as))) {
+    param.warnings<-c(param.warnings,"BeamArea_SqAS Parameter not present in Parameter File; Using 0")
+    beam.area.input.as<-0
   }
   #}}}
 
   #Do we want to Convolve the apertures with a PSF {{{
   ID="PSFConvolve"
   ind<-which(params[ID,]!="")
-  psffilt<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(psffilt))) {
+  psf.filt<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(psf.filt))) {
     if ((length(ind)==1)) {
-      psffilt<-try(as.numeric(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-      if (class(psffilt)=="try-error") {
-        parwarning<-c(parwarning,"PSFConvolve Parameter table read failed; Using 0 (FALSE)")
-        psffilt<-0
+      psf.filt<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+      if (class(psf.filt)=="try-error") {
+        param.warnings<-c(param.warnings,"PSFConvolve Parameter table read failed; Using 0 (FALSE)")
+        psf.filt<-0
       }
-      if (is.na(psffilt)) {
-        parwarning<-c(parwarning,"PSFConvolve Parameter not in Parameter File; Using 0 (FALSE)")
-        psffilt<-0
+      if (is.na(psf.filt)) {
+        param.warnings<-c(param.warnings,"PSFConvolve Parameter not in Parameter File; Using 0 (FALSE)")
+        psf.filt<-0
       }
     } else {
-      parwarning<-c(parwarning,"PSFConvolve Parameter not in Parameter File; Using 0 (FALSE)")
-      psffilt<-0
+      param.warnings<-c(param.warnings,"PSFConvolve Parameter not in Parameter File; Using 0 (FALSE)")
+      psf.filt<-0
     }
   }
-  psffilt<-psffilt==1
+  psf.filt<-psf.filt==1
   #}}}
 
   #Do we want PSF Matched Photometry? {{{
   ID="PSFWeighted"
   ind<-which(params[ID,]!="")
-  PSFWeighted<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(PSFWeighted))) {
+  psf.weighted<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(psf.weighted))) {
     if ((length(ind)==1)) {
-      PSFWeighted<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(PSFWeighted)=="try-error") {
-        parwarning<-c(parwarning,"PSFWeighted Parameter table read failed; Using 0 (FALSE)")
-        PSFWeighted<-0
+      psf.weighted<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(psf.weighted)=="try-error") {
+        param.warnings<-c(param.warnings,"PSFWeighted Parameter table read failed; Using 0 (FALSE)")
+        psf.weighted<-0
       }
-      if (is.na(PSFWeighted)) {
-        parwarning<-c(parwarning,"PSFWeighted Parameter not in Parameter File; Using 0 (FALSE)")
-        PSFWeighted<-0
+      if (is.na(psf.weighted)) {
+        param.warnings<-c(param.warnings,"PSFWeighted Parameter not in Parameter File; Using 0 (FALSE)")
+        psf.weighted<-0
       }
     } else {
-      parwarning<-c(parwarning,"PSFWeighted Parameter not in Parameter File; Using 0 (FALSE)")
-      PSFWeighted<-0
+      param.warnings<-c(param.warnings,"PSFWeighted Parameter not in Parameter File; Using 0 (FALSE)")
+      psf.weighted<-0
     }
   }
-  PSFWeighted<-(PSFWeighted==1)
+  psf.weighted<-(psf.weighted==1)
   #}}}
 
   #PSF map filename {{{
   ID="PSFMap"
   ind<-which(params[ID,]!="")
-  psfmap<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(psfmap))) {
-    parwarning<-c(parwarning,"PSFMap Parameter not in Paramter File; Using NONE")
-    psfmap<-"NONE"
+  psf.map<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(psf.map))) {
+    param.warnings<-c(param.warnings,"PSFMap Parameter not in Paramter File; Using NONE")
+    psf.map<-"NONE"
   }
-  #Determine if provided psfmap is an image or filelist {{{
-  if ((length(psfmap)==1)&(psfmap!="NONE")&(!grepl(".fits", psfmap))) {
+  #Determine if provided psf.map is an image or filelist {{{
+  if ((length(psf.map)==1)&(psf.map!="NONE")&(!grepl(".fits", psf.map))) {
     #One file provided without .fits extension - must be filelist
-    psfmap<-try(c(t(read.table(file.path(pathroot,psfmap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(psfmap)=="try-error") {
-      parwarning<-c(parwarning,"PSFMap Parameter table read failed; Using NONE")
-      psfmap<-"NONE"
+    psf.map<-try(c(t(read.table(file.path(path.root,psf.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(psf.map)=="try-error") {
+      param.warnings<-c(param.warnings,"PSFMap Parameter table read failed; Using NONE")
+      psf.map<-"NONE"
     }
-    if (is.na(psfmap)) {
-      parwarning<-c(parwarning,"PSFMap Parameter not in Paramter File; Using NONE")
-      psfmap<-"NONE"
+    if (is.na(psf.map)) {
+      param.warnings<-c(param.warnings,"PSFMap Parameter not in Paramter File; Using NONE")
+      psf.map<-"NONE"
     }
   }
   #}}}
   #}}}
 
   #If no PSF map, get gaussian FWHM {{{
-  if (any(psfmap=="NONE")) {
+  if (any(psf.map=="NONE")) {
     #FWHM of seeing gaussian
     ID="Gauss_FWHM_AS"
     ind<-which(params[ID,]!="")
-    gauss_fwhm_as<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||(is.na(gauss_fwhm_as))) {
+    gauss.fwhm.arcsec<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(gauss.fwhm.arcsec))) {
       if ((length(ind)==1)) {
-        gauss_fwhm_as<-try(as.numeric(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-        if (class(gauss_fwhm_as)=="try-error") {
-          parwarning<-c(parwarning,"Gauss_FWHM_AS Parameter table read failed; Using 0")
-          gauss_fwhm_as<-0.0
+        gauss.fwhm.arcsec<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+        if (class(gauss.fwhm.arcsec)=="try-error") {
+          param.warnings<-c(param.warnings,"Gauss_FWHM_AS Parameter table read failed; Using 0")
+          gauss.fwhm.arcsec<-0.0
         }
-        if (is.na(gauss_fwhm_as)) {
-          parwarning<-c(parwarning,"Gauss_FWHM_AS Parameter not in Parameter File; Using 0")
-          gauss_fwhm_as<-0.0
+        if (is.na(gauss.fwhm.arcsec)) {
+          param.warnings<-c(param.warnings,"Gauss_FWHM_AS Parameter not in Parameter File; Using 0")
+          gauss.fwhm.arcsec<-0.0
         }
       } else {
-        parwarning<-c(parwarning,"Gauss_FWHM_AS Parameter not in Parameter File; Using 0")
-        gauss_fwhm_as<-0.0
+        param.warnings<-c(param.warnings,"Gauss_FWHM_AS Parameter not in Parameter File; Using 0")
+        gauss.fwhm.arcsec<-0.0
       }
     }
     #Make sure PSF maps and Gauss FWHM vals are conformable {{{
-    if (length(gauss_fwhm_as)!=length(psfmap)) {
-      gauss_fwhm_as<-rep(gauss_fwhm_as[1], length(psfmap))
+    if (length(gauss.fwhm.arcsec)!=length(psf.map)) {
+      gauss.fwhm.arcsec<-rep(gauss.fwhm.arcsec[1], length(psf.map))
     }#}}}
 
     #Make sure files with PSF maps have Gauss FWHM vals set to 0 {{{
-    ind<-which(psfmap!="NONE")
-    if (length(ind)>0) { gauss_fwhm_as[ind]<-0.0 }
+    ind<-which(psf.map!="NONE")
+    if (length(ind)>0) { gauss.fwhm.arcsec[ind]<-0.0 }
     #}}}
 
     #If we want convolution, there is no PSF, and no gaussian FWHM provided - ERROR {{{
-    ind<-which(psfmap=="NONE")
-    if ((psffilt)&(any(gauss_fwhm_as[ind]==0.0))) {
+    ind<-which(psf.map=="NONE")
+    if ((psf.filt)&(any(gauss.fwhm.arcsec[ind]==0.0))) {
       cat(" - Error\n")
-      str<-paste("Loops with bad parameters:",paste(which(psfmap=="NONE" & gauss_fwhm_as==0.0),collapse=", ",sep=""))
+      str<-paste("Loops with bad parameters:",paste(which(psf.map=="NONE" & gauss.fwhm.arcsec==0.0),collapse=", ",sep=""))
       stop(paste("Parameter file does not provide either PSF map or Gaussian FWHM for One or more files.\n",str,sep=""))
     }
     #}}}
   } else {
     #If there is a PSF Map - set gauss fwhm to zero {{{
-    gauss_fwhm_as<-0.0
+    gauss.fwhm.arcsec<-0.0
     #}}}
   }
   #}}}
 
   #Flag loops with no provided PSF {{{
-  nopsf<-((psfmap=="NONE") & (gauss_fwhm_as==0.0))
+  no.psf<-((psf.map=="NONE") & (gauss.fwhm.arcsec==0.0))
   #}}}
 
   #Perform Contaminant removal? {{{
-  nocontammap<-NULL
-  nNNs<-10
-  checkContam<-FALSE
+  no.contam.map<-NULL
+  num.nearest.neighbours<-10
+  check.contam<-FALSE
   ID="RemoveContam"
   ind<-which(params[ID,]!="")
-  filtcontam<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(filtcontam))) {
+  filt.contam<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(filt.contam))) {
     if ((length(ind)==1)) {
-      filtcontam<-try(as.numeric(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(filtcontam)=="try-error") {
-        parwarning<-c(parwarning,"RemoveContam Parameter table read failed; Using 0 (FALSE)")
-        filtcontam<-FALSE
-      } else { filtcontam<-(filtcontam==1) }
-      if (is.na(filtcontam)) {
-        parwarning<-c(parwarning,"RemoveContam Parameter not in Parameter File; Using 0 (FALSE)")
-        filtcontam<-FALSE
+      filt.contam<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(filt.contam)=="try-error") {
+        param.warnings<-c(param.warnings,"RemoveContam Parameter table read failed; Using 0 (FALSE)")
+        filt.contam<-FALSE
+      } else { filt.contam<-(filt.contam==1) }
+      if (is.na(filt.contam)) {
+        param.warnings<-c(param.warnings,"RemoveContam Parameter not in Parameter File; Using 0 (FALSE)")
+        filt.contam<-FALSE
       }
     } else {
-      parwarning<-c(parwarning,"RemoveContam Parameter not in Parameter File; Using 0 (FALSE)")
-      filtcontam<-FALSE
+      param.warnings<-c(param.warnings,"RemoveContam Parameter not in Parameter File; Using 0 (FALSE)")
+      filt.contam<-FALSE
     }
-  } else { filtcontam<-filtcontam==1 }
+  } else { filt.contam<-filt.contam==1 }
   #}}}
 
-  if ( filtcontam ) {
+  if ( filt.contam ) {
     #Check for irrelevant contaminants? {{{
     ID="CheckContam"
     ind<-which(params[ID,]!="")
-    checkContam<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||(is.na(checkContam))) {
+    check.contam<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(check.contam))) {
       if ((length(ind)==1)) {
-        checkContam<-try(as.numeric(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(checkContam)=="try-error") {
-          parwarning<-c(parwarning,"CheckContam Parameter table read failed; Using 0 (FALSE)")
-          checkContam<-FALSE
-        } else { checkContam<-(checkContam==1) }
-        if (is.na(checkContam)) {
-          parwarning<-c(parwarning,"CheckContam Parameter not in Parameter File; Using 0 (FALSE)")
-          checkContam<-FALSE
+        check.contam<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(check.contam)=="try-error") {
+          param.warnings<-c(param.warnings,"CheckContam Parameter table read failed; Using 0 (FALSE)")
+          check.contam<-FALSE
+        } else { check.contam<-(check.contam==1) }
+        if (is.na(check.contam)) {
+          param.warnings<-c(param.warnings,"CheckContam Parameter not in Parameter File; Using 0 (FALSE)")
+          check.contam<-FALSE
         }
       } else {
-        parwarning<-c(parwarning,"CheckContam Parameter not in Parameter File; Using 0 (FALSE)")
-        checkContam<-FALSE
+        param.warnings<-c(param.warnings,"CheckContam Parameter not in Parameter File; Using 0 (FALSE)")
+        check.contam<-FALSE
       }
-    } else { checkContam<-checkContam==1 }
+    } else { check.contam<-check.contam==1 }
     #}}}
     #Check for irrelevant contaminants? {{{
     ID="nNearestCheck"
     ind<-which(params[ID,]!="")
-    nNNs<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||(is.na(nNNs))) {
+    num.nearest.neighbours<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(num.nearest.neighbours))) {
       if ((length(ind)==1)) {
-        nNNs<-try(as.numeric(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(nNNs)=="try-error") {
-          parwarning<-c(parwarning,"nNearestCheck Parameter table read failed; Using 10")
-          nNNs<-10
-        } else { nNNs<-(nNNs==1) }
-        if (is.na(nNNs)) {
-          parwarning<-c(parwarning,"nNearestCheck Parameter not in Parameter File; Using 10")
-          nNNs<-10
+        num.nearest.neighbours<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(num.nearest.neighbours)=="try-error") {
+          param.warnings<-c(param.warnings,"nNearestCheck Parameter table read failed; Using 10")
+          num.nearest.neighbours<-10
+        } else { num.nearest.neighbours<-(num.nearest.neighbours==1) }
+        if (is.na(num.nearest.neighbours)) {
+          param.warnings<-c(param.warnings,"nNearestCheck Parameter not in Parameter File; Using 10")
+          num.nearest.neighbours<-10
         }
       } else {
-        parwarning<-c(parwarning,"nNearestCheck Parameter not in Parameter File; Using 10")
-        nNNs<-10
+        param.warnings<-c(param.warnings,"nNearestCheck Parameter not in Parameter File; Using 10")
+        num.nearest.neighbours<-10
       }
     }
     #}}}
     #Contaminant Image Filename {{{
     ID="NoContamImageFile"
     ind<-which(params[ID,]!="")
-    nocontammap<-params[ID,ind]
-    if ((length(ind)==0)||is.na(nocontammap)) {
-      parwarning<-c(parwarning,"NoContamImageFile Parameter not in Parameter File; Using 'NoContamResidualImage.fits'")
-      nocontammap<-"NoContamResidualImage.fits"
+    no.contam.map<-params[ID,ind]
+    if ((length(ind)==0)||is.na(no.contam.map)) {
+      param.warnings<-c(param.warnings,"NoContamImageFile Parameter not in Parameter File; Using 'NoContamResidualImage.fits'")
+      no.contam.map<-"NoContamResidualImage.fits"
     }
     #}}}
   }
@@ -317,7 +317,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Determine if provided weightmap is an image or filelist {{{
   if ((length(catalogue)==1)&(!grepl(".csv",catalogue))&(!grepl(".Rdata",catalogue))&(!grepl(".fits", catalogue))) {
     #One file provided without .fits extension - must be filelist
-    catalogue<-try(c(t(read.table(file.path(pathroot,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    catalogue<-try(c(t(read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(catalogue)=="try-error") {
       #Stop on Error
       stop("Catalogue Filelist read failed")
@@ -331,85 +331,85 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #What is the title of the Catalogue's ID Column? {{{
   ID="CatIDColumnLabel"
-  catalab<-params[ID,1]
-  if (is.na(catalab)) {
-    parwarning<-c(parwarning,"CatIDColumnLabel Parameter not in Parameter File; Using 'CATAID'")
-    catalab<-"CATAID"
+  cata.lab<-params[ID,1]
+  if (is.na(cata.lab)) {
+    param.warnings<-c(param.warnings,"CatIDColumnLabel Parameter not in Parameter File; Using 'CATAID'")
+    cata.lab<-"CATAID"
   }
   #}}}
 
   #What is the title of the Catalogue's RA Column? {{{
   ID="RAColumnLabel"
-  ralab<-params[ID,1]
-  if (is.na(ralab)) {
-    parwarning<-c(parwarning,"RAColumnLabel Parameter not in Parameter File; Using 'ALPHA_J2000'")
-    ralab<-"ALPHA_J2000"
+  ra.lab<-params[ID,1]
+  if (is.na(ra.lab)) {
+    param.warnings<-c(param.warnings,"RAColumnLabel Parameter not in Parameter File; Using 'ALPHA_J2000'")
+    ra.lab<-"ALPHA_J2000"
   }#}}}
 
   #What is the title of the Catalogue's Dec Column? {{{
   ID="DecColumnLabel"
-  declab<-params[ID,1]
-  if (is.na(declab)) {
-    parwarning<-c(parwarning,"DecColumnLabel Parameter not in Parameter File; Using 'DELTA_J2000'")
-    declab<-"DELTA_J2000"
+  dec.lab<-params[ID,1]
+  if (is.na(dec.lab)) {
+    param.warnings<-c(param.warnings,"DecColumnLabel Parameter not in Parameter File; Using 'DELTA_J2000'")
+    dec.lab<-"DELTA_J2000"
   }#}}}
 
   #What is the title of the Catalogue's Theta Column? {{{
   ID="ThetaColumnLabel"
-  thetalab<-params[ID,1]
-  if (is.na(thetalab)) {
-    parwarning<-c(parwarning,"ThetaColumnLabel Parameter not in Parameter File; Using 'THETA_J2000'")
-    thetalab<-"THETA_J2000"
+  theta.lab<-params[ID,1]
+  if (is.na(theta.lab)) {
+    param.warnings<-c(param.warnings,"ThetaColumnLabel Parameter not in Parameter File; Using 'THETA_J2000'")
+    theta.lab<-"THETA_J2000"
   }#}}}
 
   #What is the title of the Catalogue's SemiMaj Axis Column? {{{
   ID="SemiMajColumnLabel"
-  semimajlab<-params[ID,1]
-  if (is.na(semimajlab)) {
-    parwarning<-c(parwarning,"SemiMajColumnLabel Parameter not in Parameter File; Using 'SEMIMAJ_AS'")
-    semimajlab<-"SEMIMAJ_AS"
+  semimaj.lab<-params[ID,1]
+  if (is.na(semimaj.lab)) {
+    param.warnings<-c(param.warnings,"SemiMajColumnLabel Parameter not in Parameter File; Using 'SEMIMAJ.arcsec'")
+    semimaj.lab<-"SEMIMAJ.arcsec"
   }#}}}
 
   #What is the title of the Catalogue's SemiMaj Axis Column? {{{
   ID="SemiMinColumnLabel"
-  semiminlab<-params[ID,1]
-  if (is.na(semiminlab)) {
-    parwarning<-c(parwarning,"SemiMinColumnLabel Parameter not in Parameter File; Using 'SEMIMIN_AS'")
-    semiminlab<-"SEMIMIN_AS"
+  semimin.lab<-params[ID,1]
+  if (is.na(semimin.lab)) {
+    param.warnings<-c(param.warnings,"SemiMinColumnLabel Parameter not in Parameter File; Using 'SEMIMIN.arcsec'")
+    semimin.lab<-"SEMIMIN.arcsec"
   }#}}}
 
   #What is the title of the Catalogue's SemiMaj Axis Column? {{{
   ID="ContamColumnLabel"
-  contamlab<-params[ID,1]
-  if (is.na(contamlab)) {
-    parwarning<-c(parwarning,"ContamColumnLabel Parameter not in Parameter File; Using 'CONTAM'")
-    contamlab<-"CONTAM"
+  contam.lab<-params[ID,1]
+  if (is.na(contam.lab)) {
+    param.warnings<-c(param.warnings,"ContamColumnLabel Parameter not in Parameter File; Using 'CONTAM'")
+    contam.lab<-"CONTAM"
   }#}}}
 
   #What is the title of the Catalogue's SemiMaj Axis Column? {{{
   ID="FluxWgtColumnLabel"
-  fluxweightlab<-params[ID,1]
-  if (is.na(fluxweightlab)) {
-    parwarning<-c(parwarning,"FluxWgtColumnLabel Parameter not in Parameter File; Using 'FLUXWEIGHT'")
-    fluxweightlab<-"FLUXWEIGHT"
+  flux.weight.lab<-params[ID,1]
+  if (is.na(flux.weight.lab)) {
+    param.warnings<-c(param.warnings,"FluxWgtColumnLabel Parameter not in Parameter File; Using 'FLUXWEIGHT'")
+    flux.weight.lab<-"FLUXWEIGHT"
   }#}}}
 
   #Name of Data Image {{{
   ID="DataMap"
   ind<-which(params[ID,]!="")
-  datamap<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(datamap))) {
+  data.map<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(data.map))) {
     stop("DataMap Parameter not in Parameter File")
   }
-  #Determine if provided datamap is an image or filelist {{{
-  if ((length(datamap)==1)&(datamap!="NONE")&(!grepl(".fits", datamap))) {
+  #Determine if provided data.map is an image or filelist {{{
+  if ((length(data.map)==1)&(data.map!="NONE")&(!grepl(".fits", data.map))) {
     #One file provided without .fits extension - must be filelist
-    datamap<-try(c(t(read.table(file.path(pathroot,datamap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(datamap)=="try-error") {
+    data.map<-try(c(t(read.table(file.path(path.root,data.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(data.map)=="try-error") {
       #Stop on Error
       stop("Datamap Parameter table read failed")
     }
-    if (is.na(datamap)) {
+    if (is.na(data.map)) {
       stop("DataMap Parameter not in Parameter File")
     }
   }
@@ -419,22 +419,22 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Name of Error Map {{{
   ID="ErrorMap"
   ind<-which(params[ID,]!="")
-  errormap<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(errormap))) {
-    parwarning<-c(parwarning,"ErrorMap Parameter not in Parameter File; Using 'NONE'")
-    errormap<-"NONE"
+  error.map<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(error.map))) {
+    param.warnings<-c(param.warnings,"ErrorMap Parameter not in Parameter File; Using 'NONE'")
+    error.map<-"NONE"
   }
-  #Determine if provided errormap is an image or filelist {{{
-  if ((length(errormap)==1)&(is.na(as.numeric(errormap)))&(errormap!="NONE")&(!grepl(".fits", errormap))) {
+  #Determine if provided error.map is an image or filelist {{{
+  if ((length(error.map)==1)&(is.na(as.numeric(error.map)))&(error.map!="NONE")&(!grepl(".fits", error.map))) {
     #One file provided without .fits extension - must be filelist
-    errormap<-try(c(t(read.table(file.path(pathroot,errormap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(errormap)=="try-error") {
-      parwarning<-c(parwarning,"ErrorMap Parameter table read failed; Using 'NONE'")
-      errormap<-"NONE"
+    error.map<-try(c(t(read.table(file.path(path.root,error.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(error.map)=="try-error") {
+      param.warnings<-c(param.warnings,"ErrorMap Parameter table read failed; Using 'NONE'")
+      error.map<-"NONE"
     }
-    if (is.na(errormap)) {
-      parwarning<-c(parwarning,"ErrorMap Parameter not in Parameter File; Using 'NONE'")
-      errormap<-"NONE"
+    if (is.na(error.map)) {
+      param.warnings<-c(param.warnings,"ErrorMap Parameter not in Parameter File; Using 'NONE'")
+      error.map<-"NONE"
     }
   }
   #}}}
@@ -443,22 +443,22 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Name of Mask Map {{{
   ID="MaskMap"
   ind<-which(params[ID,]!="")
-  maskmap<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(maskmap))) {
-    parwarning<-c(parwarning,"MaskMap Parameter not in Parameter File; Using 'NONE'")
-    maskmap<-"NONE"
+  mask.map<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(mask.map))) {
+    param.warnings<-c(param.warnings,"MaskMap Parameter not in Parameter File; Using 'NONE'")
+    mask.map<-"NONE"
   }
-  #Determine if provided maskmap is an image or filelist {{{
-  if ((length(maskmap)==1)&(maskmap!="NONE")&(!grepl(".fits", maskmap))) {
+  #Determine if provided mask.map is an image or filelist {{{
+  if ((length(mask.map)==1)&(mask.map!="NONE")&(!grepl(".fits", mask.map))) {
     #One file provided without .fits extension - must be filelist
-    maskmap<-try(c(t(read.table(file.path(pathroot,maskmap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(maskmap)=="try-error") {
-      parwarning<-c(parwarning,"MaskMap Parameter table read failed; Using 'NONE'")
-      maskmap<-"NONE"
+    mask.map<-try(c(t(read.table(file.path(path.root,mask.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(mask.map)=="try-error") {
+      param.warnings<-c(param.warnings,"MaskMap Parameter table read failed; Using 'NONE'")
+      mask.map<-"NONE"
     }
-    if (is.na(maskmap)) {
-      parwarning<-c(parwarning,"MaskMap Parameter not in Parameter File; Using 'NONE'")
-      maskmap<-"NONE"
+    if (is.na(mask.map)) {
+      param.warnings<-c(param.warnings,"MaskMap Parameter not in Parameter File; Using 'NONE'")
+      mask.map<-"NONE"
     }
   }
   #}}}
@@ -467,22 +467,22 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Name of Weight Map {{{
   ID="WeightMap"
   ind<-which(params[ID,]!="")
-  wgtmap<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(wgtmap))) {
-    parwarning<-c(parwarning,"WeightMap Parameter not in Parameter File; Using 'NONE'")
-    wgtmap<-"NONE"
+  weight.map<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(weight.map))) {
+    param.warnings<-c(param.warnings,"WeightMap Parameter not in Parameter File; Using 'NONE'")
+    weight.map<-"NONE"
   }
   #Determine if provided weightmap is an image or filelist {{{
-  if ((length(wgtmap)==1)&(wgtmap!="NONE")&(!grepl(".fits", wgtmap))) {
+  if ((length(weight.map)==1)&(weight.map!="NONE")&(!grepl(".fits", weight.map))) {
     #One file provided without .fits extension - must be filelist
-    wgtmap<-try(c(t(read.table(file.path(pathroot,wgtmap), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(wgtmap)=="try-error") {
-      parwarning<-c(parwarning,"WeightMap Parameter table read failed; Using 'NONE'")
-      wgtmap<-"NONE"
+    weight.map<-try(c(t(read.table(file.path(path.root,weight.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(weight.map)=="try-error") {
+      param.warnings<-c(param.warnings,"WeightMap Parameter table read failed; Using 'NONE'")
+      weight.map<-"NONE"
     }
-    if (is.na(wgtmap)) {
-      parwarning<-c(parwarning,"WeightMap Parameter not in Parameter File; Using 'NONE'")
-      wgtmap<-"NONE"
+    if (is.na(weight.map)) {
+      param.warnings<-c(param.warnings,"WeightMap Parameter not in Parameter File; Using 'NONE'")
+      weight.map<-"NONE"
     }
   }
   #}}}
@@ -491,30 +491,30 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Zero Point of Weight Map {{{
   ID="WeightMapZP"
   ind<-which(params[ID,]!="")
-  wgtzp<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(wgtzp))) {
-    parwarning<-c(parwarning,"WeightMapZP Parameter not in Parameter File; Using 0")
-    wgtzp<-0
+  wgt.zp<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(wgt.zp))) {
+    param.warnings<-c(param.warnings,"WeightMapZP Parameter not in Parameter File; Using 0")
+    wgt.zp<-0
   }#}}}
 
   #Extension number of Data in FITS Header {{{
   ID="DataExtn"
   ind<-which(params[ID,]!="")
-  extn<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(extn))) {
+  data.extn<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(data.extn))) {
     if ((length(ind)==1)) {
-      extn<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(extn)=='try-error') {
-        parwarning<-c(parwarning,"DataExtn Parameter table read failed; Using 0")
-        extn<-0
+      data.extn<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(data.extn)=='try-error') {
+        param.warnings<-c(param.warnings,"DataExtn Parameter table read failed; Using 0")
+        data.extn<-0
       }
-      if (is.na(extn)) {
-        parwarning<-c(parwarning,"DataExtn Parameter not in Parameter File; Using 0")
-        extn<-0
+      if (is.na(data.extn)) {
+        param.warnings<-c(param.warnings,"DataExtn Parameter not in Parameter File; Using 0")
+        data.extn<-0
       }
     } else {
-      parwarning<-c(parwarning,"DataExtn Parameter not in Parameter File; Using 0")
-      extn<-0
+      param.warnings<-c(param.warnings,"DataExtn Parameter not in Parameter File; Using 0")
+      data.extn<-0
     }
   }
   #}}}
@@ -522,21 +522,21 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Extension number of Error Map in FITS Header {{{
   ID="ErrorExtn"
   ind<-which(params[ID,]!="")
-  extnerr<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(extnerr))) {
+  data.error.extn<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(data.error.extn))) {
     if ((length(ind)==1)) {
-      extnerr<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(extnerr)=='try-error') {
-        parwarning<-c(parwarning,"ErrorExtn Parameter table read failed; Using 0")
-        extnerr<-0
+      data.error.extn<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(data.error.extn)=='try-error') {
+        param.warnings<-c(param.warnings,"ErrorExtn Parameter table read failed; Using 0")
+        data.error.extn<-0
       }
-      if (is.na(extnerr)) {
-        parwarning<-c(parwarning,"ErrorExtn Parameter not in Parameter File; Using 0")
-        extnerr<-0
+      if (is.na(data.error.extn)) {
+        param.warnings<-c(param.warnings,"ErrorExtn Parameter not in Parameter File; Using 0")
+        data.error.extn<-0
       }
     } else {
-      parwarning<-c(parwarning,"MaskExtn Parameter not in Parameter File; Using 0")
-      extnerr<-0
+      param.warnings<-c(param.warnings,"MaskExtn Parameter not in Parameter File; Using 0")
+      data.error.extn<-0
     }
   }
   #}}}
@@ -544,21 +544,21 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Extension number of Mask Map in FITS Header {{{
   ID="MaskExtn"
   ind<-which(params[ID,]!="")
-  extnmask<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(extnmask))) {
+  data.mask.extn<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(data.mask.extn))) {
     if ((length(ind)==1)) {
-      extnmask<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(extnmask)=='try-error') {
-        parwarning<-c(parwarning,"MaskExtn Parameter table read failed; Using 0")
-        extnmask<-0
+      data.mask.extn<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(data.mask.extn)=='try-error') {
+        param.warnings<-c(param.warnings,"MaskExtn Parameter table read failed; Using 0")
+        data.mask.extn<-0
       }
-      if (is.na(extnmask)) {
-        parwarning<-c(parwarning,"MaskExtn Parameter not in Parameter File; Using 0")
-        extnmask<-0
+      if (is.na(data.mask.extn)) {
+        param.warnings<-c(param.warnings,"MaskExtn Parameter not in Parameter File; Using 0")
+        data.mask.extn<-0
       }
     } else {
-      parwarning<-c(parwarning,"MaskExtn Parameter not in Parameter File; Using 0")
-      extnmask<-0
+      param.warnings<-c(param.warnings,"MaskExtn Parameter not in Parameter File; Using 0")
+      data.mask.extn<-0
     }
   }
   #}}}
@@ -566,21 +566,21 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Extension number of Data in FITS Header {{{
   ID="WeightExtn"
   ind<-which(params[ID,]!="")
-  extnwgt<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(extnwgt))) {
+  data.weight.extn<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(data.weight.extn))) {
     if ((length(ind)==1)) {
-      extnwgt<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(extnwgt)=='try-error') {
-        parwarning<-c(parwarning,"WeightExtn Parameter table read failed; Using 0")
-        extnwgt<-0
+      data.weight.extn<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(data.weight.extn)=='try-error') {
+        param.warnings<-c(param.warnings,"WeightExtn Parameter table read failed; Using 0")
+        data.weight.extn<-0
       }
-      if (is.na(extnwgt)) {
-        parwarning<-c(parwarning,"WeightExtn Parameter not in Parameter File; Using 0")
-        extnwgt<-0
+      if (is.na(data.weight.extn)) {
+        param.warnings<-c(param.warnings,"WeightExtn Parameter not in Parameter File; Using 0")
+        data.weight.extn<-0
       }
     } else {
-      parwarning<-c(parwarning,"WeightExtn Parameter not in Parameter File; Using 0")
-      extnwgt<-0
+      param.warnings<-c(param.warnings,"WeightExtn Parameter not in Parameter File; Using 0")
+      data.weight.extn<-0
     }
   }
   #}}}
@@ -588,45 +588,45 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to force use of point sources? {{{
   ID="PointSources"
   ind<-which(params[ID,]!="")
-  forcepointsources<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(forcepointsources)) {
+  force.point.sources<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(force.point.sources)) {
     if ((length(ind)==1)) {
-      forcepointsources<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(forcepointsources)=='try-error') {
-        parwarning<-c(parwarning,"PointSources Parameter table read failed; Using 0 (FALSE)")
-        forcepointsources<-0
+      force.point.sources<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(force.point.sources)=='try-error') {
+        param.warnings<-c(param.warnings,"PointSources Parameter table read failed; Using 0 (FALSE)")
+        force.point.sources<-0
       }
-      if (is.na(forcepointsources)) {
-        parwarning<-c(parwarning,"PointSources Parameter not in Parameter File; Using 0 (FALSE)")
-        forcepointsources<-0
+      if (is.na(force.point.sources)) {
+        param.warnings<-c(param.warnings,"PointSources Parameter not in Parameter File; Using 0 (FALSE)")
+        force.point.sources<-0
       }
     } else {
-      parwarning<-c(parwarning,"PointSources Parameter not in Parameter File; Using 0 (FALSE)")
-      forcepointsources<-0
+      param.warnings<-c(param.warnings,"PointSources Parameter not in Parameter File; Using 0 (FALSE)")
+      force.point.sources<-0
     }
 
   }
-  forcepointsources<-(forcepointsources==1)
+  force.point.sources<-(force.point.sources==1)
   #}}}
 
   #Error Map scale factor #{{{
   ID="EFactor"
   ind<-which(params[ID,]!="")
-  Efactor<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(Efactor))) {
+  error.factor<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(error.factor))) {
     if ((length(ind)==1)) {
-      Efactor<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(Efactor)=='try-error') {
-        parwarning<-c(parwarning,"EFactor Parameter table read failed; Using 0")
-        Efactor<-1
+      error.factor<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(error.factor)=='try-error') {
+        param.warnings<-c(param.warnings,"EFactor Parameter table read failed; Using 0")
+        error.factor<-1
       }
-      if (is.na(Efactor)) {
-        parwarning<-c(parwarning,"EFactor Parameter not in Parameter File; Using 0")
-        Efactor<-1
+      if (is.na(error.factor)) {
+        param.warnings<-c(param.warnings,"EFactor Parameter not in Parameter File; Using 0")
+        error.factor<-1
       }
     } else {
-      parwarning<-c(parwarning,"EFactor Parameter not in Parameter File; Using 0")
-      Efactor<-1
+      param.warnings<-c(param.warnings,"EFactor Parameter not in Parameter File; Using 0")
+      error.factor<-1
     }
   }
   #}}}
@@ -634,71 +634,71 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Flux Correction (Scale) Factor {{{
   ID="FluxCorr"
   ind<-which(params[ID,]!="")
-  fluxcorr<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(fluxcorr))) {
+  flux.corr<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(flux.corr))) {
     if ((length(ind)==1)) {
-      fluxcorr<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(fluxcorr)=='try-error') {
-        parwarning<-c(parwarning,"FluxCorr Parameter table read failed; Using 1")
-        fluxcorr<-1
+      flux.corr<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(flux.corr)=='try-error') {
+        param.warnings<-c(param.warnings,"FluxCorr Parameter table read failed; Using 1")
+        flux.corr<-1
       }
-      if (is.na(fluxcorr)) {
-        parwarning<-c(parwarning,"FluxCorr Parameter not in Parameter File; Using 1")
-        fluxcorr<-1
+      if (is.na(flux.corr)) {
+        param.warnings<-c(param.warnings,"FluxCorr Parameter not in Parameter File; Using 1")
+        flux.corr<-1
       }
     } else {
-      parwarning<-c(parwarning,"FluxCorr Parameter not in Parameter File; Using 1")
-      fluxcorr<-1
+      param.warnings<-c(param.warnings,"FluxCorr Parameter not in Parameter File; Using 1")
+      flux.corr<-1
     }
   }
   #}}}
 
   #Initialise Cropping parameters {{{
-  cutrad<-NULL
+  crop.radius<-NULL
   ra0<-NULL
   dec0<-NULL
-  imfitsoutname<-NULL
-  immfitsoutname<-NULL
-  imwgtfitsoutname<-NULL
-  imefitsoutname<-NULL
+  data.fits.output.filename<-NULL
+  mask.fits.output.filename<-NULL
+  weight.fits.output.filename<-NULL
+  error.fits.output.filename<-NULL
   #}}}
 
   #Do we want to crop the input image(s)? {{{
   ID="CropImage"
   ind<-which(params[ID,]!="")
-  cropimage<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(cropimage))) {
+  crop.image<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(crop.image))) {
     if ((length(ind)==1)) {
-      cropimage<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(cropimage)=='try-error') {
-        parwarning<-c(parwarning,"CropImage Parameter table read failed; Using 0 (FALSE)")
-        cropimage<-0
+      crop.image<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(crop.image)=='try-error') {
+        param.warnings<-c(param.warnings,"CropImage Parameter table read failed; Using 0 (FALSE)")
+        crop.image<-0
       }
-      if (is.na(cropimage)) {
-        parwarning<-c(parwarning,"CropImage Parameter not in Parameter File; Using 0 (FALSE)")
-        cropimage<-0
+      if (is.na(crop.image)) {
+        param.warnings<-c(param.warnings,"CropImage Parameter not in Parameter File; Using 0 (FALSE)")
+        crop.image<-0
       }
     } else {
-      parwarning<-c(parwarning,"CropImage Parameter not in Parameter File; Using 0 (FALSE)")
-      cropimage<-0
+      param.warnings<-c(param.warnings,"CropImage Parameter not in Parameter File; Using 0 (FALSE)")
+      crop.image<-0
     }
   }
-  cropimage<-(cropimage==1)
+  crop.image<-(crop.image==1)
   #}}}
 
   #Cropped image parameters {{{
-  if (cropimage) {
+  if (crop.image) {
     #What will the cropped image(s) be named {{{
     ID="CropFitsName"
-    imfitsoutname<-params[ID,1]
-    if (is.na(imfitsoutname)) {
-      parwarning<-c(parwarning,"CropFitsName Parameter not in Parameter File; Using 'croppedimage'")
-      imfitsoutname<-"croppedimage"
+    data.fits.output.filename<-params[ID,1]
+    if (is.na(data.fits.output.filename)) {
+      param.warnings<-c(param.warnings,"CropFitsName Parameter not in Parameter File; Using 'croppedimage'")
+      data.fits.output.filename<-"croppedimage"
     }
-    immfitsoutname<-paste(imfitsoutname,"_mask.fits",sep="")
-    imwgtfitsoutname<-paste(imfitsoutname,"_wgt.fits",sep="")
-    imefitsoutname<-paste(imfitsoutname,"_err.fits",sep="")
-    imfitsoutname<-paste(imfitsoutname,".fits",sep="")
+    mask.fits.output.filename<-paste(data.fits.output.filename,"_mask.fits",sep="")
+    weight.fits.output.filename<-paste(data.fits.output.filename,"_wgt.fits",sep="")
+    error.fits.output.filename<-paste(data.fits.output.filename,"_err.fits",sep="")
+    data.fits.output.filename<-paste(data.fits.output.filename,".fits",sep="")
     #}}}
     #Cropped image RA {{{
     ID="CropImRA0"
@@ -707,19 +707,19 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(ra0))) {
       if (length(ind)==1) {
         #Try Reading table:
-        ra0<-try(as.numeric(c(t(read.table(file.path(pathroot,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        ra0<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
         if (class(ra0)=="try-error") {
           #Warn on Error
-          parwarning<-c(parwarning,"CropImRA0 Parameter table read failed; Using -999")
+          param.warnings<-c(param.warnings,"CropImRA0 Parameter table read failed; Using -999")
           ra0<- -999
         }
         if (is.na(ra0)) {
           #Warn on Error
-          parwarning<-c(parwarning,"CropImRA0 Parameter not in parameter file; Using -999")
+          param.warnings<-c(param.warnings,"CropImRA0 Parameter not in parameter file; Using -999")
           ra0<- -999
         }
       } else {
-        parwarning<-c(parwarning,"CropImRA0 Parameter not in Parameter File; Using -999")
+        param.warnings<-c(param.warnings,"CropImRA0 Parameter not in Parameter File; Using -999")
         ra0<- -999
       }
     }
@@ -731,19 +731,19 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(dec0))) {
       if (length(ind)==1) {
         #Try Reading table:
-        dec0<-try(as.numeric(c(t(read.table(file.path(pathroot,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        dec0<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
         if (class(dec0)=="try-error") {
           #Warn on Error
-          parwarning<-c(parwarning,"CropImDec0 Parameter table read failed; Using -999")
+          param.warnings<-c(param.warnings,"CropImDec0 Parameter table read failed; Using -999")
           dec0<- -999
         }
         if (is.na(dec0)) {
           #Warn on Error
-          parwarning<-c(parwarning,"CropImDec0 Parameter not in parameter file; Using -999")
+          param.warnings<-c(param.warnings,"CropImDec0 Parameter not in parameter file; Using -999")
           dec0<- -999
         }
       } else {
-        parwarning<-c(parwarning,"CropImDec0 Parameter not in Parameter File; Using -999")
+        param.warnings<-c(param.warnings,"CropImDec0 Parameter not in Parameter File; Using -999")
         dec0<- -999
       }
     }
@@ -751,24 +751,24 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     #Cropped image radius {{{
     ID="CropImRad"
     ind<-which(params[ID,]!="")
-    cutrad<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||(is.na(cutrad))) {
+    crop.radius<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(crop.radius))) {
       if (length(ind)==1) {
         #Try Reading table:
-        cutrad<-try(as.numeric(c(t(read.table(file.path(pathroot,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(cutrad)=="try-error") {
+        crop.radius<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(crop.radius)=="try-error") {
           #Warn on Error
-          parwarning<-c(parwarning,"CropImRad Parameter table read failed; Using 0.5")
-          cutrad<- 0.5
+          param.warnings<-c(param.warnings,"CropImRad Parameter table read failed; Using 0.5")
+          crop.radius<- 0.5
         }
-        if (is.na(cutrad)) {
+        if (is.na(crop.radius)) {
           #Warn on Error
-          parwarning<-c(parwarning,"CropImRad Parameter not in parameter file; Using 0.5")
-          cutrad<- 0.5
+          param.warnings<-c(param.warnings,"CropImRad Parameter not in parameter file; Using 0.5")
+          crop.radius<- 0.5
         }
       } else {
-        parwarning<-c(parwarning,"CropImRad Parameter not in Parameter File; Using 0.5")
-        cutrad<-0.5
+        param.warnings<-c(param.warnings,"CropImRad Parameter not in Parameter File; Using 0.5")
+        crop.radius<-0.5
       }
     }
     #}}}
@@ -781,17 +781,17 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   conf<-as.numeric(params[ID,ind])
   if ((length(ind)==0)||(is.na(conf))) {
     if ((length(ind)==1)) {
-      conf<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      conf<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(conf)=='try-error') {
-        parwarning<-c(parwarning,"Confusion_units Parameter table read failed; Using 0")
+        param.warnings<-c(param.warnings,"Confusion_units Parameter table read failed; Using 0")
         conf<-0
       }
       if (is.na(conf)) {
-        parwarning<-c(parwarning,"Confusion_units Parameter not in Parameter File; Using 0")
+        param.warnings<-c(param.warnings,"Confusion_units Parameter not in Parameter File; Using 0")
         conf<-0
       }
     } else {
-      parwarning<-c(parwarning,"Confusion_units Parameter not in Parameter File; Using 0")
+      param.warnings<-c(param.warnings,"Confusion_units Parameter not in Parameter File; Using 0")
       conf<-0
     }
   }
@@ -799,10 +799,10 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Number of Processors available for computations {{{
   ID="nProcessors"
-  ncores<-as.numeric(params[ID,1])
-  if (is.na(ncores)) {
-    parwarning<-c(parwarning,"nProcessors Parameter not in Parameter File; Using 1")
-    ncores<-1
+  num.cores<-as.numeric(params[ID,1])
+  if (is.na(num.cores)) {
+    param.warnings<-c(param.warnings,"nProcessors Parameter not in Parameter File; Using 1")
+    num.cores<-1
   }
   #}}}
 
@@ -811,24 +811,24 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #N0E90 Angular Coordinates?
   ID="AngularOffset"
   ind<-which(params[ID,]!="")
-  angoffset<-params[ID,ind]
-  if ((length(ind)==0)||is.na(angoffset)) {
+  ang.offset<-params[ID,ind]
+  if ((length(ind)==0)||is.na(ang.offset)) {
     if ((length(ind)==1)) {
-      angoffset<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(angoffset)=='try-error') {
-        parwarning<-c(parwarning,"AngularOffset Parameter table read failed; Using 0 (N0E90)")
-        angoffset<-0
+      ang.offset<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(ang.offset)=='try-error') {
+        param.warnings<-c(param.warnings,"AngularOffset Parameter table read failed; Using 0 (N0E90)")
+        ang.offset<-0
       }
-      if (is.na(angoffset)) {
-        parwarning<-c(parwarning,"AngularOffset Parameter not in Parameter File; Using 0 (N0E90)")
-        angoffset<-0
+      if (is.na(ang.offset)) {
+        param.warnings<-c(param.warnings,"AngularOffset Parameter not in Parameter File; Using 0 (N0E90)")
+        ang.offset<-0
       }
     } else {
-      parwarning<-c(parwarning,"AngularOffset Parameter not in Parameter File; Using 0 (N0E90)")
-      angoffset<-0
+      param.warnings<-c(param.warnings,"AngularOffset Parameter not in Parameter File; Using 0 (N0E90)")
+      ang.offset<-0
     }
   }
-  angoffset<-angoffset==1
+  ang.offset<-ang.offset==1
   #}}}
 
   #Is the map in Jy per Beam? {{{
@@ -837,17 +837,17 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   Jybm<-as.numeric(params[ID,ind])
   if ((length(ind)==0)||(is.na(Jybm))) {
     if ((length(ind)==1)) {
-      Jybm<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      Jybm<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(Jybm)=='try-error') {
-        parwarning<-c(parwarning,"MapUnitsPerBeam Parameter table read failed; Using 0 (FALSE)")
+        param.warnings<-c(param.warnings,"MapUnitsPerBeam Parameter table read failed; Using 0 (FALSE)")
         Jybm<-0
       }
       if (is.na(Jybm)) {
-        parwarning<-c(parwarning,"MapUnitsPerBeam Parameter not in Parameter File; Using 0 (FALSE)")
+        param.warnings<-c(param.warnings,"MapUnitsPerBeam Parameter not in Parameter File; Using 0 (FALSE)")
         Jybm<-0
       }
     } else {
-      parwarning<-c(parwarning,"MapUnitsPerBeam Parameter not in Parameter File; Using 0 (FALSE)")
+      param.warnings<-c(param.warnings,"MapUnitsPerBeam Parameter not in Parameter File; Using 0 (FALSE)")
       Jybm<-0
     }
   }
@@ -858,74 +858,74 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Apertures by resampling around the edges?
   ID="SmoothAper"
   ind<-which(params[ID,]!="")
-  resampleaperture<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(resampleaperture))) {
+  resample.aperture<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(resample.aperture))) {
     if ((length(ind)==1)) {
-      resampleaperture<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(resampleaperture)=="try-error") {
-        parwarning<-c(parwarning,"SmoothAper Parameter table read failed; Using 1 (TRUE)")
-        resampleaperture<-1
+      resample.aperture<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(resample.aperture)=="try-error") {
+        param.warnings<-c(param.warnings,"SmoothAper Parameter table read failed; Using 1 (TRUE)")
+        resample.aperture<-1
       }
-      if (is.na(resampleaperture)) {
-        parwarning<-c(parwarning,"SmoothAper Parameter not in Parameter File; Using 1 (TRUE)")
-        resampleaperture<-1
+      if (is.na(resample.aperture)) {
+        param.warnings<-c(param.warnings,"SmoothAper Parameter not in Parameter File; Using 1 (TRUE)")
+        resample.aperture<-1
       }
     } else {
-      parwarning<-c(parwarning,"SmoothAper Parameter not in Parameter File; Using 1 (TRUE)")
-      resampleaperture<-1
+      param.warnings<-c(param.warnings,"SmoothAper Parameter not in Parameter File; Using 1 (TRUE)")
+      resample.aperture<-1
     }
   }
-  resampleaperture<-resampleaperture==1
+  resample.aperture<-resample.aperture==1
   #}}}
 
   #Resample Parameters {{{
-  if (any(resampleaperture)) {
+  if (any(resample.aperture)) {
     #What resolution do we want to upscale by? {{{
     ID="ResamplingRes"
     ind<-which(params[ID,]!="")
-    upres<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||(is.na(upres))) {
+    resample.upres<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(resample.upres))) {
       if ((length(ind)==1)) {
-        upres<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(upres)=='try-error') {
-          parwarning<-c(parwarning,"ResamplingRes Parameter table read failed; Using 3")
-          upres<-3
+        resample.upres<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(resample.upres)=='try-error') {
+          param.warnings<-c(param.warnings,"ResamplingRes Parameter table read failed; Using 3")
+          resample.upres<-3
         }
-        if (is.na(upres)) {
-          parwarning<-c(parwarning,"ResamplingRes Parameter not in Parameter File; Using 3")
-          upres<-3
+        if (is.na(resample.upres)) {
+          param.warnings<-c(param.warnings,"ResamplingRes Parameter not in Parameter File; Using 3")
+          resample.upres<-3
         }
       } else {
-        parwarning<-c(parwarning,"ResamplingRes Parameter not in Parameter File; Using 3")
-        upres<-3
+        param.warnings<-c(param.warnings,"ResamplingRes Parameter not in Parameter File; Using 3")
+        resample.upres<-3
       }
     }
     #}}}
     #How many iterations of upscale do we want? {{{
     ID="ResamplingIters"
     ind<-which(params[ID,]!="")
-    itersteps<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||(is.na(itersteps))) {
+    resample.iterations<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(resample.iterations))) {
       if ((length(ind)==1)) {
-        itersteps<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(itersteps)=='try-error') {
-          parwarning<-c(parwarning,"ResamplingIters Parameter table read failed; Using 5")
-          itersteps<-5
+        resample.iterations<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(resample.iterations)=='try-error') {
+          param.warnings<-c(param.warnings,"ResamplingIters Parameter table read failed; Using 5")
+          resample.iterations<-5
         }
-        if (is.na(itersteps)) {
-          parwarning<-c(parwarning,"ResamplingIters Parameter not in Parameter File; Using 5")
-          itersteps<-5
+        if (is.na(resample.iterations)) {
+          param.warnings<-c(param.warnings,"ResamplingIters Parameter not in Parameter File; Using 5")
+          resample.iterations<-5
         }
       } else {
-        parwarning<-c(parwarning,"ResamplingIters Parameter not in Parameter File; Using 5")
-        itersteps<-5
+        param.warnings<-c(param.warnings,"ResamplingIters Parameter not in Parameter File; Using 5")
+        resample.iterations<-5
       }
     }
     #}}}
   } else {
     #If not - set defaults (#iters=0 performs no resampling) {{{
-    upres<-2
-    itersteps<-0
+    resample.upres<-2
+    resample.iterations<-0
     #}}}
   }
   #}}}
@@ -938,17 +938,17 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   confidence<-as.numeric(params[ID,ind])
   if ((length(ind)==0)||is.na(confidence)) {
     if ((length(ind)==1)) {
-      confidence<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      confidence<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(confidence)=='try-error') {
-        parwarning<-c(parwarning,"PSFConfidence Parameter table read failed; Using 1")
+        param.warnings<-c(param.warnings,"PSFConfidence Parameter table read failed; Using 1")
         confidence<-1
       }
       if (is.na(confidence)) {
-        parwarning<-c(parwarning,"PSFConfidence Parameter not in Parameter File; Using 1")
+        param.warnings<-c(param.warnings,"PSFConfidence Parameter not in Parameter File; Using 1")
         confidence<-1
       }
     } else {
-      parwarning<-c(parwarning,"PSFConfidence Parameter not in Parameter File; Using 1")
+      param.warnings<-c(param.warnings,"PSFConfidence Parameter not in Parameter File; Using 1")
       confidence<-1
     }
   }
@@ -957,208 +957,208 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Size of the aperture stamp as a multiple of the aperture major axis {{{
   ID="ApStampWidth"
   ind<-which(params[ID,]!="")
-  defbuff<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(defbuff)) {
+  def.buff<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(def.buff)) {
     if ((length(ind)==1)) {
-      defbuff<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(defbuff)=='try-error') {
-        parwarning<-c(parwarning,"ApStampWidth Parameter table read failed; Using 1.05")
-        defbuff<-1.05
+      def.buff<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(def.buff)=='try-error') {
+        param.warnings<-c(param.warnings,"ApStampWidth Parameter table read failed; Using 1.05")
+        def.buff<-1.05
       }
-      if (is.na(defbuff)) {
-        parwarning<-c(parwarning,"ApStampWidth Parameter not in Parameter File; Using 1.05")
-        defbuff<-1.05
+      if (is.na(def.buff)) {
+        param.warnings<-c(param.warnings,"ApStampWidth Parameter not in Parameter File; Using 1.05")
+        def.buff<-1.05
       }
     } else {
-      parwarning<-c(parwarning,"ApStampWidth Parameter not in Parameter File; Using 1.05")
-      defbuff<-1.05
+      param.warnings<-c(param.warnings,"ApStampWidth Parameter not in Parameter File; Using 1.05")
+      def.buff<-1.05
     }
   }
-  if (defbuff<1) {
-    parwarning<-c(parwarning,"ApStampWidth Value is less than or equal to Unity. Value must be strictly > 1. Setting to 1.05")
-    defbuff<-1.05
+  if (def.buff<1) {
+    param.warnings<-c(param.warnings,"ApStampWidth Value is less than or equal to Unity. Value must be strictly > 1. Setting to 1.05")
+    def.buff<-1.05
   }
   #}}}
 
   #Do we want to output the source mask only? {{{
   ID="SourceMaskOnly"
   ind<-which(params[ID,]!="")
-  sourcemaskonly<-as.numeric(params[ID,ind])
-  if (length(ind)==0||is.na(sourcemaskonly)) {
+  sourcemask.only<-as.numeric(params[ID,ind])
+  if (length(ind)==0||is.na(sourcemask.only)) {
     if (length(ind)==1) {
-      sourcemaskonly<-try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-      if (class(sourcemaskonly)=="try-error") {
-        parwarning<-c(parwarning,"SourceMaskOnly Parameter table read failed; Using 0 (FALSE)")
-        sourcemaskonly<-0
+      sourcemask.only<-try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+      if (class(sourcemask.only)=="try-error") {
+        param.warnings<-c(param.warnings,"SourceMaskOnly Parameter table read failed; Using 0 (FALSE)")
+        sourcemask.only<-0
       }
-      if (is.na(sourcemaskonly)) {
-        parwarning<-c(parwarning,"SourceMaskOnly Parameter not in Parameter File; Using 0 (FALSE)")
-        sourcemaskonly<-0
+      if (is.na(sourcemask.only)) {
+        param.warnings<-c(param.warnings,"SourceMaskOnly Parameter not in Parameter File; Using 0 (FALSE)")
+        sourcemask.only<-0
       }
     } else {
-      parwarning<-c(parwarning,"SourceMaskOnly Parameter not in Parameter File; Using 0 (FALSE)")
-      sourcemaskonly<-0
+      param.warnings<-c(param.warnings,"SourceMaskOnly Parameter not in Parameter File; Using 0 (FALSE)")
+      sourcemask.only<-0
     }
   }
-  sourcemaskonly<-(sourcemaskonly==1)
+  sourcemask.only<-(sourcemask.only==1)
   #}}}
 
   #Do we want to output the source mask at all?
-  if (any(!sourcemaskonly)) {
+  if (any(!sourcemask.only)) {
     ID="WriteSourceMask"
     ind<-which(params[ID,]!="")
-    sourcemaskout<-as.numeric(params[ID,ind])
-    if (length(ind)==0||is.na(sourcemaskout)) {
+    sourcemask.out<-as.numeric(params[ID,ind])
+    if (length(ind)==0||is.na(sourcemask.out)) {
       if (length(ind)==1) {
-        sourcemaskout<-try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-        if (class(sourcemaskout)=="try-error") {
+        sourcemask.out<-try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+        if (class(sourcemask.out)=="try-error") {
           #Warn on Error
-          parwarning<-c(parwarning,"WriteSourceMask Parameter table read failed; Using 0 (FALSE)")
-          sourcemaskout<-0
+          param.warnings<-c(param.warnings,"WriteSourceMask Parameter table read failed; Using 0 (FALSE)")
+          sourcemask.out<-0
         }
-        if (is.na(sourcemaskout)) {
-          parwarning<-c(parwarning,"WriteSourceMask Parameter not in Parameter File; Using 0 (FALSE)")
-          sourcemaskout<-0
+        if (is.na(sourcemask.out)) {
+          param.warnings<-c(param.warnings,"WriteSourceMask Parameter not in Parameter File; Using 0 (FALSE)")
+          sourcemask.out<-0
         }
       } else {
-        parwarning<-c(parwarning,"WriteSourceMask Parameter not in Parameter File; Using 0 (FALSE)")
-        sourcemaskout<-0
+        param.warnings<-c(param.warnings,"WriteSourceMask Parameter not in Parameter File; Using 0 (FALSE)")
+        sourcemask.out<-0
       }
     }
   } else {
-    sourcemaskout<-TRUE
+    sourcemask.out<-TRUE
     sourcemask   <-TRUE
   }
-  sourcemaskout<-(sourcemaskout==1)
-  sourcemask   <-(sourcemaskout==1)
+  sourcemask.out<-(sourcemask.out==1)
+  sourcemask   <-(sourcemask.out==1)
   #}}}
 
   #Do we want to output the All Apertures Mask {{{
-  aafilename<-NULL
+  all.apertures.map.filename<-NULL
   ID="WriteAAMask"
   ind<-which(params[ID,]!="")
-  makeaamask<-params[ID,ind]
-  if ((length(ind)==0)||is.na(makeaamask)) {
-    parwarning<-c(parwarning,"WriteAAMask Parameter not in Parameter File; Using 0 (FALSE)")
-    makeaamask<-FALSE
-  } else { makeaamask<-(makeaamask==1) }
+  make.all.apertures.map<-params[ID,ind]
+  if ((length(ind)==0)||is.na(make.all.apertures.map)) {
+    param.warnings<-c(param.warnings,"WriteAAMask Parameter not in Parameter File; Using 0 (FALSE)")
+    make.all.apertures.map<-FALSE
+  } else { make.all.apertures.map<-(make.all.apertures.map==1) }
   #}}}
 
   #All Apertures mask file name {{{
-  if ( makeaamask ) {
+  if ( make.all.apertures.map ) {
     #Name of the output All Apertures file
     ID="AllApersFile"
     ind<-which(params[ID,]!="")
-    aafilename<-params[ID,ind]
-    if ((length(ind)==0)||is.na(aafilename)) {
-      parwarning<-c(parwarning,"AllApersFile Parameter not in Parameter File; Using 'AllApertures_Mask.fits'")
-      aafilename<-"AllApertures_Mask.fits"
+    all.apertures.map.filename<-params[ID,ind]
+    if ((length(ind)==0)||is.na(all.apertures.map.filename)) {
+      param.warnings<-c(param.warnings,"AllApersFile Parameter not in Parameter File; Using 'AllApertures_Mask.fits'")
+      all.apertures.map.filename<-"AllApertures_Mask.fits"
     }
   }
   #}}}
 
   #Do we want to output the Convolved Apertures mask {{{
-  fafilename<-NULL
+  fa.filename<-NULL
   ID="WriteFAMask"
   ind<-which(params[ID,]!="")
-  makefamask<-params[ID,ind]
-  if ((length(ind)==0)||is.na(makefamask)) {
-    parwarning<-c(parwarning,"WriteFAMask Parameter not in Parameter File; Using 0 (FALSE)")
-    makefamask<-FALSE
-  } else { makefamask<-(makefamask==1) }
+  make.convolved.apertures.map<-params[ID,ind]
+  if ((length(ind)==0)||is.na(make.convolved.apertures.map)) {
+    param.warnings<-c(param.warnings,"WriteFAMask Parameter not in Parameter File; Using 0 (FALSE)")
+    make.convolved.apertures.map<-FALSE
+  } else { make.convolved.apertures.map<-(make.convolved.apertures.map==1) }
   #}}}
 
   #Convolved Apertures Filename {{{
-  if ( makefamask ) {
+  if ( make.convolved.apertures.map ) {
     #Name of the output Convolved Apertures Mask
     ID="ConvApersFile"
     ind<-which(params[ID,]!="")
-    fafilename<-params[ID,ind]
-    if ((length(ind)==0)||is.na(fafilename)) {
-      parwarning<-c(parwarning,"ConvApersFile Parameter not in Parameter File; Using 'AllConvolvedApertures_Mask.fits'")
-      fafilename<-"AllConvolvedApertures_Mask.fits"
+    fa.filename<-params[ID,ind]
+    if ((length(ind)==0)||is.na(fa.filename)) {
+      param.warnings<-c(param.warnings,"ConvApersFile Parameter not in Parameter File; Using 'AllConvolvedApertures_Mask.fits'")
+      fa.filename<-"AllConvolvedApertures_Mask.fits"
     }
   }
   #}}}
 
   #Do we want to output the Deblended Convolved Apertures mask {{{
-  dfafilename<-NULL
+  dfa.filename<-NULL
   ID="WriteDFAMask"
   ind<-which(params[ID,]!="")
-  makedfamask<-params[ID,ind]
-  if ((length(ind)==0)||is.na(makedfamask)) {
-    parwarning<-c(parwarning,"WriteDFAMask Parameter not in Parameter File; Using 0 (FALSE)")
-    makedfamask<-FALSE
-  } else { makedfamask<-(makedfamask==1) }
+  make.debelended.apertures.map<-params[ID,ind]
+  if ((length(ind)==0)||is.na(make.debelended.apertures.map)) {
+    param.warnings<-c(param.warnings,"WriteDFAMask Parameter not in Parameter File; Using 0 (FALSE)")
+    make.debelended.apertures.map<-FALSE
+  } else { make.debelended.apertures.map<-(make.debelended.apertures.map==1) }
   #}}}
 
   #Deblended Convolved Apertures Mask filename {{{
-  if ( makedfamask ) {
+  if ( make.debelended.apertures.map ) {
     #Name of the output Convolved Apertures Mask
     ID="DeblConvApersFile"
     ind<-which(params[ID,]!="")
-    dfafilename<-params[ID,ind]
-    if ((length(ind)==0)||is.na(dfafilename)) {
-      parwarning<-c(parwarning,"DeblConvApersFile Parameter not in Parameter File; Using 'AllDeblConvolvedApertures_Mask.fits'")
-      dfafilename<-"AllDeblConvolvedApertures_Mask.fits"
+    dfa.filename<-params[ID,ind]
+    if ((length(ind)==0)||is.na(dfa.filename)) {
+      param.warnings<-c(param.warnings,"DeblConvApersFile Parameter not in Parameter File; Using 'AllDeblConvolvedApertures_Mask.fits'")
+      dfa.filename<-"AllDeblConvolvedApertures_Mask.fits"
     }
   }
   #}}}
 
   #Do we want to output the Residual image? {{{
-  residmap<-NULL
+  residual.map<-NULL
   ID="WriteResidMap"
   ind<-which(params[ID,]!="")
-  makeresidmap<-params[ID,ind]
-  if ((length(ind)==0)||is.na(makeresidmap)) {
-    parwarning<-c(parwarning,"WriteResidMap Parameter not in Parameter File; Using 0 (FALSE)")
-    makeresidmap<-FALSE
-  } else { makeresidmap<-(makeresidmap==1) }
+  make.resid.map<-params[ID,ind]
+  if ((length(ind)==0)||is.na(make.resid.map)) {
+    param.warnings<-c(param.warnings,"WriteResidMap Parameter not in Parameter File; Using 0 (FALSE)")
+    make.resid.map<-FALSE
+  } else { make.resid.map<-(make.resid.map==1) }
   #}}}
 
   #Residual Image filename {{{
-  if ( makeresidmap ) {
+  if ( make.resid.map ) {
     #Name of the output Residual image
     ID="ResidImageFile"
     ind<-which(params[ID,]!="")
-    residmap<-params[ID,ind]
-    if ((length(ind)==0)||is.na(residmap)) {
-      parwarning<-c(parwarning,"ResidImageFile Parameter not in Parameter File; Using 'ResidualImage.fits'")
-      residmap<-"ResidualImage.fits"
+    residual.map<-params[ID,ind]
+    if ((length(ind)==0)||is.na(residual.map)) {
+      param.warnings<-c(param.warnings,"ResidImageFile Parameter not in Parameter File; Using 'ResidualImage.fits'")
+      residual.map<-"ResidualImage.fits"
     }
   }
   #}}}
 
   #Do we want to output the Flux table? {{{
-  tableoutname<-NULL
+  tableout.name<-NULL
   ID="WriteTable"
   ind<-which(params[ID,]!="")
-  writetab<-params[ID,ind]
-  if ((length(ind)==0)||is.na(writetab)) {
-    parwarning<-c(parwarning,"WriteTable Parameter not in Parameter File; Using 1 (TRUE)")
-    writetab<-TRUE
-  } else { writetab<-(writetab==1) }
+  write.tab<-params[ID,ind]
+  if ((length(ind)==0)||is.na(write.tab)) {
+    param.warnings<-c(param.warnings,"WriteTable Parameter not in Parameter File; Using 1 (TRUE)")
+    write.tab<-TRUE
+  } else { write.tab<-(write.tab==1) }
   #}}}
 
   #Table Filename {{{
-  if ( writetab ) {
+  if ( write.tab ) {
     #Name of output Flux table
     ID="TableName"
     ind<-which(params[ID,]!="")
-    tableoutname<-params[ID,ind]
-    if ((length(ind)==0)||(is.na(tableoutname))) {
+    tableout.name<-params[ID,ind]
+    if ((length(ind)==0)||(is.na(tableout.name))) {
       #Warn on Error
-      parwarning<-c(parwarning,"TableName Parameter not in Parameter File; Using 'LAMBDAR_Results'")
-      tableoutname<-"LAMBDAR_Results"
+      param.warnings<-c(param.warnings,"TableName Parameter not in Parameter File; Using 'LAMBDAR_Results'")
+      tableout.name<-"LAMBDAR_Results"
     } else {
       if (length(ind)==1) {
-        tableoutname<-try(suppressWarnings(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
-        if (class(tableoutname)=="try-error") {
+        tableout.name<-try(suppressWarnings(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
+        if (class(tableout.name)=="try-error") {
           #Warn on Error
-          tableoutname<-params[ID,1]
+          tableout.name<-params[ID,1]
         }
-        if (is.na(tableoutname)) {
-          tableoutname<-params[ID,1]
+        if (is.na(tableout.name)) {
+          tableout.name<-params[ID,1]
         }
       }
     }
@@ -1173,7 +1173,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     ind<-which(params[ID,]!="")
     showtime<-params[ID,ind]
     if ((length(ind)==0)||is.na(showtime)) {
-      parwarning<-c(parwarning,"ShowTime Parameter not in Parameter File; Using 0 (FALSE)")
+      param.warnings<-c(param.warnings,"ShowTime Parameter not in Parameter File; Using 0 (FALSE)")
       showtime<-FALSE
     } else { showtime<-(showtime==1) }
   }
@@ -1184,7 +1184,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   ind<-which(params[ID,]!="")
   interact<-params[ID,ind]
   if ((length(ind)==0)||is.na(interact)) {
-    parwarning<-c(parwarning,"Interactive Parameter not in Parameter File; Using 0 (FALSE)")
+    param.warnings<-c(param.warnings,"Interactive Parameter not in Parameter File; Using 0 (FALSE)")
     interact<-FALSE
   } else { interact<-(interact==1) }
   #}}}
@@ -1192,21 +1192,21 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #What limit do we want for the use of masks what cross the mask edges {{{
   ID="UseMaskLim"
   ind<-which(params[ID,]!="")
-  useMaskLim<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(useMaskLim)) {
+  use.mask.lim<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(use.mask.lim)) {
     if ((length(ind)==1)) {
-      useMaskLim<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(useMaskLim)=='try-error') {
-        parwarning<-c(parwarning,"UseMaskLim Parameter table read failed; Using 0.2")
-        useMaskLim<-0.2
+      use.mask.lim<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(use.mask.lim)=='try-error') {
+        param.warnings<-c(param.warnings,"UseMaskLim Parameter table read failed; Using 0.2")
+        use.mask.lim<-0.2
       }
-      if (is.na(useMaskLim)) {
-        parwarning<-c(parwarning,"UseMaskLim Parameter not in Parameter File; Using 0.2")
-        useMaskLim<-0.2
+      if (is.na(use.mask.lim)) {
+        param.warnings<-c(param.warnings,"UseMaskLim Parameter not in Parameter File; Using 0.2")
+        use.mask.lim<-0.2
       }
     } else {
-      parwarning<-c(parwarning,"UseMaskLim Parameter not in Parameter File; Using 0.2")
-      useMaskLim<-0.2
+      param.warnings<-c(param.warnings,"UseMaskLim Parameter not in Parameter File; Using 0.2")
+      use.mask.lim<-0.2
     }
   }
   #}}}
@@ -1216,7 +1216,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   ind<-which(params[ID,]!="")
   diagnostic<-params[ID,ind]
   if ((length(ind)==0)||is.na(diagnostic)) {
-    parwarning<-c(parwarning,"Diagnostic Parameter not in Parameter File; Using 0 (FALSE)")
+    param.warnings<-c(param.warnings,"Diagnostic Parameter not in Parameter File; Using 0 (FALSE)")
     diagnostic<-FALSE
   } else { diagnostic<-(diagnostic==1) }
   #}}}
@@ -1229,11 +1229,11 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     ind<-which(params[ID,]!="")
     verbose<-params[ID,ind]
     if ((length(ind)==0)||is.na(verbose)) {
-      parwarning<-c(parwarning,"Verbose Parameter not in Parameter File; Using 0 (FALSE)")
+      param.warnings<-c(param.warnings,"Verbose Parameter not in Parameter File; Using 0 (FALSE)")
       verbose<-FALSE
     } else { verbose<-(verbose==1) }
   }
-  verboseout<-verbose
+  verbose.out<-verbose
   if (quiet) {
     verbose<-FALSE
     diagnostic<-FALSE
@@ -1243,104 +1243,104 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want a sample of the apertures to be output? {{{
   ID="PlotSample"
   ind<-which(params[ID,]!="")
-  plotsample<-params[ID,ind]
-  if ((length(ind)==0)||is.na(plotsample)) {
-    parwarning<-c(parwarning,"PlotSample Parameter not in Parameter File; Using 0 (FALSE)")
-    plotsample<-FALSE
-  } else { plotsample<-(plotsample==1) }
+  plot.sample<-params[ID,ind]
+  if ((length(ind)==0)||is.na(plot.sample)) {
+    param.warnings<-c(param.warnings,"PlotSample Parameter not in Parameter File; Using 0 (FALSE)")
+    plot.sample<-FALSE
+  } else { plot.sample<-(plot.sample==1) }
   ID="PlotAll"
   ind<-which(params[ID,]!="")
-  plotall<-params[ID,ind]
-  if ((length(ind)==0)||is.na(plotall)) {
-    parwarning<-c(parwarning,"PlotAll Parameter not in Parameter File; Using 0 (FALSE)")
-    plotall<-FALSE
-  } else { plotall<-(plotall==1) }
-  if (plotall & !plotsample) {
-    parwarning<-c(parwarning,"PlotAll Parameter TRUE but PlotSample Parameter FALSE; Forcing PlotSample Parameter to TRUE")
-    plotsample<-TRUE
+  plot.all<-params[ID,ind]
+  if ((length(ind)==0)||is.na(plot.all)) {
+    param.warnings<-c(param.warnings,"PlotAll Parameter not in Parameter File; Using 0 (FALSE)")
+    plot.all<-FALSE
+  } else { plot.all<-(plot.all==1) }
+  if (plot.all & !plot.sample) {
+    param.warnings<-c(param.warnings,"PlotAll Parameter TRUE but PlotSample Parameter FALSE; Forcing PlotSample Parameter to TRUE")
+    plot.sample<-TRUE
   }
   #}}}
 
-  #Make Magnitudes in Output? {{{
+  #Make magnitudes in Output? {{{
   ID="Magnitudes"
   ind<-which(params[ID,]!="")
-  Magnitudes<-params[ID,ind]
-  if ((length(ind)==0)||is.na(Magnitudes)) {
-    parwarning<-c(parwarning,"Magnitudes Parameter not present in the Parameter File; Using 1 (TRUE)")
-    Magnitudes<-TRUE
-  } else { Magnitudes<-(Magnitudes==1) }
+  magnitudes<-params[ID,ind]
+  if ((length(ind)==0)||is.na(magnitudes)) {
+    param.warnings<-c(param.warnings,"Magnitudes Parameter not present in the Parameter File; Using 1 (TRUE)")
+    magnitudes<-TRUE
+  } else { magnitudes<-(magnitudes==1) }
   #}}}
 
   #Magnitude Details {{{
-  if (Magnitudes) {
+  if (magnitudes) {
     #AB Vega Magnitude {{{
     ID="ABVegaFlux"
     ind<-which(params[ID,]!="")
-    ABvegaflux<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||(is.na(ABvegaflux))) {
-      parwarning<-c(parwarning,"ABVegaFlux Parameter not present in the Parameter File; Using 1.0")
-      ABvegaflux<-1.0
+    ab.vega.flux<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(ab.vega.flux))) {
+      param.warnings<-c(param.warnings,"ABVegaFlux Parameter not present in the Parameter File; Using 1.0")
+      ab.vega.flux<-1.0
     }
     #}}}
 
-    #Magnitudes Zero Point {{{
+    #magnitudes Zero Point {{{
     ID="MagZeroPoint"
     ind<-which(params[ID,]!="")
-    magZP<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||(is.na(magZP))) {
+    mag.zp<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(mag.zp))) {
       if (length(ind)==1) {
-        magZP<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(magZP)=="try-error") {
+        mag.zp<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(mag.zp)=="try-error") {
           #Warn on Error
-          parwarning<-c(parwarning,"MagZeroPoint Parameter table read failed; Using 0.0")
-          magZP<-0.0
+          param.warnings<-c(param.warnings,"MagZeroPoint Parameter table read failed; Using 0.0")
+          mag.zp<-0.0
         }
-        if (is.na(magZP)) {
+        if (is.na(mag.zp)) {
           #Warn on Error
-          parwarning<-c(parwarning,"MagZeroPoint Parameter not present/bad in the Parameter File; Using 0.0")
-          magZP<-0.0
+          param.warnings<-c(param.warnings,"MagZeroPoint Parameter not present/bad in the Parameter File; Using 0.0")
+          mag.zp<-0.0
         }
       } else {
         #Warn on Error
-        parwarning<-c(parwarning,"Magnitudes Zero Point not present/bad in the Parameter File; Using 0.0")
-        magZP<-0.0
+        param.warnings<-c(param.warnings,"MagZeroPoint Parameter not present/bad in the Parameter File; Using 0.0")
+        mag.zp<-0.0
       }
     }
     #}}}
 
-    #Magnitudes Zero Point {{{
+    #magnitudes Zero Point {{{
     ID="MagZPLabel"
     ind<-which(params[ID,]!="")
-    magZPlabel<-params[ID,ind]
-    if ((length(ind)==0)||(is.na(magZPlabel))) {
-      parwarning<-c(parwarning,"MagZPLabel Parameter not present in the Parameter File; Using 'MagZP'")
-      magZPlabel<-"MagZP"
+    mag.zp.label<-params[ID,ind]
+    if ((length(ind)==0)||(is.na(mag.zp.label))) {
+      param.warnings<-c(param.warnings,"MagZPLabel Parameter not present in the Parameter File; Using 'MagZP'")
+      mag.zp.label<-"MagZP"
     }
     #}}}
   } else {
-    magZP<-NA
-    magZPlabel<-"MagZP"
-    ABvegaflux<-1.0
+    mag.zp<-NA
+    mag.zp.label<-"MagZP"
+    ab.vega.flux<-1.0
   }
   #}}}
 
   #Saturation Label {{{
   ID="SaturationLabel"
   ind<-which(params[ID,]!="")
-  saturlabel<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(saturlabel))) {
-    parwarning<-c(parwarning,"SaturationLabel Parameter not present in the Parameter File; Using 'SATUR'")
-    saturlabel<-"SATUR"
-  } else if (length(ind)==1&&(file.exists(file.path(pathroot,saturlabel)))) {
+  satur.label<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(satur.label))) {
+    param.warnings<-c(param.warnings,"SaturationLabel Parameter not present in the Parameter File; Using 'SATUR'")
+    satur.label<-"SATUR"
+  } else if (length(ind)==1&&(file.exists(file.path(path.root,satur.label)))) {
     #One file provided
-    saturlabel<-try(c(t(read.table(file.path(pathroot,saturlabel), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(saturlabel)=="try-error") {
-      parwarning<-c(parwarning,"SaturationLabel Parameter table read failed; Using 'SATUR'")
-      saturlabel<-"SATUR"
+    satur.label<-try(c(t(read.table(file.path(path.root,satur.label), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(satur.label)=="try-error") {
+      param.warnings<-c(param.warnings,"SaturationLabel Parameter table read failed; Using 'SATUR'")
+      satur.label<-"SATUR"
     }
-    if (is.na(saturlabel)) {
-      parwarning<-c(parwarning,"SaturationLabel Parameter not in Parameter File; Using 'SATUR'")
-      saturlabel<-"SATUR"
+    if (is.na(satur.label)) {
+      param.warnings<-c(param.warnings,"SaturationLabel Parameter not in Parameter File; Using 'SATUR'")
+      satur.label<-"SATUR"
     }
   }
   #}}}
@@ -1350,21 +1350,21 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   ind<-which(params[ID,]!="")
   saturation<-as.numeric(params[ID,ind])
   if ((length(ind)==0)) {
-    parwarning<-c(parwarning,"Saturation Parameter not present in the Parameter File; Using Inf")
+    param.warnings<-c(param.warnings,"Saturation Parameter not present in the Parameter File; Using Inf")
     saturation<-Inf
-  } else if (length(ind)==1&&(file.exists(file.path(pathroot,saturation)))) {
+  } else if (length(ind)==1&&(file.exists(file.path(path.root,saturation)))) {
     #One file provided
-    saturation<-try(as.numeric(c(t(read.table(file.path(pathroot,saturation), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
+    saturation<-try(as.numeric(c(t(read.table(file.path(path.root,saturation), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
     if (class(saturation)=="try-error") {
-      parwarning<-c(parwarning,"Saturation Parameter table read failed; Using Inf")
+      param.warnings<-c(param.warnings,"Saturation Parameter table read failed; Using Inf")
       saturation<-Inf
     }
     if (is.na(saturation)) {
-      parwarning<-c(parwarning,"Saturation Parameter not in Parameter File; Using Inf")
+      param.warnings<-c(param.warnings,"Saturation Parameter not in Parameter File; Using Inf")
       saturation<-Inf
     }
   } else if (any(is.na(saturation))) {
-    parwarning<-c(parwarning,"Saturation Parameter is NA in Parameter File; Using Inf")
+    param.warnings<-c(param.warnings,"Saturation Parameter is NA in Parameter File; Using Inf")
     saturation[which(is.na(saturation))]<-Inf
   }
   #}}}
@@ -1372,20 +1372,20 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Gain Label {{{
   ID="GainLabel"
   ind<-which(params[ID,]!="")
-  gainlabel<-params[ID,ind]
-  if ((length(ind)==0)||(is.na(gainlabel))) {
-    parwarning<-c(parwarning,"GainLabel Parameter not present in the Parameter File; Using 'GAIN'")
-    gainlabel<-"GAIN"
-  } else if (length(ind)==1&&(file.exists(file.path(pathroot,gainlabel)))) {
+  gain.label<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(gain.label))) {
+    param.warnings<-c(param.warnings,"GainLabel Parameter not present in the Parameter File; Using 'GAIN'")
+    gain.label<-"GAIN"
+  } else if (length(ind)==1&&(file.exists(file.path(path.root,gain.label)))) {
     #One file provided
-    gainlabel<-try(c(t(read.table(file.path(pathroot,gainlabel), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(gainlabel)=="try-error") {
-      parwarning<-c(parwarning,"GainLabel Parameter table read failed; Using 'GAIN'")
-      gainlabel<-"GAIN"
+    gain.label<-try(c(t(read.table(file.path(path.root,gain.label), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(gain.label)=="try-error") {
+      param.warnings<-c(param.warnings,"GainLabel Parameter table read failed; Using 'GAIN'")
+      gain.label<-"GAIN"
     }
-    if (is.na(gainlabel)) {
-      parwarning<-c(parwarning,"GainLabel Parameter not in Parameter File; Using 'GAIN'")
-      gainlabel<-"GAIN"
+    if (is.na(gain.label)) {
+      param.warnings<-c(param.warnings,"GainLabel Parameter not in Parameter File; Using 'GAIN'")
+      gain.label<-"GAIN"
     }
   }
   #}}}
@@ -1394,42 +1394,42 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to perform a blanks Correction to the errors of object fluxes?
   ID="BlankCor"
   ind<-which(params[ID,]!="")
-  BlankCor<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(BlankCor))) {
+  blank.cor<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(blank.cor))) {
     if ((length(ind)==1)) {
-      BlankCor<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(BlankCor)=="try-error") {
-        parwarning<-c(parwarning,"BlankCor Parameter table read failed; Using 0 (FALSE)")
-        BlankCor<-0
+      blank.cor<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(blank.cor)=="try-error") {
+        param.warnings<-c(param.warnings,"BlankCor Parameter table read failed; Using 0 (FALSE)")
+        blank.cor<-0
       }
-      if (is.na(BlankCor)) {
-        parwarning<-c(parwarning,"BlankCor Parameter not in Parameter File; Using 0 (FALSE)")
-        BlankCor<-0
+      if (is.na(blank.cor)) {
+        param.warnings<-c(param.warnings,"BlankCor Parameter not in Parameter File; Using 0 (FALSE)")
+        blank.cor<-0
       }
     } else {
-      parwarning<-c(parwarning,"BlankCor Parameter not in Parameter File; Using 0 (FALSE)")
-      BlankCor<-0
+      param.warnings<-c(param.warnings,"BlankCor Parameter not in Parameter File; Using 0 (FALSE)")
+      blank.cor<-0
     }
   }
-  BlankCor<-BlankCor==1
+  blank.cor<-blank.cor==1
   #Number of Blanks per Object {{{
   ID="nBlanks"
   ind<-which(params[ID,]!="")
-  nBlanks<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(nBlanks))) {
+  num.blanks<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(num.blanks))) {
     if ((length(ind)==1)) {
-      nBlanks<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(nBlanks)=="try-error") {
-        parwarning<-c(parwarning,"nBlanks Parameter table read failed; Using 10")
-        nBlanks<-10
+      num.blanks<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(num.blanks)=="try-error") {
+        param.warnings<-c(param.warnings,"nBlanks Parameter table read failed; Using 10")
+        num.blanks<-10
       }
-      if (is.na(nBlanks)) {
-        parwarning<-c(parwarning,"nBlanks Parameter not in Parameter File; Using 10")
-        nBlanks<-10
+      if (is.na(num.blanks)) {
+        param.warnings<-c(param.warnings,"nBlanks Parameter not in Parameter File; Using 10")
+        num.blanks<-10
       }
     } else {
-      parwarning<-c(parwarning,"nBlanks Parameter not in Parameter File; Using 10")
-      nBlanks<-10
+      param.warnings<-c(param.warnings,"nBlanks Parameter not in Parameter File; Using 10")
+      num.blanks<-10
     }
   }
   #}}}
@@ -1439,43 +1439,43 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to perform a randoms Correction to the errors of object fluxes?
   ID="RanCor"
   ind<-which(params[ID,]!="")
-  RanCor<-params[ID,ind]
-  if (length(ind)!=0){ if(RanCor!="execute") { RanCor<-as.numeric(RanCor) } }
-  if ((length(ind)==0)||(is.na(RanCor))) {
+  ran.cor<-params[ID,ind]
+  if (length(ind)!=0){ if(ran.cor!="execute") { ran.cor<-as.numeric(ran.cor) } }
+  if ((length(ind)==0)||(is.na(ran.cor))) {
     if ((length(ind)==1)) {
-      RanCor<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(RanCor)=="try-error") {
-        parwarning<-c(parwarning,"RanCor Parameter table read failed; Using 0 (FALSE)")
-        RanCor<-0
+      ran.cor<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(ran.cor)=="try-error") {
+        param.warnings<-c(param.warnings,"RanCor Parameter table read failed; Using 0 (FALSE)")
+        ran.cor<-0
       }
-      if (is.na(RanCor)) {
-        parwarning<-c(parwarning,"RanCor Parameter not in Parameter File; Using 0 (FALSE)")
-        RanCor<-0
+      if (is.na(ran.cor)) {
+        param.warnings<-c(param.warnings,"RanCor Parameter not in Parameter File; Using 0 (FALSE)")
+        ran.cor<-0
       }
     } else {
-      parwarning<-c(parwarning,"RanCor Parameter not in Parameter File; Using 0 (FALSE)")
-      RanCor<-0
+      param.warnings<-c(param.warnings,"RanCor Parameter not in Parameter File; Using 0 (FALSE)")
+      ran.cor<-0
     }
   }
-  if(RanCor!="execute") { RanCor<-RanCor==1 }
+  if(ran.cor!="execute") { ran.cor<-ran.cor==1 }
   #Number of Randoms per Object {{{
   ID="nRandoms"
   ind<-which(params[ID,]!="")
-  nRandoms<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(nRandoms))) {
+  num.randoms<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(num.randoms))) {
     if ((length(ind)==1)) {
-      nRandoms<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(nRandoms)=="try-error") {
-        parwarning<-c(parwarning,"nRandoms Parameter table read failed; Using 10")
-        nRandoms<-10
+      num.randoms<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(num.randoms)=="try-error") {
+        param.warnings<-c(param.warnings,"nRandoms Parameter table read failed; Using 10")
+        num.randoms<-10
       }
-      if (is.na(nRandoms)) {
-        parwarning<-c(parwarning,"nRandoms Parameter not in Parameter File; Using 10")
-        nRandoms<-10
+      if (is.na(num.randoms)) {
+        param.warnings<-c(param.warnings,"nRandoms Parameter not in Parameter File; Using 10")
+        num.randoms<-10
       }
     } else {
-      parwarning<-c(parwarning,"nRandoms Parameter not in Parameter File; Using 10")
-      nRandoms<-10
+      param.warnings<-c(param.warnings,"nRandoms Parameter not in Parameter File; Using 10")
+      num.randoms<-10
     }
   }
   #}}}
@@ -1484,92 +1484,92 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Perform a Sky estimation & subtraction? {{{
   ID="DoSkyEst"
   ind<-which(params[ID,]!="")
-  doskyest<-as.numeric(params[ID,ind])
-  if ((length(ind)==0) || is.na(doskyest)) {
+  do.sky.est<-as.numeric(params[ID,ind])
+  if ((length(ind)==0) || is.na(do.sky.est)) {
     if (length(ind)==1) {
-      doskyest<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(doskyest)=="try-error") {
+      do.sky.est<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(do.sky.est)=="try-error") {
         #Warn on Error
-        parwarning<-c(parwarning,"DoSkyEst Parameter table read failed; Using 0 (FALSE)")
-        doskyest<-0
+        param.warnings<-c(param.warnings,"DoSkyEst Parameter table read failed; Using 0 (FALSE)")
+        do.sky.est<-0
       }
-      if (is.na(doskyest)) {
+      if (is.na(do.sky.est)) {
         #Warn on Error
-        parwarning<-c(parwarning,"DoSkyEst Parameter not in Parameter File; Using 0 (FALSE)")
-        doskyest<-0
+        param.warnings<-c(param.warnings,"DoSkyEst Parameter not in Parameter File; Using 0 (FALSE)")
+        do.sky.est<-0
       }
     } else {
       #Warn on Error
-      parwarning<-c(parwarning,"DoSkyEst Parameter not in Parameter File; Using 0 (FALSE)")
-      doskyest<-0
+      param.warnings<-c(param.warnings,"DoSkyEst Parameter not in Parameter File; Using 0 (FALSE)")
+      do.sky.est<-0
     }
   }
-  doskyest<-(doskyest==1)
+  do.sky.est<-(do.sky.est==1)
   #}}}
 
   #Calculate the Sky RMS? {{{
   ID="GetSkyRMS"
   ind<-which(params[ID,]!="")
-  getskyrms<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(getskyrms)) {
+  get.sky.rms<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(get.sky.rms)) {
     if (length(ind)==1) {
-      getskyrms<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(getskyrms)=="try-error") {
+      get.sky.rms<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(get.sky.rms)=="try-error") {
         #Warn on Error
-        parwarning<-c(parwarning,"GetSkyRMS Parameter not in Parameter File; Using 0 (FALSE)")
-        getskyrms<-0
+        param.warnings<-c(param.warnings,"GetSkyRMS Parameter not in Parameter File; Using 0 (FALSE)")
+        get.sky.rms<-0
       }
-      if (is.na(getskyrms)) {
+      if (is.na(get.sky.rms)) {
         #Warn on Error
-        parwarning<-c(parwarning,"GetSkyRMS Parameter not in Parameter File; Using 0 (FALSE)")
-        getskyrms<-0
+        param.warnings<-c(param.warnings,"GetSkyRMS Parameter not in Parameter File; Using 0 (FALSE)")
+        get.sky.rms<-0
       }
     } else {
         #Warn on Error
-        parwarning<-c(parwarning,"GetSkyRMS Parameter not in Parameter File; Using 0 (FALSE)")
-        getskyrms<-0
+        param.warnings<-c(param.warnings,"GetSkyRMS Parameter not in Parameter File; Using 0 (FALSE)")
+        get.sky.rms<-0
     }
   }
-  getskyrms<-getskyrms==1
+  get.sky.rms<-get.sky.rms==1
   #}}}
 
   #Sky Estimate Paramters {{{
-  if (any(doskyest|getskyrms|BlankCor)) {
+  if (any(do.sky.est|get.sky.rms|blank.cor)) {
     #Sourcemask needed for SkyEstimate. If not TRUE, set to TRUE {{{
-    if (any(!sourcemask & (doskyest|getskyrms|BlankCor))) {
-      parwarning<-c(parwarning,"Source Mask creation being forced for all runs with doSkyEst/getSkyRMS/BlankCor Parameters TRUE")
-      sourcemask<-BlankCor|doskyest|getskyrms|sourcemask
+    if (any(!sourcemask & (do.sky.est|get.sky.rms|blank.cor))) {
+      param.warnings<-c(param.warnings,"Source Mask creation being forced for all runs with doSkyEst/getSkyRMS/blank.cor Parameters TRUE")
+      sourcemask<-blank.cor|do.sky.est|get.sky.rms|sourcemask
     }
     #}}}
 
     #Number of iterations used in sky estimation {{{
     ID="SkyEstIters"
     ind<-which(params[ID,]!="")
-    skycutiters<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)||is.na(skycutiters)) {
-      parwarning<-c(parwarning,"SkyEstIters Parameter not in Parameter File; Using 5")
-      skycutiters<-5
+    sky.clip.iters<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||is.na(sky.clip.iters)) {
+      param.warnings<-c(param.warnings,"SkyEstIters Parameter not in Parameter File; Using 5")
+      sky.clip.iters<-5
     }
     #}}}
 
     #Sigma level used in sky cut {{{
     ID="SkyEstProbCut"
     ind<-which(params[ID,]!="")
-    skyprobcut<-as.numeric(params[ID,ind])
-    if ((length(ind)==0)|| (is.na(skyprobcut))) {
+    sky.clip.prob<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)|| (is.na(sky.clip.prob))) {
       if ((length(ind)==1)) {
-        skyprobcut<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(skyprobcut)=='try-error') {
-          parwarning<-c(parwarning,"SkyEstProbCut Parameter table read failed; Using 3")
-          skyprobcut<-3
+        sky.clip.prob<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(sky.clip.prob)=='try-error') {
+          param.warnings<-c(param.warnings,"SkyEstProbCut Parameter table read failed; Using 3")
+          sky.clip.prob<-3
         }
-        if (is.na(skyprobcut)) {
-          parwarning<-c(parwarning,"SkyEstProbCut Parameter not in Parameter File; Using 3")
-          skyprobcut<-3
+        if (is.na(sky.clip.prob)) {
+          param.warnings<-c(param.warnings,"SkyEstProbCut Parameter not in Parameter File; Using 3")
+          sky.clip.prob<-3
         }
       } else {
-        parwarning<-c(parwarning,"SkyEstProbCut Parameter not in Parameter File; Using 3")
-        skyprobcut<-3
+        param.warnings<-c(param.warnings,"SkyEstProbCut Parameter not in Parameter File; Using 3")
+        sky.clip.prob<-3
       }
     }
     #}}}
@@ -1577,10 +1577,10 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     #Default Sky Value if estimation fails {{{
     ID="SkyDefault"
     ind<-which(params[ID,]!="")
-    skydefault<-params[ID,ind]
-    if ((length(ind)==0)||is.na(skydefault)) {
-      parwarning<-c(parwarning,"SkyDefault Parameter not in Parameter File; Using 'median'")
-      skydefault<-"median"
+    sky.default<-params[ID,ind]
+    if ((length(ind)==0)||is.na(sky.default)) {
+      param.warnings<-c(param.warnings,"SkyDefault Parameter not in Parameter File; Using 'median'")
+      sky.default<-"median"
     }
     #}}}
 
@@ -1590,132 +1590,132 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
     correl.noise<-as.numeric(params[ID,ind])
     if ((length(ind)==0)||(is.na(correl.noise))) {
       if ((length(ind)==1)) {
-        correl.noise<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        correl.noise<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
         if (class(correl.noise)=='try-error') {
-          parwarning<-c(parwarning,"SkyCorrelNoise Parameter table read failed; Using 1")
+          param.warnings<-c(param.warnings,"SkyCorrelNoise Parameter table read failed; Using 1")
           correl.noise<-1
         }
         if (is.na(correl.noise)) {
-          parwarning<-c(parwarning,"SkyCorrelNoise Parameter not in Parameter File; Using 1")
+          param.warnings<-c(param.warnings,"SkyCorrelNoise Parameter not in Parameter File; Using 1")
           correl.noise<-1
         }
       } else {
-        parwarning<-c(parwarning,"SkyCorrelNoise Parameter not in Parameter File; Using 1")
+        param.warnings<-c(param.warnings,"SkyCorrelNoise Parameter not in Parameter File; Using 1")
         correl.noise<-1
       }
     }
     #}}}
   } else {
-    skycutiters<-0
-    skydefault<-0
-    skyprobcut<-0
+    sky.clip.iters<-0
+    sky.default<-0
+    sky.clip.prob<-0
     correl.noise<-1
   }
   #}}}
 
   #Sourcemask parameters; filename & confidence limit {{{
-  smfilename<-NULL
-  smConfidenceLim<-NULL
+  sourcemask.filename<-NULL
+  sourcemask.conf.lim<-NULL
   if ( sourcemask ) {
-    if (sourcemaskout) {
+    if (sourcemask.out) {
       #Name of SourceMask that is output
       ID="SourceMaskFile"
       ind<-which(params[ID,]!="")
-      smfilename<-params[ID,ind]
-      if (length(ind)==0||is.na(smfilename)||((length(smfilename)==1)&(!grepl(".fits", smfilename)))) {
+      sourcemask.filename<-params[ID,ind]
+      if (length(ind)==0||is.na(sourcemask.filename)||((length(sourcemask.filename)==1)&(!grepl(".fits", sourcemask.filename)))) {
         if (length(ind)==1) {
-          smfilename<-(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-          if (class(smfilename)=="try-error") {
+          sourcemask.filename<-(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+          if (class(sourcemask.filename)=="try-error") {
             #Warn on Error
-            parwarning<-c(parwarning,"SourceMaskFile Parameter table read failed; Using 'SourceMask.fits'")
-            smfilename<-"SourceMask.fits"
+            param.warnings<-c(param.warnings,"SourceMaskFile Parameter table read failed; Using 'SourceMask.fits'")
+            sourcemask.filename<-"SourceMask.fits"
           }
-          if (is.na(smfilename)) {
+          if (is.na(sourcemask.filename)) {
             #Warn on Error
-            parwarning<-c(parwarning,"SourceMaskFile Parameter not in Parameter File; Using 'SourceMask.fits'")
-            smfilename<-"SourceMask.fits"
+            param.warnings<-c(param.warnings,"SourceMaskFile Parameter not in Parameter File; Using 'SourceMask.fits'")
+            sourcemask.filename<-"SourceMask.fits"
           }
         } else {
           #Warn on Error
-        parwarning<-c(parwarning,"SourceMaskFile Parameter not in Parameter File; Using 'SourceMask.fits'")
-          smfilename<-"SourceMask.fits"
+        param.warnings<-c(param.warnings,"SourceMaskFile Parameter not in Parameter File; Using 'SourceMask.fits'")
+          sourcemask.filename<-"SourceMask.fits"
         }
       }
     }
     #Name of SourceMask that is output
     ID="TransmissionMap"
     ind<-which(params[ID,]!="")
-    TransmissionMap<-as.numeric(params[ID,ind])
-    if (length(ind)==0||is.na(TransmissionMap)) {
+    transmission.map<-as.numeric(params[ID,ind])
+    if (length(ind)==0||is.na(transmission.map)) {
       if (length(ind)==1) {
-        TransmissionMap<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(TransmissionMap)=="try-error") {
+        transmission.map<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(transmission.map)=="try-error") {
           #Warn on Error
-          parwarning<-c(parwarning,"TransmissionMap Parameter table read failed; Using 0 (FALSE)")
-          TransmissionMap<-0
+          param.warnings<-c(param.warnings,"TransmissionMap Parameter table read failed; Using 0 (FALSE)")
+          transmission.map<-0
         }
-        if (is.na(TransmissionMap)) {
+        if (is.na(transmission.map)) {
           #Warn on Error
-          parwarning<-c(parwarning,"Transmission Map Parameter not in Parameter File; Using 0 (FALSE)")
-          TransmissionMap<-0
+          param.warnings<-c(param.warnings,"TransmissionMap Parameter not in Parameter File; Using 0 (FALSE)")
+          transmission.map<-0
         }
       } else {
         #Warn on Error
-        parwarning<-c(parwarning,"Transmission Map Parameter not in Parameter File; Using 0 (FALSE)")
-        TransmissionMap<-0
+        param.warnings<-c(param.warnings,"TransmissionMap Parameter not in Parameter File; Using 0 (FALSE)")
+        transmission.map<-0
       }
     }
-    TransmissionMap<-(TransmissionMap==1)
+    transmission.map<-(transmission.map==1)
     #SourceMask Confidence Limit
     ID="SourceMaskConfLim"
     ind<-which(params[ID,]!="")
-    smConfidenceLim<-as.numeric(params[ID,ind])
-    if (length(ind)==0||is.na(smConfidenceLim)) {
+    sourcemask.conf.lim<-as.numeric(params[ID,ind])
+    if (length(ind)==0||is.na(sourcemask.conf.lim)) {
       if (length(ind)==1) {
-        smConfidenceLim<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(smConfidenceLim)=="try-error") {
+        sourcemask.conf.lim<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+        if (class(sourcemask.conf.lim)=="try-error") {
           #Warn on Error
-          parwarning<-c(parwarning,"SourceMaskConfLim Parameter table read failed; Using 0.95")
-          smConfidenceLim<-0.95
+          param.warnings<-c(param.warnings,"SourceMaskConfLim Parameter table read failed; Using 0.95")
+          sourcemask.conf.lim<-0.95
         }
-        if (is.na(smConfidenceLim)) {
+        if (is.na(sourcemask.conf.lim)) {
           #Warn on Error
-          parwarning<-c(parwarning,"SourceMaskConfLim Parameter not in Parameter File; Using 0.95")
-          smConfidenceLim<-0.95
+          param.warnings<-c(param.warnings,"SourceMaskConfLim Parameter not in Parameter File; Using 0.95")
+          sourcemask.conf.lim<-0.95
         }
       } else {
         #Warn on Error
-        parwarning<-c(parwarning,"SourceMaskConfLim Parameter not in Parameter File; Using 0.95")
-        smConfidenceLim<-0.95
+        param.warnings<-c(param.warnings,"SourceMaskConfLim Parameter not in Parameter File; Using 0.95")
+        sourcemask.conf.lim<-0.95
       }
     }
   } else {
-    TransmissionMap=FALSE
-    smConfidenceLim=NA
+    transmission.map=FALSE
+    sourcemask.conf.lim=NA
   }
   #}}}
 
   #Set Minimum Aperture Radius {{{
   ID="MinApRad"
   ind<-which(params[ID,]!="")
-  MinApRad<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(MinApRad))) {
+  min.ap.rad<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(min.ap.rad))) {
     if (length(ind)==1) {
-      MinApRad<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(MinApRad)=="try-error") {
+      min.ap.rad<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(min.ap.rad)=="try-error") {
         #Warn on Error
-        parwarning<-c(parwarning,"MinApRad Parameter not in Parameter File; Using 0")
-        MinApRad<-0
+        param.warnings<-c(param.warnings,"MinApRad Parameter not in Parameter File; Using 0")
+        min.ap.rad<-0
       }
-      if (is.na(MinApRad)) {
+      if (is.na(min.ap.rad)) {
         #Warn on Error
-        parwarning<-c(parwarning,"MinApRad Parameter not in Parameter File; Using 0")
-        MinApRad<-0
+        param.warnings<-c(param.warnings,"MinApRad Parameter not in Parameter File; Using 0")
+        min.ap.rad<-0
       }
     } else {
       #Warn on Error
-      parwarning<-c(parwarning,"MinApRad Parameter not in Parameter File; Using 0")
-      MinApRad<-0
+      param.warnings<-c(param.warnings,"MinApRad Parameter not in Parameter File; Using 0")
+      min.ap.rad<-0
     }
   }
   #}}}
@@ -1723,21 +1723,21 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want a Memory-Safe run? {{{
   ID="MemorySafe"
   ind<-which(params[ID,]!="")
-  memSafe<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(memSafe)) {
+  mem.safe<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(mem.safe)) {
     if ((length(ind)==1)) {
-      memSafe<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(memSafe)=='try-error') {
-        parwarning<-c(parwarning,"MemorySafe Parameter table read failed; Using 0 (FALSE)")
-        memSafe<-0
+      mem.safe<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(mem.safe)=='try-error') {
+        param.warnings<-c(param.warnings,"MemorySafe Parameter table read failed; Using 0 (FALSE)")
+        mem.safe<-0
       }
-      if (is.na(memSafe)) {
-        memSafe<-0
-        parwarning<-c(parwarning,"MemorySafe Parameter not in Parameter File; Using 0 (FALSE)")
+      if (is.na(mem.safe)) {
+        mem.safe<-0
+        param.warnings<-c(param.warnings,"MemorySafe Parameter not in Parameter File; Using 0 (FALSE)")
       }
     } else {
-      memSafe<-0
-      parwarning<-c(parwarning,"MemorySafe Parameter not in Parameter File; Using 0 (FALSE)")
+      mem.safe<-0
+      param.warnings<-c(param.warnings,"MemorySafe Parameter not in Parameter File; Using 0 (FALSE)")
     }
   }
   #}}}
@@ -1745,24 +1745,24 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #What limit value do we want for the Aperture generation? #{{{
   ID="ApertureConfLimit"
   ind<-which(params[ID,]!="")
-  apLimit<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||(is.na(apLimit))) {
+  ap.limit<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(ap.limit))) {
     if (length(ind)==1) {
-      apLimit<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(apLimit)=="try-error") {
+      ap.limit<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(ap.limit)=="try-error") {
         #Warn on Error
-        parwarning<-c(parwarning,"ApertureConfLimit Parameter table read failed; Using 0.9")
-        apLimit<-0.9
+        param.warnings<-c(param.warnings,"ApertureConfLimit Parameter table read failed; Using 0.9")
+        ap.limit<-0.9
       }
-      if (is.na(apLimit)) {
+      if (is.na(ap.limit)) {
         #Warn on Error
-        parwarning<-c(parwarning,"ApertureConfLimit Parameter not in Parameter File; Using 0.9")
-        apLimit<-0.9
+        param.warnings<-c(param.warnings,"ApertureConfLimit Parameter not in Parameter File; Using 0.9")
+        ap.limit<-0.9
       }
     } else {
       #Warn on Error
-      parwarning<-c(parwarning,"ApertureConfLimit Parameter not in Parameter File; Using 0.9")
-      apLimit<-0.9
+      param.warnings<-c(param.warnings,"ApertureConfLimit Parameter not in Parameter File; Using 0.9")
+      ap.limit<-0.9
     }
   }
   #}}}
@@ -1770,130 +1770,130 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Do we want to iterate the fluxes? {{{
   ID="IterateFluxes"
   ind<-which(params[ID,]!="")
-  iterateFluxes<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(iterateFluxes)) {
+  iterate.fluxes<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(iterate.fluxes)) {
     if (length(ind)==1) {
-      iterateFluxes<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(iterateFluxes)=="try-error") {
+      iterate.fluxes<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(iterate.fluxes)=="try-error") {
         #Warn on Error
-        parwarning<-c(parwarning,"IterateFluxes Parameter table read failed; Using 0 (FALSE)")
-        iterateFluxes<-0
+        param.warnings<-c(param.warnings,"IterateFluxes Parameter table read failed; Using 0 (FALSE)")
+        iterate.fluxes<-0
       }
-      if (is.na(iterateFluxes)) {
+      if (is.na(iterate.fluxes)) {
         #Warn on Error
-        parwarning<-c(parwarning,"IterateFluxes Parameter not in Parameter File; Using 0 (FALSE)")
-        iterateFluxes<-0
+        param.warnings<-c(param.warnings,"IterateFluxes Parameter not in Parameter File; Using 0 (FALSE)")
+        iterate.fluxes<-0
       }
     } else {
         #Warn on Error
-        parwarning<-c(parwarning,"IterateFluxes Parameter not in Parameter File; Using 0 (FALSE)")
-        iterateFluxes<-0
+        param.warnings<-c(param.warnings,"IterateFluxes Parameter not in Parameter File; Using 0 (FALSE)")
+        iterate.fluxes<-0
     }
   }
-  iterateFluxes<-(iterateFluxes==1)
+  iterate.fluxes<-(iterate.fluxes==1)
   #}}}
 
   #If Iterating, how many iterations do we want? {{{
   ID="nIterations"
   ind<-which(params[ID,]!="")
-  nIterations<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(nIterations)) {
+  num.iterations<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(num.iterations)) {
     if ((length(ind)==1)) {
-      nIterations<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(nIterations)=='try-error') {
-        parwarning<-c(parwarning,"nIterations Parameter table read failed; Using 2")
-        nIterations<-2
+      num.iterations<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(num.iterations)=='try-error') {
+        param.warnings<-c(param.warnings,"nIterations Parameter table read failed; Using 2")
+        num.iterations<-2
       }
-      if (is.na(nIterations)) {
-        parwarning<-c(parwarning,"nIterations Parameter not in Parameter File; Using 2")
-        nIterations<-2
+      if (is.na(num.iterations)) {
+        param.warnings<-c(param.warnings,"nIterations Parameter not in Parameter File; Using 2")
+        num.iterations<-2
       }
     } else {
-      parwarning<-c(parwarning,"nIterations Parameter not in Parameter File; Using 2")
-      nIterations<-2
+      param.warnings<-c(param.warnings,"nIterations Parameter not in Parameter File; Using 2")
+      num.iterations<-2
     }
   }
   #}}}
 
-  #What format are the input fluxweights? {{{
+  #What format are the input flux.weights? {{{
   ID="FluxWgtType"
   ind<-which(params[ID,]!="")
-  weightType<-tolower(params[ID,ind])
-  if ((length(ind)==0)||is.na(weightType)) {
-    parwarning<-c(parwarning,"FluxWgtType Parameter not in Parameter File; Using 'scale'")
-    weightType<-"scale"
-  } else if (weightType!="flux" & weightType!="mag" & weightType!="scale") {
+  weight.type<-tolower(params[ID,ind])
+  if ((length(ind)==0)||is.na(weight.type)) {
+    param.warnings<-c(param.warnings,"FluxWgtType Parameter not in Parameter File; Using 'scale'")
+    weight.type<-"scale"
+  } else if (weight.type!="flux" & weight.type!="mag" & weight.type!="scale") {
     stop("Fluxweight Type Parameter has unknown value; valid values are 'flux', 'mag', and 'scale'")
   }
   #}}}
 
-  #Do we want to fluxweight Using Pixel Fluxes? {{{
+  #Do we want to flux.weight Using Pixel Fluxes? {{{
   ID="UsePixelFluxWgts"
   ind<-which(params[ID,]!="")
-  usePixelFluxWeights<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(usePixelFluxWeights)) {
+  use.pixel.fluxweight<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(use.pixel.fluxweight)) {
     if (length(ind)==1) {
-      usePixelFluxWeights<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(usePixelFluxWeights)=="try-error") {
+      use.pixel.fluxweight<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(use.pixel.fluxweight)=="try-error") {
         #Warn on Error
-        parwarning<-c(parwarning,"UsePixelFluxWgts Parameter table read failed; Using 0 (FALSE)")
-        usePixelFluxWeights<-0
+        param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter table read failed; Using 0 (FALSE)")
+        use.pixel.fluxweight<-0
       }
-      if (is.na(usePixelFluxWeights)) {
+      if (is.na(use.pixel.fluxweight)) {
         #Warn on Error
-        parwarning<-c(parwarning,"UsePixelFluxWgts Parameter not in Parameter File; Using 0 (FALSE)")
-        usePixelFluxWeights<-0
+        param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter not in Parameter File; Using 0 (FALSE)")
+        use.pixel.fluxweight<-0
       }
     } else {
       #Warn on Error
-      parwarning<-c(parwarning,"UsePixelFluxWgts Parameter not in Parameter File; Using 0 (FALSE)")
-      usePixelFluxWeights<-0
+      param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter not in Parameter File; Using 0 (FALSE)")
+      use.pixel.fluxweight<-0
     }
   }
-  usePixelFluxWeights<-(usePixelFluxWeights==1)
-  if (usePixelFluxWeights) { weightType<-"scale" }
+  use.pixel.fluxweight<-(use.pixel.fluxweight==1)
+  if (use.pixel.fluxweight) { weight.type<-"scale" }
   #}}}
 
   #Do we just want the Deblend Fraction for each aperture? {{{
   ID="GetDeblFrac"
   ind<-which(params[ID,]!="")
-  getDeblFrac<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(getDeblFrac)) {
+  get.debl.frac<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(get.debl.frac)) {
     if (length(ind)==1) {
-      getDeblFrac<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(getDeblFrac)=="try-error") {
+      get.debl.frac<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(get.debl.frac)=="try-error") {
         #Warn on Error
-        parwarning<-c(parwarning,"GetDeblFrac Parameter not in Parameter File; Using 0 (FALSE)")
-        getDeblFrac<-0
+        param.warnings<-c(param.warnings,"GetDeblFrac Parameter not in Parameter File; Using 0 (FALSE)")
+        get.debl.frac<-0
       }
-      if (is.na(getDeblFrac)) {
+      if (is.na(get.debl.frac)) {
         #Warn on Error
-        parwarning<-c(parwarning,"GetDeblFrac Parameter not in Parameter File; Using 0 (FALSE)")
-        getDeblFrac<-0
+        param.warnings<-c(param.warnings,"GetDeblFrac Parameter not in Parameter File; Using 0 (FALSE)")
+        get.debl.frac<-0
       }
     } else {
         #Warn on Error
-        parwarning<-c(parwarning,"GetDeblFrac Parameter not in Parameter File; Using 0 (FALSE)")
-        getDeblFrac<-0
+        param.warnings<-c(param.warnings,"GetDeblFrac Parameter not in Parameter File; Using 0 (FALSE)")
+        get.debl.frac<-0
     }
   }
-  getDeblFrac<-getDeblFrac==1
+  get.debl.frac<-get.debl.frac==1
   #Don't do unwanted things if using this option {{{
-  if (any(getDeblFrac & (getskyrms|doskyest))) {
-    parwarning<-c(parwarning,"Stopping Sky Estimate for all loops where GetDeblFrac is TRUE, as it is unnecessary")
-    if (length(doskyest)==1) {
-      doskyest<-!getDeblFrac
-    } else if (length(getDeblFrac)==1) {
-      doskyest<-FALSE
+  if (any(get.debl.frac & (get.sky.rms|do.sky.est))) {
+    param.warnings<-c(param.warnings,"Stopping Sky Estimate for all loops where GetDeblFrac is TRUE, as it is unnecessary")
+    if (length(do.sky.est)==1) {
+      do.sky.est<-!get.debl.frac
+    } else if (length(get.debl.frac)==1) {
+      do.sky.est<-FALSE
     } else {
-      doskyest[which(getDeblFrac)]<-FALSE
+      do.sky.est[which(get.debl.frac)]<-FALSE
     }
-    if (length(getskyrms)==1) {
-      getskyrms<-!getDeblFrac
-    } else if (length(getDeblFrac)==1) {
-      getskyrms<-FALSE
+    if (length(get.sky.rms)==1) {
+      get.sky.rms<-!get.debl.frac
+    } else if (length(get.debl.frac)==1) {
+      get.sky.rms<-FALSE
     } else {
-      getskyrms[which(getDeblFrac)]<-FALSE
+      get.sky.rms[which(get.debl.frac)]<-FALSE
     }
   }
   #}}}
@@ -1902,21 +1902,21 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #Simulation Noise Gaussianisation Kernel {{{
   ID="SimGauss_AS"
   ind<-which(params[ID,]!="")
-  sim.gauss.as<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(sim.gauss.as)) {
+  sim.gauss.arcsec<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(sim.gauss.arcsec)) {
     if ((length(ind)==1)) {
-      sim.gauss.as<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(sim.gauss.as)=='try-error') {
-        parwarning<-c(parwarning,"SimGauss_AS Parameter table read failed; Using 0")
-        sim.gauss.as<-0
+      sim.gauss.arcsec<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(sim.gauss.arcsec)=='try-error') {
+        param.warnings<-c(param.warnings,"SimGauss_AS Parameter table read failed; Using 0")
+        sim.gauss.arcsec<-0
       }
-      if (is.na(nIterations)) {
-        parwarning<-c(parwarning,"SimGauss_AS Parameter not in Parameter File; Using 0")
-        sim.gauss.as<-0
+      if (is.na(num.iterations)) {
+        param.warnings<-c(param.warnings,"SimGauss_AS Parameter not in Parameter File; Using 0")
+        sim.gauss.arcsec<-0
       }
     } else {
-      parwarning<-c(parwarning,"SimGauss_AS Parameter not in Parameter File; Using 0")
-      sim.gauss.as<-0
+      param.warnings<-c(param.warnings,"SimGauss_AS Parameter not in Parameter File; Using 0")
+      sim.gauss.arcsec<-0
     }
   }
   #}}}
@@ -1925,125 +1925,125 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   ID="LogFile"
   logfile<-params[ID,1]
   if (is.na(logfile)) {
-    parwarning<-c(parwarning,"LogFile Parameter not in Parameter File; Using 'LAMBDAR_Log.txt'")
+    param.warnings<-c(param.warnings,"LogFile Parameter not in Parameter File; Using 'LAMBDAR_Log.txt'")
     logfile<-"LAMBDAR_Log.txt"
   }
   #}}}
   #}}}
 
   # Print any warnings {{{
-  if (!is.null(parwarning) & !quiet) {
-    parwarning<-paste(parwarning,collapse="\n     > ")
+  if (!is.null(param.warnings) & !quiet) {
+    param.warnings<-paste(param.warnings,collapse="\n     > ")
     cat("{\n    Warnings in Parameter File read:\n     > ")
-    cat(parwarning)
+    cat(param.warnings)
     cat("\n   } ")
   }
 
   #}}}
 
   # Assign variables to LAMBDAR workspace {{{
-  assign("aafilename"       , aafilename       , envir = env) # A
-  assign("ABvegaflux"       , ABvegaflux       , envir = env) #
-  assign("angoffset"        , angoffset        , envir = env) #
-  assign("apLimit"          , apLimit          , envir = env) #
-  assign("beamarea_SOM_as"  , beamarea_SOM_as  , envir = env) # B
-  assign("BlankCor"         , BlankCor         , envir = env) # B
+  assign("all.apertures.map.filename"       , all.apertures.map.filename       , envir = env) # A
+  assign("ab.vega.flux"       , ab.vega.flux       , envir = env) #
+  assign("ang.offset"        , ang.offset        , envir = env) #
+  assign("ap.limit"          , ap.limit          , envir = env) #
+  assign("beam.area.input.as"  , beam.area.input.as  , envir = env) # B
+  assign("blank.cor"         , blank.cor         , envir = env) # B
   assign("conf"             , conf             , envir = env) # C
-  assign("checkContam"      , checkContam      , envir = env) #
+  assign("check.contam"      , check.contam      , envir = env) #
   assign("confidence"       , confidence       , envir = env) #
-  assign("cropimage"        , cropimage        , envir = env) #
+  assign("crop.image"        , crop.image        , envir = env) #
   assign("correl.noise"     , correl.noise     , envir = env) #
   assign("catalogue"        , catalogue        , envir = env) #
-  assign("cutrad"           , cutrad           , envir = env) #
-  assign("contamlab"        , contamlab        , envir = env) #
-  assign("catalab"          , catalab          , envir = env) #
-  assign("datamap"          , datamap          , envir = env) # D
-  assign("doskyest"         , doskyest         , envir = env) #
-  assign("defbuff"          , defbuff          , envir = env) #
+  assign("crop.radius"           , crop.radius           , envir = env) #
+  assign("contam.lab"        , contam.lab        , envir = env) #
+  assign("cata.lab"          , cata.lab          , envir = env) #
+  assign("data.map"          , data.map          , envir = env) # D
+  assign("do.sky.est"         , do.sky.est         , envir = env) #
+  assign("def.buff"          , def.buff          , envir = env) #
   assign("diagnostic"       , diagnostic       , envir = env) #
   assign("dec0"             , dec0             , envir = env) #
-  assign("declab"           , declab           , envir = env) #
-  assign("dfafilename"      , dfafilename      , envir = env) #
-  assign("errormap"         , errormap         , envir = env) # E
-  assign("extn"             , extn             , envir = env) #
-  assign("extnerr"          , extnerr          , envir = env) #
-  assign("extnmask"         , extnmask         , envir = env) #
-  assign("extnwgt"          , extnwgt          , envir = env) #
-  assign("Efactor"          , Efactor          , envir = env) #
-  assign("fluxcorr"         , fluxcorr         , envir = env) # F
-  assign("fafilename"       , fafilename       , envir = env) #
-  assign("forcepointsources", forcepointsources, envir = env) #
-  assign("filtcontam"       , filtcontam       , envir = env) #
-  assign("fluxweightlab"    , fluxweightlab    , envir = env) #
-  assign("gainlabel"        , gainlabel        , envir = env) #
-  assign("gauss_fwhm_as"    , gauss_fwhm_as    , envir = env) # G
-  assign("getDeblFrac"      , getDeblFrac      , envir = env) #
-  assign("getskyrms"        , getskyrms        , envir = env) #
-  assign("itersteps"        , itersteps        , envir = env) # I
-  assign("iterateFluxes"    , iterateFluxes    , envir = env) # I
-  assign("nIterations"      , nIterations      , envir = env) # I
+  assign("dec.lab"           , dec.lab           , envir = env) #
+  assign("dfa.filename"      , dfa.filename      , envir = env) #
+  assign("error.map"         , error.map         , envir = env) # E
+  assign("data.extn"             , data.extn             , envir = env) #
+  assign("data.error.extn"          , data.error.extn          , envir = env) #
+  assign("data.mask.extn"         , data.mask.extn         , envir = env) #
+  assign("data.weight.extn"          , data.weight.extn          , envir = env) #
+  assign("error.factor"          , error.factor          , envir = env) #
+  assign("flux.corr"         , flux.corr         , envir = env) # F
+  assign("fa.filename"       , fa.filename       , envir = env) #
+  assign("force.point.sources", force.point.sources, envir = env) #
+  assign("filt.contam"       , filt.contam       , envir = env) #
+  assign("flux.weight.lab"    , flux.weight.lab    , envir = env) #
+  assign("gain.label"        , gain.label        , envir = env) #
+  assign("gauss.fwhm.arcsec"    , gauss.fwhm.arcsec    , envir = env) # G
+  assign("get.debl.frac"      , get.debl.frac      , envir = env) #
+  assign("get.sky.rms"        , get.sky.rms        , envir = env) #
+  assign("resample.iterations"        , resample.iterations        , envir = env) # I
+  assign("iterate.fluxes"    , iterate.fluxes    , envir = env) # I
+  assign("num.iterations"      , num.iterations      , envir = env) # I
   assign("interact"         , interact         , envir = env) #
-  assign("immfitsoutname"   , immfitsoutname   , envir = env) #
-  assign("imwgtfitsoutname" , imwgtfitsoutname , envir = env) #
-  assign("imefitsoutname"   , imefitsoutname   , envir = env) #
-  assign("imfitsoutname"    , imfitsoutname    , envir = env) #
+  assign("mask.fits.output.filename"   , mask.fits.output.filename   , envir = env) #
+  assign("weight.fits.output.filename" , weight.fits.output.filename , envir = env) #
+  assign("error.fits.output.filename"   , error.fits.output.filename   , envir = env) #
+  assign("data.fits.output.filename"    , data.fits.output.filename    , envir = env) #
   assign("Jybm"             , Jybm             , envir = env) # J
   assign("logfile"          , logfile          , envir = env) # KL
-  assign("makeresidmap"     , makeresidmap     , envir = env) # M
-  assign("makedfamask"      , makedfamask      , envir = env) #
-  assign("Magnitudes"       , Magnitudes       , envir = env) #
-  assign("magZP"            , magZP            , envir = env) #
-  assign("magZPlabel"       , magZPlabel       , envir = env) #
-  assign("makefamask"       , makefamask       , envir = env) #
-  assign("makeaamask"       , makeaamask       , envir = env) #
-  assign("maskmap"          , maskmap          , envir = env) #
-  assign("MinApRad"         , MinApRad         , envir = env) #
-  assign("memSafe"          , memSafe          , envir = env) #
-  assign("nopsf"            , nopsf            , envir = env) # N
-  assign("nNNs"             , nNNs             , envir = env) #
-  assign("nocontammap"      , nocontammap      , envir = env) #
-  assign("ncores"           , ncores           , envir = env) #
-  assign("nBlanks"          , nBlanks          , envir = env) #
-  assign("nRandoms"         , nRandoms         , envir = env) #
-  assign("pathroot"         , pathroot         , envir = env) # P
-  assign("pathwork"         , pathwork         , envir = env) #
-  assign("pathout"          , pathout          , envir = env) #
-  assign("plotsample"       , plotsample       , envir = env) #
-  assign("plotall"          , plotall          , envir = env) #
-  assign("psfmap"           , psfmap           , envir = env) #
-  assign("PSFWeighted"      , PSFWeighted      , envir = env) #
-  assign("psffilt"          , psffilt          , envir = env) #
-  assign("resampleaperture" , resampleaperture , envir = env) # QR
+  assign("make.resid.map"     , make.resid.map     , envir = env) # M
+  assign("make.debelended.apertures.map"      , make.debelended.apertures.map      , envir = env) #
+  assign("magnitudes"       , magnitudes       , envir = env) #
+  assign("mag.zp"            , mag.zp            , envir = env) #
+  assign("mag.zp.label"       , mag.zp.label       , envir = env) #
+  assign("make.convolved.apertures.map"       , make.convolved.apertures.map       , envir = env) #
+  assign("make.all.apertures.map"       , make.all.apertures.map       , envir = env) #
+  assign("mask.map"          , mask.map          , envir = env) #
+  assign("min.ap.rad"         , min.ap.rad         , envir = env) #
+  assign("mem.safe"          , mem.safe          , envir = env) #
+  assign("no.psf"            , no.psf            , envir = env) # N
+  assign("num.nearest.neighbours"             , num.nearest.neighbours             , envir = env) #
+  assign("no.contam.map"      , no.contam.map      , envir = env) #
+  assign("num.cores"           , num.cores           , envir = env) #
+  assign("num.blanks"          , num.blanks          , envir = env) #
+  assign("num.randoms"         , num.randoms         , envir = env) #
+  assign("path.root"         , path.root         , envir = env) # P
+  assign("path.work"         , path.work         , envir = env) #
+  assign("path.out"          , path.out          , envir = env) #
+  assign("plot.sample"       , plot.sample       , envir = env) #
+  assign("plot.all"          , plot.all          , envir = env) #
+  assign("psf.map"           , psf.map           , envir = env) #
+  assign("psf.weighted"      , psf.weighted      , envir = env) #
+  assign("psf.filt"          , psf.filt          , envir = env) #
+  assign("resample.aperture" , resample.aperture , envir = env) # QR
   assign("ra0"              , ra0              , envir = env) #
-  assign("ralab"            , ralab            , envir = env) #
-  assign("RanCor"           , RanCor           , envir = env) #
-  assign("residmap"         , residmap         , envir = env) #
+  assign("ra.lab"            , ra.lab            , envir = env) #
+  assign("ran.cor"           , ran.cor           , envir = env) #
+  assign("residual.map"         , residual.map         , envir = env) #
   assign("saturation"       , saturation       , envir = env) # S
-  assign("saturlabel"       , saturlabel       , envir = env) #
-  assign("sim.gauss.as"     , sim.gauss.as     , envir = env) #
+  assign("satur.label"       , satur.label       , envir = env) #
+  assign("sim.gauss.arcsec"     , sim.gauss.arcsec     , envir = env) #
   assign("sourcemask"       , sourcemask       , envir = env) #
-  assign("sourcemaskout"    , sourcemaskout    , envir = env) #
-  assign("sourcemaskonly"   , sourcemaskonly   , envir = env) #
-  assign("smConfidenceLim"  , smConfidenceLim  , envir = env) #
+  assign("sourcemask.out"    , sourcemask.out    , envir = env) #
+  assign("sourcemask.only"   , sourcemask.only   , envir = env) #
+  assign("sourcemask.conf.lim"  , sourcemask.conf.lim  , envir = env) #
   assign("showtime"         , showtime         , envir = env) #
-  assign("skycutiters"      , skycutiters      , envir = env) #
-  assign("skydefault"       , skydefault       , envir = env) #
-  assign("skyprobcut"       , skyprobcut       , envir = env) #
-  assign("semimajlab"       , semimajlab       , envir = env) #
-  assign("semiminlab"       , semiminlab       , envir = env) #
-  assign("smfilename"       , smfilename       , envir = env) #
-  assign("tableoutname"     , tableoutname     , envir = env) # T
-  assign("thetalab"         , thetalab         , envir = env) #
-  assign("TransmissionMap"  , TransmissionMap  , envir = env) #
-  assign("upres"            , upres            , envir = env) # U
-  assign("useMaskLim"       , useMaskLim       , envir = env)
-  assign("usePixelFluxWeights", usePixelFluxWeights , envir = env)
+  assign("sky.clip.iters"      , sky.clip.iters      , envir = env) #
+  assign("sky.default"       , sky.default       , envir = env) #
+  assign("sky.clip.prob"       , sky.clip.prob       , envir = env) #
+  assign("semimaj.lab"       , semimaj.lab       , envir = env) #
+  assign("semimin.lab"       , semimin.lab       , envir = env) #
+  assign("sourcemask.filename"       , sourcemask.filename       , envir = env) #
+  assign("tableout.name"     , tableout.name     , envir = env) # T
+  assign("theta.lab"         , theta.lab         , envir = env) #
+  assign("transmission.map"  , transmission.map  , envir = env) #
+  assign("resample.upres"            , resample.upres            , envir = env) # U
+  assign("use.mask.lim"       , use.mask.lim       , envir = env)
+  assign("use.pixel.fluxweight", use.pixel.fluxweight , envir = env)
   assign("verbose"          , verbose          , envir = env) # V
-  assign("verboseout"       , verboseout       , envir = env) #
-  assign("writetab"         , writetab         , envir = env) # W
-  assign("weightType"       , weightType       , envir = env) #
-  assign("wgtmap"           , wgtmap           , envir = env) #
-  assign("wgtzp"            , wgtzp            , envir = env) #
+  assign("verbose.out"       , verbose.out       , envir = env) #
+  assign("write.tab"         , write.tab         , envir = env) # W
+  assign("weight.type"       , weight.type       , envir = env) #
+  assign("weight.map"           , weight.map           , envir = env) #
+  assign("wgt.zp"            , wgt.zp            , envir = env) #
                                                               # XYZ
   #}}}
 
@@ -2053,7 +2053,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Finished Setup of Parameter Space {{{
   if (!quiet) { cat(" - Done\n") }
-  return=parwarning
+  return=param.warnings
   #}}}
 
 }

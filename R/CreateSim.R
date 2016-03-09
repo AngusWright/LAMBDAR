@@ -1,5 +1,5 @@
-CreateSim <-
-function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=TRUE, colourCorr=0.0, quiet=FALSE, confuse=FALSE){
+create.sim <-
+function(par.file=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=TRUE, colourCorr=0.0, quiet=FALSE, confuse=FALSE){
 #Proceedure measures object fluxes from an arbitrary fits image
 
   #For Setup, warnings are handled internally - print nothing {{{
@@ -7,17 +7,17 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
   #}}}
 
   #Set function Environments {{{
-  environment(opencatalogue)<-environment()
-  environment(readimage)<-environment()
-  environment(readparfile)<-environment()
+  environment(open.catalogue)<-environment()
+  environment(read.images)<-environment()
+  environment(read.par.file)<-environment()
   environment(create.sim.image)<-environment()
   #}}}
 
   #Check for appropriate calling syntax {{{
-  if (is.na(parfile)) {
+  if (is.na(par.file)) {
   stop(paste("Parameter file not supplied.\n",
              "Calling Syntax:\n",
-             "       MeasureFluxes(<ParameterFile>,<Observation Parameters>,<Quiet Flag>)\n",
+             "       measure.fluxes(<ParameterFile>,<Observation Parameters>,<Quiet Flag>)\n",
              "<ParameterFile> = Path to, and Filename of, the LAMBDAR .par file\n",
              "<Observation Parameters> = Data frame containing the details of the observation of the input image: \n",
              "            $exp = Effective Exposure Time (s)\n",
@@ -25,12 +25,12 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
              "            $lamEff = Filter Effective Central Wavelength (Ang)\n",
              "            $Weff = Filter Effective Width (Ang)\n",
              "<QuietFlag> = TRUE/FALSE\n\n",
-             "To create the default parameter file, run MeasureFluxes('--makepar').", sep=""))
+             "To create the default parameter file, run measure.fluxes('--makepar').", sep=""))
   }
   if (is.na(ObsParm)|!is.data.frame(ObsParm)) {
   warning(paste("Observation Parameters not supplied, or supplied incorrectly.\n",
              "Calling Syntax:\n",
-             "       MeasureFluxes(<ParameterFile>,<Observation Parameters>,<Quiet Flag>)\n",
+             "       measure.fluxes(<ParameterFile>,<Observation Parameters>,<Quiet Flag>)\n",
              "<ParameterFile> = Path to, and Filename of, the LAMBDAR .par file\n",
              "<Observation Parameters> = Data frame containing the details of the observation of the input image: \n",
              "            $exp = Effective Exposure Time (s)\n",
@@ -38,82 +38,82 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
              "            $lamEff = Filter Effective Central Wavelength (Ang)\n",
              "            $Weff = Filter Effective Width (Ang)\n",
              "<QuietFlag> = TRUE/FALSE\n\n",
-             "To create the default parameter file, run MeasureFluxes('--makepar').", sep=""))
+             "To create the default parameter file, run measure.fluxes('--makepar').", sep=""))
   warning("Using SDSSIII r-band default parameters for observation paramters\n")
   ObsParm=data.frame(exp=53.9,area=pi*(2.5/2)^2,lamEff=1111.2,Weff=6165)
   }#}}}
 
   #If requested, resume LAMBDAR run from last loop state {{{
-  if (parfile == "--resume") {
+  if (par.file == "--resume") {
     if (file.exists(".LambdarParameters.Rdata")&file.exists(".LambdarActiveLoop.txt")) {
       if (!quiet) { cat("Resuming from Previous Loop State\n") }
       load(".LambdarParameters.Rdata")
-      lstart<-as.numeric(read.csv(".LambdarActiveLoop.txt"))[1]
+      loop.start<-as.numeric(read.csv(".LambdarActiveLoop.txt"))[1]
       resume<-TRUE
     } else {
       stop("Resume Requested, but one/both of the required resume files .LambdarParameters.Rdata & .LambdarLoopState.txt are missing")
     }
   } else {
-    lstart<-1
+    loop.start<-1
     resume<-FALSE
   }#}}}
 
   #Set start timer & print opening {{{
-  starttime<-proc.time()[3]
+  start.time<-proc.time()[3]
   #}}}
 
-  memLim<-Inf
+  mem.lim<-Inf
 
   #Setup Parameter Space (read .par file) {{{
   if (!resume) {
     param.env<-new.env(parent=environment())
-    readparfile(parfile,starttime,quiet,env=param.env)
+    read.par.file(par.file,start.time,quiet,env=param.env)
   }
-  parameterList<-ls(envir=param.env)
+  parameter.list<-ls(envir=param.env)
   #}}}
 
   #From here on, produce warnings as they occur {{{
   options(warn=1)
   #}}}
 
-  #Check if Magnitudes are active {{{
-  if (any(!param.env$Magnitudes) | any(is.na(param.env$magZP))) {
-    stop("Magnitudes must be TRUE for sim-image generation; magZP is used in all cases to output image as Jy/pix")
+  #Check if magnitudes are active {{{
+  if (any(!param.env$magnitudes) | any(is.na(param.env$mag.zp))) {
+    stop("magnitudes must be TRUE for sim-image generation; mag.zp is used in all cases to output image as Jy/pix")
   }
   #}}}
 
   #If needed, register the parallel backend {{{
-  registerDoParallel(cores=param.env$ncores)
+  registerDoParallel(cores=param.env$num.cores)
   if (!quiet) { cat("   Program running with ",getDoParWorkers()," workers/threads.\n") }
   #}}}
 
   #Initialise Loop Counter {{{
   results<-{}
-  nloops<-length(param.env$datamap)
-  if (!quiet) { cat("   There are ",nloops," files to analyse:\n") }
+  loop.total<-length(param.env$data.map)
+  if (!quiet) { cat("   There are ",loop.total," files to analyse:\n") }
   #}}}
 
   #If doing multiple loops; save the parameters in case we need to reset mid-run {{{
-  if ((nloops>1)&(!resume)) {
+  if ((loop.total>1)&(!resume)) {
     save(file=".LambdarParameters.Rdata", param.env)
   }
   #}}}
 
   #Loop through files supplied {{{
-  for (f in lstart:nloops) {
+  for (f in loop.start:loop.total) {
     #Set restart value {{{
     write.csv(file=".LambdarActiveLoop.txt", c(f), row.names=FALSE)
     #}}}
 
     #Initialise Timer and Get Parameters for this run {{{
-    loopstarttime<-proc.time()[3]
-    getNthVar(parameterList,n=f,inenv=param.env,outenv=environment(),lim=nloops)
-    dir.create(file.path(pathroot,pathwork, pathout), showWarnings = FALSE)
+    loop.start.time<-proc.time()[3]
+    get.nth.var(parameter.list,n=f,inenv=param.env,outenv=environment(),lim=loop.total)
+    dir.create(file.path(path.root,path.work, path.out), showWarnings = FALSE)
     #}}}
 
     #Send Message output to logfile {{{
-    sinkfile<-file(file.path(pathroot,pathwork,pathout,logfile),open="wt")
-    sink(sinkfile, type="message")
+    sink.file<-file(file.path(path.root,path.work,path.out,logfile),open="wt")
+    sink(sink.file, type="message")
     on.exit(sink(type="message"), add=TRUE)
     #Print any warnings {{{
     if ((!quiet)&(!(is.null(warnings())))) {
@@ -125,12 +125,12 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     #}}}
 
     #If wanted, crop image prior to read {{{
-    if (cropimage) {
+    if (crop.image) {
       #Data Image {{{
-      if (verbose) { message(paste("Cropping Input Image: Outputting to", imfitsoutname)) }
-      crop_im(ra0=ra0, dec0=dec0, pathroot=file.path(pathroot,pathwork), inpim=datamap, cutrad=cutrad, fitsoutname=imfitsoutname)
-      if (verbose) { message(paste("Using", imfitsoutname, "as data image")) }
-      datamap<-imfitsoutname
+      if (verbose) { message(paste("Cropping Input Image: Outputting to", data.fits.output.filename)) }
+      crop.fits.image(ra0=ra0, dec0=dec0, path.root=file.path(path.root,path.work), inpim=data.map, crop.radius=crop.radius, fitsoutname=data.fits.output.filename)
+      if (verbose) { message(paste("Using", data.fits.output.filename, "as data image")) }
+      data.map<-data.fits.output.filename
       #}}}
     }#}}}
 
@@ -145,23 +145,23 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     #}}}
 
     #Read in Data, Mask map, & Error map {{{
-    readimage(env=NULL,quiet,showtime,outenv=image.env)
+    read.images(env=NULL,quiet,showtime,outenv=image.env)
     #Move Astrometry list from image env to main env {{{
-    astr_struc<-image.env$astr_struc
+    astr.struc<-image.env$astr.struc
     saturation<-image.env$saturation
     gain<-image.env$gain
-    rm(astr_struc, envir=image.env)
+    rm(astr.struc, envir=image.env)
     #}}}
     #}}}
 
     #Read source catalogue {{{
-    opencatalogue(outenv=environment())
+    open.catalogue(outenv=environment())
     #}}}
 
     #If wanted, Set Minimum Aperture Radius {{{
-    if(MinApRad>0){
-      a_g[a_g<MinApRad]=MinApRad
-      b_g[b_g<MinApRad]=MinApRad
+    if(min.ap.rad>0){
+      cat.a[cat.a<min.ap.rad]=min.ap.rad
+      cat.b[cat.b<min.ap.rad]=min.ap.rad
     }
     #}}}
 
@@ -174,81 +174,81 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     if (!quiet) { cat("   Determining Correct Galaxy Sample ") }
 
     #Get object locations in pixel space {{{
-    gamapos<-ad2xy(ra_g,dec_g,astr_struc)
-    x_g<-gamapos[,1]
-    y_g<-gamapos[,2]
+    gama.pos<-ad.to.xy(cat.ra,cat.dec,astr.struc)
+    cat.x<-gama.pos[,1]
+    cat.y<-gama.pos[,2]
     #}}}
 
     #-----Diagnostic-----# {{{
     if (diagnostic) {
-      message(paste("X_G:", length(x_g),"\nY_G:",length(y_g)))
-      message(paste("min/max X_G:", min(x_g), max(x_g),"\nmin/max Y_G:",min(x_g), max(y_g)))
+      message(paste("X.pix:", length(cat.x),"\nY.pix:",length(cat.y)))
+      message(paste("min/max X.pix:", min(cat.x), max(cat.x),"\nmin/max Y.pix:",min(cat.x), max(cat.y)))
     }#}}}
 
     #Discard any apertures that lie completely outside of the image ± 1 pixel {{{
-    catlen<-length(x_g)
-    insidemask<-!((x_g <= 0) | (x_g >= length(image.env$im[,1])+1) | (y_g <= 0) | (y_g >= length(image.env$im[1,])+1))
+    cat.len<-length(cat.x)
+    inside.mask<-!((cat.x <= 0) | (cat.x >= length(image.env$im[,1])+1) | (cat.y <= 0) | (cat.y >= length(image.env$im[1,])+1))
     #Check that something is inside the image {{{
-    if (length(which(insidemask==TRUE))==0) {
+    if (length(which(inside.mask==TRUE))==0) {
       warning("No Single Apertures are inside the image.")
       #Notify & Close Logfile {{{
       message(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
-      message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
-      message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
+      message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
+      message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
       sink(type='message')
-      close(sinkfile)
+      close(sink.file)
       if (!quiet) {
         cat(paste('- Done\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
-        cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
-        cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
-        if (f!=nloops) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
+        cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
+        cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
+        if (f!=loop.total) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
       }
       next
       #}}}
     }
     #}}}
     #Remove object catalogue entries {{{
-    x_g<-x_g[which(insidemask)]
-    y_g<-y_g[which(insidemask)]
-    id_g<-id_g[which(insidemask)]
-    ra_g<-ra_g[which(insidemask)]
-    dec_g<-dec_g[which(insidemask)]
-    theta_g<-theta_g[which(insidemask)]
-    a_g<-a_g[which(insidemask)]
-    b_g<-b_g[which(insidemask)]
-    if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
-    if (filtcontam) { contams<-contams[which(insidemask)] }
+    cat.x<-cat.x[which(inside.mask)]
+    cat.y<-cat.y[which(inside.mask)]
+    cat.id<-cat.id[which(inside.mask)]
+    cat.ra<-cat.ra[which(inside.mask)]
+    cat.dec<-cat.dec[which(inside.mask)]
+    cat.theta<-cat.theta[which(inside.mask)]
+    cat.a<-cat.a[which(inside.mask)]
+    cat.b<-cat.b[which(inside.mask)]
+    if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
+    if (filt.contam) { contams<-contams[which(inside.mask)] }
     #}}}
     #Notify how many objects remain {{{
-    if (verbose) { message(paste("There are",length(x_g),"supplied objects inside the image (",
-                                  round(((catlen-length(x_g))/catlen)*100, digits=2),"% of supplied were outside the image )")) }
+    if (verbose) { message(paste("There are",length(cat.x),"supplied objects inside the image (",
+                                  round(((cat.len-length(cat.x))/cat.len)*100, digits=2),"% of supplied were outside the image )")) }
     #}}}
     #}}}
 
     #Discard any apertures that have nonphysical aperture axis values {{{
-    catlen<-length(x_g)
-    insidemask<-!((a_g < 0)|(b_g < 0))
+    cat.len<-length(cat.x)
+    inside.mask<-!((cat.a < 0)|(cat.b < 0))
     #Check that something is inside the image {{{
-    if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Apertures remaining have physical axis values.") }
+    if (length(which(inside.mask==TRUE))==0) { sink(type="message") ; stop("No Apertures remaining have physical axis values.") }
     #}}}
     #Remove object catalogue entries {{{
-    x_g<-x_g[which(insidemask)]
-    y_g<-y_g[which(insidemask)]
-    id_g<-id_g[which(insidemask)]
-    ra_g<-ra_g[which(insidemask)]
-    dec_g<-dec_g[which(insidemask)]
-    theta_g<-theta_g[which(insidemask)]
-    a_g<-a_g[which(insidemask)]
-    b_g<-b_g[which(insidemask)]
-    if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
-    if (filtcontam) { contams<-contams[which(insidemask)] }
-    chunkSize=length(id_g)/getDoParWorkers()
-    mpiopts<-list(chunkSize=chunkSize)
-    message("Number of objects per thread:",chunkSize)
+    cat.x<-cat.x[which(inside.mask)]
+    cat.y<-cat.y[which(inside.mask)]
+    cat.id<-cat.id[which(inside.mask)]
+    cat.ra<-cat.ra[which(inside.mask)]
+    cat.dec<-cat.dec[which(inside.mask)]
+    cat.theta<-cat.theta[which(inside.mask)]
+    cat.a<-cat.a[which(inside.mask)]
+    cat.b<-cat.b[which(inside.mask)]
+    if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
+    if (filt.contam) { contams<-contams[which(inside.mask)] }
+    chunk.size=length(cat.id)/getDoParWorkers()
+    mpi.opts<-list(chunk.size=chunk.size)
+    message("Number of objects per thread:",chunk.size)
     #}}}
     #Notify how many objects remain {{{
-    if (verbose) { message(paste("There are",length(x_g),"supplied objects with physical aperture values (",
-                                  round(((catlen-length(x_g))/catlen)*100, digits=2),"% of supplied had unphysical values )")) }
+    if (verbose) { message(paste("There are",length(cat.x),"supplied objects with physical aperture values (",
+                                  round(((cat.len-length(cat.x))/cat.len)*100, digits=2),"% of supplied had unphysical values )")) }
     #}}}
     #}}}
 
@@ -259,13 +259,13 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     if (!quiet) { cat("   Setting Astrometry   ") }
 
     #Get pixel resolution from astrometry {{{
-    if (all(is.finite(astr_struc$CDELT))) {
+    if (all(is.finite(astr.struc$CDELT))) {
       #Using CDELT keywords {{{
-      asperpix<-max(abs(astr_struc$CDELT))*3600.
+      arcsec.per.pix<-max(abs(astr.struc$CDELT))*3600.
       #}}}
-    } else if (all(is.finite(astr_struc$CD[1:2,1:2]))) {
+    } else if (all(is.finite(astr.struc$CD[1:2,1:2]))) {
       #Using CD matrix keywords {{{
-      asperpix<-max(astr_struc$CD[1,1],astr_struc$CD[2,2])*3600.
+      arcsec.per.pix<-max(astr.struc$CD[1,1],astr.struc$CD[2,2])*3600.
       #}}}
     } else {
       #Otherwise; Error - unknown Astrometry Resolution Keyword {{{
@@ -284,13 +284,13 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     #will be inaccurate because it cannot be accurately
     #convolved. }}}
     #Get pixel diagonal size in arcsec {{{
-    diag_arcsec<-abs(asperpix)*sqrt(2)/2
+    diag.arcsec<-abs(arcsec.per.pix)*sqrt(2)/2
     #}}}
     #Make needed changes, and notify {{{
-    message("Forcing ",length(which((b_g<diag_arcsec)|!is.finite(a_g)))," apertures to be point sources")
-    a_g[which((b_g<diag_arcsec)|!is.finite(a_g))]<-0
-    theta_g[which((b_g<diag_arcsec)|!is.finite(theta_g))]<-0
-    b_g[which((b_g<diag_arcsec)|!is.finite(b_g))]<-0
+    message("Forcing ",length(which((cat.b<diag.arcsec)|!is.finite(cat.a)))," apertures to be point sources")
+    cat.a[which((cat.b<diag.arcsec)|!is.finite(cat.a))]<-0
+    cat.theta[which((cat.b<diag.arcsec)|!is.finite(cat.theta))]<-0
+    cat.b[which((cat.b<diag.arcsec)|!is.finite(cat.b))]<-0
     #}}}
     #}}}
 
@@ -299,8 +299,8 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
 
     #-----Diagnostic-----# {{{
     if (diagnostic) {
-      message(paste("X_G:", length(x_g),"\nY_G:",length(y_g)))
-      message(paste("min/max X_G:", min(x_g), max(x_g),"\nmin/max Y_G:",min(x_g), max(y_g)))
+      message(paste("X.pix:", length(cat.x),"\nY.pix:",length(cat.y)))
+      message(paste("min/max X.pix:", min(cat.x), max(cat.x),"\nmin/max Y.pix:",min(cat.x), max(cat.y)))
     }#}}}
 
     #Finished setting astrometry. Notify {{{
@@ -308,17 +308,17 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
       cat("   } - Done\n")
       cat('} Initialisation Complete ')
     }
-    if (showtime) { cat(paste(' (  Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'  )\n')) }
+    if (showtime) { cat(paste(' (  Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'  )\n')) }
     #}}}
 
     #-----Diagnostic-----# {{{
     if (diagnostic) {
-    message(paste('Arcsec per pixel in map: ', asperpix))
-    message(paste('Beam area (from observers manual) converted into pixel units: ', beamarea_pix))
+    message(paste('Arcsec per pixel in map: ', arcsec.per.pix))
+    message(paste('Beam area (from observers manual) converted into pixel units: ', beam.area.pix))
     }#}}}
 
     #Send Parameter to logfile /*fold*/ {{{
-    sink(sinkfile, type="output")
+    sink(sink.file, type="output")
     cat("Parameters used in this run:\n")
     print(lsos(envir=environment(), head=FALSE))
     cat("Images used in this run:\n")
@@ -332,24 +332,24 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
 
     #Notify & Close Logfile {{{
     message(paste('-----------------------------------------------------\nDatamap Complete\n'))
-    message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
-    message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
+    message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
+    message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
     sink(type='message')
-    close(sinkfile)
+    close(sink.file)
     #}}}
 
     #Loop Completed - Print Update, Loop {{{
     if (!quiet) {
       cat(paste('-----------------------------------------------------\nDatamap Complete\n'))
-      cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loopstarttime, digits=3),'\n'))
-      cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-starttime, digits=3),'\n'))
-      if (f!=nloops) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
+      cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
+      cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
+      if (f!=loop.total) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
     }
     #}}}
   }#}}}
 
   #Remove State Preservation Files {{{
-  if (nloops>1) {
+  if (loop.total>1) {
     system("rm -f .LambdarActiveLoop.txt .LambdarParameters.Rdata")
   }#}}}
 

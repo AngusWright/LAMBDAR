@@ -1,5 +1,5 @@
-\name{interp2D}
-\alias{interp2D}
+\name{interp.2d}
+\alias{interp.2d}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Interpolate 2D function
@@ -8,7 +8,7 @@ Interpolate 2D function
 An interpolation function for 2D distributions
 }
 \usage{
-interp2D(x,y,obj)
+interp.2d(x,y,obj)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -69,7 +69,7 @@ y.new<-seq(y.new.min,y.new.max,by=0.1)
 new.grid<-expand.grid(x.new,y.new)
 
 #Interpolate
-z.new<-interp2D(x=new.grid[,1],y=new.grid[,2],obj=list(x=x,y=y,z=z))
+z.new<-interp.2d(x=new.grid[,1],y=new.grid[,2],obj=list(x=x,y=y,z=z))
 
 #Reconstruct image
 z.new<-matrix(z.new[,3],length(x.new),length(y.new))
@@ -90,7 +90,7 @@ y.samp<-runif(350,min=y.min,max=y.max)*2/3
 samp.grid<-cbind(x.samp,y.samp)
 
 #Interpolate
-z.samp<-interp2D(x=samp.grid[,1],y=samp.grid[,2],obj=list(x=x,y=y,z=z))
+z.samp<-interp.2d(x=samp.grid[,1],y=samp.grid[,2],obj=list(x=x,y=y,z=z))
 
 #Reconstruct image
 z.samp.im<-matrix(NA,length(x),length(y))

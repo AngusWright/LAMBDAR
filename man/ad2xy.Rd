@@ -1,5 +1,5 @@
-\name{ad2xy}
-\alias{ad2xy}
+\name{ad.to.xy}
+\alias{ad.to.xy}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 RA/Dec to Pixel via Header Astrometry
@@ -8,7 +8,7 @@ RA/Dec to Pixel via Header Astrometry
 Converts RA/DEC (degrees) to X/Y (pixels) position using the TAN Gnomonic projection system.
 }
 \usage{
-ad2xy(ra, dec, astr_struc, diagnostic = FALSE)
+ad.to.xy(ra, dec, astr.struc, diagnostic = FALSE)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -18,8 +18,8 @@ numeric (n) vector; RA values
   \item{dec}{
 numeric (n) vector; Dec values
 }
-  \item{astr_struc}{
-list; Astrometry Keywords and values returned from read of a fits header. See "read.astr" function
+  \item{astr.struc}{
+list; Astrometry Keywords and values returned from read of a fits header. See "read.astrometry" function
 }
   \item{diagnostic}{
 logical; if TRUE, diagnostic information will be output as type `message'
@@ -47,7 +47,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{radec2xy}, \link{read.astr}, \link{MeasureFluxes}
+\link{radec.to.xy}, \link{read.astrometry}, \link{measure.fluxes}
 }
 \examples{
 
@@ -58,9 +58,9 @@ data(ApCat.sample)
 #Save sample image to File
 write.fits(file="SampleImage.fits",SDSS.sample)
 #Read Astrometry
-astr<-read.astr("SampleImage.fits")
+astr<-read.astrometry("SampleImage.fits")
 #Determine the pixel-locations of the aperture catalogue objects
-xy<-ad2xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg,astr_struc=astr)
+xy<-ad.to.xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg,astr.struc=astr)
 #Print sample
 print(head(xy))
 

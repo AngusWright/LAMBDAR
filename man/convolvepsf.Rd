@@ -1,5 +1,5 @@
-\name{convolvepsf}
-\alias{convolvepsf}
+\name{convolve.psf}
+\alias{convolve.psf}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 2D Convolution
@@ -11,7 +11,7 @@ apertures in photometric measurements. As such, the positional information of th
 more accurately the phase information of the first array's fft) is discarded.
 }
 \usage{
-convolvepsf(arr1, arr2, normalise = TRUE, mag2 = TRUE,
+convolve.psf(arr1, arr2, normalise = TRUE, mag2 = TRUE,
 zapdig = NULL)
 }
 %- maybe also `usage' for other objects documented here.
@@ -53,7 +53,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{zapsmall}
+\link{measure.fluxes}, \link{zapsmall}
 }
 \examples{
 
@@ -77,13 +77,13 @@ ap[n/2,n/2]<-1
 layout(cbind(1,2,3))
 image(x=1:n,y=1:n,z=psf,col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="PSF Function",asp=1)
 image(x=1:n,y=1:n,z=ap,col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Aperture Function",asp=1)
-image(x=1:n,y=1:n,z=convolvepsf(psf,ap),col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Convolved Aperture Function",asp=1)
+image(x=1:n,y=1:n,z=convolve.psf(psf,ap),col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Convolved Aperture Function",asp=1)
 
 #Make an Aperture Function
 #Pixel Grid
 ap.pix<-expand.grid(seq(1,n),seq(1,n))
 #Generate Aperture Pixel values
-ap.pix.vals <- iterapint(x=ap.pix[,1],y=ap.pix[,2],xstep=1,ystep=1,xcen=n/2,ycen=n/2,
+ap.pix.vals <- generate.aperture(x=ap.pix[,1],y=ap.pix[,2],xstep=1,ystep=1,xcen=n/2,ycen=n/2,
                          majax=10,axrat=0.5,axang=45)
 #Construct Aperture Matrix
 ap<-matrix(ap.pix.vals[, 3], ncol = n)
@@ -92,7 +92,7 @@ ap<-matrix(ap.pix.vals[, 3], ncol = n)
 layout(cbind(1,2,3))
 image(x=1:n,y=1:n,z=psf,col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="PSF Function",asp=1)
 image(x=1:n,y=1:n,z=ap,col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Aperture Function",asp=1)
-image(x=1:n,y=1:n,z=convolvepsf(psf,ap),col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Convolved Aperture Function",asp=1)
+image(x=1:n,y=1:n,z=convolve.psf(psf,ap),col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Convolved Aperture Function",asp=1)
 
 #Phase information in the PSF-matrix is discarded during convolution, meaning that the PSF can be arbitrarily placed on its stamp:
 #Big PSF, located in the stamp corner
@@ -100,7 +100,7 @@ big.psf<-matrix(0,n*3,n*3)
 big.psf[1:n,1:n]<-psf
 #A Big Aperture
 big.ap.pix<-expand.grid(seq(1,n*3),seq(1,n*3))
-big.ap.pix.vals <- iterapint(x=big.ap.pix[,1],y=big.ap.pix[,2],xstep=1,ystep=1,xcen=n*3/2,ycen=n*3/2,
+big.ap.pix.vals <- generate.aperture(x=big.ap.pix[,1],y=big.ap.pix[,2],xstep=1,ystep=1,xcen=n*3/2,ycen=n*3/2,
                          majax=30,axrat=0.5,axang=45)
 big.ap<-matrix(big.ap.pix.vals[, 3], ncol = n*3)
 
@@ -108,7 +108,7 @@ big.ap<-matrix(big.ap.pix.vals[, 3], ncol = n*3)
 layout(cbind(1,2,3))
 image(x=1:(n*3),y=1:(n*3),z=big.psf,col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="PSF Function",asp=1)
 image(x=1:(n*3),y=1:(n*3),z=big.ap,col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Aperture Function",asp=1)
-image(x=1:(n*3),y=1:(n*3),z=convolvepsf(big.psf,big.ap),col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Convolved Aperture Function",asp=1)
+image(x=1:(n*3),y=1:(n*3),z=convolve.psf(big.psf,big.ap),col=grey.colors(1E3),useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",main="Convolved Aperture Function",asp=1)
 
 
 }

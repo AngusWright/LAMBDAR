@@ -1,4 +1,4 @@
-interp2D <-
+interp.2d <-
 function(x,y,obj){
     xobj = obj$x
     yobj = obj$y

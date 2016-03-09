@@ -1,4 +1,4 @@
-writefitsout <-
+write.fits.image.file <-
 function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffset=NA, nochange=FALSE,verbose=FALSE,diagnostic=FALSE){
   #Write out a fits file with associated astrometry
   #xcent and ycent are the position in the input image of what will become the central pixel in the output image
@@ -14,9 +14,9 @@ function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffse
       sink(type="message")
       stop(paste('Incorrect Calling Syntax. Please Use:\n',
                  ' if nochange==TRUE:\n',
-                 '                  > writefitsout(filename,image,header_in,<pixeloffset>, nochange=TRUE)\n',
+                 '                  > write.fits.image.file(filename,image,header_in,<pixeloffset>, nochange=TRUE)\n',
                  ' if nochange==FALSE:\n',
-                 '                  > writefitsout(filename,image,header_in,xsize,ysize,xcent,ycent,<pixeloffset>, <nochange==FALSE>)\n',
+                 '                  > write.fits.image.file(filename,image,header_in,xsize,ysize,xcent,ycent,<pixeloffset>, <nochange==FALSE>)\n',
                  '                                                                            NB: commands inside <...> are optional'))
     }
 
@@ -38,7 +38,7 @@ function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffse
 
     if ((is.finite(xcent)) & (is.finite(ycent))) {
 
-      radec<-xy2ad(xcent,ycent,header)
+      radec<-xy.to.ad(xcent,ycent,header)
       ra_deg<-radec[,"RA"]
       dec_deg<-radec[,"DEC"]
 
@@ -82,7 +82,7 @@ function(filename,image,header_in,xsize=NA,ysize=NA,xcent=NA,ycent=NA,pixeloffse
   if (verbose) { message(paste("Writing FITS to file:",filename)) }
   if (diagnostic) {
     message(paste("Header to be output:"))
-    sink(file=sinkfile, type="output", append=TRUE)
+    sink(file=sink.file, type="output", append=TRUE)
     print(cbind(rownames(header),header[,1]))
     sink(file=NULL, type="output")
   }

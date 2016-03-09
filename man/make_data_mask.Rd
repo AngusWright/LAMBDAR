@@ -1,20 +1,20 @@
-\name{make_data_mask}
-\alias{make_data_mask}
+\name{make.data.array.maps}
+\alias{make.data.array.maps}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Data Stamps
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
 Create a series of length (m) list of (n,n) arrays, containing the data cutouts around all input catalogue objects.
 }
 \usage{
-make_data_mask(outenv=parent.env(environment()),env=NULL)
+make.data.array.maps(outenv=parent.env(environment()),env=NULL)
 }
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in `MeasureFluxes'
+environment; the environment containing the parameters used in `measure.fluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
@@ -43,7 +43,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 %%\examples{
 

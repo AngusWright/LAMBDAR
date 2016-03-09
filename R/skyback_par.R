@@ -1,13 +1,13 @@
-skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask=NULL,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3, mpiopts=""){
+sky.estimate<-function(x.pix,y.pix,cutlo=0,cuthi=100,data.stamp,mask.stamp=NULL,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3, mpi.opts=""){
   cutup=TRUE
-  if(length(x_p) != length(y_p)){stop('x_pix and y_pix lengths do not match!')}
-  if(length(x_p) != length(cutlo)){stop('x_pix and cutlo lengths do not match!')}
-  if(length(x_p) != length(cuthi)){stop('x_pix and cuthi lengths do not match!')}
-  if(length(x_p) != length(im_mask)){
-    if (is.matrix(im_mask)) {
+  if(length(x.pix) != length(y.pix)){stop('x.pixix and y.pixix lengths do not match!')}
+  if(length(x.pix) != length(cutlo)){stop('x.pixix and cutlo lengths do not match!')}
+  if(length(x.pix) != length(cuthi)){stop('x.pixix and cuthi lengths do not match!')}
+  if(length(x.pix) != length(data.stamp)){
+    if (is.matrix(data.stamp)) {
       cutup=FALSE
     } else {
-      stop('x_pix and im_mask lengths do not match!')
+      stop('x.pixix and data.stamp lengths do not match!')
     }
   }
   cutlo[cutlo<hardlo*PSFFWHMinPIX]<-hardlo*PSFFWHMinPIX
@@ -17,7 +17,7 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask=NULL,remmask=TR
   probcut<-1-pnorm(probcut)
 
   if (cutup) {
-    output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x_p, pixlocy=y_p, origim=im_mask, maskim=imm_mask, .options.mpi=mpiopts, .combine='rbind') %dopar% {
+    output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x.pix, pixlocy=y.pix, origim=data.stamp, maskim=mask.stamp, .options.mpi=mpi.opts, .combine='rbind') %dopar% {
 
       for (run in 1:2) {
         #Find extreme pixels to cut out
@@ -122,7 +122,7 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask=NULL,remmask=TR
                         sky.mean=meanStat$sky,skyerr.mean=meanStat$skyerr,Nnearsky.mean=meanStat$Nnearsky,skyRMS.mean=meanStat$skyRMS,skyRMSpval.mean=meanStat$skyRMSpval)
     }
   } else {
-    output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x_p, pixlocy=y_p, .export=c('im_mask','imm_mask'), .options.mpi=mpiopts, .combine='rbind') %dopar% {
+    output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x.pix, pixlocy=y.pix, .export=c('data.stamp','mask.stamp'), .options.mpi=mpi.opts, .combine='rbind') %dopar% {
 
       for (run in 1:2) {
         #Find extreme pixels to cut out
@@ -132,8 +132,8 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask=NULL,remmask=TR
         xcen<-cuthi+1-length(which(xlocs<0))
         ycen<-cuthi+1-length(which(ylocs<0))
         #Select only pixels which are inside the image bounds
-        xsel<-which(xlocs>0 & xlocs<=length(im_mask[,1]))
-        ysel<-which(ylocs>0 & ylocs<=length(im_mask[1,]))
+        xsel<-which(xlocs>0 & xlocs<=length(data.stamp[,1]))
+        ysel<-which(ylocs>0 & ylocs<=length(data.stamp[1,]))
         #Trim to above
         xlocs<-xlocs[xsel]
         ylocs<-ylocs[ysel]
@@ -147,9 +147,9 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask=NULL,remmask=TR
         tempref<-tempref[keep,]
         #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
         if(remmask){
-          tempval<-im_mask[tempref]*imm_mask[tempref]
+          tempval<-data.stamp[tempref]*mask.stamp[tempref]
         }else{
-          tempval<-im_mask[tempref]
+          tempval<-data.stamp[tempref]
         }
         temprad<-temprad[keep]
         #If sourcemask is used ignore pixels that exactly equal 0 (since these will belong to masked pixels)

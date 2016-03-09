@@ -9,7 +9,7 @@ A better object list
 }
 \usage{
 lsos(pattern="", envir=NULL, pos = 1, order.by="Size",
-decreasing=TRUE, head=TRUE, n=10,noShow="")
+decreasing=TRUE, head=TRUE, n=10,noShow="",exact=FALSE)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -36,6 +36,9 @@ integer; number of items to list when `head' is specified
 }
   \item{noShow}{
 character vector; fields to not show. Can be any combination of "type","size","pretty","dim","vals".
+}
+  \item{exact}{
+logical; only show items that match 'pattern' exactly.
 }
 }
 \details{

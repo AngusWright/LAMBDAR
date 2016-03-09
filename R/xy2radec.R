@@ -1,4 +1,4 @@
-xy2radec <-
+xy.to.radec <-
 function(x,y,ra0=0,dec0=0,x0=0,y0=0,xscale=1,yscale=1) {
   # Converts x/y (pixels) to RA/DEC (degrees) position using the TAN Gnomonic projection system
   # point of interest x & y, anchor point RA & DEC, anchor point x & y, x & y scale (degrees per pixel)

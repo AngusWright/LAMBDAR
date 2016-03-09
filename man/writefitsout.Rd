@@ -1,5 +1,5 @@
-\name{writefitsout}
-\alias{writefitsout}
+\name{write.fits.image.file}
+\alias{write.fits.image.file}
 \alias{make.fits.header}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
@@ -9,7 +9,7 @@ Write FITS Image to File
 Write an input image to file, using the standard FITS format.
 }
 \usage{
-writefitsout(filename, image, header_in, xsize = NA,
+write.fits.image.file(filename, image, header_in, xsize = NA,
 ysize = NA, xcent = NA, ycent = NA, pixeloffset = NA,
 nochange = FALSE, verbose = FALSE, diagnostic = FALSE)
 make.fits.header(hdr)
@@ -74,7 +74,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 \examples{
 

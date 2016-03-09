@@ -1,21 +1,21 @@
-\name{opencatalogue}
-\alias{opencatalogue}
+\name{open.catalogue}
+\alias{open.catalogue}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Open and Read Catalogue
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
-Open and read an input catalogue for the MeasureFluxes procedure.
+Open and read an input catalogue for the measure.fluxes procedure.
 }
 \usage{
-opencatalogue(outenv = parent.env(environment()), env = NULL)
+open.catalogue(outenv = parent.env(environment()), env = NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in `MeasureFluxes'
+environment; the environment containing the parameters used in `measure.fluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.

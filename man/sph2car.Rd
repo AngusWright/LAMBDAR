@@ -1,5 +1,5 @@
-\name{sph2car}
-\alias{sph2car}
+\name{sph.to.car}
+\alias{sph.to.car}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Spherical to Cartesian Conversion
@@ -8,7 +8,7 @@ Spherical to Cartesian Conversion
 Does what is says on the tin
 }
 \usage{
-sph2car(long, lat, radius = 1, deg = TRUE)
+sph.to.car(long, lat, radius = 1, deg = TRUE)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{

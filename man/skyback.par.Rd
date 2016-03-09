@@ -1,6 +1,6 @@
-\name{skyback.par}
-\alias{skyback.par}
-\alias{PlotSkyback}
+\name{sky.estimate}
+\alias{sky.estimate}
+\alias{plot.sky.estimate}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Function to find local sky values
@@ -11,23 +11,23 @@ values of weighted annuli that are located around the ra and dec of the object o
 sky problems and is robust to outliers. It returns a single sky value and error for each requested ra and dec location.
 }
 \usage{
-skyback.par(x_p, y_p, cutlo = 0, cuthi = 100, im_mask,
-imm_mask=NULL, remmask = TRUE, radweight = 1, clipiters = 5,
+sky.estimate(x.pix, y.pix, cutlo = 0, cuthi = 100, data.stamp,
+mask.stamp=NULL, remmask = TRUE, radweight = 1, clipiters = 5,
 PSFFWHMinPIX = 2/0.339, hardlo = 3, hardhi = 10,
-probcut = 3, mpiopts = "")
-PlotSkyback(id_g,x_p,y_p,stamplims=NULL,cutlo=0,
-cuthi=100,im_mask,imm_mask=NULL,remmask=TRUE,radweight=1,
+probcut = 3, mpi.opts = "")
+plot.sky.estimate(cat.id,x.pix,y.pix,stamplims=NULL,cutlo=0,
+cuthi=100,data.stamp,mask.stamp=NULL,remmask=TRUE,radweight=1,
 clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,
-probcut=3,plotall=FALSE,path=NULL,
+probcut=3,plot.all=FALSE,path=NULL,
 toFile=TRUE,res=120)
 
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
-  \item{x_p}{
+  \item{x.pix}{
 numeric (i) array; Vector of x-pixel values for the sky locations of interest (typically these will be the positions of objects).
 }
-  \item{y_p}{
+  \item{y.pix}{
 numeric (i) array; Vector of y-pixel values for the sky locations of interest (typically these will be the positions of objects).
 }
   \item{cutlo}{
@@ -38,11 +38,11 @@ Should be large enough to avoid significant object flux, i.e. a few times the fl
 numeric (i) array; Vector of low radius values (in pixels) where the code will stop calculating sky annuli around the object.
 Should be large enough to avoid significant object flux, i.e. a few times the flux 90 radius.
 }
-  \item{im_mask}{
+  \item{data.stamp}{
 numeric (n,m) array; The data image stamps to use in sky estimation.
 }
-  \item{imm_mask}{
-numeric (n,m) array; The sourcemask image stamps. This must be pixel matched to im_mask, with pixel values of 1 where the pixels are likely to
+  \item{mask.stamp}{
+numeric (n,m) array; The sourcemask image stamps. This must be pixel matched to data.stamp, with pixel values of 1 where the pixels are likely to
 be sky, and 0 where they are likely to be sources. The SourceMask output of LAMBDAR can be used.
 }
   \item{remmask}{
@@ -67,17 +67,17 @@ numeric; The lower limit for the outer sky annuli, where the limit used is hardh
   \item{probcut}{
 numeric; probability-level used for iterative clipping of sky-pixels in estimation.
 }
-  \item{mpiopts}{
+  \item{mpi.opts}{
 list; options to be passed to the MPI foreach backend, if it is being used.
 }
-  \item{id_g}{
+  \item{cat.id}{
 character (n) vector; id's of the sources.
 }
   \item{stamplims}{
-numeric (n,4) matrix; indicies of the image stamps in the full image space. If stamps are not cutup (im_mask is a matrix),
+numeric (n,4) matrix; indicies of the image stamps in the full image space. If stamps are not cutup (data.stamp is a matrix),
 then the stamplims can be NULL.
 }
-  \item{plotall}{
+  \item{plot.all}{
 logical; should all objects be plotted?
 }
   \item{path}{
@@ -116,14 +116,14 @@ data(ApCat.sample)
 #Save sample image to File
 write.fits(file="SampleImage.fits",SDSS.sample)
 #Read Astrometry
-astr<-read.astr("SampleImage.fits")
+astr<-read.astrometry("SampleImage.fits")
 #Determine the pixel-locations of the aperture catalogue objects
-xy<-ad2xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg,astr_struc=astr)
+xy<-ad.to.xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg,astr.struc=astr)
 #Get the Main Object's ID
 main<-which.min(sqrt((xy[,1]-astr$NAXIS[1]/2)^2+(xy[,2]-astr$NAXIS[2]/2)^2))
 
 #Perform a sky estimate for the Primary target
-skyest<-skyback.par(xy[main,1],xy[main,2],im_mask=SDSS.sample$dat[[1]],remmask=FALSE)
+skyest<-sky.estimate(xy[main,1],xy[main,2],data.stamp=SDSS.sample$dat[[1]],remmask=FALSE)
 #Show Sky Estimate
 print(skyest[,c('sky','skyerr','skyRMS','Nnearsky')])
 #Note that the sky is likely non-gaussian:
@@ -131,18 +131,18 @@ print(skyest[,'skyRMSpval'])
 
 #Perform a sky estimates for purely gaussian noise
 gauss<-array(rnorm(length(SDSS.sample$dat[[1]])),dim=dim(SDSS.sample$dat[[1]]))
-skyest.gauss<-skyback.par(xy[,1],xy[,2], cutlo=rep(0,length(xy[,1])), cuthi=rep(100,length(xy[,1])),
-im_mask=gauss,remmask=FALSE)
+skyest.gauss<-sky.estimate(xy[,1],xy[,2], cutlo=rep(0,length(xy[,1])), cuthi=rep(100,length(xy[,1])),
+data.stamp=gauss,remmask=FALSE)
 #But the p-value is still systematically low:
 hist(skyest.gauss[,'skyRMSpval'],breaks=20,xlab='Sky RMS Normality p-value',col='red',density=20,angle=-45)
 #This is becuase of the sigma-clipping:
-skyest.gauss.noclip<-skyback.par(xy[,1],xy[,2], cutlo=rep(0,length(xy[,1])), cuthi=rep(100,length(xy[,1])),
-,im_mask=gauss,remmask=FALSE,clipiters=0)
+skyest.gauss.noclip<-sky.estimate(xy[,1],xy[,2], cutlo=rep(0,length(xy[,1])), cuthi=rep(100,length(xy[,1])),
+,data.stamp=gauss,remmask=FALSE,clipiters=0)
 hist(skyest.gauss.noclip[,'skyRMSpval'],breaks=20,xlab='Sky RMS Normality p-value',add=TRUE,col='blue',density=10)
 legend('topright',legend=c("With Clipping","Without Clipping"),col=c('red','blue'),lty=1,pch=0)
 
 #Plot the Sky Estimate
-skyest<-PlotSkyback(id_g="",x_p=xy[main,1],y_p=xy[main,2],im_mask=gauss,remmask=FALSE,toFile=FALSE)
+skyest<-plot.sky.estimate(cat.id="",x.pix=xy[main,1],y.pix=xy[main,2],data.stamp=gauss,remmask=FALSE,toFile=FALSE)
 
 }
 % Add one or more standard keywords, see file `KEYWORDS' in the

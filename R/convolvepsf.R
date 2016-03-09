@@ -1,4 +1,4 @@
-convolvepsf <-
+convolve.psf <-
 function(arr1, arr2, normalise=TRUE, mag2=TRUE, zapdig=NULL) {
   #Details {{{
   # Perform the Convolution of arr1 with arr2 using FFT

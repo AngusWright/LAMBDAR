@@ -5,9 +5,9 @@ create.sim.image<-
 function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, outenv=parent.env(environment()), confuse=FALSE, env=NULL){
 
   #Setup Environments {{{
-  environment(make_esa_mask)<-environment()
-  environment(make_a_mask)<-environment()
-  environment(readpsf)<-environment()
+  environment(make.exponential.apertures)<-environment()
+  environment(make.aperture.map)<-environment()
+  environment(read.psf)<-environment()
   #}}}
 
   #Get PSF details {{{
@@ -18,13 +18,13 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
   #Calculate PSF - if one has not be supplied,
   #then a gaussian PSF will be created. Stampsize of PSF
   #should be = maximum stampsize: max aperture * stamp mult }}}
-  if (gauss_fwhm_as==0) {
-    gauss_fwhm_as=get.fwhm(read.fits(file.path(pathroot,pathwork,psfmap))$dat[[1]])*asperpix
+  if (gauss.fwhm.arcsec==0) {
+    gauss.fwhm.arcsec=get.fwhm(read.fits(file.path(path.root,path.work,psf.map))$dat[[1]])*arcsec.per.pix
   }
   #Get PSF {{{
-  psf<-readpsf(outenv=environment(),"NONE",asperpix,max(a_g,na.rm=TRUE),1-(1E-14),gauss_fwhm_as=gauss_fwhm_as)
-  if (sim.gauss.as>0) {
-    sim.gauss.psf<-readpsf(outenv=environment(),"NONE",asperpix,max(a_g,na.rm=TRUE),1-(1E-14),gauss_fwhm_as=sim.gauss.as)
+  psf<-read.psf(outenv=environment(),"NONE",arcsec.per.pix,max(cat.a,na.rm=TRUE),1-(1E-14),gauss.fwhm.arcsec=gauss.fwhm.arcsec)
+  if (sim.gauss.arcsec>0) {
+    sim.gauss.psf<-read.psf(outenv=environment(),"NONE",arcsec.per.pix,max(cat.a,na.rm=TRUE),1-(1E-14),gauss.fwhm.arcsec=sim.gauss.arcsec)
   } else {
     sim.gauss.psf<-0
   }
@@ -64,41 +64,41 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
 
   #Create Simulated Profiles & Image {{{
   if (!quiet) { cat(paste('Creating Simulated Image  ')) }
-  if (!exists('contams')) { contams<-rep(0,length(id_g)) }
-  timer=system.time(esa<-make_esa_mask(outenv=environment(),ObsParm=ObsParm,padGals=padGals,col.corr=col.corr,confuse=confuse))
-  simFlux<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { sum(esam) }
-  npix<-foreach(esam=esa, .combine='c', .inorder=TRUE, .options.mpi=mpiopts, .noexport=ls(envir=environment())) %dopar% { length(esam) }
+  if (!exists('contams')) { contams<-rep(0,length(cat.id)) }
+  timer=system.time(esa<-make.exponential.apertures(outenv=environment(),ObsParm=ObsParm,padGals=padGals,col.corr=col.corr,confuse=confuse))
+  simFlux<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(esam) }
+  npix<-foreach(esam=esa, .combine='c', .inorder=TRUE, .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { length(esam) }
   simFlux<-array(unlist(simFlux),dim=c(dim(simFlux[[1]]),length(simFlux)))
-  cat.out<-data.frame(CATAID=id_g,RA=ra_g,DEC=dec_g,X_IM=x_g,Y_IM=y_g,REff=Reff_pix*asperpix,SEMIMAJ_AS=a_g,
-           SEMIMIN_AS=b_g,THETA=theta_g,inputFlux=fluxweight*10^((8.9-magZP)/2.5),StampFlux=simFlux,nPix=npix,CONTAM=contams)
-  colnames(cat.out)<-c(catalab,ralab,declab,"X.im","Y.im","R.Eff",semimajlab,semiminlab,thetalab,"Input.Flux.Jy","Sim.Flux.Jy","n.pix",contamlab)
-  write.csv(file=file.path(pathroot,pathwork,pathout,"SimFlux.csv"), cat.out, row.names=FALSE,quote=FALSE)
-  timer1=system.time(image.env$ea<-make_a_mask(outenv=environment(), esa, dim(image.env$im)))
+  cat.out<-data.frame(CATAID=cat.id,RA=cat.ra,DEC=cat.dec,X.im=cat.x,Y.im=cat.y,REff=Reff_pix*arcsec.per.pix,SEMIMAJ.arcsec=cat.a,
+           SEMIMIN.arcsec=cat.b,THETA=cat.theta,inputFlux=flux.weight*10^((8.9-mag.zp)/2.5),StampFlux=simFlux,nPix=npix,CONTAM=contams)
+  colnames(cat.out)<-c(cata.lab,ra.lab,dec.lab,"X.im","Y.im","R.Eff",semimaj.lab,semimin.lab,theta.lab,"Input.Flux.Jy","Sim.Flux.Jy","n.pix",contam.lab)
+  write.csv(file=file.path(path.root,path.work,path.out,"SimFlux.csv"), cat.out, row.names=FALSE,quote=FALSE)
+  timer1=system.time(image.env$ea<-make.aperture.map(outenv=environment(), esa, dim(image.env$im)))
   if (showtime) { cat("   - Done (",round(timer[3]+timer1[3],digits=2),"sec )\n")
     message(paste('Create Sim Image - Done (',round(timer[3]+timer1[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }
   if (!quiet) { cat(paste('Making Noisemap  ')) }
   noisemap<-image.env$ea*0
   if (!noNoise) { noisemap[1:length(noisemap)]<-rnorm(length(image.env$ea),mean=0,sd=1) }
-  if (convolveNoise & sim.gauss.as > 0) {
+  if (convolveNoise & sim.gauss.arcsec > 0) {
     bigpsf<-noisemap*0
     bigpsf[1:length(sim.gauss.psf[,1]),1:length(sim.gauss.psf[1,])]<-sim.gauss.psf
-    noisemap<-convolvepsf(bigpsf, noisemap)
-  } else if (convolveNoise & sim.gauss.as == 0) {
+    noisemap<-convolve.psf(bigpsf, noisemap)
+  } else if (convolveNoise & sim.gauss.arcsec == 0) {
     warning("convolveNoise is TRUE, but SimGauss_AS is 0\". Noise convolution will not take place...")
     message("WARNING: convolveNoise is TRUE, but SimGauss_AS is 0\". Noise convolution will not take place...")
   }
   message(paste('BLAH'))
   #Convert Noise mode & stdev to Jys
   message("Converting Sim Image to Jy from ADU.")
-  x.mode<-x.mode*10^((8.9-magZP)/2.5)
-  stdev<-stdev*10^((8.9-magZP)/2.5)
+  x.mode<-x.mode*10^((8.9-mag.zp)/2.5)
+  stdev<-stdev*10^((8.9-mag.zp)/2.5)
   if (!noNoise) { noisemap<-(noisemap*(stdev/sd(as.numeric(noisemap))))+x.mode }
   message("Noise Properties in input Image (Jy): mode=",x.mode,"; sd=",stdev)
   message("Noise Properties in Sim Image (Jy): mean=",mean(as.numeric(noisemap)),"; sd=",sd(as.numeric(noisemap)))
   if (!quiet) { cat("   - Done\n") }
   if (!quiet) { cat(paste('Outputting Simulate Image to',"sim_image.fits","   ")) }
-  timer=system.time(writefitsout(file.path(pathroot,pathwork,pathout,"sim_image.fits"),(image.env$ea+noisemap),image.env$hdr_str,nochange=TRUE) )
+  timer=system.time(write.fits.image.file(file.path(path.root,path.work,path.out,"sim_image.fits"),(image.env$ea+noisemap),image.env$data.hdr,nochange=TRUE) )
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
     message(paste('Output Sim Image - Done (',round(timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }

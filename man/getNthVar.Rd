@@ -1,5 +1,5 @@
-\name{getNthVar}
-\alias{getNthVar}
+\name{get.nth.var}
+\alias{get.nth.var}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Parameter Assignment to Environment
@@ -8,7 +8,7 @@ Parameter Assignment to Environment
 Assign the Nth variable from a parameter list to a designated environment
 }
 \usage{
- getNthVar(varList,n,inenv,outenv,lim)
+ get.nth.var(varList,n,inenv,outenv,lim)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -65,12 +65,12 @@ assign("par4","xyz",env=parameter.env)
 assign("par5",function(x) print(x),env=parameter.env)
 
 #Assign the 2nd value of parameters 1, 2, and 5 to this environment
-getNthVar(c("par1","par2","par4"),2,inenv=parameter.env,outenv=environment(),lim=12)
+get.nth.var(c("par1","par2","par4"),2,inenv=parameter.env,outenv=environment(),lim=12)
 #Show Parameters
 lsos(envir=environment())
 
 #Assign the 5th value of all parameters to this environment
-getNthVar(ls(envir=parameter.env),2,inenv=parameter.env,outenv=environment(),lim=12)
+get.nth.var(ls(envir=parameter.env),2,inenv=parameter.env,outenv=environment(),lim=12)
 #Show Parameters
 lsos(envir=environment(),noShow=c('size','pretty'))
 

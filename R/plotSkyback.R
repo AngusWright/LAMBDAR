@@ -1,18 +1,18 @@
-PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_mask=NULL,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3,plotall=FALSE,path=NULL,toFile=TRUE,res=120){
+plot.sky.estimate<-function(cat.id,x.pix,y.pix,stamplims=NULL,cutlo=0,cuthi=100,data.stamp,mask.stamp=NULL,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3,plot.all=FALSE,path=NULL,toFile=TRUE,res=120){
   cutup=TRUE
-  if(length(x_p) != length(y_p)){stop('x_pix and y_pix lengths do not match!')}
-  if(length(x_p) != length(cutlo)){stop('x_pix and cutlo lengths do not match!')}
-  if(length(x_p) != length(cuthi)){stop('x_pix and cuthi lengths do not match!')}
-  if(length(x_p) != length(im_mask)){
-    if (is.matrix(im_mask)) {
+  if(length(x.pix) != length(y.pix)){stop('x.pixix and y.pixix lengths do not match!')}
+  if(length(x.pix) != length(cutlo)){stop('x.pixix and cutlo lengths do not match!')}
+  if(length(x.pix) != length(cuthi)){stop('x.pixix and cuthi lengths do not match!')}
+  if(length(x.pix) != length(data.stamp)){
+    if (is.matrix(data.stamp)) {
       cutup=FALSE
     } else {
-      stop('x_pix and im_mask lengths do not match!')
+      stop('x.pixix and data.stamp lengths do not match!')
     }
   }
   if(is.null(stamplims)){
-    if (is.matrix(im_mask)) {
-      stamplims<-matrix(c(1,length(im_mask[,1]),1,length(im_mask[1,])),ncol=4,nrow=length(x_p))
+    if (is.matrix(data.stamp)) {
+      stamplims<-matrix(c(1,length(data.stamp[,1]),1,length(data.stamp[1,])),ncol=4,nrow=length(x.pix))
     } else {
       stop('Stamplims not provided!')
     }
@@ -27,22 +27,22 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_
     path=file.path(path,"SkyBackIms")
   }
 
-  if(plotall) {
-    rand<-1:length(x_p)
+  if(plot.all) {
+    rand<-1:length(x.pix)
   } else {
-    rand<-sample(length(x_p),min(10,length(x_p)))
+    rand<-sample(length(x.pix),min(10,length(x.pix)))
   }
   if (cutup) {
     for (r in rand) {
       cutlo=cutlovec[r]
       cuthi=cuthivec[r]
-      origim=im_mask[[r]]
-      maskim=imm_mask[[r]]
+      origim=data.stamp[[r]]
+      maskim=mask.stamp[[r]]
       sxl=stamplims[r,1]
       syl=stamplims[r,3]
-      pixlocx=x_p[r]
-      pixlocy=y_p[r]
-      id=id_g[r]
+      pixlocx=x.pix[r]
+      pixlocy=y.pix[r]
+      id=cat.id[r]
 
       pixloc=c(pixlocx,pixlocy)
       pixlocx=pixlocx-(sxl-1)
@@ -203,7 +203,7 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_
       }
       magaxis(side=1:4,labels=FALSE)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
-      points(x=(x_p-pixloc[1]+1),y=(y_p-pixloc[2]+1), pch=3)
+      points(x=(x.pix-pixloc[1]+1),y=(y.pix-pixloc[2]+1), pch=3)
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
       if (length(tempval)>1E4) {
@@ -232,9 +232,9 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_
       cuthi=cuthivec[r]
       sxl=stamplims[r,1]
       syl=stamplims[r,3]
-      pixlocx=x_p[r]
-      pixlocy=y_p[r]
-      id=id_g[r]
+      pixlocx=x.pix[r]
+      pixlocy=y.pix[r]
+      id=cat.id[r]
 
       pixloc=c(pixlocx,pixlocy)
       pixlocx=pixlocx-(sxl-1)
@@ -244,16 +244,16 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_
         xlocs<-floor(pixlocx+(-cuthi:cuthi))
         ylocs<-floor(pixlocy+(-cuthi:cuthi))
         #Select only pixels which are inside the image bounds
-        xsel<-which(xlocs>0 & xlocs<=length(im_mask[,1]))
-        ysel<-which(ylocs>0 & ylocs<=length(im_mask[1,]))
+        xsel<-which(xlocs>0 & xlocs<=length(data.stamp[,1]))
+        ysel<-which(ylocs>0 & ylocs<=length(data.stamp[1,]))
         #Trim to above
         xlocs<-xlocs[xsel]
         ylocs<-ylocs[ysel]
         #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
         if(remmask){
-          tempim<-im_mask*imm_mask
+          tempim<-data.stamp*mask.stamp
         }else{
-          tempim<-im_mask
+          tempim<-data.stamp
         }
         #All ref pixels for new image
         tempref<-as.matrix(expand.grid(xlocs,ylocs))
@@ -358,14 +358,14 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_
       xlocs<-floor(pixlocx+(-cuthi:cuthi))
       ylocs<-floor(pixlocy+(-cuthi:cuthi))
       #Select only pixels which are inside the image bounds
-      xsel<-which(xlocs>0 & xlocs<=length(im_mask[,1]))
-      ysel<-which(ylocs>0 & ylocs<=length(im_mask[1,]))
+      xsel<-which(xlocs>0 & xlocs<=length(data.stamp[,1]))
+      ysel<-which(ylocs>0 & ylocs<=length(data.stamp[1,]))
       #Trim to above
       xlocs<-xlocs[xsel]
       ylocs<-ylocs[ysel]
       #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
       if(remmask){
-        tempim<-im_mask*imm_mask
+        tempim<-data.stamp*mask.stamp
       }
       #All ref pixels for new image
       tempref<-as.matrix(expand.grid(xlocs,ylocs))
@@ -385,9 +385,9 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_
         CairoPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=6*res,width=10*res,res=res)
       }
       layout(cbind(1,2))
-      image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,magmap(im_mask,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="",asp=1,useRaster=TRUE, xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
+      image(x=1:length(data.stamp[,1])-pixlocx,y=1:length(data.stamp[1,])-pixlocy,magmap(data.stamp,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="",asp=1,useRaster=TRUE, xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
       if (remmask) {
-        image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,log10(1-imm_mask),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-pixlocx,y=1:length(data.stamp[1,])-pixlocy,log10(1-mask.stamp),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
       }
       if (length(tempxbak)!=0 & !any(is.na(templtybak))) {
         for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col='darkgrey',lty=templtybak[bin],lwd=3) }
@@ -397,7 +397,7 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_
       }
       magaxis(side=1:4,labels=FALSE)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
-      points(x=(x_p-pixloc[1]+1),y=(y_p-pixloc[2]+1), pch=3)
+      points(x=(x.pix-pixloc[1]+1),y=(y.pix-pixloc[2]+1), pch=3)
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
       if (length(tempval)>1E4) {

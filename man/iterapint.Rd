@@ -1,5 +1,5 @@
-\name{iterapint}
-\alias{iterapint}
+\name{generate.aperture}
+\alias{generate.aperture}
 \alias{checkgrid}
 \alias{inap}
 \alias{reexpand.grid}
@@ -8,22 +8,22 @@
 Elliptical Aperture Creation
 }
 \description{
-The iterapint() procedure creates a single elliptical aperture on a finite grid, which is designated by the values of \{x,y\}.
+The generate.aperture() procedure creates a single elliptical aperture on a finite grid, which is designated by the values of \{x,y\}.
 The aperture is created with properties determined by the input parameters. In order to improve the accuracy of
 the aperture integral, the accuracy of the pixel values at the aperture boundary are improved by increasing the
 resolution of the grid at the boundary, calculating the subpixel values, and summing over subpixels.
-The functions checkgrid(), inap(), and reexpand.grid() are low level functions called internally by iterapint().
+The functions checkgrid(), inap(), and reexpand.grid() are low level functions called internally by generate.aperture().
 }
 \usage{
-iterapint(x, y, xstep, ystep, xcen = 0, ycen = 0,
-axrat = 1, axang = 0, majax = 1, deg = TRUE, upres = 2,
-itersteps = 9, pixscale = FALSE, peakscale = FALSE,
+generate.aperture(x, y, xstep, ystep, xcen = 0, ycen = 0,
+axrat = 1, axang = 0, majax = 1, deg = TRUE, resample.upres = 2,
+resample.iterations = 9, pixscale = FALSE, peakscale = FALSE,
 peak = 1)
 checkgrid(x, y, xstep, ystep, xcen = 0, ycen = 0,
 axrat = 1, axang = 0, majax = 1, deg = TRUE)
 inap(x, y, xcen = 0, ycen = 0, axrat = 1, axang = 0,
 majax = 1, deg = TRUE)
-reexpand.grid(x, y, xstep, ystep, id, upres = 2)
+reexpand.grid(x, y, xstep, ystep, id, resample.upres = 2)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -60,12 +60,12 @@ character;
   \item{id}{
 character; id of parent pixel
 }
-  \item{upres}{
+  \item{resample.upres}{
 numeric; exponent used to increase resolution of boundary pixels. Must be > 1.
 }
-  \item{itersteps}{
+  \item{resample.iterations}{
 numeric; number of iterations performed when increasing the resolution of boundary pixels.
-         If itersteps=0, no increase in resolution of boundary pixels occurs.
+         If resample.iterations=0, no increase in resolution of boundary pixels occurs.
 }
   \item{pixscale}{
 logical; if TRUE - values are scaled to reflect pixel area, rather than pixel fraction
@@ -82,13 +82,13 @@ numeric; the value used to rescale the peak
 \details{
 The function, at its most rudimentary, creates an eliptical aperture on a pixel-grid. The input values to
 the function are largely just the parameers needed to describe the eliptical aperture
-we wish to generate. There are additional paramaters (upres, itersteps, pixscale) that are
+we wish to generate. There are additional paramaters (resample.upres, resample.iterations, pixscale) that are
 used specifically to improve the aperture generation for use in photometric measurements.
 
 As the procedure is designed for use in high precision photometric measurements, the aperture integral can be
 improved significantly by determining the values of the pixels at the boundary at high resolution. For this
-reason, the function takes two inputs (upres and itersteps) which increase the resolution of the boundary
-pixels. After the last iteration, the resolution of pixels on the aperture boundary will be (upres)^(itersteps)
+reason, the function takes two inputs (resample.upres and resample.iterations) which increase the resolution of the boundary
+pixels. After the last iteration, the resolution of pixels on the aperture boundary will be (resample.upres)^(resample.iterations)
 higher than the original pixel size.
 }
 \value{
@@ -113,7 +113,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 \examples{
 ## Example 1: Simple Placement of an aperture
@@ -126,7 +126,7 @@ majax<-runif(1,min=0.2,max=0.8)*grid.width
 axrat<-runif(1,min=0.2,max=1)
 axang<-runif(1)*180
 #Place the aperture using binary Placement
-aper_expanded<-iterapint(x=grid[,1],y=grid[,2],xstep=1,ystep=1,axrat=axrat,axang=axang,majax=majax,itersteps=-1)
+aper_expanded<-generate.aperture(x=grid[,1],y=grid[,2],xstep=1,ystep=1,axrat=axrat,axang=axang,majax=majax,resample.iterations=-1)
 #Convert return back into matrix
 aper<-matrix(aper_expanded[,3],nrow=(grid.width*2+1))
 #Plot Aperture
@@ -135,7 +135,7 @@ image(x=seq(-grid.width,grid.width),y=seq(-grid.width,grid.width),z=aper,xlab='X
 
 ## Example 2: Quarternary Placement
 #Place the aperture using quarternary Placement
-aper_expanded<-iterapint(x=grid[,1],y=grid[,2],xstep=1,ystep=1,axrat=axrat,axang=axang,majax=majax,itersteps=0)
+aper_expanded<-generate.aperture(x=grid[,1],y=grid[,2],xstep=1,ystep=1,axrat=axrat,axang=axang,majax=majax,resample.iterations=0)
 #Convert return back into matrix
 aper<-matrix(aper_expanded[,3],nrow=(grid.width*2+1))
 #Plot Aperture
@@ -143,7 +143,7 @@ image(x=seq(-grid.width,grid.width),y=seq(-grid.width,grid.width),z=aper,xlab='X
 
 ## Example 3: Improve aperture edge-pixel determination
 #Using the same parameters as in Example 1, just improve edge determination
-aper_expanded<-iterapint(x=grid[,1],y=grid[,2],xstep=1,ystep=1,axrat=axrat,axang=axang,majax=majax, upres=3, itersteps=4)
+aper_expanded<-generate.aperture(x=grid[,1],y=grid[,2],xstep=1,ystep=1,axrat=axrat,axang=axang,majax=majax, resample.upres=3, resample.iterations=4)
 #Convert return back into matrix
 aper<-matrix(aper_expanded[,3],nrow=(grid.width*2+1))
 #Plot Aperture
@@ -154,7 +154,7 @@ image(x=seq(-grid.width,grid.width),y=seq(-grid.width,grid.width),z=aper,xlab='X
 grid.width<-2
 grid<-expand.grid(seq(-grid.width,grid.width,by=0.1), seq(-grid.width,grid.width, by=0.1))
 #Using a simple elliptical parameters, create basic aperture
-aper_expanded<-iterapint(x=grid[,1],y=grid[,2],xstep=0.1,ystep=0.1,axrat=0.5,axang=-45,majax=2,itersteps=0)
+aper_expanded<-generate.aperture(x=grid[,1],y=grid[,2],xstep=0.1,ystep=0.1,axrat=0.5,axang=-45,majax=2,resample.iterations=0)
 #Convert return back into matrix
 aper<-matrix(aper_expanded[,3],nrow=length(seq(-grid.width,grid.width,by=0.1)))
 #Plot Aperture
@@ -163,7 +163,7 @@ image(x=seq(-grid.width,grid.width,by=0.1),y=seq(-grid.width,grid.width,by=0.1),
 #quantify the improvement of our integral by plotting the integral vs iteration
 residual<-array(0,11)
 for (i in 1:11) {
-  aper_expanded<-iterapint(x=grid[,1],y=grid[,2],xstep=0.1,ystep=0.1,axrat=0.5,axang=-45,majax=2,upres=2,itersteps=(i-1),pixscale=TRUE)
+  aper_expanded<-generate.aperture(x=grid[,1],y=grid[,2],xstep=0.1,ystep=0.1,axrat=0.5,axang=-45,majax=2,resample.upres=2,resample.iterations=(i-1),pixscale=TRUE)
   residual[i]=abs(sum(aper_expanded[,3])-2*pi)
 }
 #Plot the residuals

@@ -1,12 +1,12 @@
 #
 #
 #
-iterapint <-
-function(x,y,xstep,ystep,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=TRUE,upres=2,itersteps=9,pixscale=FALSE,peakscale=FALSE,peak=1){
+generate.aperture <-
+function(x,y,xstep,ystep,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=TRUE,resample.upres=2,resample.iterations=9,pixscale=FALSE,peakscale=FALSE,peak=1){
 
 if(majax>0){
 
- if(itersteps>0){
+ if(resample.iterations>0){
 
   origx=x
   origy=y
@@ -17,17 +17,17 @@ if(majax>0){
   weight=1
   newID=1:length(x)
 
-  for(i in 1:itersteps){
+  for(i in 1:resample.iterations){
    check=checkgrid(x=x,y=y,xstep=xstep,ystep=ystep,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax,deg=deg)
    if(any(check$logic[,'empty'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'empty']],0))}
    if(any(check$logic[,'full'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'full']],weight))}
-   regrid=reexpand.grid(x[check$logic[,'part']],y[check$logic[,'part']],xstep=xstep,ystep=ystep,id=newID[check$logic[,'part']],upres=upres)
+   regrid=reexpand.grid(x[check$logic[,'part']],y[check$logic[,'part']],xstep=xstep,ystep=ystep,id=newID[check$logic[,'part']],resample.upres=resample.upres)
    x=regrid$x
    y=regrid$y
    newID=regrid$id
    xstep=regrid$xstep
    ystep=regrid$ystep
-   weight=weight/(upres^2)
+   weight=weight/(resample.upres^2)
   }
 
   check=checkgrid(x=x,y=y,xstep=xstep,ystep=ystep,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax,deg=deg)
@@ -47,7 +47,7 @@ if(majax>0){
   mastercat=mastercat[order(mastercat[,1]),2]
   mastercat=cbind(origx,origy,mastercat)
   if(pixscale){mastercat[,3]=mastercat[,3]*origxstep*origystep}
- } else if(itersteps==0){
+ } else if(resample.iterations==0){
 
   mastercat={}
   weight=1

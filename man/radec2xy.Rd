@@ -1,5 +1,5 @@
-\name{radec2xy}
-\alias{radec2xy}
+\name{radec.to.xy}
+\alias{radec.to.xy}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 RA/Dec to Pixel
@@ -9,7 +9,7 @@ Maps a provided array of RAs and Decs to pixel locations X and Y using the TAN G
 when provided with calibrating central RA/Dec, X/Y, and scales.
 }
 \usage{
-radec2xy(ra, dec, ra0 = 0, dec0 = 0,
+radec.to.xy(ra, dec, ra0 = 0, dec0 = 0,
 x0 = 0, y0 = 0, xscale = 1, yscale = 1)
 }
 %- maybe also `usage' for other objects documented here.
@@ -53,8 +53,8 @@ Aaron Robotham{ ICRAR}
  {\email{aaron.robotham@icrar.org}}
 }
 \note{
-  This function is called by the ad2xy function, which extracts relevant information from an astrometry data.frame
-  internally. It is therefore often more convenient to call ad2xy rather than to call radec2xy directly.
+  This function is called by the ad.to.xy function, which extracts relevant information from an astrometry data.frame
+  internally. It is therefore often more convenient to call ad.to.xy rather than to call radec.to.xy directly.
 }
 \note{
   This function is designed to work with the TAN Gnomonic projection. However, due to degeneracy the procedure
@@ -75,10 +75,10 @@ data(ApCat.sample)
 #Save sample image to File
 write.fits(file="SampleImage.fits",SDSS.sample)
 #Read Astrometry
-astr<-read.astr("SampleImage.fits")
+astr<-read.astrometry("SampleImage.fits")
 #Get the relevent parameters from the Astrometry Header
-### NB: This snippet is within the ad2xy function, which is a
-###     wrapper to the radec2xy function
+### NB: This snippet is within the ad.to.xy function, which is a
+###     wrapper to the radec.to.xy function
 ra0<-astr$CRVAL[1]
 dec0<-astr$CRVAL[2]
 x0<-astr$CRPIX[1]
@@ -86,7 +86,7 @@ y0<-astr$CRPIX[2]
 xscale<-astr$CD[1,1]
 yscale<-astr$CD[2,2]
 #Determine the pixel-locations of the aperture catalogue objects
-xy<-radec2xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg, ra0=ra0, dec0=dec0, x0=x0, y0=y0, xscale=xscale, yscale=yscale)
+xy<-radec.to.xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg, ra0=ra0, dec0=dec0, x0=x0, y0=y0, xscale=xscale, yscale=yscale)
 #Print sample
 print(head(xy))
 

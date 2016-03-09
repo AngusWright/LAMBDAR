@@ -1,23 +1,23 @@
-\name{make_deblended_weightmap}
-\alias{make_deblended_weightmap}
+\name{make.deblend.weight.maps}
+\alias{make.deblend.weight.maps}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Deblend Photometric Objects
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
-Deblends objects which are overlapping in a photometric image. Procedure is called by fluxmeasurements, part of the MeasureFluxes routine.
+Deblends objects which are overlapping in a photometric image. Procedure is called by flux.measurements, part of the measure.fluxes routine.
 The procedure takes individual weighted object apertures, and determines what proportion of the blended flux should belong to the object in question.
 It performs this analysis on all apertures from the input catalogue.
 }
 \usage{
-make_deblended_weightmap(outenv=parent.env(environment()),env=NULL,subs=NULL)
+make.deblend.weight.maps(outenv=parent.env(environment()),env=NULL,subs=NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in `MeasureFluxes'
+environment; the environment containing the parameters used in `measure.fluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
@@ -54,7 +54,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 %%\examples{
 

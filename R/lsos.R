@@ -1,5 +1,5 @@
 lsos <-
-function (pattern="", envir=NULL, pos = 1, order.by="Size", decreasing=TRUE, head=TRUE, n=10,noShow="") {
+function (pattern="", envir=NULL, pos = 1, order.by="Size", decreasing=TRUE, head=TRUE, n=10,noShow="",exact=FALSE) {
   #Get variable names {{{
   if (is.null(envir)) {
     #Get variable names using 'pos' {{{
@@ -12,6 +12,9 @@ function (pattern="", envir=NULL, pos = 1, order.by="Size", decreasing=TRUE, hea
     names <- ls(envir = envir, pattern = pattern)
     #}}}
   }#}}}
+  if (exact) {
+    names<-names[which(names == pattern)]
+  }
   noShow<-tolower(noShow)
   if (length(names)!=0) {
     #There are objects, get details {{{

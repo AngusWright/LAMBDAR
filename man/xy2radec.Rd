@@ -1,5 +1,5 @@
-\name{xy2radec}
-\alias{xy2radec}
+\name{xy.to.radec}
+\alias{xy.to.radec}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Pixel to RA/Dec
@@ -9,7 +9,7 @@ Convert pixel locations to RA and Dec by using a calibrating pixel and known pix
 in the TAN Gnomonic coordinate system.
 }
 \usage{
-xy2radec(x, y, ra0 = 0, dec0 = 0,
+xy.to.radec(x, y, ra0 = 0, dec0 = 0,
 x0 = 0, y0 = 0, xscale = 1, yscale = 1)
 }
 %- maybe also `usage' for other objects documented here.
@@ -59,7 +59,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-MeasureFluxes
+measure.fluxes
 }
 \examples{
 

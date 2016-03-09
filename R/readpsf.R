@@ -1,5 +1,5 @@
-readpsf <-
-function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,normalize=TRUE,gauss_fwhm_as=0, env=NULL) {
+read.psf <-
+function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confidence,normalize=TRUE,gauss.fwhm.arcsec=0, env=NULL) {
 
   message('--------------------------Read_PSF-------------------------------------')
 
@@ -15,11 +15,11 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
   #}}}
 
   #Read/Generate PSF {{{
-  if (gauss_fwhm_as > 0) {
+  if (gauss.fwhm.arcsec > 0) {
     #Generate Gaussian PSF {{{
     if (verbose) { message("Creating Gaussian PSF from input parameters") }
     #Get gaussian parameters {{{
-    psffwhm.pix<-gauss_fwhm_as/asperpix
+    psffwhm.pix<-gauss.fwhm.arcsec/arcsec.per.pix
     psfsigma.pix<-psffwhm.pix/(2*sqrt(2*log(2)))
     if (confidence==1) {
       warning("Cannot have PSF Confidence = Unity when analytically deriving PSF; Using Maximum double value (1-1E-16)")
@@ -28,17 +28,17 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
     nsig<-sqrt(qchisq(confidence,df=2)) #Determine nsigma for desired confidence using chisq distribution
     psf.clip<-ceiling(nsig*psfsigma.pix)
     psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
-    psfwidth<-psf.clip*asperpix
-    if (psffilt) {
-      stampsizepix=(floor(ceiling(defbuff*apsize/asperpix)+(ceiling(psf.clip)/2))*2+5)
+    psfwidth<-psf.clip*arcsec.per.pix
+    if (psf.filt) {
+      stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
     } else {
-      stampsizepix=(floor(ceiling(defbuff*apsize/asperpix))*2+5)
+      stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix))*2+5)
     }
 
     x0=ceiling(psf.clip/2.)
     y0=ceiling(psf.clip/2.)
-    if (verbose) { message(paste("gauss_fwhm_as, x0, y0, sigma_p, stampsizepix\n",
-                           round(gauss_fwhm_as, digits=3), x0, y0, psfsigma.pix, stampsizepix)) }
+    if (verbose) { message(paste("gauss.fwhm.arcsec, x0, y0, sigma_p, stampsizepix\n",
+                           round(gauss.fwhm.arcsec, digits=3), x0, y0, psfsigma.pix, stampsizepix)) }
     #}}}
     #Generate PSF pixel values {{{
     xi=matrix(1:psf.clip, nrow=psf.clip, ncol=psf.clip)
@@ -64,13 +64,13 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
       stop("PSF file read failed")
     }
     im_psf<-psf$dat[[1]]
-    hdr_psf<-read.astr(filename)
+    hdr_psf<-read.astrometry(filename)
     #}}}
     #Check that psf pixel scale is the same as the image {{{
     hdr_psf$CD<-abs(hdr_psf$CD)
     if (is.na(hdr_psf$CD[1,1])&is.na(hdr_psf$CD[2,2])) {
       warning("No astrometry present in PSF Header. ASSUMING EQUIVALENT PIXEL SCALES")
-      hdr_psf$CD[1:2,1:2]<-asperpix/3600
+      hdr_psf$CD[1:2,1:2]<-arcsec.per.pix/3600
     } else if (is.na(hdr_psf$CD[1,1])) {
       warning("Incomplete astrometry present in PSF Header. Assuming Symmetry.")
       hdr_psf$CD[1,1]<-hdr_psf$CD[2,2]
@@ -78,16 +78,16 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
       warning("Incomplete astrometry present in PSF Header. Assuming Symmetry.")
       hdr_psf$CD[2,2]<-hdr_psf$CD[1,1]
     }
-    if ((abs(1-(hdr_psf$CD[1,1]*3600/asperpix))>1E-3)||(abs(1-(hdr_psf$CD[2,2]*3600/asperpix)>1E-3))) {
+    if ((abs(1-(hdr_psf$CD[1,1]*3600/arcsec.per.pix))>1E-3)||(abs(1-(hdr_psf$CD[2,2]*3600/arcsec.per.pix)>1E-3))) {
       #If it isn't, reinterpolate the psf onto the same pixel spacing
       narcsec_x<-((hdr_psf$NAXIS[1]-1)*hdr_psf$CD[1,1]*3600)
       narcsec_y<-((hdr_psf$NAXIS[2]-1)*hdr_psf$CD[2,2]*3600)
       x_oldres<-seq(0,narcsec_x,by=hdr_psf$CD[1,1]*3600)
       y_oldres<-seq(0,narcsec_y,by=hdr_psf$CD[2,2]*3600)
-      x_newres<-seq(0,narcsec_x,by=asperpix            )
-      y_newres<-seq(0,narcsec_y,by=asperpix            )
+      x_newres<-seq(0,narcsec_x,by=arcsec.per.pix            )
+      y_newres<-seq(0,narcsec_y,by=arcsec.per.pix            )
       grid<-expand.grid(x_newres,y_newres)
-      im_psf<-matrix(interp2D(x=grid[,1],y=grid[,2],list(x=x_oldres,y=y_oldres,z=im_psf))[,3],ncol=length(x_newres))
+      im_psf<-matrix(interp.2d(x=grid[,1],y=grid[,2],list(x=x_oldres,y=y_oldres,z=im_psf))[,3],ncol=length(x_newres))
     }
     #}}}
     #Get PSF FWHM {{{
@@ -99,11 +99,11 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
     psfLimit<-tempfunc(confidence*max(tempsum, na.rm=TRUE))
     psf.clip<-diff(range(which(im_psf>=psfLimit, arr.ind=TRUE)[,1]))
     psf.clip<-max(psf.clip,diff(range(which(im_psf>=psfLimit, arr.ind=TRUE)[,2])))
-    psfwidth<-psf.clip*asperpix
-    if (psffilt) {
-      stampsizepix=(floor(ceiling(defbuff*apsize/asperpix)+(ceiling(psf.clip)/2))*2+5)
+    psfwidth<-psf.clip*arcsec.per.pix
+    if (psf.filt) {
+      stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
     } else {
-      stampsizepix=(floor(ceiling(defbuff*apsize/asperpix))*2+5)
+      stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix))*2+5)
     }
     #}}}
     #If Needed, pad the PSF with 0s {{{

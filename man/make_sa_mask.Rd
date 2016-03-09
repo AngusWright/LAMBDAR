@@ -1,20 +1,20 @@
-\name{make_sa_mask}
-\alias{make_sa_mask}
+\name{make.catalogue.apertures}
+\alias{make.catalogue.apertures}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Aperture Stamps
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
 Create a length (m) list of (n,n) arrays, containing object apertures given input aperture parameters
 }
 \usage{
-make_sa_mask(outenv = parent.env(environment()), env = NULL)
+make.catalogue.apertures(outenv = parent.env(environment()), env = NULL)
 }
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in `MeasureFluxes'
+environment; the environment containing the parameters used in `measure.fluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
@@ -42,7 +42,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 %%\examples{
 

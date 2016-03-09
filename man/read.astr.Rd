@@ -1,5 +1,5 @@
-\name{read.astr}
-\alias{read.astr}
+\name{read.astrometry}
+\alias{read.astrometry}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Read Astrometry
@@ -8,7 +8,7 @@ Read Astrometry
 Read the header of a provided FITS file, and return the astrometry associated with that file.
 }
 \usage{
-read.astr(fitsname,hdu=1)
+read.astrometry(fitsname,hdu=1)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -39,7 +39,7 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{MeasureFluxes}, \link{fluxmeasurements}
+\link{measure.fluxes}, \link{flux.measurements}
 }
 \examples{
 
@@ -51,7 +51,7 @@ write.fits(file="SampleImage.fits",SDSS.sample)
 hdr<-read.fitshdr("SampleImage.fits")
 print(hdr)
 #Read Astrometry
-astr<-read.astr("SampleImage.fits")
+astr<-read.astrometry("SampleImage.fits")
 #Show the Astrometry Parameters
 print(astr)
 

@@ -1,4 +1,4 @@
-sph2car<-
+sph.to.car<-
 function (long, lat, radius = 1, deg = TRUE)
 {
   if (is.matrix(long) || is.data.frame(long)) {

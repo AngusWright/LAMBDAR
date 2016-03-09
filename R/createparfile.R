@@ -1,4 +1,4 @@
-createparfile <-
+create.par.file <-
   function(
     filename="Lambdar_default.par",
     RootDirectory="./",
@@ -143,7 +143,7 @@ EFactor                ",EFactor           ,"    #Error Map Scale Factor
 WeightMapZP            ",WeightMapZP       ,"    #Zero Point of the Weight Map - used for masking Data if no mask is supplied
 Saturation             ",Saturation        ,"    #Saturation value of the Map - used for Flagging bad fluxes. If unknown, use Inf
 SaturationLabel        ",SaturationLabel   ,"    #Saturation Label in FITS header - used for reading saturation value if none supplied
-GainLabel              ",GainLabel         ,"    #Gain Label in FITS header - used for generating error map if no errormap/gain supplied
+GainLabel              ",GainLabel         ,"    #Gain Label in FITS header - used for generating error map if no error.map/gain supplied
 #                #-------Fits Extension Values--------------#
 DataExtn               ",DataExtn          ,"    #Fits header extension of Data in Image File
 ErrorExtn              ",ErrorExtn         ,"    #Fits header extension of Data in Error File
@@ -161,7 +161,7 @@ CheckContam            ",CheckContam       ,"    #Check Contaminants for ones th
 nNearestCheck          ",nNearestCheck     ,"    #Number of Nearest Neighbours to check when looking for Contaminant-Galaxy Overlaps
 PSFConvolve            ",PSFConvolve       ,"    #Convolve the Aperture with a PSF?                                              [1/0]
 ApertureConfLimit      ",ApertureConfLimit ,"    #Confidence limit used when converting PSF convolved apertures to binary apertures
-PSFWeighted            ",PSFWeighted       ,"    #Do you want PSF Weighted Photometry [1]? or Aperture Photometry [0]?            [1/0]
+PSFWeighted            ",PSFWeighted       ,"    #Do you want PSFWeighted Photometry [1]? or Aperture Photometry [0]?            [1/0]
 AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N0E90 angular coords, 1 if it is in N90E0 coords
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
 MinApRad               ",MinApRad          ,"    #State minimum aperture to use for sources
@@ -175,8 +175,8 @@ PlotSample             ",PlotSample        ,"    #Plot a sample of the Object Ap
 PlotAll                ",PlotAll           ,"    #Plot All of the Object Apertures & Fluxes for Inspection? Includes Aperture Images and object COGs
 Diagnostic             ",Diagnostic        ,"    #Diagnostic Output of Variable Values During Computation - Helpful in Understanding Code
 Interactive            ",Interactive       ,"    #Interactive Mode - Allows user access to entire parameter-space after final calculations
-Magnitudes             ",Magnitudes        ,"    #Output Fluxes as Magnitudes
-ABVegaFlux             ",ABVegaFlux        ,"    #Flux of ABVega in this band - only used if outputting Magnitudes
+Magnitudes             ",Magnitudes        ,"    #Output Fluxes as magnitudes
+ABVegaFlux             ",ABVegaFlux        ,"    #Flux of ABVega in this band - only used if outputting magnitudes
 MagZeroPoint           ",MagZeroPoint      ,"    #Magnitude of the Image Zero Point. If -999, ZP will be read from FITS header
 MagZPLabel             ",MagZPLabel        ,"    #Label used for the Zero Point Keyword in the FITS header
 DoSkyEst               ",DoSkyEst          ,"    #Perform estimate of local sky-background for each object, and subtract it from the flux
@@ -189,8 +189,8 @@ RanCor                 ",RanCor            ,"    #Do you want to calculate mean 
 nRandoms               ",nRandoms          ,"    #Number of randoms calculated *per aperture*
 BlankCor               ",BlankCor          ,"    #Do you want to calculate mean & median confusion using blanks around every aperture? [1/0]
 nBlanks                ",nBlanks           ,"    #Number of blanks calculated *per aperture*
-UsePixelFluxWgts       ",UsePixelFluxWgts  ,"    #Do you want the pixel flux at the object RA DEC to be used for relative fluxweighting? [1/0]
-FluxWgtType            ",FluxWgtType       ,"    #What is the form of the input fluxweights ('flux', 'mag', or 'scale')?
+UsePixelFluxWgts       ",UsePixelFluxWgts  ,"    #Do you want the pixel flux at the object RA DEC to be used for relative flux.weighting? [1/0]
+FluxWgtType            ",FluxWgtType       ,"    #What is the form of the input flux.weights ('flux', 'mag', or 'scale')?
 IterateFluxes          ",IterateFluxes     ,"    #Do you want to iterate the flux determination to improve deblending?
 nIterations            ",nIterations       ,"    #How many iterations do you want to do?
 #                #---------------Outputs--------------------#

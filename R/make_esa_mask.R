@@ -1,4 +1,4 @@
-make_esa_mask <-
+make.exponential.apertures <-
 function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,confuse=FALSE){
 #Procedure creates exponential galaxy profiles, using input parameters
 #from the catalogue, and places them (in order) onto stamps
@@ -21,35 +21,35 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #
 
   #Convert semi-major (Kron) axis in arcsec to Major Effective Radius in pixels
-  Reff_pix<-(a_g)*(1/(2.5*kronrad(1)))/(asperpix)
+  Reff_pix<-(cat.a)*(1/(2.5*kronrad(1)))/(arcsec.per.pix)
   #
 
   #Aperture Axis Ratio in [0,1]
-  axrat<-b_g/a_g
+  axrat<-cat.b/cat.a
   axrat[which(!is.finite(axrat))]<-1
   #
 
-  #Get input Magnitudes
-  if (is.na(magZP)) {
-    stop("No Magnitude Zero Point supplied or read. Magnitudes are required for Sim")
+  #Get input magnitudes
+  if (is.na(mag.zp)) {
+    stop("No Magnitude Zero Point supplied or read. magnitudes are required for Sim")
   }
-  inputmags<- -2.5*log10(fluxweight)+magZP
+  inputmags<- -2.5*log10(flux.weight)+mag.zp
   #
 
-  #Remove Galaxies with non-finite input Magnitudes
+  #Remove Galaxies with non-finite input magnitudes
   index<-which(is.finite(inputmags))
   inputmags<-inputmags[index]
-  a_g<-a_g[index]
-  b_g<-b_g[index]
-  ra_g<-ra_g[index]
-  dec_g<-dec_g[index]
-  x_g<-x_g[index]
-  y_g<-y_g[index]
-  theta_g<-theta_g[index]
+  cat.a<-cat.a[index]
+  cat.b<-cat.b[index]
+  cat.ra<-cat.ra[index]
+  cat.dec<-cat.dec[index]
+  cat.x<-cat.x[index]
+  cat.y<-cat.y[index]
+  cat.theta<-cat.theta[index]
   Reff_pix<-Reff_pix[index]
-  fluxweight<-fluxweight[index]
+  flux.weight<-flux.weight[index]
   axrat<-axrat[index]
-  id_g<-id_g[index]
+  cat.id<-cat.id[index]
   contams<-contams[index]
   #
 
@@ -61,7 +61,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
     x<-seq(quantile(inputmags,c(0.01)),mag.mode+2.25,by=0.5)
     NDriver<-10^(-0.01476*x^2+1.025*x-11.76)
     #Normalise for sky area
-    skylims<-dim(image.env$im)*asperpix/3600
+    skylims<-dim(image.env$im)*arcsec.per.pix/3600
     skyarea<-skylims[1]*skylims[2]
     #Magnitude Bin Values
     NDriver<-skyarea*NDriver
@@ -74,7 +74,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
       #Source Density / deg^2
       sourceDens<-(sum(ndraws))/skyarea
       #Get source Density per PSF
-      sDensPSF<-sourceDens*((gauss_fwhm_as/3600)^2)
+      sDensPSF<-sourceDens*((gauss.fwhm.arcsec/3600)^2)
       #If source density is less than probability of finding gal withing FWHM:
       if (sDensPSF<1.5) {
         add=0
@@ -89,7 +89,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
           #Source Density / deg^2
           sourceDens<-(sum(ndraws))/skyarea
           #Get source Density per PSF
-          sDensPSF<-sourceDens*((gauss_fwhm_as/3600)^2)
+          sDensPSF<-sourceDens*((gauss.fwhm.arcsec/3600)^2)
         }
         #ndraws<-ndraws*(1.5/sDensPSF)
       }
@@ -109,27 +109,27 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
     N=photCount(x,ObsParm$exp,ObsParm$area,ObsParm$Weff,ObsParm$lamEff)
     cat("Photon Counts in each x-bin:\nBin Centre: ",x,"\nN Phot: ",N,"\n")
     mag.padgals<-y
-    ra.padgals<-runif(length(mag.padgals),min=min(ra_g),max=max(ra_g))
-    dec.padgals<-runif(length(mag.padgals),min=min(dec_g),max=max(dec_g))
-    a_g.padgals<-a_g[runif(length(mag.padgals),min=1,max=length(a_g))]
+    ra.padgals<-runif(length(mag.padgals),min=min(cat.ra),max=max(cat.ra))
+    dec.padgals<-runif(length(mag.padgals),min=min(cat.dec),max=max(cat.dec))
+    cat.a.padgals<-cat.a[runif(length(mag.padgals),min=1,max=length(cat.a))]
     axrat.padgals<-runif(length(mag.padgals),min=min(axrat,na.rm=TRUE),max=1)
-    b_g.padgals<-a_g.padgals*axrat.padgals
-    Reff.padgals<-(a_g.padgals)*(1/(2.5*kronrad(1)))/(asperpix)
-    theta.padgals<-runif(length(mag.padgals),min=min(theta_g),max=max(theta_g))
+    cat.b.padgals<-cat.a.padgals*axrat.padgals
+    Reff.padgals<-(cat.a.padgals)*(1/(2.5*kronrad(1)))/(arcsec.per.pix)
+    theta.padgals<-runif(length(mag.padgals),min=min(cat.theta),max=max(cat.theta))
     #Add padding galaxies to the catalogue
-    id_g<-c(id_g,9999000+1:length(mag.padgals))
-    ra_g<-c(ra_g,ra.padgals)
-    dec_g<-c(dec_g,dec.padgals)
-    a_g<-c(a_g,a_g.padgals)
-    b_g<-c(b_g,b_g.padgals)
-    gamapos<-ad2xy(ra_g,dec_g,astr_struc)
-    x_g<-gamapos[,1]
-    y_g<-gamapos[,2]
+    cat.id<-c(cat.id,9999000+1:length(mag.padgals))
+    cat.ra<-c(cat.ra,ra.padgals)
+    cat.dec<-c(cat.dec,dec.padgals)
+    cat.a<-c(cat.a,cat.a.padgals)
+    cat.b<-c(cat.b,cat.b.padgals)
+    gama.pos<-ad.to.xy(cat.ra,cat.dec,astr.struc)
+    cat.x<-gama.pos[,1]
+    cat.y<-gama.pos[,2]
     axrat<-c(axrat,axrat.padgals)
-    theta_g<-c(theta_g,theta.padgals)
+    cat.theta<-c(cat.theta,theta.padgals)
     Reff_pix<-c(Reff_pix,Reff.padgals)
     inputmags<-c(inputmags,mag.padgals)
-    fluxweight<-10^c((8.9-inputmags)/2.5)
+    flux.weight<-10^c((8.9-inputmags)/2.5)
     contams<-c(contams,rep(1,length(mag.padgals)))
   }
 
@@ -138,13 +138,13 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #Exponential Generation function uses N90E0 angular inputs
   ### This is OPPOSITE the aperture function used in LAMBDAR
   #If the input angles are not N90E0, correct for this offset
-  if (!angoffset) { theta_off<-90-theta_g } else {theta_off<-theta_g}
+  if (!ang.offset) { theta.offset<-90-cat.theta } else {theta.offset<-cat.theta}
   #Correct for any reversal of fits image
-  if (astr_struc$CD[1,1]*astr_struc$CD[2,2]<0){ theta_off<-theta_off*-1 }
+  if (astr.struc$CD[1,1]*astr.struc$CD[2,2]<0){ theta.offset<-theta.offset*-1 }
 
 
   #Reorder for faster parallelisation
-  nchild<-ncores
+  nchild<-num.cores
   ind<-order(inputmags)
   matdim<-c(ceiling(length(inputmags)/nchild),nchild)
   ind<-c(ind,rep(NA,matdim[1]*matdim[2]-length(ind)))
@@ -153,19 +153,19 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   ind<-ind[which(!is.na(ind))]
 
   Reff_pix<-Reff_pix[ind]
-  theta_off<-theta_off[ind]
+  theta.offset<-theta.offset[ind]
   inputmags<-inputmags[ind]
   axrat<-axrat[ind]
   contams<-contams[ind]
-  ra_g<-ra_g[ind]
-  dec_g<-dec_g[ind]
-  x_g<-x_g[ind]
-  y_g<-y_g[ind]
-  id_g<-id_g[ind]
-  a_g<-a_g[ind]
-  b_g<-b_g[ind]
-  theta_g<-theta_g[ind]
-  fluxweight<-fluxweight[ind]
+  cat.ra<-cat.ra[ind]
+  cat.dec<-cat.dec[ind]
+  cat.x<-cat.x[ind]
+  cat.y<-cat.y[ind]
+  cat.id<-cat.id[ind]
+  cat.a<-cat.a[ind]
+  cat.b<-cat.b[ind]
+  cat.theta<-cat.theta[ind]
+  flux.weight<-flux.weight[ind]
 
   #Create Aperture Masks
   message("Creating Aperture Masks")
@@ -182,11 +182,11 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   for (i in 1:length(inputmags)) {
       setTxtProgressBar(pb,i)
       mag=inputmags[i]
-      theta=theta_off[i]
+      theta=theta.offset[i]
       axr=axrat[i]
       Reff=Reff_pix[i]
-      xdelt=(x_g[i]%%1)
-      ydelt=(y_g[i]%%1)
+      xdelt=(cat.x[i]%%1)
+      ydelt=(cat.y[i]%%1)
 
       #Calculate Required number of Photons
       #Formula for number of photons given magnitude, exposure time (s),
@@ -208,16 +208,16 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
         tempxy[,2]<-tempxy[,2]-stamplen-0.5-ydelt
         if (Reff!=0) {
           #Galaxy
-          tempxy<-rotdata2d(tempxy[,1],tempxy[,2],90-theta)
+          tempxy<-rotate.data.2d(tempxy[,1],tempxy[,2],90-theta)
           tempxy[,1]<-tempxy[,1]/axr
           I<-exp(-bn*(sqrt((xy[,1])^2+(xy[,2])^2)/Reff-1))
           I[which(I<max(I)*1E-5)]<-0
-          im<-zapsmall(matrix(interp2D(tempxy[,1],tempxy[,2], list(x=1:(stamplen*2)-stamplen-0.0,y=1:(stamplen*2)-stamplen-0.0,z=matrix(zapsmall(I),stamplen*2,stamplen*2)))[,3], ncol=stamplen*2,nrow=stamplen*2,byrow=FALSE))
+          im<-zapsmall(matrix(interp.2d(tempxy[,1],tempxy[,2], list(x=1:(stamplen*2)-stamplen-0.0,y=1:(stamplen*2)-stamplen-0.0,z=matrix(zapsmall(I),stamplen*2,stamplen*2)))[,3], ncol=stamplen*2,nrow=stamplen*2,byrow=FALSE))
           im<-im[(ceiling(stamplen*0.5)):(floor(stamplen*1.5)),(ceiling(stamplen*0.5)):(floor(stamplen*1.5))]
           #Convert to Jy
           im<-im/sum(im)*10^((8.9-mag)/2.5)
         }
-        if (psffilt || Reff==0) {
+        if (psf.filt || Reff==0) {
         #Point Source
           ps<-matrix(dnorm(sqrt((xy[,1])^2+(xy[,2])^2),mean=0,sd=psfsigma.pix),stamplen*2,stamplen*2)
           ps<-ps[(ceiling(stamplen*0.5)):(floor(stamplen*1.5)),(ceiling(stamplen*0.5)):(floor(stamplen*1.5))]
@@ -226,7 +226,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
             im<-ps/sum(ps)*10^((8.9-mag)/2.5)
           } else {
             #Convert to Jy
-            im<-convolvepsf(ps,im)
+            im<-convolve.psf(ps,im)
             im<-im/sum(im)*10^((8.9-mag)/2.5)
           }
         }
@@ -240,16 +240,16 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
           tempang<-runif(N, min=0, max=2*pi)
 
           #Convert from photon arrivals from Sperical to Cartesian Coords
-          tempxy<-sph2car(long=tempang, lat=0, radius=tempr, deg=FALSE)
+          tempxy<-sph.to.car(long=tempang, lat=0, radius=tempr, deg=FALSE)
 
           #Stretch y-axis by ellipticity of profile
           tempxy[,2]<-(tempxy[,2])*axr
 
           #Rotate to desired theta
-          tempxy<-rotdata2d(tempxy[,1],tempxy[,2],theta)
+          tempxy<-rotate.data.2d(tempxy[,1],tempxy[,2],theta)
 
           #Filter through Gaussian PSF
-          if (psffilt) {
+          if (psf.filt) {
             tempxy[1:length(tempxy)]<-tempxy[1:length(tempxy)]+rnorm(length(tempxy),mean=0,sd=psfsigma.pix)
           }
         } else {
@@ -273,7 +273,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #
 
   #Check for Bad objects after generation
-  es_mask<-foreach(smask=es_mask, .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+  es_mask<-foreach(smask=es_mask, .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
     #Check masking to determine if Aperture is acceptable
     if (any(is.na(smask))) {
       warning("Mask contains NA values. Setting those pixels to 0")
@@ -281,19 +281,19 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
     }
     smask
   }
-  stamplen<-foreach(smask=es_mask, .inorder=TRUE, .options.mpi=mpiopts, .combine='c') %dopar% { length(smask[,1]) }
+  stamplen<-foreach(smask=es_mask, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c') %dopar% { length(smask[,1]) }
 
   #Check that apertures do not cross image mask boundary
   if (((length(image.env$imm)!=1)&(length(which(image.env$imm!=1))!=0))) {
     #Check Mask stamps for Aperture Acceptance
     message('Combining Aps with Mask Stamps')
-    esa_mask<-foreach(slen=stamplen, smask=es_mask,mmask=imm_mask, .export="useMaskLim", .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+    esa_mask<-foreach(slen=stamplen, smask=es_mask,mmask=mask.stamp, .export="use.mask.lim", .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
       #Check masking to determine if Aperture is acceptable
       if (any(is.na(smask))) {
         warning("Mask contains NA values. Setting those pixels to 0")
         smask[which(is.na(smask))]<-0
       }
-      if (mean(mmask)<useMaskLim) {
+      if (mean(mmask)<use.mask.lim) {
         #Too much. Skip
         array(0, dim=c(slen,slen))
         #
@@ -315,30 +315,30 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #Determine Stamp Limits in Image Space
   factor<-rep(0,length(esa_mask))
   for (i in 1:length(esa_mask)) { factor[i]<-((length(esa_mask[[i]][,1])-1)/2) }
-  image_lims<-cbind(floor(x_g)-factor, floor(x_g)+factor, floor(y_g)-factor, floor(y_g)+factor)
-  ind<-which(image_lims[,1]<1)
+  ap.lims.data.map<-cbind(floor(cat.x)-factor, floor(cat.x)+factor, floor(cat.y)-factor, floor(cat.y)+factor)
+  ind<-which(ap.lims.data.map[,1]<1)
   for (i in ind) {
-    esa_mask[[i]]<-esa_mask[[i]][(image_lims[i,1]-1):0,]
-    image_lims[i,1]<-1
+    esa_mask[[i]]<-esa_mask[[i]][(ap.lims.data.map[i,1]-1):0,]
+    ap.lims.data.map[i,1]<-1
   }
-  ind<-which(image_lims[,3]<1)
+  ind<-which(ap.lims.data.map[,3]<1)
   for (i in ind) {
-    esa_mask[[i]]<-esa_mask[[i]][,(image_lims[i,3]-1):0]
-    image_lims[i,3]<-1
+    esa_mask[[i]]<-esa_mask[[i]][,(ap.lims.data.map[i,3]-1):0]
+    ap.lims.data.map[i,3]<-1
   }
-  ind<-which(image_lims[,2]>length(image.env$im[,1]))
+  ind<-which(ap.lims.data.map[,2]>length(image.env$im[,1]))
   for (i in ind) {
-    over<-image_lims[i,2]-length(image.env$im[,1])
+    over<-ap.lims.data.map[i,2]-length(image.env$im[,1])
     lim<-length(esa_mask[[i]][,1])-over
     esa_mask[[i]]<-esa_mask[[i]][1:lim,]
-    image_lims[i,2]<-length(image.env$im[,1])
+    ap.lims.data.map[i,2]<-length(image.env$im[,1])
   }
-  ind<-which(image_lims[,4]>length(image.env$im[1,]))
+  ind<-which(ap.lims.data.map[,4]>length(image.env$im[1,]))
   for (i in ind) {
-    over<-image_lims[i,4]-length(image.env$im[1,])
+    over<-ap.lims.data.map[i,4]-length(image.env$im[1,])
     lim<-length(esa_mask[[i]][1,])-over
     esa_mask[[i]]<-esa_mask[[i]][,1:lim]
-    image_lims[i,4]<-length(image.env$im[1,])
+    ap.lims.data.map[i,4]<-length(image.env$im[1,])
   }
   #
 
@@ -349,20 +349,20 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
 
   #Parse Parameter Space
   if (!is.null(env)) { detach(env) }
-  assign("id_g",id_g,envir=outenv)
-  assign("ra_g",ra_g,envir=outenv)
-  assign("dec_g",dec_g,envir=outenv)
-  assign("a_g",a_g,envir=outenv)
-  assign("b_g",b_g,envir=outenv)
-  assign("x_g",x_g,envir=outenv)
-  assign("y_g",y_g,envir=outenv)
+  assign("cat.id",cat.id,envir=outenv)
+  assign("cat.ra",cat.ra,envir=outenv)
+  assign("cat.dec",cat.dec,envir=outenv)
+  assign("cat.a",cat.a,envir=outenv)
+  assign("cat.b",cat.b,envir=outenv)
+  assign("cat.x",cat.x,envir=outenv)
+  assign("cat.y",cat.y,envir=outenv)
   assign("contams",contams,envir=outenv)
-  assign("theta_g",theta_g,envir=outenv)
+  assign("cat.theta",cat.theta,envir=outenv)
   assign("Reff_pix",Reff_pix,envir=outenv)
   assign("axrat",axrat,envir=outenv)
   assign("inputmags",inputmags,envir=outenv)
-  assign("fluxweight",fluxweight,envir=outenv)
-  assign("image_lims",image_lims,envir=outenv)
+  assign("flux.weight",flux.weight,envir=outenv)
+  assign("ap.lims.data.map",ap.lims.data.map,envir=outenv)
   #
 
   message('===========END============Make_ESA_MASK=============END=================\n')

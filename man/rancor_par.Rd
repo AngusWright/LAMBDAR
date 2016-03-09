@@ -1,35 +1,35 @@
-\name{rancor.par}
-\alias{rancor.par}
-\alias{plotRanCor}
+\name{ran.cor}
+\alias{ran.cor}
+\alias{plot.ran.cor}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Perform LAMBDAR randoms/blanks estimation
 }
 \description{
-__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+__This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
 This function performs a parallelised random/blank aperture analysis on the image stamp for each aperture under consideration.
 }
 \usage{
-rancor.par(im_mask,imm_mask,ap_mask,stamplims,
-masklims,remask=TRUE,numIters=1E3,mpiopts="",sigclip=3,nclip=0)
+ran.cor(data.stamp,mask.stamp,ap.stamp,stamplims,
+masklims,remask=TRUE,numIters=1E3,mpi.opts="",sigclip=3,nclip=0)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
-  \item{im_mask}{
+  \item{data.stamp}{
 numeric [[m]][n,n] list; stamps of the input image
 }
-  \item{imm_mask}{
+  \item{mask.stamp}{
 numeric [[m]][n,n] list; stamps of the input mask image
 }
-  \item{ap_mask}{
+  \item{ap.stamp}{
 numeric [[m]][k,k] list; aperture stamps
 }
   \item{stamplims}{
-numeric [m,4] array; indicies of the aperture stamps in the im_mask space
+numeric [m,4] array; indicies of the aperture stamps in the data.stamp space
 }
   \item{masklims}{
-numeric [m,4] array; indicies of the aperture stamps in the imm_mask space
+numeric [m,4] array; indicies of the aperture stamps in the mask.stamp space
 }
   \item{remask}{
 logical; if TRUE, Blanks will be measured. Otherwise, randoms will be measured
@@ -37,7 +37,7 @@ logical; if TRUE, Blanks will be measured. Otherwise, randoms will be measured
   \item{numIters}{
 numeric; number of blanks/randoms
 }
-  \item{mpiopts}{
+  \item{mpi.opts}{
 list; the MPI options to be passed to the MPI backend, if it is in use.
 }
   \item{sigclip}{
