@@ -44,7 +44,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
   #}}}
 
   #Check that number of Fluxweights == number of subs stamps or number of total stamps {{{
-  if (!(length(fluxweight) == npos)) {
+  if (length(fluxweight) != npos) {
     if (length(fluxweight) == length(id_g)) {
       fluxweight<-fluxweight[subs]
     } else {
@@ -84,7 +84,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
     fluxweight<-foreach(samask=sa_mask[subs],fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
     #}}}
     #Check for Errors & Fluxweight {{{
-    if (max(fluxweight,na.rm=T)<=0) {
+    if (max(fluxweight,na.rm=TRUE)<=0) {
       message("WARNING: No fluxweights are > 0! Flux weighting has removed all objects from the image.")
       fluxweight<-rep(0,length(subs))
     } else if (length(which(fluxweight>0))<2) {
@@ -93,7 +93,6 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
       fluxweight<-magmap(fluxweight,lo=0,hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
     } else {
       #Map Fluxweights onto [0,1] {{{
-      #fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
       fluxweight<-magmap(fluxweight,lo=0,hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
       #}}}
     }
@@ -124,7 +123,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
     fluxweight<-foreach(samask=sa_mask[subs],fluxwgt=fluxweight, .inorder=TRUE, .options.mpi=mpiopts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
     #}}}
     #Check for Errors & Fluxweight {{{
-    if (max(fluxweight,na.rm=T)<=0) {
+    if (max(fluxweight,na.rm=TRUE)<=0) {
       message("WARNING: No fluxweights are > 0! Flux weighting has removed all objects from the image.")
       fluxweight<-rep(0,length(subs))
     } else if (length(which(fluxweight>0))<2) {
@@ -133,9 +132,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
       fluxweight<-magmap(fluxweight,lo=0,hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
     } else {
       #Map Fluxweights onto [0,1] {{{
-      #fluxweight<-magmap(fluxweight,lo=min(fluxweight[which(fluxweight>0)],na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(1E-5,1),stretch='lin',stretchscale=1, type="num")$map
       fluxweight<-magmap(fluxweight,lo=0,hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
-      #fluxweight<-magmap(fluxweight,lo=min(fluxweight,na.rm=TRUE),hi=max(fluxweight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
       #}}}
     }
     #}}}
@@ -162,7 +159,7 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
     }#}}}
     #}}}
     #Check for Errors & Fluxweight {{{
-    if (max(fluxweight,na.rm=T)<=0) {
+    if (max(fluxweight,na.rm=TRUE)<=0) {
       message("WARNING: No fluxweights are > 0! Flux weighting has removed all objects from the image.")
       fluxweight<-rep(0,length(subs))
     } else if (length(which(fluxweight>0))<2) {
@@ -188,9 +185,6 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
     message('--------------------------Convolution----------------------------------')
     sfa_mask<-foreach(samask=sa_mask[subs], slen=stamplen[subs], fluxwgt=fluxweight, i=1:npos, xc=x_g[subs], yc=y_g[subs], .inorder=TRUE,
     .export=c("psf", "diagnostic"), .options.mpi=mpiopts) %dopar% {
-    #for( i in 1:npos) {
-    #xc=x_g[i]
-    #yc=y_g[i]
       #Use subset of psf conformable with current aperture stamp {{{
       if (slen<length(psf[,1])){
         #Aperture Stamp is smaller than PSF stamp {{{
@@ -247,22 +241,13 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
         #}}}
         #Check for Errors {{{
         if (length(which(ap <0))>0) {
-          #If Negatives produced, rezap with required 'digits' level {{{
-          #if (diagnostic) { message(paste("Negatives Produced in PSF convolution with Aperture",i)) }
-          #zapdig<- floor(-log10(abs(min(ap))))
-          #ap<-(convolvepsf(psf[lims[1]:lims[3],lims[2]:lims[4]],samask,zapdig=zapdig, normalise=TRUE))
-          #if (diagnostic) { message(paste("Attempting rezap with zapdigit",zapdig)) }
-          #if (length(which(ap<0))>0) {
-            #if still negatives, error {{{
+          #If Negatives produced, Error  {{{
           sink(sinkfile,type='output')
           print((summary(as.numeric(ap))))
           print((summary(as.numeric(psf[lims[1]:lims[3],lims[2]:lims[4]]))))
           sink(type='message')
           sink(type='output')
-          #stop("Rezap unable to remove negatives in convolution")
           stop("Unable to remove negatives produced in convolution")
-            #}}}
-          #}
           #}}}
         }
         #}}}
@@ -308,7 +293,6 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
         #}}}
         #}}}
         #}}}
-        #if ((xc%%1!=0.5)|(yc%%1!=0.5)) {
         #Reinterpolate the PSF at point source XcenYcen {{{
         lenx<-length(lims[1]:lims[3])
         leny<-length(lims[2]:lims[4])
@@ -321,21 +305,12 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
         ynew<-expanded[,2]-yc%%1
         #}}}
         #Interpolate {{{
-        ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
+        ap<-matrix(interp2D(xnew, ynew, psf_obj)[,3], ncol=leny,nrow=lenx)
         #}}}
         #}}}
-        #} else {
-        #  #Assign PSF as object aperture {{{
-        #  if (diagnostic) { message(paste("Using the Uninterpolated PSF for Point Source Aperture",i)) }
-        #  ap<-psf[lims[1]:lims[3],lims[2]:lims[4]]
-        #  #}}}
-        #}
         #Make Final Stamp {{{
         apfin<-matrix(0, nrow=slen, ncol=slen)
         apfin[aplims[1]:aplims[3],aplims[2]:aplims[4]]<-ap
-        #}}}
-        #Make integral of interpolated source same as psf integral {{{
-        #apfin<-(apfin*(sum(psf)/sum(apfin))*fluxwgt)
         #}}}
         #Normalise PSF to 1 {{{
         apfin<-(apfin/max(apfin))*fluxwgt
@@ -362,25 +337,45 @@ function(outenv=parent.env(environment()), sa_mask,fluxweightin=NULL, immask=NUL
   #}}}
 
   #Check that apertures do not cross image mask boundary {{{
-  if (length(immask)>1) {
+  if ((cutup & length(immask)>1) | ((!cutup) & length(immask)!=0 & length(image.env$imm) > 1)) {
     #Check Mask stamps for Aperture Acceptance {{{
     message('Combining Aps with Mask Stamps')
-    sff_mask<-foreach(slen=stamplen[subs], smask=sfa_mask,mmask=immask[subs],mxl=mstamp_lims[subs,1],mxh=mstamp_lims[subs,2],myl=mstamp_lims[subs,3],myh=mstamp_lims[subs,4], .export="useMaskLim", .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
-      #Check masking to determine if Aperture is acceptable {{{
-      check<-sum(mmask[mxl:mxh,myl:myh]*smask,na.rm=T)/sum(smask)
-      if (is.na(check)) {
-        #All pixels in mask are Na/NaN
-        array(0, dim=c(slen,slen))
-      } else if (check<useMaskLim) {
-        #Too much. Skip {{{
-        array(0, dim=c(slen,slen))
-        #}}}
-      } else {
-        #Not too much. Keep {{{
-        smask
+    if (cutup) {
+      sff_mask<-foreach(slen=stamplen[subs], smask=sfa_mask,mmask=immask[subs],mxl=mstamp_lims[subs,1],mxh=mstamp_lims[subs,2],myl=mstamp_lims[subs,3],myh=mstamp_lims[subs,4], .export="useMaskLim", .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+        #Check masking to determine if Aperture is acceptable {{{
+        check<-sum(mmask[mxl:mxh,myl:myh]*smask,na.rm=TRUE)/sum(smask)
+        if (is.na(check)) {
+          #All pixels in mask are Na/NaN
+          array(0, dim=c(slen,slen))
+        } else if (check<useMaskLim) {
+          #Too much. Skip {{{
+          array(0, dim=c(slen,slen))
+          #}}}
+        } else {
+          #Not too much. Keep {{{
+          smask*mmask[mxl:mxh,myl:myh]
+          #}}}
+        }
         #}}}
       }
-      #}}}
+    } else {
+      sff_mask<-foreach(slen=stamplen[subs], smask=sfa_mask,mxl=mask_lims[subs,1],mxh=mask_lims[subs,2],myl=mask_lims[subs,3],myh=mask_lims[subs,4], .export=c("useMaskLim","image.env"), .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+        #Check masking to determine if Aperture is acceptable {{{
+        check<-sum(image.env$imm[mxl:mxh,myl:myh]*smask,na.rm=TRUE)/sum(smask)
+        if (is.na(check)) {
+          #All pixels in mask are Na/NaN
+          array(0, dim=c(slen,slen))
+        } else if (check<useMaskLim) {
+          #Too much. Skip {{{
+          array(0, dim=c(slen,slen))
+          #}}}
+        } else {
+          #Not too much. Keep {{{
+          smask*image.env$imm[mxl:mxh,myl:myh]
+          #}}}
+        }
+        #}}}
+      }
     }
     message('Mask Combine Finished.')
     #}}}

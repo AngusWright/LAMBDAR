@@ -1,5 +1,5 @@
 inap <-
-function(x,y,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=T){
+function(x,y,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=TRUE){
   if(majax>0){
     #Error catch {{{
     if(any(is.na(x))|any(is.na(y))){stop(paste("Inap returns NA at input.\nis.na(x)=",length(which(is.na(x))),"of",length(x),"\nis.na(y)=",length(which(is.na(y))),"of",length(y),"\nInputs are:\nxcen=",xcen,"\nycen=",ycen,"\naxrat=",axrat,"\naxang=",axang,"\nmajax=",majax,"\ndeg=",deg))}

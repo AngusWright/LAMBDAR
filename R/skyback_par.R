@@ -1,4 +1,4 @@
-skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3, mpiopts=""){
+skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask=NULL,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3, mpiopts=""){
   cutup=TRUE
   if(length(x_p) != length(y_p)){stop('x_pix and y_pix lengths do not match!')}
   if(length(x_p) != length(cutlo)){stop('x_pix and cutlo lengths do not match!')}
@@ -32,12 +32,6 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
         #Trim to above
         xlocs<-xlocs[xsel]
         ylocs<-ylocs[ysel]
-        #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
-        if(remmask){
-          tempim<-origim*maskim
-        }else{
-          tempim<-origim
-        }
         #All ref pixels for new image
         tempref<-as.matrix(expand.grid(1:length(xsel),1:length(ysel)))
         #Corresponding radii for new pixels from the object of interest
@@ -46,7 +40,11 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
         keep<-temprad>cutlo & temprad<cuthi
         #Trim
         tempref<-tempref[keep,]
-        tempval<-tempim[tempref]
+        if(remmask){
+          tempval<-origim[tempref]*maskim[tempref]
+        }else{
+          tempval<-origim[tempref]
+        }
         temprad<-temprad[keep]
         #If sourcemask is used ignore pixels that exactly equal 0 (since these will belong to masked pixels)
         if(remmask){
@@ -66,20 +64,17 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
           }
         }
         #Find the running medians(run1) or means(run2) for the data
-        if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T) }
-        if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T,type='mean') }
+        if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE) }
+        if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE,type='mean') }
         tempylims<-tempmedian$ysd
         tempy<-tempmedian$y
         tempx<-tempmedian$x
         #Remove bins with 1 or less skypixels present
         if (any(is.na(tempylims)|(tempylims[,2]==tempylims[,1]))) {
-          ind<-which((!is.na(tempylims[,1]))&(tempylims[,2]!=tempylims[,1]))
+          ind<-which((!is.na(tempylims[,1]))&(!is.na(tempylims[,2]))&(tempylims[,2]!=tempylims[,1]))
           tempy  <-tempy[ind]
           tempx  <-tempx[ind]
-          temprad<-temprad[ind]
-          tempval<-tempval[ind]
-          tempref<-tempref[ind]
-          tempylims<-matrix(tempylims[which((!is.na(tempylims))&(tempylims[,2]!=tempylims[,1]),arr.ind=TRUE)], ncol=2)
+          tempylims<-rbind(tempylims[ind,])
         }
         if (length(tempy)!=0) {
           #Calculate worst case sky error- the sd of the medians calculated
@@ -97,13 +92,14 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
             nloop<-0
             while(any(!(tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr))) & all(!(tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr)))==FALSE){
               nloop<-nloop+1
-              tempy<-tempy[tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr)]
-              weights<-weights[tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr)]
-              tempylims<-rbind(tempylims[tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr),])
+              ref<-which(tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr))
+              tempy<-tempy[ref]
+              weights<-weights[ref]
+              tempylims<-rbind(tempylims[ref,])
               sky<-sum(tempy*weights)/(sum(weights))
-              if (nloop==1E8) {
-                warning("No running medians are inside the 1-sigma bound of the sky after 1E8 loops. Breaking.")
-                message("No running medians are inside the 1-sigma bound of the sky after 1E8 loops. Breaking.")
+              if (nloop>15) {
+                warning("Failure to converge to within the 1-sigma bound of the sky. Breaking.")
+                message("Failure to converge to within the 1-sigma bound of the sky. Breaking.")
                 break
               }
             }
@@ -141,12 +137,6 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
         #Trim to above
         xlocs<-xlocs[xsel]
         ylocs<-ylocs[ysel]
-        #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
-        if(remmask){
-          tempim<-im_mask*imm_mask
-        }else{
-          tempim<-im_mask
-        }
         #All ref pixels for new image
         tempref<-as.matrix(expand.grid(xlocs,ylocs))
         #Corresponding radii for new pixels from the object of interest
@@ -155,7 +145,12 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
         keep<-temprad>cutlo & temprad<cuthi
         #Trim
         tempref<-tempref[keep,]
-        tempval<-tempim[tempref]
+        #Create new cutout image, either the raw pixels, or multiplied through by the sourcemask
+        if(remmask){
+          tempval<-im_mask[tempref]*imm_mask[tempref]
+        }else{
+          tempval<-im_mask[tempref]
+        }
         temprad<-temprad[keep]
         #If sourcemask is used ignore pixels that exactly equal 0 (since these will belong to masked pixels)
         if(remmask){
@@ -175,20 +170,17 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
           }
         }
         #Find the running medians(run1) or means(run2) for the data
-        if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T) }
-        if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T,type='mean') }
+        if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE) }
+        if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE,type='mean') }
         tempylims<-tempmedian$ysd
         tempy<-tempmedian$y
         tempx<-tempmedian$x
         #Remove bins with 1 or less skypixels present
         if (any(is.na(tempylims)|(tempylims[,2]==tempylims[,1]))) {
-          ind<-which((!is.na(tempylims[,1]))&(tempylims[,2]!=tempylims[,1]))
+          ind<-which((!is.na(tempylims[,1]))&(!is.na(tempylims[,2]))&(tempylims[,2]!=tempylims[,1]))
           tempy  <-tempy[ind]
           tempx  <-tempx[ind]
-          temprad<-temprad[ind]
-          tempval<-tempval[ind]
-          tempref<-tempref[ind]
-          tempylims<-matrix(tempylims[which((!is.na(tempylims))&(tempylims[,2]!=tempylims[,1]),arr.ind=TRUE)], ncol=2)
+          tempylims<-rbind(tempylims[ind,])
         }
         if (length(tempy)!=0) {
           #Calculate worst case sky error- the sd of the medians calculated
@@ -206,13 +198,14 @@ skyback.par<-function(x_p,y_p,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,ra
             nloop<-0
             while(any(!(tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr))) & all(!(tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr)))==FALSE){
               nloop<-nloop+1
-              tempy<-tempy[tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr)]
-              weights<-weights[tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr)]
-              tempylims<-rbind(tempylims[tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr),])
+              ref<-which(tempylims[,1]<=(sky+skyerr) & tempylims[,2]>=(sky-skyerr))
+              tempy<-tempy[ref]
+              weights<-weights[ref]
+              tempylims<-rbind(tempylims[ref,])
               sky<-sum(tempy*weights)/(sum(weights))
-              if (nloop==1E8) {
-                warning("No running medians are inside the 1-sigma bound of the sky after 1E8 loops. Breaking.")
-                message("No running medians are inside the 1-sigma bound of the sky after 1E8 loops. Breaking.")
+              if (nloop>15) {
+                warning("Failure to converge to within the 1-sigma bound of the sky. Breaking.")
+                message("Failure to converge to within the 1-sigma bound of the sky. Breaking.")
                 break
               }
             }

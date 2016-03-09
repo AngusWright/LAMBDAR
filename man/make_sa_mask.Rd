@@ -1,6 +1,6 @@
 \name{make_sa_mask}
 \alias{make_sa_mask}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Aperture Stamps
 }
@@ -14,16 +14,16 @@ make_sa_mask(outenv = parent.env(environment()), env = NULL)
 }
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in 'MeasureFluxes'
+environment; the environment containing the parameters used in `MeasureFluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
 }
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \details{
-Aperture parameters, which are used in the creation of the aperture stamps, are stored in the parameter environment 'env'.
-The returned list of aperture stamps is sent to 'outenv'. If not supplied, 'outenv' is set to be the same environment as 'env'.
+Aperture parameters, which are used in the creation of the aperture stamps, are stored in the parameter environment `env'.
+The returned list of aperture stamps is sent to `outenv'. If not supplied, `outenv' is set to be the same environment as `env'.
 }
 \value{
 numeric [[m]][n,n] list; aperture stamps with pixel range [0,1]
@@ -47,7 +47,6 @@ Angus H Wright{ ICRAR}
 %%\examples{
 
 %%}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Aperture }

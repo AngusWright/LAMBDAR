@@ -169,15 +169,21 @@ function(outenv=parent.env(environment()), env=NULL){
     #Get Mask Limits {{{
     #Get Pixel Locations in Mask {{{
     if (maskmap=="NONE") {
-      #If mask map is NONE, it must have been created from the wgtmap
-      astr_struc.mask<-read.astr(file.path(pathroot,pathwork,wgtmap))
+      #If mask map is NONE, it has been created by the wgtmap or errormap
+      if (wgtmap=="NONE") {
+        #Error map
+        astr_struc.mask<-read.astr(file.path(pathroot,pathwork,errormap))
+      } else {
+        #Weight map
+        astr_struc.mask<-read.astr(file.path(pathroot,pathwork,wgtmap))
+      }
     } else {
       astr_struc.mask<-read.astr(file.path(pathroot,pathwork,maskmap))
     }
 
-    if (!(all(astr_struc$CRVAL==astr_struc.mask$CRVAL,na.rm=T)&
-          all(astr_struc$CRPIX==astr_struc.mask$CRPIX,na.rm=T)&
-          all(astr_struc$CD   ==astr_struc.mask$CD   ,na.rm=T))){
+    if (!(all(astr_struc$CRVAL==astr_struc.mask$CRVAL,na.rm=TRUE)&
+          all(astr_struc$CRPIX==astr_struc.mask$CRPIX,na.rm=TRUE)&
+          all(astr_struc$CD   ==astr_struc.mask$CD   ,na.rm=TRUE))){
       #Get object locations in pixel space {{{
       gamapos<-ad2xy(ra_g,dec_g,astr_struc.mask)
       x_mp<-floor(gamapos[,1])
@@ -190,6 +196,8 @@ function(outenv=parent.env(environment()), env=NULL){
       #}}}
     }
     #}}}
+    #}}}
+
     #Calculate Mask limits in mask-pixel space {{{
     imm_stamp_lims<-cbind(x_mp-factor, x_mp+factor, y_mp-factor, y_mp+factor)
     imm_stamp_lims[which(imm_stamp_lims<1)]<-1
@@ -197,6 +205,46 @@ function(outenv=parent.env(environment()), env=NULL){
     imm_stamp_lims[which(imm_stamp_lims[,2]>length(image.env$imm[,1])),2]<-length(image.env$imm[,1])
     mask_lims<-cbind(x_mp-floor(stamplen/2), x_mp+floor(stamplen/2), y_mp-floor(stamplen/2), y_mp+floor(stamplen/2))
     #}}}
+
+    #Check that stamp limits are within image {{{
+    catlen<-length(x_g)
+    insidemask<-!((mask_lims[,1]<1)|(mask_lims[,2]>length(image.env$imm[,1]))|(mask_lims[,3]<1)|(mask_lims[,4]>length(image.env$imm[1,])))
+    #}}}
+
+    #Remove any apertures whos stamps would cross the boundary {{{
+    if (any(!insidemask)) {
+      message("Removing Stamps that lie outside the mask image limits")
+      if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") }
+      factor<-factor[which(insidemask)]
+      x_p<-x_p[which(insidemask)]
+      y_p<-y_p[which(insidemask)]
+      x_mp<-x_mp[which(insidemask)]
+      y_mp<-y_mp[which(insidemask)]
+      x_g<-x_g[which(insidemask)]
+      y_g<-y_g[which(insidemask)]
+      id_g<-id_g[which(insidemask)]
+      ra_g<-ra_g[which(insidemask)]
+      dec_g<-dec_g[which(insidemask)]
+      theta_g<-theta_g[which(insidemask)]
+      a_g<-a_g[which(insidemask)]
+      b_g<-b_g[which(insidemask)]
+      stamplen<-stamplen[which(insidemask)]
+      if (length(im_mask )>1) { im_mask<-im_mask[which(insidemask)] }
+      stamp_lims<-rbind(stamp_lims[which(insidemask),])
+      image_lims<-rbind(image_lims[which(insidemask),])
+      im_stamp_lims<-rbind(im_stamp_lims[which(insidemask),])
+      mask_lims<-rbind(mask_lims[which(insidemask),])
+      imm_stamp_lims<-rbind(imm_stamp_lims[which(insidemask),])
+      if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
+      if (filtcontam) { contams<-contams[which(insidemask)] }
+      insidemask<-insidemask[which(insidemask)]
+      npos<-length(insidemask)
+    }
+    #}}}
+
+    #Setup MPI Options {{{
+    chunkSize=ceiling(npos/getDoParWorkers())
+    mpiopts<-list(chunkSize=chunkSize)
     #}}}
 
     #Create Mask Stamps {{{
@@ -216,6 +264,7 @@ function(outenv=parent.env(environment()), env=NULL){
     x_mp<-x_p
     y_mp<-y_p
     imm_mask<-1
+    image.env$imm<-1
     mask_lims<-image_lims
     mstamp_lims<-stamp_lims
     imm_stamp_lims<-im_stamp_lims
@@ -230,9 +279,9 @@ function(outenv=parent.env(environment()), env=NULL){
   if ((length(image.env$ime)!=1)&(any(image.env$ime!=image.env$ime[1]))&(file.exists(file.path(pathroot,pathwork,errormap)))) {
     #Check Errormap Astrometry {{{
     astr_struc.err<-read.astr(file.path(pathroot,pathwork,errormap))
-    if (!(all(astr_struc$CRVAL==astr_struc.err$CRVAL,na.rm=T)&
-          all(astr_struc$CRPIX==astr_struc.err$CRPIX,na.rm=T)&
-          all(astr_struc$CD   ==astr_struc.err$CD   ,na.rm=T))){
+    if (!(all(astr_struc$CRVAL==astr_struc.err$CRVAL,na.rm=TRUE)&
+          all(astr_struc$CRPIX==astr_struc.err$CRPIX,na.rm=TRUE)&
+          all(astr_struc$CD   ==astr_struc.err$CD   ,na.rm=TRUE))){
       #Get object locations in pixel space {{{
       gamapos<-ad2xy(ra_g,dec_g,astr_struc.err)
       x_ep<-floor(gamapos[,1])
@@ -252,6 +301,54 @@ function(outenv=parent.env(environment()), env=NULL){
     ime_stamp_lims[which(ime_stamp_lims[,2]>length(image.env$ime[,1])),2]<-length(image.env$ime[,1])
     error_lims<-cbind(x_ep-floor(stamplen/2), x_ep+floor(stamplen/2), y_ep-floor(stamplen/2), y_ep+floor(stamplen/2))
     #}}}
+
+    #Check that stamp limits are within image {{{
+    catlen<-length(x_g)
+    insidemask<-!((error_lims[,1]<1)|(error_lims[,2]>length(image.env$ime[,1]))|(error_lims[,3]<1)|(error_lims[,4]>length(image.env$ime[1,])))
+    #}}}
+
+    #Remove any apertures whos stamps would cross the boundary {{{
+    if (any(!insidemask)) {
+      message("Removing Stamps that lie outside the error image limits")
+      if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") }
+      factor<-factor[which(insidemask)]
+      x_p<-x_p[which(insidemask)]
+      y_p<-y_p[which(insidemask)]
+      x_mp<-x_mp[which(insidemask)]
+      y_mp<-y_mp[which(insidemask)]
+      x_ep<-x_ep[which(insidemask)]
+      y_ep<-y_ep[which(insidemask)]
+      x_g<-x_g[which(insidemask)]
+      y_g<-y_g[which(insidemask)]
+      id_g<-id_g[which(insidemask)]
+      ra_g<-ra_g[which(insidemask)]
+      dec_g<-dec_g[which(insidemask)]
+      theta_g<-theta_g[which(insidemask)]
+      a_g<-a_g[which(insidemask)]
+      b_g<-b_g[which(insidemask)]
+      if (length(im_mask )>1) { im_mask<-im_mask[which(insidemask)] }
+      if (length(imm_mask)>1) { imm_mask<-imm_mask[which(insidemask)] }
+      stamplen<-stamplen[which(insidemask)]
+      stamp_lims<-rbind(stamp_lims[which(insidemask),])
+      image_lims<-rbind(image_lims[which(insidemask),])
+      im_stamp_lims<-rbind(im_stamp_lims[which(insidemask),])
+      mstamp_lims<-rbind(mstamp_lims[which(insidemask),])
+      mask_lims<-rbind(mask_lims[which(insidemask),])
+      imm_stamp_lims<-rbind(imm_stamp_lims[which(insidemask),])
+      error_lims<-rbind(error_lims[which(insidemask),])
+      ime_stamp_lims<-rbind(ime_stamp_lims[which(insidemask),])
+      if (length(fluxweight)!=1) { fluxweight<-fluxweight[which(insidemask)] }
+      if (filtcontam) { contams<-contams[which(insidemask)] }
+      insidemask<-insidemask[which(insidemask)]
+      npos<-length(insidemask)
+    }
+    #}}}
+
+    #Setup MPI Options {{{
+    chunkSize=ceiling(npos/getDoParWorkers())
+    mpiopts<-list(chunkSize=chunkSize)
+    #}}}
+
 
     #Create Error Stamps {{{
     message('Creating Error Stamps')
@@ -323,16 +420,16 @@ function(outenv=parent.env(environment()), env=NULL){
   if (check) {
     for (i in 1:npos) {
       if (!cutup) {
-        im.mk<-matrix(0,ncol=length(im_stamp_lims[i,1]:im_stamp_lims[i,2]),nrow=length(im_stamp_lims[i,3]:im_stamp_lims[i,4]))
+        im.mk<-matrix(0,nrow=length(im_stamp_lims[i,1]:im_stamp_lims[i,2]),ncol=length(im_stamp_lims[i,3]:im_stamp_lims[i,4]))
       } else {
         im.mk<-im_mask[[i]]
       }
       #Get the masks' dimensions {{{
       dims<-rbind(dim(im.mk))
       index<-1
-      if (length(imm_mask)!=1) {
+      if (length(image.env$imm)!=1) {
         if (!cutup) {
-          imm.mk<-matrix(0,ncol=length(imm_stamp_lims[i,1]:imm_stamp_lims[i,2]),nrow=length(imm_stamp_lims[i,3]:imm_stamp_lims[i,4]))
+          imm.mk<-matrix(0,nrow=length(imm_stamp_lims[i,1]:imm_stamp_lims[i,2]),ncol=length(imm_stamp_lims[i,3]:imm_stamp_lims[i,4]))
         } else {
           imm.mk<-imm_mask[[i]]
         }
@@ -341,9 +438,9 @@ function(outenv=parent.env(environment()), env=NULL){
         index<-c(index,2)
         #}}}
       }
-      if (length(ime_mask)!=1) {
+      if (length(image.env$ime)!=1) {
         if (!cutup) {
-          ime.mk<-matrix(0,ncol=length(ime_stamp_lims[i,1]:ime_stamp_lims[i,2]),nrow=length(ime_stamp_lims[i,3]:ime_stamp_lims[i,4]))
+          ime.mk<-matrix(0,nrow=length(ime_stamp_lims[i,1]:ime_stamp_lims[i,2]),ncol=length(ime_stamp_lims[i,3]:ime_stamp_lims[i,4]))
         } else {
           ime.mk<-ime_mask[[i]]
         }
@@ -496,16 +593,23 @@ function(outenv=parent.env(environment()), env=NULL){
           }#}}}
         }
       }#}}}
+      if (!cutup){
+        #If not cutting up, will be the same for all apertures; Change all and break
+        im_stamp_lims<-cbind(rep(im_stamp_lims[i,1],npos),rep(im_stamp_lims[i,2],npos),rep(im_stamp_lims[i,3],npos),rep(im_stamp_lims[i,4],npos))
+        imm_stamp_lims<-cbind(rep(imm_stamp_lims[i,1],npos),rep(imm_stamp_lims[i,2],npos),rep(imm_stamp_lims[i,3],npos),rep(imm_stamp_lims[i,4],npos))
+        ime_stamp_lims<-cbind(rep(ime_stamp_lims[i,1],npos),rep(ime_stamp_lims[i,2],npos),rep(ime_stamp_lims[i,3],npos),rep(ime_stamp_lims[i,4],npos))
+        break
+      }
     }
     #Update Stamp limits in image-stamp space {{{
     stamp_lims<-image_lims-(im_stamp_lims[,c(1,1,3,3)]-1)
-    if (length(imm_mask)>1) {
+    if (length(image.env$imm)!=1) {
       mstamp_lims<-mask_lims-(imm_stamp_lims[,c(1,1,3,3)]-1)
     } else {
       imm_stamp_lims<-im_stamp_lims
       mstamp_lims<-stamp_lims
     }
-    if (length(ime_mask)>1) {
+    if (length(image.env$ime)!=1) {
       estamp_lims<-error_lims-(ime_stamp_lims[,c(1,1,3,3)]-1)
     } else {
       ime_stamp_lims<-im_stamp_lims
@@ -518,12 +622,15 @@ function(outenv=parent.env(environment()), env=NULL){
     if (length(which(!insidemask))!=0) {
       warning(paste("Mismatches in the edges of the input images (image, maskmap, errormap) means",length(which(!insidemask)),"stamps have to be discarded"))
       #Remove stamps {{{
-      if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Aperture Stamps are aligned enough to be valid.") }
       im_mask<-im_mask[which(insidemask)]
       if (length(imm_mask)>1) { imm_mask<-imm_mask[which(insidemask)] }
       if (length(ime_mask)>1) { ime_mask<-ime_mask[which(insidemask)] }
       x_p<-x_p[which(insidemask)]
       y_p<-y_p[which(insidemask)]
+      x_mp<-x_mp[which(insidemask)]
+      y_mp<-y_mp[which(insidemask)]
+      x_ep<-x_ep[which(insidemask)]
+      y_ep<-y_ep[which(insidemask)]
       x_g<-x_g[which(insidemask)]
       y_g<-y_g[which(insidemask)]
       id_g<-id_g[which(insidemask)]
@@ -533,6 +640,9 @@ function(outenv=parent.env(environment()), env=NULL){
       a_g<-a_g[which(insidemask)]
       b_g<-b_g[which(insidemask)]
       stamplen<-stamplen[which(insidemask)]
+      if (length(im_mask )>1) { im_mask<-im_mask[which(insidemask)] }
+      if (length(imm_mask)>1) { imm_mask<-imm_mask[which(insidemask)] }
+      if (length(ime_mask)>1) { ime_mask<-ime_mask[which(insidemask)] }
       stamp_lims<-rbind(stamp_lims[which(insidemask),])
       mstamp_lims<-rbind(mstamp_lims[which(insidemask),])
       estamp_lims<-rbind(estamp_lims[which(insidemask),])

@@ -21,7 +21,6 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
       }
     }
     #Create Cluster
-    #message("The Size of the MPI Universe is ",mpi.universe.size()," with Comm Size ",mpi.comm.size(0))
     suppressMessages(cl<-startMPIcluster())
     registerDoMPI(cl)
     on.exit(closeCluster(cl))
@@ -356,7 +355,6 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
       next
       #/*fend*/ }}}
     }
-    #if (length(which(insidemask==TRUE))==0) { sink(type="message") ; stop("No Single Apertures are inside the image.") }
     #/*fend*/ }}}
     #Remove object catalogue entries /*fold*/ {{{
     x_g<-x_g[which(insidemask)]
@@ -569,39 +567,6 @@ function(parfile=NA, quiet=FALSE, MPIBackend=FALSE, doReturn=FALSE, ...){
                      "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, ",round(immem*1E-9/8,digits=3),"Gb for images.",
                      "\n",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n"))
           #/*fend*/ }}}
-        ##If not, try and continue by reducing the number of threads /*fold*/ {{{
-        #warning("Memory Required for this computation could possibly exceed system RAM\n")
-        #cat(paste("\n        Memory Required for this computation could possibly exceed system RAM\n",
-        #             "       Attempting to limiti memory usage by lowering number of threads - "))
-        ##Memory Required on 1 thread /*fold*/ {{{
-        #immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']
-        ##/*fend*/ }}}
-        #if ((apmem+immem+memCur) >= memLim) {
-        #  #If this is too much, less threads cannot help. Stop /*fold*/ {{{
-        #  cat("Failed\n")
-        #  sink(type='message')
-        #  stop(paste("This computation is not possible on this machine,",
-        #             "as the required memory (",(apmem+immem+memCur)*1E-9/8,"Gb) is greater than that which is available to the system (",(memLim)*1E-9/8,"Gb).",
-        #             "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
-        #             "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, ",round(immem*1E-9/8,digits=3),"Gb for images.",
-        #             "\n",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n"))
-        #  #/*fend*/ }}}
-        #} else {
-        ##Otherwise, determine the maximum number of threads that won't fail /*fold*/ {{{
-        #  for( i in 2:ncores) {
-        #    immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*i
-        #    if ((apmem+immem) >= memLim) {
-        #      ncores<-i-1
-        #      immem<-3*lsos(pattern="im",envir=image.env)[1,'Size']*ncores
-        #      break
-        #    }
-        #  }
-        #  #/*fend*/ }}}
-        #  #Update number of threads to be used, and notify /*fold*/ {{{
-        #  cat(paste("Success. Continuing computations with",ncores,"threads\n"))
-        #  registerDoParallel(cores=ncores)
-        #  #/*fend*/ }}}
-        #}#/*fend*/ }}}
       }#/*fend*/ }}}
       #Notify Memory Usage Status /*fold*/ {{{
       if (!quiet) {

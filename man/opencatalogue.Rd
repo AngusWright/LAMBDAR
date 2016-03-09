@@ -1,6 +1,6 @@
 \name{opencatalogue}
 \alias{opencatalogue}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Open and Read Catalogue
 }
@@ -12,10 +12,10 @@ Open and read an input catalogue for the MeasureFluxes procedure.
 \usage{
 opencatalogue(outenv = parent.env(environment()), env = NULL)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in 'MeasureFluxes'
+environment; the environment containing the parameters used in `MeasureFluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
@@ -40,10 +40,10 @@ environment; the environment where the returned values are to be stored. If not 
   then it is expected that there is a boolean 1/0 column provided, containing flags for which objects are contaminants [1], or main objects [0].
 
   Finally, the user may optionally provide a column containing object weightings in conjunction with any other series of parameters. The weightings
-  can be specified in terms of flux, magnitude, or scale, as determined by the users specification of the 'FluxWgtType' parameter.
+  can be specified in terms of flux, magnitude, or scale, as determined by the users specification of the `FluxWgtType' parameter.
 }
 \value{
-NULL; The procedure assigns variables into the parameter environment 'outenv'.
+NULL; The procedure assigns variables into the parameter environment `outenv'.
 }
 %%\references{
 %% ~put references to the literature/web site here ~
@@ -58,13 +58,12 @@ Angus H Wright{ ICRAR}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
-\examples{
-
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+%\seealso{
+%%% ~~objects to See Also as \code{\link{help}}, ~~~
+%}
+%\examples{
+%
+%}
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Parameters }

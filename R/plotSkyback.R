@@ -1,4 +1,4 @@
-PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3,plotall=FALSE,path=NULL,mpiopts=mpiopts){
+PlotSkyback<-function(id_g,x_p,y_p,stamplims=NULL,cutlo=0,cuthi=100,im_mask,imm_mask=NULL,remmask=TRUE,radweight=1,clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,probcut=3,plotall=FALSE,path=NULL,toFile=TRUE,res=120){
   cutup=TRUE
   if(length(x_p) != length(y_p)){stop('x_pix and y_pix lengths do not match!')}
   if(length(x_p) != length(cutlo)){stop('x_pix and cutlo lengths do not match!')}
@@ -10,13 +10,22 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
       stop('x_pix and im_mask lengths do not match!')
     }
   }
+  if(is.null(stamplims)){
+    if (is.matrix(im_mask)) {
+      stamplims<-matrix(c(1,length(im_mask[,1]),1,length(im_mask[1,])),ncol=4,nrow=length(x_p))
+    } else {
+      stop('Stamplims not provided!')
+    }
+  }
   cutlo[cutlo<hardlo*PSFFWHMinPIX]<-hardlo*PSFFWHMinPIX
   cuthi[cuthi<hardhi*PSFFWHMinPIX]<-hardhi*PSFFWHMinPIX
   cutlovec<-round(cutlo)
   cuthivec<-round(cuthi)
   probcut<-1-pnorm(probcut)
-  dir.create(file.path(path,"SkyBackIms"),showWarnings=FALSE)
-  path=file.path(path,"SkyBackIms")
+  if (toFile) {
+    dir.create(file.path(path,"SkyBackIms"),showWarnings=FALSE)
+    path=file.path(path,"SkyBackIms")
+  }
 
   if(plotall) {
     rand<-1:length(x_p)
@@ -24,7 +33,6 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
     rand<-sample(length(x_p),min(10,length(x_p)))
   }
   if (cutup) {
-    #output<-foreach(id=id_g, cutlo=cutlovec, cuthi=cuthivec, pixlocx=x_p, pixlocy=y_p,sxl=stamplims[,1],syl=stamplims[,3], origim=im_mask, maskim=imm_mask, .export=c('x_p','y_p'), .options.mpi=mpiopts, .combine='rbind') %dopar% {
     for (r in rand) {
       cutlo=cutlovec[r]
       cuthi=cuthivec[r]
@@ -83,8 +91,8 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
           }
         }
         #Find the running medians(run1) or means(run2) for the data
-        if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T) }
-        if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T,type='mean') }
+        if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE) }
+        if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE,type='mean') }
         tempylims<-tempmedian$ysd
         tempy<-tempmedian$y
         tempx<-tempmedian$x
@@ -149,8 +157,8 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
           if (run==2) { meanStat  <-data.frame(sky=NA,skyerr=NA,Nnearsky=NA,skyRMS=NA,skyRMSpval=NA) }
         }
       }
-      lo<-min(tempval,na.rm=T)
-      hi<-max(tempval,na.rm=T)
+      lo<-min(tempval,na.rm=TRUE)
+      hi<-max(tempval,na.rm=TRUE)
       if (!(is.finite(lo)&is.finite(hi))) {
         lo=-5
         hi=5
@@ -181,17 +189,11 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
         next
       }
       #Plot
-      #useCairo=TRUE
-      #if (useCairo) {
-      #  #if (r==rand[1]) { cat("..using Cairo PDF...") }
-      #  library("Cairo",lib.loc='/gamah/awright/src/R/lib/')
-      #  CairoPDF(file=file.path(path,paste(id,"_skyback.pdf",sep="")),height=7,width=10)
-      #} else {
-        pdf(file=file.path(path,paste(id,"_skyback.pdf",sep="")),height=7,width=10)
-      #}
+      if (toFile) {
+        CairoPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=6*res,width=10*res,res=res)
+      }
       layout(cbind(1,2))
-      #image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,magmap(origim,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(0,0,seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE)
-      image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,magmap(origim,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE,xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
+      image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,magmap(origim,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="",asp=1,useRaster=TRUE,xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
       image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,log10(1-maskim),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
       if (length(tempxbak)!=0 & !any(is.na(templtybak))) {
         for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col='darkgrey',lty=templtybak[bin],lwd=3) }
@@ -199,13 +201,18 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
       if (length(tempx)!=0 & !any(is.na(templty))) {
         for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=3) }
       }
-      magaxis(side=1:4,labels=F)
+      magaxis(side=1:4,labels=FALSE)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
       points(x=(x_p-pixloc[1]+1),y=(y_p-pixloc[2]+1), pch=3)
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
-      magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.5,1.5)*ifelse(!is.finite(skyRMS),sd(origim),skyRMS),col=hsv(inten))
-      #points(x=temprad,y=tempval,pch=20,col=hsv(magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map))
+      if (length(tempval)>1E4) {
+        #Thin out
+        samp<-sample(length(tempval),1E4)
+        magplot(x=temprad[samp],y=tempval[samp],pch=20,xlab='Radius (pix); Thinned to 1E4 points',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad[samp],na.rm=TRUE)),100,max(temprad[samp],na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.5,1.5)*ifelse(!is.finite(skyRMS),sd(origim),skyRMS),col=hsv(inten[samp]))
+      } else {
+        magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.5,1.5)*ifelse(!is.finite(skyRMS),sd(origim),skyRMS),col=hsv(inten))
+      }
       abline(v=tempxbak,col='darkgrey',lty=templtybak,lwd=3)
       abline(v=tempx,col='purple',lty=templty,lwd=3)
       lines(x=tempxbak,y=tempybak,lwd=1,col='darkgrey')
@@ -220,7 +227,6 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
       dev.off()
     }
   } else {
-    #output<-foreach(id=id_g, cutlo=cutlovec, cuthi=cuthivec, pixlocx=x_p, pixlocy=y_p, sxl=stamplims[,1],syl=stamplims[,3],.export=c('x_p','y_p'), .options.mpi=mpiopts, .combine='rbind') %dopar% {
     for (r in rand) {
       cutlo=cutlovec[r]
       cuthi=cuthivec[r]
@@ -277,8 +283,8 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
           }
         }
         #Find the running medians(run1) or means(run2) for the data
-        if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T) }
-        if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=T,type='mean') }
+        if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE) }
+        if (run==2) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE,type='mean') }
         tempylims<-tempmedian$ysd
         tempy<-tempmedian$y
         tempx<-tempmedian$x
@@ -343,8 +349,8 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
           if (run==2) { meanStat  <-data.frame(sky=NA,skyerr=NA,Nnearsky=NA,skyRMS=NA,skyRMSpval=NA) }
         }
       }
-      lo<-min(tempval,na.rm=T)
-      hi<-max(tempval,na.rm=T)
+      lo<-min(tempval,na.rm=TRUE)
+      hi<-max(tempval,na.rm=TRUE)
       if (!(is.finite(lo)&is.finite(hi))) {
         lo=-5
         hi=5
@@ -375,31 +381,32 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
         next
       }
       #Plot
-      #useCairo=TRUE
-      #if (useCairo) {
-      #  #if (r==rand[1]) { cat("..using Cairo PDF...") }
-      #  library("Cairo",lib.loc='/gamah/awright/src/R/lib/')
-      #  CairoPDF(file=file.path(path,paste(id,"_skyback.pdf",sep="")),height=7,width=10)
-      #} else {
-        pdf(file=file.path(path,paste(id,"_skyback.pdf",sep="")),height=7,width=10)
-      #}
+      if (toFile) {
+        CairoPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=6*res,width=10*res,res=res)
+      }
       layout(cbind(1,2))
-      #image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,magmap(im_mask,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(0,0,seq(0,1,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE)
-      #image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,magmap(tempim,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE,add=TRUE)
-      image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,magmap(im_mask,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="",asp=1,useRaster=TRUE, xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
-      image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,log10(1-imm_mask),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
+      image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,magmap(im_mask,stretch='asinh',lo=lo,hi=hi,type='num')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="",asp=1,useRaster=TRUE, xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
+      if (remmask) {
+        image(x=1:length(im_mask[,1])-pixlocx,y=1:length(im_mask[1,])-pixlocy,log10(1-imm_mask),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
+      }
       if (length(tempxbak)!=0 & !any(is.na(templtybak))) {
         for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col='darkgrey',lty=templtybak[bin],lwd=3) }
       }
       if (length(tempx)!=0 & !any(is.na(templty))) {
         for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=3) }
       }
-      magaxis(side=1:4,labels=F)
+      magaxis(side=1:4,labels=FALSE)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
       points(x=(x_p-pixloc[1]+1),y=(y_p-pixloc[2]+1), pch=3)
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
-      magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.5,1.5)*ifelse(!is.finite(skyRMS),sd(im_mask),skyRMS),col=hsv(inten))
+      if (length(tempval)>1E4) {
+        #Thin out
+        samp<-sample(length(tempval),1E4)
+        magplot(x=temprad[samp],y=tempval[samp],pch=20,xlab='Radius (pix); Thinned to 1E4 points',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad[samp],na.rm=TRUE)),100,max(temprad[samp],na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.5,1.5)*ifelse(!is.finite(skyRMS),sd(origim),skyRMS),col=hsv(inten[samp]))
+      } else {
+        magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=TRUE)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.5,1.5)*ifelse(!is.finite(skyRMS),sd(origim),skyRMS),col=hsv(inten))
+      }
       if (!any(is.na(templtybak))) {
         abline(v=tempxbak,col='darkgrey',lty=templtybak,lwd=3)
         abline(v=tempx,col='purple',lty=templty,lwd=3)
@@ -413,7 +420,7 @@ PlotSkyback<-function(id_g,x_p,y_p,stamplims,cutlo=0,cuthi=100,im_mask,imm_mask,
         abline(h=meanStat$sky,col='red')
         abline(h=medianStat$sky,col='red',lty=4)
       }
-      dev.off()
+      if (toFile) { dev.off() }
     }
   }
   #Output the foreach data

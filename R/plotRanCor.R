@@ -1,4 +1,4 @@
-plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims,masklims,remask=TRUE,numIters=1E3,path="./",plotall=FALSE){
+plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims,masklims,remask=TRUE,numIters=1E3,path="./",plotall=FALSE,sigclip=3,nclip=3,res=120){
   if(length(ap_mask) != length(stamplims[,1])){stop('ap_mask and stamplim lengths do not match!')}
   if (remask) { if(length(ap_mask) != length(masklims[,1])){stop('ap_mask and masklim lengths do not match!')} }
   cutup<-TRUE
@@ -54,9 +54,8 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
       #Initialise Vectors
       flux<-rep(NA,numIters)
       sumap<-rep(NA,numIters)
-      #maskfrac<-rep(NA,numIters)
       #Mask object aperture
-      origim[sxl:sxh,syl:syh][which(zapsmall(ap)!=0,arr.ind=T)]<-NA
+      origim[sxl:sxh,syl:syh][which(zapsmall(ap)!=0,arr.ind=TRUE)]<-NA
       #Get Aperture details
       gdap<-which(ap!=0)
       gdapv<-ap[which(ap!=0)]
@@ -79,25 +78,44 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
           #Sum shifted image and Aperture to return Flux
-          sumap[iter]<-sum(gdapv[which(!is.na(tempim[as.matrix(ind)]))])
-          flux[iter]<-sum(tempvec[iter,],na.rm=T)/sumap[iter]
+          val<-which(!is.na(tempim[as.matrix(ind)]))
+          temp<-tempvec[iter,val]
+          val<-gdapv[val]
+          sumap[iter]<-sum(val)
+          #Sum Flux, correcting for masked pixels
+          flux[iter]<-sum(temp*val,na.rm=TRUE)#/(sum(gdapv)/sumap[iter])
         }
-        ranaps[which(ranaps>1)]<-1
-        dat=data.frame(randMean.mean=mean(flux,na.rm=T),randMean.SD=sd(flux,na.rm=T),nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T))
+        #Return Result
+        s<-which(is.finite(flux)&is.finite(sumap))
+        if (length(s)!=length(flux)) {
+          flux<-flux[s]
+          sumap<-sumap[s]
+        }
+        wflux<-sum(flux*sumap)/sum(sumap)
+        wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
+        wmad<-weightedMad(flux,sumap)
+        if (sigclip>0) {
+          for (iter in 1:nclip) {
+            ind<-which((flux-wflux)/wsd <= sigclip)
+            wflux<-sum(flux[ind]*sumap[ind])/sum(sumap[ind])
+            wsd<-sqrt(sum(sumap[ind] * (flux[ind] - wflux)^2) * (sum(sumap[ind])/(sum(sumap[ind])^2 - sum(sumap[ind]))))
+            wmad<-weightedMad(flux[ind],sumap[ind])
+          }
+        }
+        dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(floor(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        pdf(file=file.path(path,paste(id_g[i],"_blankscor.pdf",sep="")),height=6,width=10)
+        CairoPNG(file=file.path(path,paste(id_g[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res)
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
-        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),log10(ranaps),col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
-        magaxis(side=1:4,labels=F)
+        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
+        magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
         points(x=(x_p-x_p[i]+1),y=(y_p-y_p[i]+1), pch=3)
         #Convert pix values onto asinh scale
         #X-Axis Limits; focus on 0 with ± limits around there
-        #lim<-(floor(log10(max(abs(quantile(tempvec,c(0.001,0.999),na.rm=TRUE))))))
         #Stretch data to a useful scale
         stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
         #Apply transformation
@@ -122,7 +140,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           }
         }
         #Get pixel histogram on transformed axes
-        pix<-hist(as.numeric(tempvecstretch),plot=F,breaks=seq(0,1,length=100))
+        pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
         #Plot Histogram and Count axis
         magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='Randoms Pixel Values (pix)',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
         #Convert Labels to Pretty style
@@ -131,14 +149,14 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         labs<-paste(pref,ifelse(labs>0,"1e+","1e"),labs,"",sep="")
         labs[which(labs=="1e+Inf")]<-"0"
         labs[which(labs=="1e-Inf")]<-"0"
-        check = grep("1e+", labs, fixed = T)
-        labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = T), "}", sep = "")
-        check = grep("1e-", labs, fixed = T)
-        labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = T), "}", sep = "")
-        check = grep("e+", labs, fixed = T)
-        labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = T), "}", sep = "")
-        check = grep("e-", labs, fixed = T)
-        labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = T), "}", sep = "")
+        check = grep("1e+", labs, fixed = TRUE)
+        labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("1e-", labs, fixed = TRUE)
+        labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("e+", labs, fixed = TRUE)
+        labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("e-", labs, fixed = TRUE)
+        labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
         axespoints<-parse(text=labs)
         #Draw X major and minor ticks
         axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
@@ -149,16 +167,16 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
         #Draw histograms for each bin.
         for(iter in 1:numIters) {
-          tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-          tmp<-hist(tempvecstretch,plot=F,breaks=pix$breaks)
-          lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+          if (length(which(!is.na(tempvec[iter,])))>0) {
+            tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+            tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+            lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+          }
         }
         abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-        #arrows(x0=magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,
-        #       y0=rep(10^(log10(max(pix$counts))-1),length(flux)),y1=rep(10^(log10(max(pix$counts))-1.2),length(flux)),length=0.05,lwd=1.5,col=col2alpha('purple',alpha=0.5))
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),"\nStd Dev = ",round(dat$randMean.SD,digit=3),sep=""),cex=0.6)
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         dev.off()
@@ -167,8 +185,6 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         tempvec<-matrix(NA,ncol=length(which(ap!=0)),nrow=numIters)
         for (iter in 1:numIters) {
           #Calculate Shift Indicies
-          #ranaps[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]<-ranaps[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]+ap[which(ap!=0)]*0.1
-          #tempvec[iter,]<-origim[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]*ap[which(ap!=0)]
           xind<-((1:(nr+1)+dx[iter])%%(nr+1))
           xind<-xind[xind>0][1:length(ap[,1])]
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
@@ -176,22 +192,40 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           ind<-expand.grid(xind,yind)[gdap,]
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-origim[as.matrix(ind)]*gdapv
-          #Sum shifted image and Aperture to return Flux
-          sumap[iter]<-sum(gdapv[which(!is.na(origim[as.matrix(ind)]))])
-          flux[iter]<-sum(tempvec[iter,],na.rm=T)/sumap[iter]
+          val<-which(!is.na(origim[as.matrix(ind)]))
+          temp<-tempvec[iter,val]
+          val<-gdapv[val]
+          sumap[iter]<-sum(val)
+          #Sum Flux, correcting for masked pixels
+          flux[iter]<-sum(temp*val,na.rm=TRUE)
         }
-        ranaps[which(ranaps>1)]<-1
         #Return Result
-        dat=data.frame(randMean.mean=mean(flux,na.rm=T),randMean.SD=sd(flux,na.rm=T),nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T))
+        s<-which(is.finite(flux)&is.finite(sumap))
+        if (length(s)!=length(flux)) {
+          flux<-flux[s]
+          sumap<-sumap[s]
+        }
+        wflux<-sum(flux*sumap)/sum(sumap)
+        wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
+        wmad<-weightedMad(flux,sumap)
+        if (sigclip>0) {
+          for (iter in 1:nclip) {
+            ind<-which((flux-wflux)/wsd <= sigclip)
+            wflux<-sum(flux[ind]*sumap[ind])/sum(sumap[ind])
+            wsd<-sqrt(sum(sumap[ind] * (flux[ind] - wflux)^2) * (sum(sumap[ind])/(sum(sumap[ind])^2 - sum(sumap[ind]))))
+            wmad<-weightedMad(flux[ind],sumap[ind])
+          }
+        }
+        dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        pdf(file=file.path(path,paste(id_g[i],"_rancor.pdf",sep="")),height=6,width=10)
+        CairoPNG(file=file.path(path,paste(id_g[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res)
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),magmap(origim,stretch='asinh',lo=0.1,hi=0.9)$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
-        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:10/10),add=TRUE,useRaster=TRUE)
-        magaxis(side=1:4,labels=F)
+        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),magmap(origim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x_p[i]-imsxl),y=1:length(origim[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
+        magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
         points(x=(x_p-x_p[i]+1),y=(y_p-y_p[i]+1), pch=3)
         #Convert pix values onto asinh scale
@@ -220,7 +254,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           }
         }
         #Get pixel histogram on transformed axes
-        pix<-hist(as.numeric(tempvecstretch),plot=F,breaks=seq(0,1,length=100))
+        pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
         #Plot Histogram and Count axis
         magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='Randoms Pixel Values (pix)',ylab="Count",side=2,xlim=c(0,1),log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
         #Convert Labels to Pretty style
@@ -229,14 +263,14 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         labs<-paste(pref,ifelse(labs>0,"1e+","1e"),labs,"",sep="")
         labs[which(labs=="1e+Inf")]<-"0"
         labs[which(labs=="1e-Inf")]<-"0"
-        check = grep("1e+", labs, fixed = T)
-        labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = T), "}", sep = "")
-        check = grep("1e-", labs, fixed = T)
-        labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = T), "}", sep = "")
-        check = grep("e+", labs, fixed = T)
-        labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = T), "}", sep = "")
-        check = grep("e-", labs, fixed = T)
-        labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = T), "}", sep = "")
+        check = grep("1e+", labs, fixed = TRUE)
+        labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("1e-", labs, fixed = TRUE)
+        labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("e+", labs, fixed = TRUE)
+        labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("e-", labs, fixed = TRUE)
+        labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
         axespoints<-parse(text=labs)
         #Draw X major and minor ticks
         axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
@@ -247,17 +281,16 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
         #Draw histograms for each bin.
         for(iter in 1:numIters) {
-          tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-          tmp<-hist(tempvecstretch,plot=F,breaks=pix$breaks)
-          lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+          if (length(which(!is.na(tempvec[iter,])))>0) {
+            tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+            tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+            lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+          }
         }
         abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
-        abline(v=magmap(dat$randMed.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=4)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-        #arrows(x0=magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,
-        #       y0=rep(10^(log10(max(pix$counts))-1),length(flux)),y1=rep(10^(log10(max(pix$counts))-1.2),length(flux)),length=0.05,lwd=1.5,col=col2alpha('purple',alpha=0.5))
-        legend('topright',legend=c("Random Flux; Median", "Random Flux; Mean"),col=hsv(0,0,0),lty=c(4,1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMedian Est = ",round(dat$randMed.mean,digit=3),"\nMean Est = ",round(dat$randMean.mean,digit=3),sep=""),cex=0.6)
+        legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),"\nStd Dev = ",round(dat$randMean.SD,digit=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))+0.5),boxwex=2)
         dev.off()
@@ -284,10 +317,9 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
       #Initialise Vectors
       flux<-rep(NA,numIters)
       sumap<-rep(NA,numIters)
-      #maskfrac<-rep(NA,numIters)
       #Mask object aperture
       tempim<-im_mask
-      tempim[sxl:sxh,syl:syh][which(zapsmall(ap)!=0,arr.ind=T)]<-NA
+      tempim[sxl:sxh,syl:syh][which(zapsmall(ap)!=0,arr.ind=TRUE)]<-NA
       #Get Aperture details
       gdap<-which(ap!=0)
       gdapv<-ap[which(ap!=0)]
@@ -309,28 +341,44 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           ind<-expand.grid(xind,yind)[gdap,]
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
-          #ranaps[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]<-ranaps[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]+ap[which(ap!=0)]*0.1
-          #tempvec[iter,]<-tempim[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]*ap[which(ap!=0)]
-          #Sum shifted image and Aperture to return Flux
-          sumap[iter]<-sum(gdapv[which(!is.na(tempim[as.matrix(ind)]))])
-          flux[iter]<-sum(tempvec[iter,],na.rm=T)/sumap[iter]
+          val<-which(!is.na(tempim[as.matrix(ind)]))
+          temp<-tempvec[iter,val]
+          val<-gdapv[val]
+          sumap[iter]<-sum(val)
+          #Sum Flux, correcting for masked pixels
+          flux[iter]<-sum(temp*val,na.rm=TRUE)
         }
         #Return Result
-        dat=data.frame(randMean.mean=mean(flux,na.rm=T),randMean.SD=sd(flux,na.rm=T),nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T))
+        s<-which(is.finite(flux)&is.finite(sumap))
+        if (length(s)!=length(flux)) {
+          flux<-flux[s]
+          sumap<-sumap[s]
+        }
+        wflux<-sum(flux*sumap)/sum(sumap)
+        wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
+        wmad<-weightedMad(flux,sumap)
+        if (sigclip>0) {
+          for (iter in 1:nclip) {
+            ind<-which((flux-wflux)/wsd <= sigclip)
+            wflux<-sum(flux[ind]*sumap[ind])/sum(sumap[ind])
+            wsd<-sqrt(sum(sumap[ind] * (flux[ind] - wflux)^2) * (sum(sumap[ind])/(sum(sumap[ind])^2 - sum(sumap[ind]))))
+            wmad<-weightedMad(flux[ind],sumap[ind])
+          }
+        }
+        dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(floor(log10(max(abs(quantile(im_mask,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        pdf(file=file.path(path,paste(id_g[i],"_blankscor.pdf",sep="")),height=6,width=10)
+        CairoPNG(file=file.path(path,paste(id_g[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res)
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
-        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:10/10),add=TRUE,useRaster=TRUE)
-        magaxis(side=1:4,labels=F)
+        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
+        magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
         points(x=(x_p-x_p[i]+1),y=(y_p-y_p[i]+1), pch=3)
         #Convert pix values onto asinh scale
         #X-Axis Limits; focus on 0 with ± limits around there
-        #lim<-(floor(log10(max(abs(quantile(tempvec,c(0.001,0.999),na.rm=TRUE))))))
         #Stretch data to a useful scale
         stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
         #Apply transformation
@@ -355,7 +403,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           }
         }
         #Get pixel histogram on transformed axes
-        pix<-hist(as.numeric(tempvecstretch),plot=F,breaks=seq(0,1,length=100))
+        pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
         #Plot Histogram and Count axis
         magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='Randoms Pixel Values (pix)',ylab="Count",side=2,xlim=c(0,1),ylim=c(1,10^(log10(max(pix$counts))+1)),main="Pixel Histogram",log='y')
         #Convert Labels to Pretty style
@@ -364,14 +412,14 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         labs<-paste(pref,ifelse(labs>0,"1e+","1e"),labs,"",sep="")
         labs[which(labs=="1e+Inf")]<-"0"
         labs[which(labs=="1e-Inf")]<-"0"
-        check = grep("1e+", labs, fixed = T)
-        labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = T), "}", sep = "")
-        check = grep("1e-", labs, fixed = T)
-        labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = T), "}", sep = "")
-        check = grep("e+", labs, fixed = T)
-        labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = T), "}", sep = "")
-        check = grep("e-", labs, fixed = T)
-        labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = T), "}", sep = "")
+        check = grep("1e+", labs, fixed = TRUE)
+        labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("1e-", labs, fixed = TRUE)
+        labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("e+", labs, fixed = TRUE)
+        labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("e-", labs, fixed = TRUE)
+        labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
         axespoints<-parse(text=labs)
         #Draw X major and minor ticks
         axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
@@ -382,14 +430,14 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
         #Draw histograms for each bin.
         for(iter in 1:numIters) {
-          tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-          tmp<-hist(tempvecstretch,plot=F,breaks=pix$breaks)
-          lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+          if (length(which(!is.na(tempvec[iter,])))>0) {
+            tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+            tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+            lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+          }
         }
         abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-        #arrows(x0=magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,
-        #       y0=rep(10^(log10(max(pix$counts))-1),length(flux)),y1=rep(10^(log10(max(pix$counts))-1.2),length(flux)),length=0.05,lwd=1.5,col=col2alpha('purple',alpha=0.5))
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),"\nStd Dev = ",round(dat$randMean.SD,digit=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
@@ -407,28 +455,45 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           ind<-expand.grid(xind,yind)[gdap,]
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
-          #ranaps[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]<-ranaps[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]+ap[which(ap!=0)]*0.1
-          #tempvec[iter,]<-im_mask[(1:(nr+1)+dx[iter])%%(nr+1),(1:(nc+1)+dy[iter])%%(nc+1)][which(ap!=0,arr.ind=T)]*ap[which(ap!=0)]
           #Sum shifted image and Aperture to return Flux
-          sumap[iter]<-sum(gdapv[which(!is.na(tempim[as.matrix(ind)]))])
-          flux[iter]<-sum(tempvec[iter,],na.rm=T)/sumap[iter]
+          val<-which(!is.na(tempim[as.matrix(ind)]))
+          temp<-tempvec[iter,val]
+          val<-gdapv[val]
+          sumap[iter]<-sum(val)
+          #Sum Flux, correcting for masked pixels
+          flux[iter]<-sum(temp*val,na.rm=TRUE)
         }
         #Return Result
-        dat=data.frame(randMean.mean=mean(flux,na.rm=T),randMean.SD=sd(flux,na.rm=T),nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=T),randAp.SD=sd(sumap,na.rm=T))
+        s<-which(is.finite(flux)&is.finite(sumap))
+        if (length(s)!=length(flux)) {
+          flux<-flux[s]
+          sumap<-sumap[s]
+        }
+        wflux<-sum(flux*sumap)/sum(sumap)
+        wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
+        wmad<-weightedMad(flux,sumap)
+        if (sigclip>0) {
+          for (iter in 1:nclip) {
+            ind<-which((flux-wflux)/wsd <= sigclip)
+            wflux<-sum(flux[ind]*sumap[ind])/sum(sumap[ind])
+            wsd<-sqrt(sum(sumap[ind] * (flux[ind] - wflux)^2) * (sum(sumap[ind])/(sum(sumap[ind])^2 - sum(sumap[ind]))))
+            wmad<-weightedMad(flux[ind],sumap[ind])
+          }
+        }
+        dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(floor(log10(max(abs(quantile(tempim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        pdf(file=file.path(path,paste(id_g[i],"_rancor.pdf",sep="")),height=6,width=10)
+        CairoPNG(file=file.path(path,paste(id_g[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res)
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=F,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
-        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:10/10),add=TRUE,useRaster=TRUE)
-        magaxis(side=1:4,labels=F)
+        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(im_mask[,1])-(x_p[i]-imsxl),y=1:length(im_mask[1,])-(y_p[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
+        magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
         points(x=(x_p-x_p[i]+1),y=(y_p-y_p[i]+1), pch=3)
         #Convert pix values onto asinh scale
         #X-Axis Limits; focus on 0 with ± limits around there
-        #lim<-(floor(log10(max(abs(quantile(tempvec,c(0.001,0.999),na.rm=TRUE))))))
         #Stretch data to a useful scale
         stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
         #Apply transformation
@@ -453,7 +518,7 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
           }
         }
         #Get pixel histogram on transformed axes
-        pix<-hist(as.numeric(tempvecstretch),plot=F,breaks=seq(0,1,length=100))
+        pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
         #Plot Histogram and Count axis
         magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='Randoms Pixel Values (pix)',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
         #Convert Labels to Pretty style
@@ -462,14 +527,14 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         labs<-paste(pref,ifelse(labs>0,"1e+","1e"),labs,"",sep="")
         labs[which(labs=="1e+Inf")]<-"0"
         labs[which(labs=="1e-Inf")]<-"0"
-        check = grep("1e+", labs, fixed = T)
-        labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = T), "}", sep = "")
-        check = grep("1e-", labs, fixed = T)
-        labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = T), "}", sep = "")
-        check = grep("e+", labs, fixed = T)
-        labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = T), "}", sep = "")
-        check = grep("e-", labs, fixed = T)
-        labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = T), "}", sep = "")
+        check = grep("1e+", labs, fixed = TRUE)
+        labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("1e-", labs, fixed = TRUE)
+        labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("e+", labs, fixed = TRUE)
+        labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
+        check = grep("e-", labs, fixed = TRUE)
+        labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
         axespoints<-parse(text=labs)
         #Draw X major and minor ticks
         axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
@@ -480,14 +545,14 @@ plotRanCor<-function(id_g,x_p,y_p,im_mask,imm_mask,ap_mask,stamplims,imstamplims
         axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
         #Draw histograms for each bin.
         for(iter in 1:numIters) {
-          tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-          tmp<-hist(tempvecstretch,plot=F,breaks=pix$breaks)
-          lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+          if (length(which(!is.na(tempvec[iter,])))>0) {
+            tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+            tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+            lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+          }
         }
         abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-        #arrows(x0=magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,
-        #       y0=rep(10^(log10(max(pix$counts))-1),length(flux)),y1=rep(10^(log10(max(pix$counts))-1.2),length(flux)),length=0.05,lwd=1.5,col=col2alpha('purple',alpha=0.5))
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digit=3),"\nStd Dev = ",round(dat$randMean.SD,digit=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map

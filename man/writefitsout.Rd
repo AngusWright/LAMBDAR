@@ -1,6 +1,7 @@
 \name{writefitsout}
 \alias{writefitsout}
-%- Also NEED an '\alias' for EACH other topic documented here.
+\alias{make.fits.header}
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Write FITS Image to File
 }
@@ -11,8 +12,9 @@ Write an input image to file, using the standard FITS format.
 writefitsout(filename, image, header_in, xsize = NA,
 ysize = NA, xcent = NA, ycent = NA, pixeloffset = NA,
 nochange = FALSE, verbose = FALSE, diagnostic = FALSE)
+make.fits.header(hdr)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{filename}{
 string; The path to, and filename of, the output image
@@ -47,12 +49,16 @@ logical; if TRUE, then perform diagnostic checks and outputs
   \item{verbose}{
 logical; if TRUE, then perform verbose outputs
 }
+  \item{hdr}{
+data.frame; In the form of a fits header, this will be converted to a string which can be output as a binary fits header
+}
 }
 %%\details{
 %%  ~~ If necessary, more details than the description above ~~
 %%}
 \value{
 NULL; Output is to file
+character; fits header to be written to file
 }
 %%\references{
 %% ~put references to the literature/web site here ~
@@ -73,7 +79,6 @@ Angus H Wright{ ICRAR}
 \examples{
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Output }

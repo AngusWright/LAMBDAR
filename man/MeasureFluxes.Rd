@@ -1,6 +1,6 @@
 \name{MeasureFluxes}
 \alias{MeasureFluxes}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Measure Fluxes
 }
@@ -13,10 +13,10 @@ A default parameter file can be created by running MeasureFluxes("--makepar"). F
 \usage{
 MeasureFluxes(parfile, quiet = FALSE, MPIBackend=FALSE, doReturn=FALSE, ...)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{parfile}{
-Path to, and name of, the Input Parameter file (ie. '/path/to/parfile.par').
+Path to, and name of, the Input Parameter file (ie. `/path/to/parfile.par').
 }
   \item{quiet}{
 logical; if TRUE all output to screen is suppressed
@@ -28,7 +28,7 @@ logical; if TRUE, will use Rmpi and doMPI backends to foreach.
 logical; if TRUE, a set of core outputs (for every object) will be passed to the R console on program completion.
 }
   \item{...}{
-Any arguments that are intended to be passed to the 'createparfile' routine; see examples below.
+Any arguments that are intended to be passed to the `createparfile' routine; see examples below.
 }
 }
 \details{
@@ -98,25 +98,46 @@ warning on exiting MeasureFluxes.
 \link{createparfile}
 }
 \examples{
-# To generate a default parameter file for use:
+###Parameter File Generation:
+# To generate a default parameter file for use
 MeasureFluxes("--makepar")
 
 # When generating the parameter file, all parameters can be made custom
 # by including the parameter name and its desired value in the makepar call.
 # For Example, to generate a parameter file for use, with customised Catalogue
-# name value:
-MeasureFluxes("--makepar", Catalogue="MyCat.csv")
+# name value, and send it to the file 'Lambdar_Sample.par':
+MeasureFluxes("--makepar", filename="Lambdar_Sample.par", Catalogue="MyCat.csv")
 
 # Or changing the input Catalogue name, and changing number of foreach/doParallel processors
-MeasureFluxes("--makepar", Catalogue="MyCat.csv", nProcessors=10)
+MeasureFluxes("--makepar", filename="Lambdar_Sample.par", Catalogue="MyCat.csv", nProcessors=10)
 
-# To execute the program using the parameter file "Lambdar.par":
-\dontrun{
+#Alternatively, you can call the createparfile function yourself
+createparfile(file="Lambdar_Sample.par", Catalogue="MyCat.csv", nProcessors=10)
 
-MeasureFluxes("Lambdar.par")
+###Example of Measuring Photometry:
 
-}
+#Load a Sample Image and Catalogue
+data("SDSS.sample",envir=environment())
+data("ApCat.sample",envir=environment())
+#Show the loaded data
+lsos(envir=environment())
+#Write Sample Image to File
+write.fits(file="SampleImage.fits",SDSS.sample)
+#Write Sample Catalogue to File
+write.csv(file="SampleCat.csv",ApCat.sample,row.names=FALSE,quote=FALSE)
+#Generate Parameter File
+createparfile(file="Lambdar_Sample.par",DataMap="SampleImage.fits",Catalogue="SampleCat.csv")
 
+#Measure Photometry
+MeasureFluxes("Lambdar_Sample.par")
+
+#Read the Results file
+output<-read.csv("LAMBDAR_Results.csv",stringsAsFactors=FALSE)
+
+#Summarise Results
+summary(output$DFAFlux_Jy)
+
+###Running using MPI:
 # To execute the program using the MPI backend (provided that you have a functional
 # System installation of MPI, as well as the relevant R packages Rmpi, and doMPI)
 # you would execute:
@@ -128,7 +149,10 @@ mpirun -np <NUM_PROCESSORS> R --slave -e "MeasureFluxes('/path/to/parfile.par',M
 }
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Main }
+\keyword{ Photometry }
+\keyword{ Imaging }
+\keyword{ Astrometry }
+%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

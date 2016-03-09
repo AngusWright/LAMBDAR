@@ -2,7 +2,7 @@
 #
 #
 iterapint <-
-function(x,y,xstep,ystep,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=T,upres=2,itersteps=9,pixscale=FALSE,peakscale=FALSE,peak=1){
+function(x,y,xstep,ystep,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=TRUE,upres=2,itersteps=9,pixscale=FALSE,peakscale=FALSE,peak=1){
 
 if(majax>0){
 
@@ -33,7 +33,7 @@ if(majax>0){
   check=checkgrid(x=x,y=y,xstep=xstep,ystep=ystep,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax,deg=deg)
   if(any(check$logic[,'empty'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'empty']],0))}
   if(any(check$logic[,'full'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'full']],weight))}
-  if(any(check$logic[,'mid']==F & check$logic[,'part'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'mid']==F & check$logic[,'part']],0))}
+  if(any(check$logic[,'mid']==FALSE & check$logic[,'part'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'mid']==FALSE & check$logic[,'part']],0))}
   if(any(check$logic[,'mid'] & check$logic[,'part'])){mastercat=rbind(mastercat,cbind(newID[check$logic[,'mid'] & check$logic[,'part']],weight))}
 
   rebinID=as.numeric(names(table(mastercat[,1])[table(mastercat[,1])>1]))
@@ -69,7 +69,7 @@ if(majax>0){
   check=checkgrid(x=x,y=y,xstep=xstep,ystep=ystep,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax,deg=deg)
   if(any(check$logic[,'empty'])){mastercat=rbind(mastercat,cbind(which(check$logic[,'empty']),0))}
   if(any(check$logic[,'full'])){mastercat=rbind(mastercat,cbind(which(check$logic[,'full']),weight))}
-  if(any(check$logic[,'mid']==F & check$logic[,'part'])){mastercat=rbind(mastercat,cbind(which(check$logic[,'mid']==F & check$logic[,'part']),0))}
+  if(any(check$logic[,'mid']==FALSE & check$logic[,'part'])){mastercat=rbind(mastercat,cbind(which(check$logic[,'mid']==FALSE & check$logic[,'part']),0))}
   if(any(check$logic[,'mid'] & check$logic[,'part'])){mastercat=rbind(mastercat,cbind(which(check$logic[,'mid'] & check$logic[,'part']),weight))}
 
   mastercat=mastercat[order(mastercat[,1]),2]

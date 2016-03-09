@@ -1,9 +1,9 @@
 \name{rancor.par}
 \alias{rancor.par}
 \alias{plotRanCor}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
-Perform LAMBDAR randoms/blanks correction
+Perform LAMBDAR randoms/blanks estimation
 }
 \description{
 __This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
@@ -12,9 +12,9 @@ This function performs a parallelised random/blank aperture analysis on the imag
 }
 \usage{
 rancor.par(im_mask,imm_mask,ap_mask,stamplims,
-masklims,remask=TRUE,numIters=1E3,mpiopts="")
+masklims,remask=TRUE,numIters=1E3,mpiopts="",sigclip=3,nclip=0)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{im_mask}{
 numeric [[m]][n,n] list; stamps of the input image
@@ -40,6 +40,12 @@ numeric; number of blanks/randoms
   \item{mpiopts}{
 list; the MPI options to be passed to the MPI backend, if it is in use.
 }
+  \item{sigclip}{
+numeric; sigma to use for clipping of randoms/blanks, to improve randoms/blanks stdev estimate. [Not currently implemented in .par file]
+}
+  \item{nclip}{
+numeric; number of iterative sigma-clips to do when calculating the stdev of randoms/blanks, to improve randoms/blanks stdev estimate. [Not currently implemented in .par file]
+}
 }
 %%\details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -53,13 +59,14 @@ for randoms/blanks measurements (___Ap.SD), the median absolute deviation from m
 (___Ap.MAD), and the number of randoms/blanks that had finite measurements within the aperture (n____).
 }
 \author{
-Angus H Wright
+Angus H. Wright { ICRAR}
+ {\email{angus.wright@icrar.org}}
 }
 
 \examples{
 ##No examples to run, perhaps in final release version of LAMBDAR
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{sky}
-\keyword{background}
+\keyword{Imaging}
+\keyword{Background}

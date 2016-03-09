@@ -1,24 +1,29 @@
 \name{make_deblended_weightmap}
 \alias{make_deblended_weightmap}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Deblend Photometric Objects
 }
 \description{
+__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+
 Deblends objects which are overlapping in a photometric image. Procedure is called by fluxmeasurements, part of the MeasureFluxes routine.
 The procedure takes individual weighted object apertures, and determines what proportion of the blended flux should belong to the object in question.
 It performs this analysis on all apertures from the input catalogue.
 }
 \usage{
-make_deblended_weightmap(outenv=parent.env(environment()),env=NULL)
+make_deblended_weightmap(outenv=parent.env(environment()),env=NULL,subs=NULL)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in 'MeasureFluxes'
+environment; the environment containing the parameters used in `MeasureFluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
+}
+  \item{subs}{
+numeric length(k) vector; the subset of apertures to calculate deblending for. Default NULL is treated as all (i.e. 1:ngal).
 }
 }
 \details{
@@ -54,7 +59,7 @@ Angus H Wright{ ICRAR}
 %%\examples{
 
 %%}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Deblend }
+\keyword{ Aperture }% __ONLY ONE__ keyword per line

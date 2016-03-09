@@ -1,6 +1,6 @@
 \name{make_sfa_mask}
 \alias{make_sfa_mask}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Weighted and Convolved Apertures
 }
@@ -11,12 +11,12 @@ Convolve the input aperture stamps with the PSF, and weight the resultant apertu
 }
 \usage{
 make_sfa_mask(outenv = parent.env(environment()),
-sa_mask, fluxweightin = NULL, immask = NULL, env = NULL)
+sa_mask, fluxweightin = NULL, immask = NULL, env = NULL, subs = NULL)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in 'MeasureFluxes'
+environment; the environment containing the parameters used in `MeasureFluxes'
 }
   \item{sa_mask}{
 numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) aperture stamps
@@ -29,6 +29,9 @@ numeric length (m) list of (n,n) arrays; a length (m) list of (n,n) mask stamps
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
+}
+  \item{subs}{
+numeric length(k) vector; the subset of apertures to convolve and weight. Default NULL is treated as 1:length(m).
 }
 }
 \value{
@@ -53,7 +56,9 @@ Angus H Wright{ ICRAR}
 %%\examples{
 
 %%}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Aperture }
+\keyword{ Deblend }
+\keyword{ Convolution }% __ONLY ONE__ keyword per line
+

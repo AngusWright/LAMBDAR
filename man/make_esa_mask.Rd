@@ -1,6 +1,8 @@
 \name{make_esa_mask}
 \alias{make_esa_mask}
-%- Also NEED an '\alias' for EACH other topic documented here.
+\alias{rotdata2d}
+\alias{makerotmat2d}
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Exponential Profile Stamps
 }
@@ -17,22 +19,24 @@ Objects that are supplied with zero width (ie. point sources) are simulated as p
 \usage{
 make_esa_mask(outenv = parent.env(environment()),
 env = NULL, ObsParm, padGals, col.corr = 0, confuse = FALSE)
+rotdata2d(x,y,theta)
+makerotmat2d(theta)
 }
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in 'MeasureFluxes'
+environment; the environment containing the parameters used in `MeasureFluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
 }
   \item{ObsParm}{
 List containing Observation Parameters needed in creating simulated galaxies; Exposure Time (sec; exp=),
-Collecting Area (meters squared; area=), Effective wavelength of filter (Å; lamEff=), and Effective width of filter (Å; WEff=).
+Collecting Area (meters squared; area=), Effective wavelength of filter (Angstrom; lamEff=), and Effective width of filter (Angstrom; WEff=).
 For example, SDSS r-band has parameters ObsParm=list(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165).
 }
   \item{padGals}{
 logical; if TRUE then the simulated image will have galaxies added beyond those in the input catalogue, such that
-the galactic number counts follow the power law log(N)=0.38*m_r-4.78.
+the galactic number counts follow the power law log(N)=-0.01476*m_r^2+1.025*m_r-11.76.
 }
   \item{col.corr}{
 numeric; The colour correction need to convert SDSS r-band magnitude to magnitude in the band being analysed.
@@ -43,8 +47,17 @@ SDSS r-band.
   \item{confuse}{
 logical; do you want to confuse the simulation such that the source density is greater than 1 object per FWHM^2
 }
+  \item{x}{
+numeric vector; x-values to rotate. Used in profile generation.
 }
-%- maybe also 'usage' for other objects documented here.
+  \item{y}{
+numeric vector; y-values to rotate. Used in profile generation.
+}
+  \item{theta}{
+numeric; theta (in N90E0) for matrix rotation. Used in profile generation.
+}
+}
+%- maybe also `usage' for other objects documented here.
 \value{
 numeric [[m]][n,n] list; stamps containing exponential profiles of simulated galaxies
 }
@@ -67,7 +80,7 @@ Angus H Wright{ ICRAR}
 %%\examples{
 
 %%}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Simulation }
+\keyword{ Imaging }% __ONLY ONE__ keyword per line

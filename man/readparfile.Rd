@@ -1,6 +1,6 @@
 \name{readparfile}
 \alias{readparfile}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Read Parameter File
 }
@@ -8,13 +8,13 @@ Read Parameter File
 __This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
 
 Reads the Parameter file required for the execution of the MeasureFluxes procedure. This parameter file can be
-generated using the 'createparfile' routine, or by calling createparfile through 'MeasureFluxes'.
+generated using the `createparfile' routine, or by calling createparfile through `MeasureFluxes'.
 }
 \usage{
 readparfile(parfile=NA, starttime=NA,
 quiet=FALSE, env=NULL)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{parfile}{
 string; relative path to, and filename of, the parameter file
@@ -33,7 +33,7 @@ environment; the environment to which all parameters will be assigned. if NULL, 
 %%  ~~ If necessary, more details than the description above ~~
 %%}
 \value{
-NULL; all output is to the parameter environment 'env'
+NULL; all output is to the parameter environment `env'
 }
 %%\references{
 %% ~put references to the literature/web site here ~
@@ -54,7 +54,6 @@ Angus H Wright{ ICRAR}
 \examples{
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Parameters }

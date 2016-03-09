@@ -44,7 +44,6 @@ function(outenv=parent.env(environment()), env=NULL){
   s_mask<-foreach(slen=stamplen,axa=theta_off,axr=axrat,maj=a_g_pix,xdelt=(x_g%%1),ydelt=(y_g%%1), .export=c("itersteps","upres"), .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
       #Setup Grid for use in aperture generation {{{
       grid<-expand.grid(seq((1.5),(slen+0.5), by=1),seq((1.5),(slen+0.5), by=1))
-      #grid<-expand.grid(seq((1.0),(slen+0.0), by=1),seq((1.0),(slen+0.0), by=1))
       if (any(is.na(grid))){ stop(paste("NAs produced in Expand Grid. Stamplen=",slen)) }
       #}}}
       #For each stamp, place down the relevant aperture {{{
@@ -57,22 +56,47 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
 
   #Check that apertures do not cross image mask boundary {{{
-  if (length(imm_mask)>1) {
+  if ((cutup & length(imm_mask)>1) | (!cutup & length(image.env$imm) > 1)) {
     #Check Mask stamps for Aperture Acceptance {{{
     message('Combining Aps with Mask Stamps')
-    sa_mask<-foreach(slen=stamplen, smask=s_mask,mmask=imm_mask,mxl=mstamp_lims[,1],mxh=mstamp_lims[,2],myl=mstamp_lims[,3],myh=mstamp_lims[,4],.export="useMaskLim", .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
-      #Check masking to determine if Aperture is acceptable {{{
-      check<-sum(mmask[mxl:mxh,myl:myh]*smask)/sum(smask)
-      if (check<useMaskLim) {
-        #Too much. Skip {{{
-        array(0, dim=c(slen,slen))
-        #}}}
-      } else {
-        #Not too much. Keep {{{
-        smask
+    if (cutup) {
+      sa_mask<-foreach(slen=stamplen, smask=s_mask,mmask=imm_mask,mxl=mstamp_lims[,1],mxh=mstamp_lims[,2],myl=mstamp_lims[,3],myh=mstamp_lims[,4],.export=c("useMaskLim","psffilt"), .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+        #Check masking to determine if Aperture is acceptable {{{
+        check<-sum(mmask[mxl:mxh,myl:myh]*smask)/sum(smask)
+        if (check<useMaskLim) {
+          #Too much. Skip {{{
+          array(0, dim=c(slen,slen))
+          #}}}
+        } else {
+          #Not too much. Keep {{{
+          if (psffilt) {
+            smask
+          } else {
+            smask*mmask[mxl:mxh,myl:myh]
+          }
+          #}}}
+        }
         #}}}
       }
-      #}}}
+    } else {
+      sa_mask<-foreach(slen=stamplen, smask=s_mask,mxl=mask_lims[,1],mxh=mask_lims[,2],myl=mask_lims[,3],myh=mask_lims[,4],.export=c("useMaskLim","image.env","psffilt"), .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
+        #Check masking to determine if Aperture is acceptable {{{
+        check<-sum(image.env$imm[mxl:mxh,myl:myh]*smask)/sum(smask)
+        if (check<useMaskLim) {
+          #Too much. Skip {{{
+          array(0, dim=c(slen,slen))
+          #}}}
+        } else {
+          #Not too much. Keep {{{
+          if (psffilt) {
+            smask
+          } else {
+            smask*image.env$imm[mxl:mxh,myl:myh]
+          }
+          #}}}
+        }
+        #}}}
+      }
     }
     message('Mask Combine Finished.')
     #}}}
@@ -83,7 +107,7 @@ function(outenv=parent.env(environment()), env=NULL){
   }#}}}
 
   #Check for Foreach errors {{{
-  if (class(s_mask[[1]])=="try-error") {
+  if ((length(s_mask) > 0) && class(s_mask[[1]])=="try-error") {
     stop(paste("Fatal Error in Foreach's Multi-Core Application.\n",
     "This seems to at random, but is more likely\n",
     "to happen with increasing numbers of objects\n",
@@ -99,6 +123,7 @@ function(outenv=parent.env(environment()), env=NULL){
 
   #Parse Parameter Space {{{
   if (!is.null(env)) { detach(env) }
+  assign("theta_off",theta_off,envir=outenv)
   assign("theta_g",theta_g,envir=outenv)
   assign("a_g_pix",a_g_pix,envir=outenv)
   #}}}

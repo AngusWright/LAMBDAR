@@ -5,7 +5,6 @@ function(env=NULL,filename) {
   if(!is.null(env)) {
     attach(env, warn.conflicts=FALSE)
   }
-  #on.exit(detach('env'))
 
   sz=length(ra_g)
   janskyConv<-10^(-(magZP-8.9)/2.5)

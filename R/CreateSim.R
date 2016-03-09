@@ -76,6 +76,12 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
   options(warn=1)
   #}}}
 
+  #Check if Magnitudes are active {{{
+  if (any(!param.env$Magnitudes) | any(is.na(param.env$magZP))) {
+    stop("Magnitudes must be TRUE for sim-image generation; magZP is used in all cases to output image as Jy/pix")
+  }
+  #}}}
+
   #If needed, register the parallel backend {{{
   registerDoParallel(cores=param.env$ncores)
   if (!quiet) { cat("   Program running with ",getDoParWorkers()," workers/threads.\n") }
@@ -311,14 +317,14 @@ function(parfile=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=
     message(paste('Beam area (from observers manual) converted into pixel units: ', beamarea_pix))
     }#}}}
 
-    #Send Parameter to logfile {{{
+    #Send Parameter to logfile /*fold*/ {{{
     sink(sinkfile, type="output")
     cat("Parameters used in this run:\n")
     print(lsos(envir=environment(), head=FALSE))
     cat("Images used in this run:\n")
     print(lsos(envir=image.env, head=FALSE))
     sink(type="output")
-    #}}}
+    #/*fend*/ }}}
 
     #Create Simulated Image from Catalogue {{{
     simcat<-create.sim.image(ObsParm=ObsParm,noNoise=noNoise,convolveNoise=convolveNoise,padGals=padGalaxies,col.corr=colourCorr,confuse=confuse)

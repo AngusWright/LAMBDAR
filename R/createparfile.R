@@ -1,5 +1,6 @@
 createparfile <-
   function(
+    filename="Lambdar_default.par",
     RootDirectory="./",
     WorkingDirectory="./",
     OutputDirectory="./",
@@ -7,19 +8,20 @@ createparfile <-
     DataMap="image.fits",
     BeamArea_SqAS=0,
     PSFConvolve=0,
-    PSFWeighted=0,
+    PSFWeighted=1,
     PSFMap='NONE',
     Gauss_FWHM_AS=0,
+    SimGauss_AS=0,
     RemoveContam=0,
     CheckContam=0,
     nNearestCheck=10,
     NoContamImageFile='NoContamResidualImage.fits',
     CatIDColumnLabel='CATAID',
-    RAColumnLabel='ALPHA_J2000',
-    DecColumnLabel='DELTA_J2000',
-    ThetaColumnLabel='THETA_J2000',
-    SemiMajColumnLabel='SEMIMAJ_AS',
-    SemiMinColumnLabel='SEMIMIN_AS',
+    RAColumnLabel='RAdeg',
+    DecColumnLabel='DECdeg',
+    ThetaColumnLabel='rotN2E',
+    SemiMajColumnLabel='radmajasec',
+    SemiMinColumnLabel='radminasec',
     ContamColumnLabel='CONTAM',
     FluxWgtColumnLabel='FLUXWEIGHT',
     ErrorMap='NONE',
@@ -44,10 +46,10 @@ createparfile <-
     Confusion_units=0,
     nProcessors=1,
     AngularOffset=0,
-    MapJyPerBeam=0,
-    SmoothAper=1,
+    MapUnitsPerBeam=0,
+    SmoothAper=0,
     ResamplingRes=3,
-    ResamplingIters=5,
+    ResamplingIters=2,
     PSFConfidence=1,
     ApStampWidth=1.05,
     SourceMaskOnly=0,
@@ -72,7 +74,7 @@ createparfile <-
     Magnitudes=1,
     MagZPLabel='MagZP',
     ABVegaFlux=1.0,
-    MagZeroPoint=0.0,
+    MagZeroPoint=8.9,
     BlankCor=0,
     nBlanks=10,
     RanCor=0,
@@ -97,7 +99,7 @@ createparfile <-
     LogFile='LAMBDAR_Log.txt') {
 
 #Sink Output to File {{{
-sink(file="Lambdar_default.par")
+sink(file=filename)
 #}}}
 #Write File {{{
 cat(paste("#-------------------------------------------------------------------------------------
@@ -131,9 +133,10 @@ SemiMajColumnLabel     ",SemiMajColumnLabel,"    #Label for designating the Semi
 ContamColumnLabel      ",ContamColumnLabel ,"    #Label for designating the Contaminants ID Column of the supplied catalogue
 FluxWgtColumnLabel     ",FluxWgtColumnLabel,"    #Label for designating the FluxWeights Column of the supplied catalogue
 #                #-------Telescope Specific Variables-------#
-MapUnitsPerBeam        ",MapJyPerBeam      ,"    #Is the Image in units per beam (as opposed to UnitsPerPixel)?            [1/0]
+MapUnitsPerBeam        ",MapUnitsPerBeam      ,"    #Is the Image in units per beam (as opposed to UnitsPerPixel)?            [1/0]
 Confusion_units        ",Confusion_units   ,"    #Image Confusion in units
 Gauss_FWHM_AS          ",Gauss_FWHM_AS     ,"    #Gaussian FWHM of Seeing in ArcSec
+SimGauss_AS            ",SimGauss_AS       ,"    #Gaussian FWHM of Gaussianisation Kernel (used for convolution of Simulation Image Noise), in ArcSec
 BeamArea_SqAS          ",BeamArea_SqAS     ,"    #Beam area in Square Arcsec
 FluxCorr               ",FluxCorr          ,"    #Flux Correction Factor
 EFactor                ",EFactor           ,"    #Error Map Scale Factor

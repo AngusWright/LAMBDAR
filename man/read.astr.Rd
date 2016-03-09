@@ -1,6 +1,6 @@
 \name{read.astr}
 \alias{read.astr}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Read Astrometry
 }
@@ -10,7 +10,7 @@ Read the header of a provided FITS file, and return the astrometry associated wi
 \usage{
 read.astr(fitsname,hdu=1)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{fitsname}{
 string; relative path and filename of the FITS file to be analysed.
@@ -43,8 +43,19 @@ Angus H Wright{ ICRAR}
 }
 \examples{
 
+#Load sample image
+data(SDSS.sample)
+#Save sample image to File
+write.fits(file="SampleImage.fits",SDSS.sample)
+#Show the Full FITS Header
+hdr<-read.fitshdr("SampleImage.fits")
+print(hdr)
+#Read Astrometry
+astr<-read.astr("SampleImage.fits")
+#Show the Astrometry Parameters
+print(astr)
+
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Astrometry }

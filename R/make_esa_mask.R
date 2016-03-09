@@ -30,7 +30,10 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #
 
   #Get input Magnitudes
-  inputmags<- -2.5*log10(fluxweight)+8.9
+  if (is.na(magZP)) {
+    stop("No Magnitude Zero Point supplied or read. Magnitudes are required for Sim")
+  }
+  inputmags<- -2.5*log10(fluxweight)+magZP
   #
 
   #Remove Galaxies with non-finite input Magnitudes
@@ -52,23 +55,24 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
 
   if (padGals) {
     #Pad the input catalogue with stellar contaminants down to below the magnitude limit
-    dens<-density(inputmags,bw=0.5,kernel='rect',na.rm=TRUE)
+    dens<-density(inputmags,bw=0.1,na.rm=TRUE,from=0,to=50)
     mag.mode<-dens$x[which.max(dens$y)]
     #Determine Number Counts using Driver et al r-band relation
-    ngal<-length(which(inputmags<=(mag.mode) & inputmags>=(mag.mode-0.5)))/(diff(range(ra_g))*diff(range(dec_g)))
-    NDriver<-10^(0.38*(mag.mode-0.25+col.corr)-4.78)
-    norm<-min(ngal/NDriver,1) #Normalise to represent correct area
-    cat("Normalisation of Driver Relation is:",norm,"\n")
+    x<-seq(quantile(inputmags,c(0.01)),mag.mode+2.25,by=0.5)
+    NDriver<-10^(-0.01476*x^2+1.025*x-11.76)
+    #Normalise for sky area
+    skylims<-dim(image.env$im)*asperpix/3600
+    skyarea<-skylims[1]*skylims[2]
     #Magnitude Bin Values
-    x<-seq(quantile(inputmags,c(0.01)),mag.mode+3.25,by=0.5)
+    NDriver<-skyarea*NDriver
     #Number of gals in each Bin
-    ndraws<-norm*10^(0.38*(x+col.corr)-4.78)
-    cat("Source Density: ",(sum(ndraws)+length(inputmags))/(diff(range(ra_g))*diff(range(dec_g))),' Objects/sqDegree\n')
+    ndraws<-rpois(length(NDriver),NDriver)
+    cat("Source Density: ",(sum(ndraws))/skyarea,' Objects/sqDegree\n')
     if (confuse) {
       #If we want confusion, increase this number so that
       #source density ~= psf size
       #Source Density / deg^2
-      sourceDens<-(sum(ndraws)+length(inputmags))/(diff(range(ra_g))*diff(range(dec_g)))
+      sourceDens<-(sum(ndraws))/skyarea
       #Get source Density per PSF
       sDensPSF<-sourceDens*((gauss_fwhm_as/3600)^2)
       #If source density is less than probability of finding gal withing FWHM:
@@ -77,43 +81,38 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
         while (sDensPSF<1.5) {
           add=add+0.5
           #Get another bin of draws
-          x<-seq(quantile(inputmags,c(0.01)),mag.mode+3.25+add,by=0.5)
+          x<-seq(quantile(inputmags,c(0.01)),mag.mode+2.25+add,by=0.5)
           #Get new draws
-          ndraws<-norm*10^(0.38*(x+col.corr)-4.78)
+          NDriver<-10^(-0.01476*x^2+1.025*x-11.76)
+          NDriver<-skyarea*NDriver
+          ndraws<-rpois(length(NDriver),NDriver)
           #Source Density / deg^2
-          sourceDens<-(sum(ndraws)+length(inputmags))/(diff(range(ra_g))*diff(range(dec_g)))
+          sourceDens<-(sum(ndraws))/skyarea
           #Get source Density per PSF
           sDensPSF<-sourceDens*((gauss_fwhm_as/3600)^2)
         }
         #ndraws<-ndraws*(1.5/sDensPSF)
       }
-      cat("Confused Source Density: ",(sum(ndraws)+length(inputmags))/(diff(range(ra_g))*diff(range(dec_g))),' Objects/sqDegree\n')
+      cat("Confused Source Density: ",sum(ndraws)/skyarea,' Objects/sqDegree\n')
     }
     #Do Magnitude Draws
     y<-foreach(draws=ndraws,lo=x-0.25,hi=x+0.25,.combine='c',.export='inputmags',.inorder=FALSE)%dopar%{
-      n=draws-length(which(inputmags>lo & inputmags<hi))
+      n=draws-length(which(inputmags>=lo & inputmags<hi))
       if (n<=0) {
         NULL
       } else {
-        runif(draws-length(which(inputmags>lo & inputmags<hi)),min=lo,max=hi)
+        runif(n,min=lo,max=hi)
       }
     }
     y<-y+rnorm(length(y),0,0.2)
     photCount<-function(abmag,exp,area,Weff,lamEff) { return=10^((8.9-abmag)/2.5+7)*(1/1.51)*exp*area*(Weff/lamEff) }
     N=photCount(x,ObsParm$exp,ObsParm$area,ObsParm$Weff,ObsParm$lamEff)
     cat("Photon Counts in each x-bin:\nBin Centre: ",x,"\nN Phot: ",N,"\n")
-    #y<-NULL
-    #for( i in 1:length(x)) {
-    #  draws=ndraws[i]
-    #  lo=x[i]-0.25
-    #  hi=x[i]+0.25
-    #  y<-c(y,runif(draws-length(which(inputmags>lo & inputmags<hi)),min=lo,max=hi))
-    #}
     mag.padgals<-y
     ra.padgals<-runif(length(mag.padgals),min=min(ra_g),max=max(ra_g))
     dec.padgals<-runif(length(mag.padgals),min=min(dec_g),max=max(dec_g))
     a_g.padgals<-a_g[runif(length(mag.padgals),min=1,max=length(a_g))]
-    axrat.padgals<-runif(length(mag.padgals),min=min(axrat,na.rm=TRUE),max=max(axrat,na.rm=TRUE))
+    axrat.padgals<-runif(length(mag.padgals),min=min(axrat,na.rm=TRUE),max=1)
     b_g.padgals<-a_g.padgals*axrat.padgals
     Reff.padgals<-(a_g.padgals)*(1/(2.5*kronrad(1)))/(asperpix)
     theta.padgals<-runif(length(mag.padgals),min=min(theta_g),max=max(theta_g))
@@ -130,12 +129,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
     theta_g<-c(theta_g,theta.padgals)
     Reff_pix<-c(Reff_pix,Reff.padgals)
     inputmags<-c(inputmags,mag.padgals)
-    fluxweight.new<-10^c((8.9-inputmags)/2.5)
-    if (any((zapsmall(fluxweight)-zapsmall(fluxweight.new[1:length(fluxweight)]))!=0,na.rm=TRUE)) {
-      cat("\nFLUXWEIGHTS ARE NOT EQUAL\n")
-    } else {
-      fluxweight<-fluxweight.new
-    }
+    fluxweight<-10^c((8.9-inputmags)/2.5)
     contams<-c(contams,rep(1,length(mag.padgals)))
   }
 
@@ -150,15 +144,11 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
 
 
   #Reorder for faster parallelisation
-  #if (MPIBackend) {
-  #  nchild=getDoParWorkers()
-  #} else {
-    nchild<-ncores
-  #}
+  nchild<-ncores
   ind<-order(inputmags)
   matdim<-c(ceiling(length(inputmags)/nchild),nchild)
   ind<-c(ind,rep(NA,matdim[1]*matdim[2]-length(ind)))
-  ind<-matrix(ind,ncol=matdim[2],nrow=matdim[1],byrow=T)
+  ind<-matrix(ind,ncol=matdim[2],nrow=matdim[1],byrow=TRUE)
   ind<-as.numeric(ind)
   ind<-ind[which(!is.na(ind))]
 
@@ -174,7 +164,6 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   id_g<-id_g[ind]
   a_g<-a_g[ind]
   b_g<-b_g[ind]
-  axrat<-axrat[ind]
   theta_g<-theta_g[ind]
   fluxweight<-fluxweight[ind]
 
@@ -188,8 +177,6 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   nsig<-sqrt(qchisq(confidence,df=2)) #Determine nsigma for desired confidence using chisq distribution
   psf.clip<-ceiling(nsig*psfsigma.pix)
   psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
-  print(paste("PSFClip",psf.clip))
-  #es_mask<-foreach(mag=inputmags, theta=theta_off,axr=axrat,Reff=Reff_pix,xdelt=(x_g%%1),ydelt=(y_g%%1), .export=c("psf.clip","psfsigma.pix","psffwhm.pix",'saturation','gain'), .inorder=TRUE, .options.mpi=mpiopts) %dopar% {
   es_mask<-NULL
   pb<-txtProgressBar(min=1,max=length(inputmags),style=3)
   for (i in 1:length(inputmags)) {
@@ -209,9 +196,8 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
       #Calculate N Photons given magnitude and SDSS r-band stats
       bn=1.678
       #Get N photons
-      N=min(floor(photCount(mag,ObsParm$exp,ObsParm$area,ObsParm$Weff,ObsParm$lamEff)), 1E6)
-      N<-1E6
-      if (N==1E6) {
+      N=floor(photCount(mag,ObsParm$exp,ObsParm$area,ObsParm$Weff,ObsParm$lamEff))
+      if (N>1E4) {
       #Use Analytic {{{
         stamplen<-(floor((ceiling(Reff*9)+ceiling(psf.clip))/2)*2+5)
         xy<-expand.grid(1:(stamplen*2),1:(stamplen*2))
@@ -226,7 +212,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
           tempxy[,1]<-tempxy[,1]/axr
           I<-exp(-bn*(sqrt((xy[,1])^2+(xy[,2])^2)/Reff-1))
           I[which(I<max(I)*1E-5)]<-0
-          im<-zapsmall(matrix(interp2D(tempxy[,1],tempxy[,2], list(x=1:(stamplen*2)-stamplen-0.0,y=1:(stamplen*2)-stamplen-0.0,z=matrix(zapsmall(I),stamplen*2,stamplen*2))), ncol=stamplen*2,nrow=stamplen*2,byrow=F))
+          im<-zapsmall(matrix(interp2D(tempxy[,1],tempxy[,2], list(x=1:(stamplen*2)-stamplen-0.0,y=1:(stamplen*2)-stamplen-0.0,z=matrix(zapsmall(I),stamplen*2,stamplen*2)))[,3], ncol=stamplen*2,nrow=stamplen*2,byrow=FALSE))
           im<-im[(ceiling(stamplen*0.5)):(floor(stamplen*1.5)),(ceiling(stamplen*0.5)):(floor(stamplen*1.5))]
           #Convert to Jy
           im<-im/sum(im)*10^((8.9-mag)/2.5)
@@ -276,12 +262,10 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
         tempy<-(tempxy[,2]+ydelt+stamplen/2)+0.5
         k<-kde2d(tempx,tempy,lims=c(1,stamplen,1,stamplen),n=stamplen)
         im<-matrix(k$z,stamplen,stamplen)
-        #for (i in 1:stamplen) { for (j in 1:stamplen) {  im[i,j]<-length(which(tempx==i & tempy==j)) } }
 
         #Convert from ADU to Jy
         im<-im/sum(im)*10^((8.9-mag)/2.5)
       }
-      #return=im
       es_mask<-c(es_mask, list(im))
   }
   close(pb)

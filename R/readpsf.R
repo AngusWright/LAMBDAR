@@ -82,12 +82,12 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
       #If it isn't, reinterpolate the psf onto the same pixel spacing
       narcsec_x<-((hdr_psf$NAXIS[1]-1)*hdr_psf$CD[1,1]*3600)
       narcsec_y<-((hdr_psf$NAXIS[2]-1)*hdr_psf$CD[2,2]*3600)
-      x_oldres<-seq(0,narcsec_x,by=hdr_psf$CD[1,1]*3600)#+0.5*hdr_psf$CD[1,1]*3600
-      y_oldres<-seq(0,narcsec_y,by=hdr_psf$CD[2,2]*3600)#+0.5*hdr_psf$CD[2,2]*3600
-      x_newres<-seq(0,narcsec_x,by=asperpix            )#+0.5*asperpix
-      y_newres<-seq(0,narcsec_y,by=asperpix            )#+0.5*asperpix
+      x_oldres<-seq(0,narcsec_x,by=hdr_psf$CD[1,1]*3600)
+      y_oldres<-seq(0,narcsec_y,by=hdr_psf$CD[2,2]*3600)
+      x_newres<-seq(0,narcsec_x,by=asperpix            )
+      y_newres<-seq(0,narcsec_y,by=asperpix            )
       grid<-expand.grid(x_newres,y_newres)
-      im_psf<-matrix(interp2D(x=grid[,1],y=grid[,2],list(x=x_oldres,y=y_oldres,z=im_psf)),ncol=length(x_newres))
+      im_psf<-matrix(interp2D(x=grid[,1],y=grid[,2],list(x=x_oldres,y=y_oldres,z=im_psf))[,3],ncol=length(x_newres))
     }
     #}}}
     #Get PSF FWHM {{{
@@ -114,15 +114,6 @@ function (outenv=parent.env(environment()), filename,asperpix,apsize,confidence,
     }
     #}}}
     if (verbose) { message(paste("psf_width_as, psf.clip, height, stampsizepix\n",round(psfwidth, digits=3), psf.clip, max(im_psf), stampsizepix)) }
-    ##Ensure PSF is centred on a pixel centre by convolving with deltafunction {{{
-    #delt<-array(0, dim=dim(im_psf))
-    #delt[ceiling(px/2),ceiling(py/2)]<-1
-    #oldsum<-sum(im_psf)
-    #im_psf<-convolvepsf(im_psf,delt,mag2=FALSE)
-    ##}}}
-    ##Check nothing has changed except position {{{
-    #if (sum(im_psf)!=oldsum) { message(paste("NOTE: PSF sum has changed from in realignment by",abs(oldsum-sum(im_psf))*100/oldsum,"%")) }
-    ##}}}
   }
   #}}}
   #Notify {{{

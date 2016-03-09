@@ -1,6 +1,6 @@
 \name{make_data_mask}
 \alias{make_data_mask}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Data Stamps
 }
@@ -14,13 +14,13 @@ make_data_mask(outenv=parent.env(environment()),env=NULL)
 }
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in 'MeasureFluxes'
+environment; the environment containing the parameters used in `MeasureFluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
 }
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \details{
 This function creates cutouts of the input image, input mask, and error map. This is done so that parallelisation is as efficient
 as possible.
@@ -48,7 +48,6 @@ Angus H Wright{ ICRAR}
 %%\examples{
 
 %%}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Imaging }

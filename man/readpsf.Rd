@@ -1,6 +1,6 @@
 \name{readpsf}
 \alias{readpsf}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Read and Process PSF FITS Image
 }
@@ -8,7 +8,7 @@ Read and Process PSF FITS Image
 __This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
 
 Reads an input fits image for a Point Spread Function (PSF) and performs calculations needed in MeasureFluxes.
-However, when a non-zero gaussian FWHM (in arcsec) is provided, a gaussian psf will be generated. This is useful
+However, when a non-zero Gaussian FWHM (in arcsec) is provided, a Gaussian PSF will be generated. This is useful
 if no PSF map is present.
 }
 \usage{
@@ -16,10 +16,10 @@ readpsf(outenv = parent.env(environment()), filename,
 asperpix, apsize, confidence, normalize = TRUE,
 gauss_fwhm_as = 0, env = NULL)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
-environment; the environment containing the parameters used in 'MeasureFluxes'
+environment; the environment containing the parameters used in `MeasureFluxes'
 }
   \item{filename}{
 string; relative path to, and filename of, the PSF FITS file
@@ -70,10 +70,10 @@ Angus H Wright{ ICRAR}
 \seealso{
 MeasureFluxes, fluxmeasurements
 }
-\examples{
-
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+%\examples{
+%
+%}
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ PSF }
+\keyword{ Imaging }% __ONLY ONE__ keyword per line

@@ -1,7 +1,7 @@
 \name{CreateSim}
 \alias{CreateSim}
 \alias{create.sim.image}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Create Simulated Image
 }
@@ -19,16 +19,16 @@ create.sim.image(ObsParm, noNoise=FALSE, convolveNoise=TRUE,
 padGals=TRUE, col.corr=0,outenv=parent.env(environment()),
 confuse=FALSE, env=NULL)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{parfile}{
-Path to, and name of, the Input Parameter file (ie. '/path/to/parfile.par'). This is of the same
+Path to, and name of, the Input Parameter file (ie. `/path/to/parfile.par'). This is of the same
 as the MeasureFluxes Parameter File, however only some parameters are relevant.
 }
   \item{ObsParm}{
-List containing Observation Parameters needed in creating simulated galaxies; Exposure Time (sec; exp=),
-Collecting Area (meters squared; area=), Effective wavelength of filter (Å; lamEff=), and Effective width of filter (Å; WEff=).
-For example, SDSS r-band has parameters ObsParm=list(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165).
+Data frame containing Observation Parameters needed in creating simulated galaxies; Exposure Time (sec; exp=),
+Collecting Area (meters squared; area=), Effective wavelength of filter (Angstrom; lamEff=), and Effective width of filter (Angstrom; WEff=).
+For example, SDSS r-band has parameters ObsParm=data.frame(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165).
 }
   \item{noNoise}{
 logical; if TRUE then noise is not added to the simulated image
@@ -38,7 +38,7 @@ logical; if TRUE then noise is convolved with the PSF prior to addition
 }
   \item{padGalaxies}{
 logical; if TRUE then the simulated image will have galaxies added beyond those in the input catalogue, such that
-the galactic number counts follow the power law log(N)=0.38*m_r-4.78.
+the galactic number counts follow the polynomial log(N)=-0.01476*m_r^2+1.025*m_r-11.76.
 }
   \item{colourCorr}{
 numeric; The colour correction need to convert SDSS r-band magnitude to magnitude in the band being analysed.
@@ -90,20 +90,107 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-\link{createparfile}
+\link{createparfile}\link{lsos}\link{write.fits}\link{MeasureFluxes}
 }
 \examples{
 
-#Create simulated image using parameter file '/path/to/parfile.par' and SDSS r-band observation parameters:
+#Create simulated image using an SDSS r-band image and observation parameters:
+#Load a Sample Image and Catalogue
+data("SDSS.sample",envir=environment())
+data("ApCat.sample",envir=environment())
+lsos(envir=environment())
+#Write Sample Image to File
+write.fits(file="SampleImage.fits",SDSS.sample)
+#Write Sample Catalogue to File
+write.csv(file="SampleCat.csv",ApCat.sample,row.names=FALSE,quote=FALSE)
+#Generate Parameter File
+createparfile(file="Lambdar_Sample.par",DataMap="SampleImage.fits",Catalogue="SampleCat.csv",IterateFluxes=1,nIterations=2,
+Gauss_FWHM_AS=2,PSFConvolve=1)
 
-\dontrun{
+#Measure Photometry
+MeasureFluxes("Lambdar_Sample.par")
 
-CreateSim('/path/to/parfile.par',ObsParm=list(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165),convolveNoise=T)
+#Generate Simulation Parameter File
+createparfile(file="Lambdar_Simulation.par",DataMap="SampleImage.fits",Catalogue="LAMBDAR_Results.csv",
+Gauss_FWHM_AS=2,SimGauss_AS=1.1,FluxWgtColumnLabel="DFAFlux_Jy",OutputDirectory="Simulation/",
+PSFConvolve=1)
+
+#Create Simulation from Catalogued objects only
+CreateSim('Lambdar_Simulation.par',ObsParm=data.frame(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165),convolveNoise=TRUE,padGalaxies=TRUE)
+
+#Read the Input Image
+inp.im<-read.fits("SampleImage.fits")
+#Read the Simulated Image
+sim.im<-read.fits("Simulation/sim_image.fits")
+
+#Plot the Input and Simulation Images
+layout(matrix(1:4,2,2,byrow=TRUE))
+#Get Object Positions
+xy<-ad2xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,read.astr("SampleImage.fits"))
+aspp<-abs(read.astr("SampleImage.fits")$CD[1,1])*3600
+#Plot Input & Aperture Ellipses
+image(x=1:length(inp.im$dat[[1]][,1]),y=1:length(inp.im$dat[[1]][1,]),inp.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
+xlab='X (pix)',ylab="Y (pix)")
+invisible(Vectorize(function(x,y,a,b,pa) {
+   lines(ellipse(x,y,a,b,pa=pa),col='red',lty=2); points(x,y,pch=3,cex=0.5,col='red');
+})(xy[,1],xy[,2],ApCat.sample$radmajasec/aspp,ApCat.sample$radminasec/aspp,ApCat.sample$rotW2N))
+#Plot Simulation & Aperture Ellipses
+image(x=1:length(sim.im$dat[[1]][,1]),y=1:length(sim.im$dat[[1]][1,]),sim.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
+xlab='X (pix)',ylab="Y (pix)")
+invisible(Vectorize(function(x,y,a,b,pa) {
+   lines(ellipse(x,y,a,b,pa=pa),col='red',lty=2); points(x,y,pch=3,cex=0.5,col='red');
+})(xy[,1],xy[,2],ApCat.sample$radmajasec/aspp,ApCat.sample$radminasec/aspp,ApCat.sample$rotW2N))
+#Plot Zoomed Sections of the Image:
+#-> Input & Aperture Ellipses
+image(x=1:length(inp.im$dat[[1]][,1]),y=1:length(inp.im$dat[[1]][1,]),inp.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
+xlab='X (pix)',ylab="Y (pix)",xlim=c(800,1200),ylim=c(800,1200))
+points(xy[,1],xy[,2],pch=3,cex=0.5,col='red');
+#-> Simulation & Aperture Ellipses
+image(x=1:length(sim.im$dat[[1]][,1]),y=1:length(sim.im$dat[[1]][1,]),sim.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
+xlab='X (pix)',ylab="Y (pix)",xlim=c(800,1200),ylim=c(800,1200))
+points(xy,pch=3,cex=0.5,col='red');
+
+#Measure Simulation Fluxes
+createparfile(file="Lambdar_SimAnalysis.par",DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
+Gauss_FWHM_AS=2,OutputDirectory="SimResults/",PSFConvolve=1,BlankCor=1)
+MeasureFluxes('Lambdar_SimAnalysis.par')
+
+#Read simulation results
+sim.out.cat<-read.csv("SimResults/LAMBDAR_Results.csv",stringsAsFactors=FALSE)
+sim.in.cat.full<-read.csv("Simulation/SimFlux.csv",stringsAsFactors=FALSE)
+sim.in.cat<-sim.in.cat.full[which(sim.in.cat.full$CATAID \%in\% sim.out.cat$CATAID),]
+
+#Plot Flux Comparisons
+layout(c(1,2))
+magplot(sim.in.cat$Sim.Flux.Jy, sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy, pch=20, log='xy', ylim=c(0.5,2),majorn=10,minorn=10,
+ylab='Measured / Input Flux',xlab='Input Flux (Jy)')
+#Add Uncertainties
+suppressWarnings(magerr(x=sim.in.cat$Sim.Flux.Jy,y=sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
+ylo=abs(sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy)*sim.out.cat$DFAErr_Jy/sim.out.cat$DFAFlux_Jy))
+abline(h=1,col='grey')
+abline(h=0.96,col='blue',lty=2)
+legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),col='blue',lty=2)
+
+#Improve Flux Measurement by Iterating
+createparfile(file="Lambdar_SimAnalysis.par",DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
+Gauss_FWHM_AS=2,OutputDirectory="SimResults/",IterateFluxes=1,nIterations=5,BlankCor=1)
+MeasureFluxes('Lambdar_SimAnalysis.par')
+
+#Read simulation results
+sim.out.cat<-read.csv("SimResults/LAMBDAR_Results.csv",stringsAsFactors=FALSE)
+sim.in.cat<-sim.in.cat.full[which(sim.in.cat.full$CATAID \%in\% sim.out.cat$CATAID),]
+
+#Plot Flux Comparisons
+magplot(sim.in.cat$Sim.Flux.Jy, sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy, pch=20, log='xy', ylim=c(0.5,2),majorn=10,minorn=10,
+ylab='Measured / Input Flux',xlab='Input Flux (Jy)')
+#Add Uncertainties
+suppressWarnings(magerr(x=sim.in.cat$Sim.Flux.Jy,y=sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
+ylo=abs(sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy)*sim.out.cat$DFAErr_Jy/sim.out.cat$DFAFlux_Jy))
+abline(h=1,col='grey')
+abline(h=0.96,col='blue',lty=2)
+legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),col='blue',lty=2)
 
 }
-
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Simulation }

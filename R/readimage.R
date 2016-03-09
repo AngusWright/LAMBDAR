@@ -47,7 +47,6 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
 
   #Test Read of Data Image for errors {{{
   im_fits<-try(read.fits(paste(pathroot,pathwork,datamap,sep=""),hdu=extn, comments=FALSE),silent=TRUE)
-  #im_fits<-try(readFITS(paste(pathroot,pathwork,datamap,sep=""),hdu=extn),silent=TRUE)
   if (class(im_fits)=="try-error") {
     #Stop on Error
     sink(type='message')
@@ -72,10 +71,6 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   message(paste0("Using Saturation level: ",saturation))
   #}}}
 
-  #Remove NA/NaN/Inf's {{{
-  im[which(!is.finite(im))]<-0.0
-  #}}}
-
   #Finished Setting Astrometry {{{
   if (showtime) { cat(paste(" - Done (Image Read took",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
   timer<-proc.time()
@@ -87,7 +82,6 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     if (!quiet) { cat(paste("   Reading Data from Weight Map",wgtmap,"   ")) }
     #Try read weight map {{{
     imwt_fits<-try(read.fits(paste(pathroot,pathwork,wgtmap,sep=""),hdu=extnwgt,comments=FALSE),silent=TRUE)
-    #imwt_fits<-try(readFITS(paste(pathroot,pathwork,wgtmap,sep=""),hdu=extnwgt),silent=TRUE)
     if (class(imwt_fits)=="try-error") {
       #Stop on Error
       sink(type='message')
@@ -131,7 +125,6 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     if (!quiet) { cat(paste("   Reading Data from MaskMap",maskmap,"   ")) }
     #Test Read of Mask Map for errors {{{
     imm_fits<-try(read.fits(paste(pathroot,pathwork,maskmap,sep=""),hdu=extnmask, comments=FALSE),silent=TRUE)
-    #imm_fits<-try(readFITS(paste(pathroot,pathwork,maskmap,sep=""),hdu=extnmask),silent=TRUE)
     if (class(imm_fits)=="try-error") {
       #Stop on Error
       sink(type='message')
@@ -183,8 +176,9 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
         ime<-1/sqrt(imwt)
         #Determine Implied Gain: gain=abs(im)/(sigma)^2
         gain<-abs(im)/ime^2
-        message(paste0("Implied Median (Max) Equivalent Gain level from Weight Map: ",median(gain,na.rm=T), "(",max(gain,na.rm=T),")"))
-        gain<-max(gain,na.rm=T)
+        ind<-which(imwt!=wgtzp)
+        message(paste0("Implied Median (Max) Equivalent Gain level from Weight Map: ",median(gain[ind],na.rm=TRUE), "(",max(gain[ind],na.rm=TRUE),")"))
+        gain<-max(gain[ind],na.rm=TRUE)
         #}}}
       } else {
         #Max Gain; Weightmap present; sigma map is 1/sqrt(image/gain) {{{
@@ -192,8 +186,9 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
         message(paste0("Max Equivalent Gain level from Header: ",gain))
         #convert from wt ~ 1/var(x) to ~ sig(x)
         imwt<-1/sqrt(imwt)
+        ind<-which(is.finite(imwt))
         #use relative sigma to get absolute pixel varying gain
-        imwt<-imwt/max(imwt,na.rm=T)*gain
+        imwt<-imwt/max(imwt[ind],na.rm=TRUE)*gain
         #sigma map = sqrt(abs(im)/gain)
         ime<-sqrt(abs(im/(imwt)))
         #}}}
@@ -236,6 +231,18 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
       #Remove NA/NaN/Inf's {{{
       ime[which(!is.finite(ime))]<-0.0
       #}}}
+      #If no mask, generate one using Errormap {{{
+      if (length(imm)==1) {
+        if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+        timer<-proc.time()
+        } else if (!quiet) { cat(" - Done\n") }
+        if (!quiet) { cat(paste("   Generating Mask Map from Weight Map ")) }
+        # Use Errormap Footprint
+        imm<-ime*0
+        # Wherever there is non-zero error, make transparent.
+        imm[which(ime>0)]<-1
+      }
+      #}}}
       #}}}
     }
     #}}}
@@ -248,6 +255,11 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   } else if (!quiet) { cat(" - Done\n") }
   #}}}
   #}}}
+
+  #Remove NA/NaN/Inf's {{{
+  im[which(!is.finite(im))]<-0.0
+  #}}}
+
 
   #Notify {{{
   if (verbose) {

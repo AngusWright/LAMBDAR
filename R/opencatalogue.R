@@ -27,7 +27,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
   #Open Catalogue {{{
   if (csv) {
-    fitstable<-try(as.data.frame(read.csv(paste(pathroot,pathwork,catalogue,sep=""),stringsAsFactors=F)),silent=TRUE)
+    fitstable<-try(as.data.frame(read.csv(paste(pathroot,pathwork,catalogue,sep=""),stringsAsFactors=FALSE)),silent=TRUE)
     #Test Read of Catalogue for errors
     if (class(fitstable)=="try-error") {
       #Stop on Error
@@ -36,7 +36,7 @@ function(outenv=parent.env(environment()), env=NULL){
       stop("Catalogue File read failed")
     }
   } else if (fits) {
-    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,pathwork,catalogue,sep="")),stringsAsFactors=F),silent=TRUE)
+    fitstable<-try(as.data.frame(read.fitstab(paste(pathroot,pathwork,catalogue,sep="")),stringsAsFactors=FALSE),silent=TRUE)
     if (class(fitstable)=="try-error") {
       #Stop on Error
       geterrmessage()
@@ -67,7 +67,7 @@ function(outenv=parent.env(environment()), env=NULL){
     stop(paste("Catalogue does not contain",catalab,"column"))
   }#}}}
   #Make sure that there are no duplicate IDs {{{
-  if (any(is.na(id_g))|any(id_g=="",na.rm=T)) {
+  if (any(is.na(id_g))|any(id_g=="",na.rm=TRUE)) {
     message("There are ",length(which(is.na(id_g)|id_g==""))," Missing IDs. These will be renamed NewID_%d")
     ind<-which(is.na(id_g)|id_g=="")
     id_g[ind]<-paste("NewID_",cbind(1:length(ind)),sep="")
@@ -152,7 +152,6 @@ function(outenv=parent.env(environment()), env=NULL){
   assign("theta_g"   ,theta_g   ,envir=outenv)
   if (filtcontam) { assign("contams"   ,contams   ,envir=outenv) }
   assign("fluxweight",fluxweight,envir=outenv)
-  #assign("fitstable" ,fitstable ,envir=outenv)
   assign("nrows"     ,nrows     ,envir=outenv)
   #}}}
 

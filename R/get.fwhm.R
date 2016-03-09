@@ -1,5 +1,5 @@
 get.fwhm<-
-function(zdist, nsteps=100){
+function(zdist){
 #Details {{{
 #function returns the FHWM of the image from
 #*maxima*, in pixels.

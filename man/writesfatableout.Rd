@@ -1,17 +1,19 @@
 \name{writesfatableout}
 \alias{writesfatableout}
 \alias{writedeblfractableout}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Write MeasureFluxes Results
 }
 \description{
+__This function is not designed to be called directly, but rather is an internal function to MeasureFluxes__
+
 Output a CSV table, to file, containing the MeasureFluxes results
 }
 \usage{
 writesfatableout(env=NULL, filename)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{env}{
 environment; the enovironment containing the parameters and results of MeasureFluxes.
@@ -45,7 +47,6 @@ Angus H Wright{ ICRAR}
 \examples{
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Output }

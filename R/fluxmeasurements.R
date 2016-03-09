@@ -206,6 +206,23 @@ function(env=NULL) {
 
   #Create an array of stamps containing the data image subsection for all objects /*fold*/ {{{
   timer=system.time(im_mask<-make_data_mask(outenv=environment()))
+  if (((nloops<=1)&(cutup)&(length(im_mask))==0)) { sink(type="message") ; stop("No Aperture Stamps are aligned enough to be valid.") }
+  else if ((cutup)&(length(im_mask)==0)) {
+      if (showtime) { cat("   - BREAK (",round(timer[3],digits=2),"sec )\n")
+        message(paste('Make Data Mask - BREAK (',round(timer[3], digits=2),'sec )'))
+      } else if (!quiet) { cat("   - BREAK\n") }
+      warning("No Aperture Stamps are aligned enough to be valid.")
+      #Notify & Close Logfile /*fold*/ {{{
+      if (!is.null(env)) {
+        on.exit(detach(env), add=TRUE)
+      }
+      message(paste('\n-----------------------------------------------------\nDatamap Skipped - No Aperture Stamps are aligned enough to be valid\n'))
+      if (!quiet) {
+        cat(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures Stamps are aligned enough to be valid'))
+      }
+      return(NULL)
+      # /*fend*/ }}}
+  }
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
     message(paste('Make Data Mask - Done (',round(timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }
@@ -264,6 +281,7 @@ function(env=NULL) {
   ra_g<-ra_g[which(insidemask)]
   dec_g<-dec_g[which(insidemask)]
   theta_g<-theta_g[which(insidemask)]
+  theta_off<-theta_off[which(insidemask)]
   a_g<-a_g[which(insidemask)]
   a_g_pix<-a_g_pix[which(insidemask)]
   b_g<-b_g[which(insidemask)]
@@ -318,10 +336,14 @@ function(env=NULL) {
     #Determine Noise Characteristics /*fold*/ {{{
     if (verbose) { cat("Determine Image Noise Characteristics ") }
     if (any(pixflux==-99)) { warning("Some pixel flux determinations failed"); pixflux[which(pixflux==-99)]<-NA }
-    quan<-quantile(image.env$im,c(0.1,0.9),na.rm=T)
-    mode<-density(as.numeric(image.env$im),from=quan[1],to=quan[2],kernel='rect',bw=abs(quan[2]-quan[1])/100/sqrt(12),na.rm=T)
+    quan<-quantile(image.env$im,c(0.1,0.9),na.rm=TRUE)
+    bw<-abs(quan[2]-quan[1])/100/sqrt(12)
+    if (bw<=0) {
+      bw<-diff(range(image.env$im))/100/sqrt(12)
+    }
+    mode<-density(as.numeric(image.env$im),from=quan[1],to=quan[2],kernel='rect',bw=bw,na.rm=TRUE)
     mode<-mode$x[which.max(mode$y)]
-    mad<-median(abs(image.env$im-mode),na.rm=T)
+    mad<-median(abs(image.env$im-mode),na.rm=TRUE)
     if (length(which(pixflux>mode+mad))==0) {
       message("WARNING: No objects have pixel flux measurements that are > Pixel Mode+MAD. Pixel Flux weighting cannot be used\n")
         fluxweight<-1
@@ -469,6 +491,7 @@ function(env=NULL) {
   ra_g<-ra_g[which(insidemask)]
   dec_g<-dec_g[which(insidemask)]
   theta_g<-theta_g[which(insidemask)]
+  theta_off<-theta_off[which(insidemask)]
   a_g<-a_g[which(insidemask)]
   a_g_pix<-a_g_pix[which(insidemask)]
   b_g<-b_g[which(insidemask)]
@@ -497,8 +520,9 @@ function(env=NULL) {
   }# /*fend*/ }}}
   #Do we want to plot a sample of the apertures? /*fold*/ {{{
   if (plotsample) {
+    res<-120
     #Set output name /*fold*/ {{{
-    pdf(file.path(pathroot,pathwork,pathout,"PSF_Samples.pdf"))
+    CairoPNG(file.path(pathroot,pathwork,pathout,"PSF_Samples.png"))
     # /*fend*/ }}}
     #Set Layout /*fold*/ {{{
     par(mfrow=c(2,2))
@@ -512,19 +536,16 @@ function(env=NULL) {
     rm(ind2)
     ind<-ind[which(!is.na(ind))]
     for (i in ind) {
-      image(sa[[i]], main="Single Aperture (SA)", asp=1, col=heat.colors(256), useRaster=TRUE)
+      Rast<-ifelse(stamplen[i]>100,TRUE,FALSE)
+      image(sa[[i]], main="Single Aperture (SA)", asp=1, col=heat.colors(256), useRaster=Rast)
       points(ceiling(stamplen[i]/2)/stamplen[i],ceiling(stamplen[i]/2)/stamplen[i],pch="+",lw=2.0, col="red")
-      image(sfa[[i]], main="Single Convolved Apertrure (SFA)", asp=1, col=heat.colors(256), useRaster=TRUE)
+      image(sfa[[i]], main="Single Convolved Apertrure (SFA)", asp=1, col=heat.colors(256), useRaster=Rast)
       points(ceiling(stamplen[i]/2)/stamplen[i],ceiling(stamplen[i]/2)/stamplen[i],pch="+",lw=2.0, col="red")
     }# /*fend*/ }}}
     #Close the file /*fold*/ {{{
     dev.off()
     # /*fend*/ }}}
   }
-  # /*fend*/ }}}
-  #Remove arrays that are no longer needed /*fold*/ {{{
-  #rm(sa)
-  #gc()
   # /*fend*/ }}}
   #If wanted, output the Convolved & Weighted Aperture Mask /*fold*/ {{{
   if (makefamask) {
@@ -607,13 +628,13 @@ function(env=NULL) {
     #Get sky estimates /*fold*/ {{{
     if (!quiet) { message("Perfoming Sky Estimation"); cat("Performing Sky Estimation") }
     #Perform Sky Estimation /*fold*/ {{{
-    #timer<-system.time(skyest<-skyback(ra_g,dec_g,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,origim=list(dat=list(im)),maskim=list(dat=list(sm)),
-    #                astrom=astr_struc,clipiters=skycutiters,probcut=skyprobcut,PSFFWHMinPIX=psffwhm))
     if (cutup) {
       timer<-system.time(skyest<-skyback.par(x_p-(im_stamp_lims[,1]-1),y_p-(im_stamp_lims[,3]-1),cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,im_mask=im_mask,imm_mask=imm_mask,
                       clipiters=skycutiters,probcut=skyprobcut,PSFFWHMinPIX=psffwhm, mpiopts=mpiopts))
     } else {
-      timer<-system.time(skyest<-skyback.par(x_p,y_p,cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,im_mask=image.env$im,imm_mask=image.env$imm,
+      timer<-system.time(skyest<-skyback.par(x_p-(im_stamp_lims[,1]-1),y_p-(im_stamp_lims[,3]-1),cutlo=(a_g/asperpix),cuthi=(a_g/asperpix)*5,
+                      im_mask=image.env$im[im_stamp_lims[1,1]:im_stamp_lims[1,2],im_stamp_lims[1,3]:im_stamp_lims[1,4]],
+                      imm_mask=image.env$imm[imm_stamp_lims[1,1]:imm_stamp_lims[1,2],imm_stamp_lims[1,3]:imm_stamp_lims[1,4]],
                       clipiters=skycutiters,probcut=skyprobcut,PSFFWHMinPIX=psffwhm, mpiopts=mpiopts))
     }
     # /*fend*/ }}}
@@ -655,8 +676,6 @@ function(env=NULL) {
     skylocal[which(is.na(skylocal))]<-skydefault
     skyrms[which(is.na(skyrms))]<-rmsdefault
     skyerr[which(is.na(skyerr))]<-errdefault
-    #skyflux<-skylocal*sdfa
-    #skyerr<-skyerr*sdfa
     # /*fend*/ }}}
     #Notify /*fold*/ {{{
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
@@ -691,16 +710,6 @@ function(env=NULL) {
     }
     if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
     # /*fend*/ }}}
-    #If wanted, do sky subtraction /*fold*/ {{{
-    #if (doskyest) {
-    #  if (!quiet) { message("Perfoming Sky Subtraction"); cat("   Performing Sky Subtraction") }
-    #  #Subrtract Sky Flux
-    #  dfaflux<-dfaflux-skyflux
-    #  sfaflux<-sfaflux-skyflux
-    #  dfaerr[which(!is.na(skyerr))]<-sqrt(dfaerr^2+skyerr^2)[which(!is.na(skyerr))]
-    #  sfaerr[which(!is.na(skyerr))]<-sqrt(sfaerr^2+skyerr^2)[which(!is.na(skyerr))]
-    #  if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
-    #}# /*fend*/ }}}
   } else {
     skylocal<-array(NA, dim=c(length(sfa)))
     skyflux<-array(NA, dim=c(length(sfa)))
@@ -737,7 +746,6 @@ function(env=NULL) {
       tempsum<-cumsum(apvals)
       tempfunc<-approxfun(tempsum,apvals)
       apLim<-tempfunc(apLimit*max(tempsum, na.rm=TRUE))
-      #message(paste("ApLimit:",apLimit,"; PSFLimit:",psfLimit))
       sfam[which(sfam <  apLim)]<-0
       sfam[which(sfam >= apLim)]<-1
       return=sfam
@@ -796,12 +804,12 @@ function(env=NULL) {
   #If PSF Supplied & sample wanted, Plot PSF and Min Aperture Correction /*fold*/ {{{
   if (!(nopsf)&(plotsample)) {
     #PSF with Contours /*fold*/ {{{
-    pdf(file.path(pathroot,pathwork,pathout,"PSF.pdf"))
+    CairoPNG(file.path(pathroot,pathwork,pathout,"PSF.png"))
     psfvals<-rev(sort(psf))
     tempsum<-cumsum(psfvals)
     tempfunc<-approxfun(tempsum,psfvals)
     psfLimit<-tempfunc(apLimit*max(tempsum, na.rm=TRUE))
-    suppressWarnings(image(log10(psf),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=TRUE))
+    suppressWarnings(image(log10(psf),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=ifelse(length(psf)>1E4,TRUE,FALSE)))
     contour(psf, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
     if (psffilt) { contour(psf, levels=c(psfLimit), labels=c(apLimit), col='green', add=TRUE) }
     dev.off()
@@ -836,25 +844,26 @@ function(env=NULL) {
     ynew<-expanded[,2]-y_g[ind]%%1
     # /*fend*/ }}}
     #Interpolate /*fold*/ {{{
-    ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
+    ap<-matrix(interp2D(xnew, ynew, psf_obj)[,3], ncol=leny,nrow=lenx)
     # /*fend*/ }}}
     #Aperture Correction Plot /*fold*/ {{{
-    pdf(file.path(pathroot,pathwork,pathout,"ApertureCorrection.pdf"))
+    CairoPNG(file.path(pathroot,pathwork,pathout,"ApertureCorrection.png"))
+    Rast<-ifelse(length(ap)>1E4,TRUE,FALSE)
     if (!PSFWeighted) {
       #Binary Aperture /*fold*/ {{{
-      suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (smallest source)", asp=1,col=heat.colors(256),useRaster=TRUE))
+      suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (smallest source)", asp=1,col=heat.colors(256),useRaster=Rast))
       contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       contour(ap, levels=c(psfLimit), labels=c(apLimit), col='green', add=TRUE)
-      suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=TRUE))
+      suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
       ssfap<-sum(sfa[[ind]]*ap)
       label("topright",lab=paste("SumPSF=",round(spsf,digits=2),"\nSum(PSF*Ap)=",round(ssfap,digits=2),"\nApCorr=",round(spsf/ssfap,digits=2),sep=""))
       # /*fend*/ }}}
     } else {
       #PSF Weighted Aperture /*fold*/ {{{
-      suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (smallest source)", asp=1,col=heat.colors(256),useRaster=TRUE))
+      suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (smallest source)", asp=1,col=heat.colors(256),useRaster=Rast))
       contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
-      suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=TRUE))
+      suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
       ssfap<-sum(sfa[[ind]]*ap)
       label("topright",lab=paste("SumPSF=",round(spsf,digits=2),"\nSum(PSF*Ap)=",round(ssfap,digits=2),"\nApCorr=",round(spsf/ssfap,digits=2),sep=""))
@@ -887,23 +896,24 @@ function(env=NULL) {
     ynew<-expanded[,2]-y_g[ind]%%1
     # /*fend*/ }}}
     #Interpolate /*fold*/ {{{
-    ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
+    ap<-matrix(interp2D(xnew, ynew, psf_obj)[,3], ncol=leny,nrow=lenx)
     # /*fend*/ }}}
     # /*fend*/ }}}
     #Aperture Correction Plot /*fold*/ {{{
+    Rast<-ifelse(length(ap)>1E4,TRUE,FALSE)
     if (!PSFWeighted) {
       #Binary Aperture /*fold*/ {{{
-      suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (median source)", asp=1,col=heat.colors(256),useRaster=TRUE))
+      suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (median source)", asp=1,col=heat.colors(256),useRaster=Rast))
       contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       if (psffilt) { contour(ap, levels=c(psfLimit), labels=c(apLimit), col='green', add=TRUE) }
-      suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=TRUE))
+      suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
       ssfap<-sum(sfa[[ind]]*ap)
       label("topright",lab=paste("SumPSF=",round(spsf,digits=2),"\nSum(PSF*Ap)=",round(ssfap,digits=2),"\nApCorr=",round(spsf/ssfap,digits=2),sep=""))
       # /*fend*/ }}}
     } else {
       #PSF Weighted Aperture /*fold*/ {{{
-      suppressWarnings(image(log10(ap)-log10(sfa[[ind]]),main="Example: Minimum Aperture Correction (median source; shown as residual)", asp=1,col=heat.colors(256),useRaster=TRUE))
+      suppressWarnings(image(log10(ap)-log10(sfa[[ind]]),main="Example: Minimum Aperture Correction (median source; shown as residual)", asp=1,col=heat.colors(256),useRaster=Rast))
       contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       spsf<-sum(ap)
       ssfap<-sum(sfa[[ind]]*ap)
@@ -997,7 +1007,7 @@ function(env=NULL) {
       }
       #Check we have something to do! /*fold*/ {{{
       if (length(xind)==0) {
-        if (verbose) { cat(" - Breaking out; no objects overlap, so no point iterating!\n") }
+        if (verbose) { cat(" - Breaking out; no objects remaining overlap, so no point iterating!\n") }
         break
       }
       #/*fend*/ }}}
@@ -1017,7 +1027,7 @@ function(env=NULL) {
            sum(dfam*(im[xlo:xup,ylo:yup]))
         }
       } else {
-        sdfad[xind]<-foreach(dfam=dfa[xind], xlo=stamp_lims[xind,1],xup=stamp_lims[xind,2], ylo=stamp_lims[xind,3],yup=stamp_lims[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment()),.export='im') %dopar% {
+        sdfad[xind]<-foreach(dfam=dfa[xind], xlo=image_lims[xind,1],xup=image_lims[xind,2], ylo=image_lims[xind,3],yup=image_lims[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment()),.export='im') %dopar% {
            sum(dfam*(im[xlo:xup,ylo:yup]))
         }
       }
@@ -1049,7 +1059,7 @@ function(env=NULL) {
           }
         }
       } else {
-        sdfa2e2[xind]<-foreach(dfam=dfa[xind], xlo=estamp_lims[xind,1],xup=estamp_lims[xind,2],ylo=estamp_lims[xind,3],yup=estamp_lims[xind,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+        sdfa2e2[xind]<-foreach(dfam=dfa[xind], xlo=error_lims[xind,1],xup=error_lims[xind,2],ylo=error_lims[xind,3],yup=error_lims[xind,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
             sum((dfam*ime[xlo:xup,ylo:yup])^2.)
         }
       }
@@ -1163,22 +1173,23 @@ function(env=NULL) {
   }
   if (RanCor) {
     if (!quiet) { message("Perfoming Randoms Correction"); cat("Performing Randoms Correction") }
-    #debug(rancor.par)
     if (cutup) {
       timer<-system.time(randoms<-rancor.par(im_mask=im_mask,imm_mask=imm_mask,ap_mask=sfa,stamplims=stamp_lims,masklims=mstamp_lims,numIters=nRandoms,mpiopts=mpiopts,remask=FALSE))
     } else {
-      timer<-system.time(randoms<-rancor.par(im_mask=image.env$im,imm_mask=image.env$imm,ap_mask=sfa,stamplims=image_lims,masklims=mask_lims,numIters=nRandoms,mpiopts=mpiopts,remask=FALSE))
+      timer<-system.time(randoms<-rancor.par(im_mask=image.env$im[im_stamp_lims[1,1]:im_stamp_lims[1,2],im_stamp_lims[1,3]:im_stamp_lims[1,4]],
+                      imm_mask=image.env$imm[imm_stamp_lims[1,1]:imm_stamp_lims[1,2],imm_stamp_lims[1,3]:imm_stamp_lims[1,4]],
+      ap_mask=sfa,stamplims=image_lims,masklims=mask_lims,numIters=nRandoms,mpiopts=mpiopts,remask=FALSE))
     }
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Randoms Correction - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     if (plotsample) {
       if (!quiet) { message("Plotting Randoms Correction"); cat("Plotting Randoms Correction") }
-      #debug(rancor.par)
       if (cutup) {
         timer<-system.time(plotRanCor(id_g,x_g,y_g,im_mask=im_mask,imm_mask=imm_mask,ap_mask=sfa,stamplims=stamp_lims,imstamplims=im_stamp_lims,masklims=mstamp_lims,numIters=nRandoms,remask=FALSE,path=file.path(pathroot,pathwork,pathout),plotall=plotall))
       } else {
-        timer<-system.time(plotRanCor(id_g,x_g,y_g,im_mask=image.env$im,imm_mask=image.env$imm,ap_mask=sfa,stamplims=image_lims,imstamplims=im_stamp_lims,masklims=mask_lims,numIters=nRandoms,remask=FALSE,path=file.path(pathroot,pathwork,pathout),plotall=plotall))
+        timer<-system.time(plotRanCor(id_g,x_g,y_g,im_mask=image.env$im[im_stamp_lims[1,1]:im_stamp_lims[1,2],im_stamp_lims[1,3]:im_stamp_lims[1,4]],
+                      imm_mask=image.env$imm[imm_stamp_lims[1,1]:imm_stamp_lims[1,2],imm_stamp_lims[1,3]:imm_stamp_lims[1,4]],ap_mask=sfa,stamplims=image_lims,imstamplims=im_stamp_lims,masklims=mask_lims,numIters=nRandoms,remask=FALSE,path=file.path(pathroot,pathwork,pathout),plotall=plotall))
       }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Randoms Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1190,22 +1201,22 @@ function(env=NULL) {
   if (!exists("BlankCor")) { BlankCor<-FALSE }
   if (BlankCor) {
     if (!quiet) { message("Perfoming Blanks Correction"); cat("Performing Blanks Correction") }
-    #debug(rancor.par)
     if (cutup) {
       timer<-system.time(blanks<-rancor.par(im_mask=im_mask,imm_mask=imm_mask,ap_mask=sfa,stamplims=stamp_lims,masklims=mstamp_lims,numIters=nBlanks,mpiopts=mpiopts,remask=TRUE))
     } else {
-      timer<-system.time(blanks<-rancor.par(im_mask=image.env$im,imm_mask=image.env$imm,ap_mask=sfa,stamplims=image_lims,masklims=mask_lims,numIters=nBlanks,mpiopts=mpiopts,remask=TRUE))
+      timer<-system.time(blanks<-rancor.par(im_mask=image.env$im[im_stamp_lims[1,1]:im_stamp_lims[1,2],im_stamp_lims[1,3]:im_stamp_lims[1,4]],
+                      imm_mask=image.env$imm[imm_stamp_lims[1,1]:imm_stamp_lims[1,2],imm_stamp_lims[1,3]:imm_stamp_lims[1,4]],ap_mask=sfa,stamplims=image_lims,masklims=mask_lims,numIters=nBlanks,mpiopts=mpiopts,remask=TRUE))
     }
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
     if (plotsample) {
       if (!quiet) { message("Plotting Blanks Correction"); cat("Plotting Blanks Correction") }
-      #debug(rancor.par)
     if (cutup) {
       timer<-system.time(plotRanCor(id_g,x_g,y_g,im_mask=im_mask,imm_mask=imm_mask,ap_mask=sfa,stamplims=stamp_lims,imstamplims=im_stamp_lims,masklims=mstamp_lims,numIters=nBlanks,remask=TRUE,path=file.path(pathroot,pathwork,pathout),plotall=plotall))
     } else {
-      timer<-system.time(plotRanCor(id_g,x_g,y_g,im_mask=image.env$im,imm_mask=image.env$imm,ap_mask=sfa,stamplims=image_lims,imstamplims=im_stamp_lims,masklims=mask_lims,numIters=nBlanks,remask=TRUE,path=file.path(pathroot,pathwork,pathout),plotall=plotall))
+      timer<-system.time(plotRanCor(id_g,x_g,y_g,im_mask=image.env$im[im_stamp_lims[1,1]:im_stamp_lims[1,2],im_stamp_lims[1,3]:im_stamp_lims[1,4]],
+                      imm_mask=image.env$imm[imm_stamp_lims[1,1]:imm_stamp_lims[1,2],imm_stamp_lims[1,3]:imm_stamp_lims[1,4]],ap_mask=sfa,stamplims=image_lims,imstamplims=im_stamp_lims,masklims=mask_lims,numIters=nBlanks,remask=TRUE,path=file.path(pathroot,pathwork,pathout),plotall=plotall))
     }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1237,11 +1248,11 @@ function(env=NULL) {
     if (verbose) { cat("      Checking for Saturations ") }
     if (cutup) {
       saturated<-foreach(sfam=sfa, im=im_mask, xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment()), .export='saturation') %dopar% {
-          any(im[xlo:xup,ylo:yup][which(sfam!=0,arr.ind=T)]>=saturation)
+          any(im[xlo:xup,ylo:yup][which(sfam!=0,arr.ind=TRUE)]>=saturation)
       }
     } else {
-      saturated<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export=c('im','saturation'), xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
-          any(im[xlo:xup,ylo:yup][which(sfam!=0,arr.ind=T)]>=saturation)
+      saturated<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export=c('im','saturation'), xlo=image_lims[,1],xup=image_lims[,2], ylo=image_lims[,3],yup=image_lims[,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+          any(im[xlo:xup,ylo:yup][which(sfam!=0,arr.ind=TRUE)]>=saturation)
       }
     }
     if (verbose) { cat(" - Done\n") }
@@ -1288,7 +1299,7 @@ function(env=NULL) {
         sum(sfam*(im[xlo:xup,ylo:yup]))
     }
   } else {
-    ssfad<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export='im', xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+    ssfad<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export='im', xlo=image_lims[,1],xup=image_lims[,2], ylo=image_lims[,3],yup=image_lims[,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
         sum(sfam*(im[xlo:xup,ylo:yup]))
     }
   }
@@ -1305,8 +1316,8 @@ function(env=NULL) {
         cbind(sum(sfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(sfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(sfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(sfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
     }
   } else {
-    qssfad<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export='im', x1=stamp_lims[,1], x2=stamp_lims[,1]+floor((stamp_lims[,2]-stamp_lims[,1])/2), x3=stamp_lims[,1]+floor((stamp_lims[,2]-stamp_lims[,1])/2)+1, x4=stamp_lims[,2],
-                                          y1=stamp_lims[,3], y2=stamp_lims[,3]+floor((stamp_lims[,4]-stamp_lims[,3])/2), y3=stamp_lims[,3]+floor((stamp_lims[,4]-stamp_lims[,3])/2)+1, y4=stamp_lims[,4],
+    qssfad<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export='im', x1=image_lims[,1], x2=image_lims[,1]+floor((image_lims[,2]-image_lims[,1])/2), x3=image_lims[,1]+floor((image_lims[,2]-image_lims[,1])/2)+1, x4=image_lims[,2],
+                                          y1=image_lims[,3], y2=image_lims[,3]+floor((image_lims[,4]-image_lims[,3])/2), y3=image_lims[,3]+floor((image_lims[,4]-image_lims[,3])/2)+1, y4=image_lims[,4],
                                          sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
                                          sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
                                           .inorder=TRUE, .options.mpi=mpiopts, .combine="rbind") %dopar% {
@@ -1329,8 +1340,6 @@ function(env=NULL) {
   if (!nopsf) {
     if (verbose) { cat("      Integral of the (convolved aperture * psf)") }
     ssfap<-foreach(sfam=sfa, slen=stamplen, xc=x_g, yc=y_g, .combine='c', .options.mpi=mpiopts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
-      #for (i in 1:npos) {
-      #slen=stamplen[i]
       #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
       centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
       delta<-floor(slen/2)*c(-1,+1)
@@ -1354,7 +1363,7 @@ function(env=NULL) {
       ynew<-expanded[,2]-yc%%1
       # /*fend*/ }}}
       #Interpolate /*fold*/ {{{
-      ap<-matrix(interp2D(xnew, ynew, psf_obj), ncol=leny,nrow=lenx)
+      ap<-matrix(interp2D(xnew, ynew, psf_obj)[,3], ncol=leny,nrow=lenx)
       # /*fend*/ }}}
       # /*fend*/ }}}
       sum(sfam*ap)
@@ -1378,7 +1387,7 @@ function(env=NULL) {
         sum(dfam*(im[xlo:xup,ylo:yup]))
     }
   } else {
-    sdfad<-foreach(dfam=dfa,.noexport=ls(envir=environment()), .export='im', xlo=stamp_lims[,1],xup=stamp_lims[,2], ylo=stamp_lims[,3],yup=stamp_lims[,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+    sdfad<-foreach(dfam=dfa,.noexport=ls(envir=environment()), .export='im', xlo=image_lims[,1],xup=image_lims[,2], ylo=image_lims[,3],yup=image_lims[,4], .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
         sum(dfam*(im[xlo:xup,ylo:yup]))
     }
   }
@@ -1395,8 +1404,8 @@ function(env=NULL) {
         cbind(sum(dfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(dfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(dfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(dfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
     }
   } else {
-    qsdfad<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export='im', x1=stamp_lims[,1], x2=stamp_lims[,1]+floor((stamp_lims[,2]-stamp_lims[,1])/2), x3=stamp_lims[,1]+floor((stamp_lims[,2]-stamp_lims[,1])/2)+1, x4=stamp_lims[,2],
-                                          y1=stamp_lims[,3], y2=stamp_lims[,3]+floor((stamp_lims[,4]-stamp_lims[,3])/2), y3=stamp_lims[,3]+floor((stamp_lims[,4]-stamp_lims[,3])/2)+1, y4=stamp_lims[,4],
+    qsdfad<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export='im', x1=image_lims[,1], x2=image_lims[,1]+floor((image_lims[,2]-image_lims[,1])/2), x3=image_lims[,1]+floor((image_lims[,2]-image_lims[,1])/2)+1, x4=image_lims[,2],
+                                          y1=image_lims[,3], y2=image_lims[,3]+floor((image_lims[,4]-image_lims[,3])/2), y3=image_lims[,3]+floor((image_lims[,4]-image_lims[,3])/2)+1, y4=image_lims[,4],
                                          sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
                                          sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
                                           .inorder=TRUE, .options.mpi=mpiopts, .combine="rbind") %dopar% {
@@ -1422,7 +1431,7 @@ function(env=NULL) {
       }
     }
   } else {
-    ssfa2e2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+    ssfa2e2<-foreach(sfam=sfa, xlo=error_lims[,1],xup=error_lims[,2],ylo=error_lims[,3],yup=error_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
         sum((sfam*ime[xlo:xup,ylo:yup])^2.)
     }
   }
@@ -1445,7 +1454,7 @@ function(env=NULL) {
       }
     }
   } else {
-    sdfa2e2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+    sdfa2e2<-foreach(dfam=dfa, xlo=error_lims[,1],xup=error_lims[,2],ylo=error_lims[,3],yup=error_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
         sum((dfam*ime[xlo:xup,ylo:yup])^2.)
     }
   }
@@ -1471,7 +1480,7 @@ function(env=NULL) {
         }
       }
     } else {
-      ssfae2<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+      ssfae2<-foreach(sfam=sfa, xlo=error_lims[,1],xup=error_lims[,2],ylo=error_lims[,3],yup=error_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
           sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
       }
     }
@@ -1494,7 +1503,7 @@ function(env=NULL) {
         }
       }
     } else {
-      sdfae2<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+      sdfae2<-foreach(dfam=dfa, xlo=error_lims[,1],xup=error_lims[,2],ylo=error_lims[,3],yup=error_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
           sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
       }
     }
@@ -1517,7 +1526,7 @@ function(env=NULL) {
         }
       }
     } else {
-      ssfae<-foreach(sfam=sfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+      ssfae<-foreach(sfam=sfa, xlo=error_lims[,1],xup=error_lims[,2],ylo=error_lims[,3],yup=error_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
         sum(sfam*ime[xlo:xup,ylo:yup])
       }
     }
@@ -1540,7 +1549,7 @@ function(env=NULL) {
         }
       }
     } else {
-      sdfae<-foreach(dfam=dfa, xlo=estamp_lims[,1],xup=estamp_lims[,2],ylo=estamp_lims[,3],yup=estamp_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
+      sdfae<-foreach(dfam=dfa, xlo=error_lims[,1],xup=error_lims[,2],ylo=error_lims[,3],yup=error_lims[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpiopts) %dopar% {
         sum(dfam*ime[xlo:xup,ylo:yup])
       }
     }
@@ -1583,7 +1592,7 @@ function(env=NULL) {
 
   #Convolved aperture error /*fold*/ {{{
   sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(ssfa)*ApCorr)^2
-  if (BlankCor) { sfaerr<-sfaerr+(blanks$randMean.MAD*sqrt(ssfa)*ApCorr)^2 }
+  if (BlankCor) { sfaerr<-sfaerr+(blanks$randMean.MAD*ApCorr)^2 }
   # /*fend*/ }}}
 
   #Deblend error /*fold*/ {{{
@@ -1592,7 +1601,7 @@ function(env=NULL) {
 
   #Deblended Convolved aperture error /*fold*/ {{{
   dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)*ApCorr)^2 + (deblerr)^2
-  if (BlankCor) { dfaerr<-dfaerr+(blanks$randMean.MAD*sqrt(ssfa)*ApCorr)^2 }
+  if (BlankCor) { dfaerr<-dfaerr+(blanks$randMean.MAD*ApCorr)^2 }
   # /*fend*/ }}}
 
   if (verbose) { cat(" - Done\n   } ") }
@@ -1604,7 +1613,7 @@ function(env=NULL) {
   } else if (!quiet) { cat(" - Done\n") }
   # /*fend*/ }}}
   #Final Calculations /*fold*/ {{{
-  if (!quiet) { cat("   Performing Final Calculations {  ") }
+  if (!quiet) { cat("   Performing Final Calculations   ") }
   if (doskyest|getskyrms) {
     skyflux.mean<-skylocal.mean*sdfa
     skyflux<-skylocal*sdfa
@@ -1613,7 +1622,7 @@ function(env=NULL) {
       dfaerr[which(!is.na(skyrms))]<-(dfaerr+(skyrms*sqrt(sdfa)*ApCorr)^2)[which(!is.na(skyrms))]
     }
     if (doskyest) {
-      if (!quiet) { message("Perfoming Sky Subtraction"); cat("\n   Performing Sky Subtraction") }
+      if (!quiet) { message("Perfoming Sky Subtraction"); cat("{\n   Performing Sky Subtraction") }
       #Subrtract Sky Flux /*fold*/ {{{
       dfaflux<-dfaflux-skyflux
       sfaflux<-sfaflux-skylocal*ssfa
@@ -1663,7 +1672,7 @@ function(env=NULL) {
     message(paste("After assignment",round(length(which(is.na(sdfa2e2)))/length(sdfa2e2)*100,digits=2),"% of the sdfa2e2 matrix are NA"))
     message(paste("After assignment",round(length(which(is.na(pixflux)))/length(pixflux)*100,digits=2),"% of the pixflux matrix are NA"))
   }# /*fend*/ }}}
-  if (!quiet) { cat("} Galaxy Results Complete\n") }
+  if (!quiet) { cat("\n} Galaxy Results Complete\n") }
   # /*fend*/ }}}
   # /*fend*/ }}}
   # /*fend*/ }}}
@@ -1679,7 +1688,7 @@ function(env=NULL) {
       if (!quiet) { message("Writing Sample of COGs to File"); cat("Writing Sample of COGs to File") }
       #Output a random 15 apertures to file /*fold*/ {{{
       ind1=which(a_g>0 & sdfa!=0)
-      ind1=ind1[order(sdfad[ind1],decreasing=T)][1:15]
+      ind1=ind1[order(sdfad[ind1],decreasing=TRUE)][1:15]
       ind2=which(sdfa!=0)[order(runif(1:length(which(sdfa!=0))))[1:15]]
       ind<-c(ind1, ind2)
       rm(ind1)
@@ -1695,16 +1704,15 @@ function(env=NULL) {
     # /*fend*/ }}}
     for (i in ind) {
       #Open Device /*fold*/ {{{
-      #png(file.path(pathroot,pathwork,pathout,paste("COGs/",id_g[i],".png",sep="")),width=14*240,height=3.5*240,res=240)
-      pdf(file.path(pathroot,pathwork,pathout,paste("COGs/",id_g[i],".pdf",sep="")),width=14,height=3.5)
+      CairoPNG(file.path(pathroot,pathwork,pathout,paste("COGs/",id_g[i],".png",sep="")),width=8*res,height=8*res,res=res)
+      #pdf(file.path(pathroot,pathwork,pathout,paste("COGs/",id_g[i],".pdf",sep="")),width=14,height=3.5)
       # /*fend*/ }}}
       #Set Layout /*fold*/ {{{
-      layout(cbind(1,2,3,4))
+      mar<-par("mar")
+      par(mar=mar*c(0.6,0.8,0.5,1))
+      layout(rbind(c(1,2),c(3,4),c(0,0)),heights=c(1,1,0.05))
       # /*fend*/ }}}
       #Axes Limits /*fold*/ {{{
-      #xlims=round(max(abs(seq(1,(diff(range(stamp_lims[i,1]:stamp_lims[i,2]))+1))-(diff(range(im_stamp_lims[i,1]:im_stamp_lims[i,2]))+1)/2)*asperpix, na.rm=TRUE))*c(-1,1)
-      #xlims=range((seq(1,(diff(range(stamp_lims[i,1]:stamp_lims[i,2]))+1))-(x_p[i]-im_stamp_lims[i,1]))*asperpix)
-      #ylims=range((seq(1,(diff(range(stamp_lims[i,3]:stamp_lims[i,4]))+1))-(y_p[i]-im_stamp_lims[i,3]))*asperpix)
       xlims=stamplen[i]*c(-2/3,2/3)*asperpix
       ylims=stamplen[i]*c(-2/3,2/3)*asperpix
       # /*fend*/ }}}
@@ -1738,9 +1746,6 @@ function(env=NULL) {
       #Plot +ve flux in aperture in Heat Colours /*fold*/ {{{
       suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(apT*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]), main="", asp=1, col=heat.colors(256), useRaster=Rast,add=TRUE, xlab="", ylab=""))
       # /*fend*/ }}}
-      #Overlay Aperture in Black /*fold*/ {{{
-      #suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=log10(sfa[[i]]), main="Image & Aperture", asp=1, useRaster=FALSE, axes=FALSE, xlab="", ylab="", xlim=xlims, ylim=xlims,add=TRUE))
-      # /*fend*/ }}}
       #Plot Sources /*fold*/ {{{
       points(x=(x_p-x_p[i]+1)*asperpix,y=(y_p-y_p[i]+1)*asperpix, pch=3)
       # /*fend*/ }}}
@@ -1748,35 +1753,35 @@ function(env=NULL) {
       label("topleft",lab=id_g[i],cex=1.5, col='red')
       # /*fend*/ }}}
       #Draw Axes /*fold*/ {{{
-      magaxis(frame.plot=T,main="Image & Aperture",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      magaxis(frame.plot=TRUE,main="Image & Aperture",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
       # /*fend*/ }}}
       #Generate COGs /*fold*/ {{{
       #Raw Image /*fold*/ {{{
       if (PSFWeighted) {
-        cog<-get.cog(sfa[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
+        cog<-get.cog(sfa[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)
       } else {
-        cog<-get.cog(image.env$im[im_stamp_lims[i,1]:im_stamp_lims[i,2],im_stamp_lims[i,3]:im_stamp_lims[i,4]],centre=c((diff(range(im_stamp_lims[i,1]:im_stamp_lims[i,2]))+1)/2, (diff(range(im_stamp_lims[i,3]:im_stamp_lims[i,4]))+1)/2))
+        cog<-get.cog(image.env$im[im_stamp_lims[i,1]:im_stamp_lims[i,2],im_stamp_lims[i,3]:im_stamp_lims[i,4]],centre=c((diff(range(im_stamp_lims[i,1]:im_stamp_lims[i,2]))+1)/2, (diff(range(im_stamp_lims[i,3]:im_stamp_lims[i,4]))+1)/2),sample=1E3)
       }
       # /*fend*/ }}}
       #Sky Subtracted only /*fold*/ {{{
       if (PSFWeighted) {
-        cog_nosky<-get.cog(sfa[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2))
+        cog_nosky<-get.cog(sfa[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)
       } else {
-        cog_nosky<-get.cog(image.env$im[im_stamp_lims[i,1]:im_stamp_lims[i,2],im_stamp_lims[i,3]:im_stamp_lims[i,4]]-skylocal[i],centre=c((diff(range(im_stamp_lims[i,1]:im_stamp_lims[i,2]))+1)/2, (diff(range(im_stamp_lims[i,3]:im_stamp_lims[i,4]))+1)/2))
+        cog_nosky<-get.cog(image.env$im[im_stamp_lims[i,1]:im_stamp_lims[i,2],im_stamp_lims[i,3]:im_stamp_lims[i,4]]-skylocal[i],centre=c((diff(range(im_stamp_lims[i,1]:im_stamp_lims[i,2]))+1)/2, (diff(range(im_stamp_lims[i,3]:im_stamp_lims[i,4]))+1)/2),sample=1E3)
       }
       # /*fend*/ }}}
       #Deblended only /*fold*/ {{{
       if (PSFWeighted) {
-        debl.cog<-get.cog(sfa[[i]]*dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
+        debl.cog<-get.cog(sfa[[i]]*dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)
       } else {
-        debl.cog<-get.cog(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2))
+        debl.cog<-get.cog(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)
       }
       # /*fend*/ }}}
       #Deblended and Sky Subtracted /*fold*/ {{{
       if (PSFWeighted) {
-        debl.cog_nosky<-get.cog(sfa[[i]]*dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2))
+        debl.cog_nosky<-get.cog(sfa[[i]]*dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)
       } else {
-        debl.cog_nosky<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2))
+        debl.cog_nosky<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)
       }
       # /*fend*/ }}}
       # /*fend*/ }}}
@@ -1815,7 +1820,20 @@ function(env=NULL) {
         # /*fend*/ }}}
         #Draw Legend /*fold*/ {{{
         legend('bottomright',legend=c("Image COG","Deblended COG","Sky removed COG","Deblended & Sky Rem. COG","Undeblended ApMag","Deblended ApMag"),lty=c(2,2,1,1,1,1),
-               col=c('grey','black','grey','black','orange','green'),pch=-1, cex=0.5)
+               col=c('grey','black','grey','black','orange','green'),pch=-1, cex=1)
+        # /*fend*/ }}}
+        #Note Half Light Radius /*fold*/ {{{
+        if (doskyest) {
+          deproj.debl.cog_nosky<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(b_g[i]/a_g[i],theta_off[i]))
+          hlr<-which(debl.cog_nosky$y>=max(debl.cog_nosky$y,na.rm=TRUE)/2)
+          dhlr<-which(deproj.debl.cog_nosky$y>max(debl.cog_nosky$y,na.rm=TRUE)/2)
+          label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog_nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog_nosky$x[dhlr]),digits=2)))
+        } else {
+          deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(b_g[i]/a_g[i],theta_off[i]))
+          hlr<-which(debl.cog$y>=max(debl.cog$y,na.rm=TRUE)/2)
+          dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
+          label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog$x[dhlr]),digits=2)))
+        }
         # /*fend*/ }}}
         # /*fend*/ }}}
         # /*fend*/ }}}
@@ -1845,33 +1863,48 @@ function(env=NULL) {
         lines(x=debl.cog_nosky$x*asperpix, y=debl.cog_nosky$y, pch=20, col='black',lty=1)
         # /*fend*/ }}}
         legend('bottomright',legend=c("Image COG","Deblended COG","Sky removed COG","Deblended & Sky Rem. COG","Undeblended Flux","Deblended Flux"),lty=c(2,2,1,1,1,1),
-               col=c('grey','black','grey','black','orange','green'),pch=-1, cex=0.5)
+               col=c('grey','black','grey','black','orange','green'),pch=-1, cex=1)
+        #Note Half Light Radius /*fold*/ {{{
+        if (doskyest) {
+          deproj.debl.cog_nosky<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(b_g[i]/a_g[i],theta_off[i]))
+          hlr<-which(debl.cog_nosky$y>=max(cog$y,na.rm=TRUE)/2)
+          dhlr<-which(deproj.debl.cog_nosky$y>max(debl.cog$y,na.rm=TRUE)/2)
+          label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog_nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog_nosky$x[dhlr]),digits=2)))
+        } else {
+          deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(b_g[i]/a_g[i],theta_off[i]))
+          hlr<-which(debl.cog$y>=max(cog$y,na.rm=TRUE)/2)
+          dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
+          label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog$x[dhlr]),digits=2)))
+        }
+        # /*fend*/ }}}
         # /*fend*/ }}}
       }
       # /*fend*/ }}}
       #Plot the Deblended Image /*fold*/ {{{
       nc<-length(image_lims[i,1]:image_lims[i,2])
       nr<-length(image_lims[i,3]:image_lims[i,4])
+      Rast<-ifelse(stamplen[i]>100,TRUE,FALSE)
       suppressWarnings(z<-matrix(magmap(dbw[[i]]*image.env$im[image_lims[i,1]:image_lims[i,2],image_lims[i,3]:image_lims[i,4]],stretch='asinh')$map,ncol=nc,nrow=nr))
-      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apB, main="Image x Weight Matrix", asp=1, col=grey.colors(256), useRaster=FALSE, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims)
+      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apB, main="Image x Weight Matrix", asp=1, col=grey.colors(256), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims)
       # /*fend*/ }}}
       #Overlay the Aperture /*fold*/ {{{
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apT, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=FALSE, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims,add=TRUE))
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apT, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims,add=TRUE))
       # /*fend*/ }}}
+      #Draw the projected half-light ellipse {{{
+      lines(ellipse(a=min(debl.cog$x[dhlr]),e=1-b_g[i]/a_g[i],pa=90-theta_off[i],xcen=0,ycen=0),col='black',lty=3,lwd=2)
+      #}}}
       #Draw the Axes and scalebar /*fold*/ {{{
-      magaxis(frame.plot=T,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
-      #magbar("topright",col=rev(rainbow(256, start=0,end=2/3)), range=range(z),title='log(pixval)')
+      magaxis(frame.plot=TRUE,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
       # /*fend*/ }}}
       #Plot the Deblend Matrix /*fold*/ {{{
       z=dbw[[i]]
-      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apB, main="Weight Matrix", asp=1, col=grey.colors(256), useRaster=FALSE, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims)
+      image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apB, main="Weight Matrix", asp=1, col=grey.colors(256), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims)
       # /*fend*/ }}}
       #Overlay the Aperture /*fold*/ {{{
-      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apT, main="Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=FALSE, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims,add=T))
+      suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*asperpix, z=z*apT, main="Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims,add=TRUE))
       # /*fend*/ }}}
       #Draw the Axes and scalebar /*fold*/ {{{
-      magaxis(frame.plot=T,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
-      #magbar("topright",col=rev(rainbow(256, start=0,end=2/3)), range=c(0,1))
+      magaxis(frame.plot=TRUE,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
       # /*fend*/ }}}
       #Close the file /*fold*/ {{{
       dev.off()
@@ -1917,6 +1950,7 @@ function(env=NULL) {
     ra_g   <-ra_g[which(contams==0)]
     dec_g  <-dec_g[which(contams==0)]
     theta_g<-theta_g[which(contams==0)]
+    theta_off<-theta_off[which(contams==0)]
     x_p    <-x_p[which(contams==0)]
     y_p    <-y_p[which(contams==0)]
     x_g    <-x_g[which(contams==0)]
@@ -1982,7 +2016,8 @@ function(env=NULL) {
   #Create Photometry Warning Flags /*fold*/ {{{
   photWarnFlag<-rep("",length(ra_g))
   #Bad Quartered Photometry /*fold*/ {{{
-  Qbad<-(apply(qsdfad,1,'max',na.rm=T)/apply(qsdfad,1,'sum',na.rm=T))>=0.7
+  Qbad<-(apply(qsdfad,1,'max',na.rm=TRUE)/apply(qsdfad,1,'sum',na.rm=TRUE))>=0.7
+  Qbad[which(!is.finite(Qbad))]<-1
   photWarnFlag<-paste0(photWarnFlag,ifelse(Qbad,"Q",""))
   # /*fend*/ }}}
   #Saturation /*fold*/ {{{
@@ -1990,7 +2025,9 @@ function(env=NULL) {
   # /*fend*/ }}}
   #Bad Sky Estimate /*fold*/ {{{
   if (doskyest|getskyrms) {
-    photWarnFlag<-paste0(photWarnFlag,ifelse(skyNBinNear<=3,"S",""))
+    temp<-skyNBinNear
+    temp[which(!is.finite(temp))]<-0
+    photWarnFlag<-paste0(photWarnFlag,ifelse(temp<=3,"S",""))
   }
   # /*fend*/ }}}
   #Iterative Deblend Warning /*fold*/ {{{

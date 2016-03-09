@@ -1,5 +1,5 @@
 crop_im <-
-function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA,extn=1){
+function(ra0=-999,dec0=-999,pathroot="./",inpim=NA,cutrad=1,fitsoutname=NA,extn=1){
 #Details {{{
 # Procedure takes a fits image and produces a new
 # image, cropped to a region <cutrad> in diameter
@@ -121,8 +121,6 @@ function(ra0=-999,dec0=-999,pathroot="",inpim=NA,cutrad=1,fitsoutname=NA,extn=1)
     upperx <- floor(xcen+cutradpix)
     lowery <- floor(ycen-cutradpix)
     uppery <- floor(ycen+cutradpix)
-    #cutxcen <- abs(cutrad/pixsize)+1.5
-    #cutycen <- abs(cutrad/pixsize)+1.5
     #}}}
 
     #If pixel limits are beyond image limits... {{{

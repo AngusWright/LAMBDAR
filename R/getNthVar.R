@@ -4,8 +4,19 @@
 getNthVar<-
  function(varList,n,inenv,outenv,lim) {
    if (identical(inenv,outenv)) { stop("Input and Output Environments must differ") }
+   if (any(lsos(env=inenv)$Type=="function")) {
+     warning("Function variables are not passed between environments")
+   }
    #Loop through Variable list
    for (i in varList) {
+     #If variable doesn't exist, set to null and loop
+     if (!exists(i,envir=inenv)) {
+       assign(i,NULL,envir=outenv)
+       next
+     }
+     #If variable is a function, loop
+     if (lsos(i,envir=inenv)$Type=="function") { next }
+     #get variable
      var<-get(i, envir=inenv)
      if (length(var)>1) { var<-c(t(var)) }
      if (length(var)==0) {

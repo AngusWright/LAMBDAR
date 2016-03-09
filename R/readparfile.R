@@ -19,7 +19,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Print Header {{{
   if (!quiet) { cat(paste('------------------------------------------------------\n'))
-                cat(paste('   LAMBDAR     version ',packageVersion("LAMBDAR"),': MeasureFluxes\n'))
+                cat(paste('   LAMBDAR : version ',packageVersion("LAMBDAR"),': ',traceback()[1],'\n'))
                 cat(paste('------------------------------------------------------\n'))
                 cat('Initialising Workspace {\n')
                 cat('   Reading Parameter File ') }
@@ -226,13 +226,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
 
   #Flag loops with no provided PSF {{{
   nopsf<-((psfmap=="NONE") & (gauss_fwhm_as==0.0))
-  #}}}
-
-  #Check for problematic inputs {{{
-  #if (any(PSFWeighted & !psffilt)) {
-    #message("WARNING: You've asked for PSF Matched Photometry, and yet specified No PSF Convolution... You could be in for some funky results")
-    #parwarning<-c(parwarning,"You've asked for PSF Matched Photometry, and yet specified No PSF Convolution... You could be in for some funky results")
-  #}
   #}}}
 
   #Perform Contaminant removal? {{{
@@ -615,14 +608,6 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   }
   forcepointsources<-(forcepointsources==1)
   #}}}
-
-  #Check for wayward inputs {{{
-  #if (any(PSFWeighted & !forcepointsources)) {
-    #message("WARNING: You've asked for PSF Matched Photometry, and not forced Point Sources to be used. PSF matched is designed for Point Sources only, so this could behave poorly.")
-    #parwarning<-c(parwarning,"You've asked for PSF Matched Photometry, and not forced Point Sources to be used. PSF matched is designed for Point Sources only, so this could behave poorly.")
-  #}
-  #}}}
-
 
   #Error Map scale factor #{{{
   ID="EFactor"
@@ -1914,6 +1899,28 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   #}}}
   #}}}
 
+  #Simulation Noise Gaussianisation Kernel {{{
+  ID="SimGauss_AS"
+  ind<-which(params[ID,]!="")
+  sim.gauss.as<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(sim.gauss.as)) {
+    if ((length(ind)==1)) {
+      sim.gauss.as<-as.numeric(try(c(t(read.table(file.path(pathroot,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(sim.gauss.as)=='try-error') {
+        parwarning<-c(parwarning,"SimGauss_AS Parameter table read failed; Using 0")
+        sim.gauss.as<-0
+      }
+      if (is.na(nIterations)) {
+        parwarning<-c(parwarning,"SimGauss_AS Parameter not in Parameter File; Using 0")
+        sim.gauss.as<-0
+      }
+    } else {
+      parwarning<-c(parwarning,"SimGauss_AS Parameter not in Parameter File; Using 0")
+      sim.gauss.as<-0
+    }
+  }
+  #}}}
+
   #Name of Logfile to be output {{{
   ID="LogFile"
   logfile<-params[ID,1]
@@ -2013,6 +2020,7 @@ function(parfile=NA, starttime=NA, quiet=FALSE, env=NULL){
   assign("residmap"         , residmap         , envir = env) #
   assign("saturation"       , saturation       , envir = env) # S
   assign("saturlabel"       , saturlabel       , envir = env) #
+  assign("sim.gauss.as"     , sim.gauss.as     , envir = env) #
   assign("sourcemask"       , sourcemask       , envir = env) #
   assign("sourcemaskout"    , sourcemaskout    , envir = env) #
   assign("sourcemaskonly"   , sourcemaskonly   , envir = env) #

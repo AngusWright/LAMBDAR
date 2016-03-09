@@ -1,5 +1,5 @@
 checkgrid <-
-function(x,y,xstep,ystep,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=T){
+function(x,y,xstep,ystep,xcen=0,ycen=0,axrat=1,axang=0,majax=1,deg=TRUE){
 #Check for calling errors {{{
 if(any(is.na(x))|any(is.na(y))){stop(paste("Checkgrid returns NA at input.\nis.na(x)=",length(which(is.na(x))),"of",length(x),"\nis.na(y)=",length(which(is.na(y))),"of",length(y),"\nInputs are:\nxcen=",xcen,"\nycen=",ycen,"\naxrat=",axrat,"\naxang=",axang,"\nmajax=",majax,"\ndeg=",deg))}
 #}}}
@@ -21,7 +21,7 @@ LxLy=inap(x-xstep/2,y-ystep/2,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=
 LxHy=inap(x-xstep/2,y+ystep/2,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax+max(c(xstep,ystep)*sqrt(2)/2),deg=deg)
 HxLy=inap(x+xstep/2,y-ystep/2,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax+max(c(xstep,ystep)*sqrt(2)/2),deg=deg)
 HxHy=inap(x+xstep/2,y+ystep/2,xcen=xcen,ycen=ycen,axrat=axrat,axang=axang,majax=majax+max(c(xstep,ystep)*sqrt(2)/2),deg=deg)
-part= ((LxLy | LxHy | HxLy | HxHy) & full==F)
+part= ((LxLy | LxHy | HxLy | HxHy) & full==FALSE)
 #}}}
 #Check if the pixel is empty {{{
 empty= (! full) & (! part)

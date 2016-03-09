@@ -1,6 +1,6 @@
 \name{sourcesubtraction}
 \alias{sourcesubtraction}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Source Subtraction from FITS image
 }
@@ -14,7 +14,7 @@ sourcesubtraction(image, sfa_models, stamp_lims,
 fluxes, outputfile, outputheader, beamarea, insidemask,
 diagnostic = FALSE, verbose = FALSE)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{image}{
 numeric (j,k) array; the image to be used for subtraction
@@ -48,10 +48,10 @@ logical; if TRUE, then perform verbose outputs
 }
 }
 \details{
-Procedure performs a subtraction of the provided sfa_models from 'image'. The models are normalised so that the
+Procedure performs a subtraction of the provided sfa_models from `image'. The models are normalised so that the
 integral of the ith model is fluxes[i]. This means that the source subtraction is only going to accurately remove all
 object flux (leaving only noise) in cases where the object is perfectly modeled. As this is rarely the case, the
-result of this source subtraction is generally the creation of 'butterfly' patterns. This is an indication that objects
+result of this source subtraction is generally the creation of `butterfly' patterns. This is an indication that objects
 are not being modeled perfectly by the aperture-psf convolution.
 }
 \value{
@@ -73,10 +73,9 @@ Angus H Wright{ ICRAR}
 \seealso{
 \link{MeasureFluxes}, \link{fluxmeasurements}
 }
-\examples{
-
-}
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+%\examples{
+%
+%}
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Imaging }

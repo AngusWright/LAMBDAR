@@ -1,6 +1,6 @@
 \name{get.cog}
 \alias{get.cog}
-%- Also NEED an '\alias' for EACH other topic documented here.
+%- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Generate Curve of Growth
 }
@@ -8,15 +8,23 @@ Generate Curve of Growth
 When provided with an image matrix, generate the 2D curve of growth.
 }
 \usage{
-get.cog(zdist, centre = NULL)
+get.cog(zdist, centre = NULL, sample = NULL, proj = NULL)
 }
-%- maybe also 'usage' for other objects documented here.
+%- maybe also `usage' for other objects documented here.
 \arguments{
   \item{zdist}{
 numeric (n,m) matrix; image
 }
   \item{centre}{
-numeric (length 2) vector; pixel location to centre COG on
+numeric (length 2) vector; pixel location to centre COG on. If NULL, CoG is centred on the
+brightest pixel.
+}
+  \item{sample}{
+numeric; Number of radial points to sample COG at. Dictates output length.
+}
+  \item{proj}{
+numeric (length 2) vector; Parameters for calculating de-projected COG. Must be length 2
+with first value Axel Ratio (b/a) and second value position angle (PA).
 }
 }
 %%\details{
@@ -31,54 +39,119 @@ List of length 2;
 %% ~put references to the literature/web site here ~
 %%}
 \author{
-Angus H Wright{ ICRAR} \\
+Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \examples{
-#Load Library
-library(LAMBDAR)
 
-#Gauusian signal with Gaussian noise
-#Create data
-z<-matrix(0, ncol=100, nrow=100)
-##Add Signal
+n<-101
+#Gaussian (PSF) signal with Gaussian noise
+#Pixel Indicies
+y<-matrix(1:n,n,n)
+x<-t(y)
+#PSF Parameters
 Amplitude=10
-x.sigma=1.5       #pix
-y.sigma=2.5       #pix
-centre=c(50,50)   #pix
-for (i in  30:70) {
-  for (j in 30:70) {
-    z[i,j]=Amplitude*exp(-(((i-centre[1])^2/(2*x.sigma^2))+((j-centre[2])^2/(2*y.sigma^2))))
-  }
-}
+x.sigma=1.5
+y.sigma=2.5
+flux<-300
+#Make Point Source
+z<-exp(-(((x-n/2)^2/(2*x.sigma^2))+((y-n/2)^2/(2*y.sigma^2))))
+z<-z/sum(z)*flux
+
 ##Random Noise
-sky<-matrix(rnorm(1E4,sd=0.1), ncol=100)
+sky<-matrix(rnorm(n^2,sd=0.1), ncol=n)
 #Get Curve of Growth
-cog<-get.cog(z+sky, centre)
+cog<-get.cog(z+sky, c(n/2,n/2))
 #Plot
-plot(cog, main="Curve of growth", xlab="Radius (pix)", ylab="COG", type='l')
+layout(cbind(1,2,3))
+magplot(cog, main="Curve of growth", xlab="Radius (pix)", ylab="Flux within Radius", type='l')
+abline(h=flux,lty=2,col='darkgreen')
 
-#Gauusian signal with Gaussian noise and negative sky
+#Gauusian (PSF) signal with Gaussian noise and negative sky
 ##Random Noise & negative sky
-sky<-matrix(rnorm(1E4,mean=-0.02,sd=0.1), ncol=100)
+sky<-matrix(rnorm(n^2,mean=-0.02,sd=0.1), ncol=n)
 #Get Curve of Growth
-cog<-get.cog(z+sky, centre)
+cog<-get.cog(z+sky, c(n/2,n/2))
 #Plot
-plot(cog, main="Curve of growth; -ve sky", xlab="Radius (pix)", ylab="COG", type='l')
+magplot(cog, main="Curve of growth; -ve sky", xlab="Radius (pix)", ylab="Flux within Radius", type='l')
+abline(h=flux,lty=2,col='darkgreen')
 
-#Gauusian signal with Gaussian noise and positive sky
+#Gauusian (PSF) signal with Gaussian noise and positive sky
 ##Random Noise & negative sky
-sky<-matrix(rnorm(1E4,mean=+0.02,sd=0.1), ncol=100)
+sky<-matrix(rnorm(n^2,mean=+0.02,sd=0.1), ncol=n)
 #Get Curve of Growth
-cog<-get.cog(z+sky, centre)
+cog<-get.cog(z+sky, c(n/2,n/2))
 #Plot
-plot(cog, main="Curve of growth; +ve sky", xlab="Radius (pix)", ylab="COG", type='l')
+magplot(cog, main="Curve of growth; +ve sky", xlab="Radius (pix)", ylab="Flux within Radius", type='l')
+abline(h=flux,lty=2,col='darkgreen')
+
+#Exponential signal with Gaussian noise
+#Exponential parameters:
+bn<-1.678
+R.Eff.pix<-10
+pa<-45
+axel.ratio<-0.5
+flux<-300
+#Pixel Indicies
+xy<-expand.grid(1:(2*n),1:(2*n))
+xy[,1]<-xy[,1]-n
+xy[,2]<-xy[,2]-n
+#Generate Exponential Profile
+xy<-rotdata2d(xy[,1],xy[,2],pa)
+xy[,2]<-xy[,2]*axel.ratio
+exp.val<-exp(-bn*(sqrt((xy[,1])^2+(xy[,2])^2)/R.Eff.pix-1))
+z<-matrix(exp.val,n*2,n*2)
+z<-z[seq(ceiling(n*0.5),floor(n*1.5)),seq(ceiling(n*0.5),floor(n*1.5))]
+z<-z/sum(z)*flux
+
+##Random Noise
+sky<-matrix(rnorm(n^2,sd=0.1), ncol=n)
+#Get Curve of Growth
+cog<-get.cog(z+sky, c(n/2,n/2))
+#Plot
+layout(cbind(1,2))
+magplot(cog, main="Curve of growth; Exponential", xlab="Radius (pix)", ylab="Flux within Radius", type='l')
+abline(h=flux,lty=2,col='darkgreen')
+
+#Curve of Growth can be measured using 'Deprojected' radii, if apertures are robust:
+#Get Deprojected Curve of Growth
+deproj.cog<-get.cog(z+sky, c(n/2,n/2),proj=c(axel.ratio,pa))
+magplot(cog, main="Deprojected Curve of growth; Exponential", xlab="Deprojected Radius (pix)", ylab="Flux within Dep. Radius", type='l')
+abline(h=flux,lty=2,col='darkgreen')
+
+
+#CoGs can be used to measure half-light radii, which are useful for aperture diagnostics
+#Plot Source Image
+image(x=seq(ceiling(-n/2),floor(n/2)),y=seq(ceiling(-n/2),floor(n/2)),z=z,xlab="X (pix)",ylab="Y (pix)",main="Source",col=grey.colors(1E3),asp=1)
+#Get Half Light Radius
+hlr<-min(cog$x[which(cog$y>=max(cog$y,na.rm=TRUE)/2)])
+deproj.hlr<-min(cog$x[which(deproj.cog$y>=max(deproj.cog$y,na.rm=TRUE)/2)])
+#Overplot Input Source Half Light Radius:
+lines(ellipse(a=R.Eff.pix,e=1-axel.ratio,pa=pa),col='forestgreen',lty=1)
+#Overplot Image half light radius:
+lines(ellipse(a=hlr,e=0,pa=0),col='red',lty=3)
+#Overplot Deprojected half light radius:
+lines(ellipse(a=deproj.hlr,e=1-axel.ratio,pa=pa),col='gold',lty=2)
+
+#Plot Source Image
+image(x=seq(ceiling(-n/2),floor(n/2)),y=seq(ceiling(-n/2),floor(n/2)),z=z+sky,xlab="X (pix)",ylab="Y (pix)",main="Source+Noise",col=grey.colors(1E3),asp=1)
+#Get Half Light Radius
+hlr<-min(which(cog$y>=max(cog$y,na.rm=TRUE)/2))
+deproj.hlr<-min(which(deproj.cog$y>=max(deproj.cog$y,na.rm=TRUE)/2))
+#Overplot Input Source Half Light Radius:
+lines(ellipse(a=R.Eff.pix,e=1-axel.ratio,pa=pa),col='forestgreen',lty=1)
+#Overplot Image half light radius:
+lines(ellipse(a=hlr,e=0,pa=0),col='red',lty=3)
+#Overplot Deprojected half light radius:
+lines(ellipse(a=deproj.hlr,e=1-axel.ratio,pa=pa),col='gold',lty=2)
 
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
+% Add one or more standard keywords, see file `KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+\keyword{ Photometry }
+\keyword{ Imaging }% __ONLY ONE__ keyword per line
+\keyword{ Background }
+\keyword{ Aperture }
