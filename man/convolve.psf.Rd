@@ -26,7 +26,7 @@ zapdig = NULL)
 logical; if TRUE, the normalised Fourier Transform will be calculated
 }
   \item{mag2}{
-logical; if TRUE, then the magnitude information of arr2 is removed prior to FFT via normalisation
+logical; if FALSE, then the magnitude information of arr2 is removed prior to FFT via normalisation
 }
   \item{zapdig}{
 integer; the precision to be used in a call to `zapsmall'. Used for removing (unwanted) small variations in near-zero areas
