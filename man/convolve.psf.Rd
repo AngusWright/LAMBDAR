@@ -11,7 +11,7 @@ apertures in photometric measurements. As such, the positional information of th
 more accurately the phase information of the first array's fft) is discarded.
 }
 \usage{
-convolve.psf(arr1, arr2, normalise = TRUE, mag2 = TRUE,
+convolve.psf(arr1, arr2, normalise = TRUE, renorm.arr2 = FALSE,
 zapdig = NULL)
 }
 %- maybe also `usage' for other objects documented here.
@@ -25,8 +25,8 @@ zapdig = NULL)
   \item{normalise}{
 logical; if TRUE, the normalised Fourier Transform will be calculated
 }
-  \item{mag2}{
-logical; if FALSE, then the magnitude information of arr2 is removed prior to FFT via normalisation
+  \item{renorm.arr2}{
+logical; if TRUE, then the magnitude information of arr2 is removed prior to FFT via normalisation
 }
   \item{zapdig}{
 integer; the precision to be used in a call to `zapsmall'. Used for removing (unwanted) small variations in near-zero areas

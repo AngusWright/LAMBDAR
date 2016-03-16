@@ -1,11 +1,11 @@
 convolve.psf <-
-function(arr1, arr2, normalise=TRUE, mag2=TRUE, zapdig=NULL) {
+function(arr1, arr2, normalise=TRUE, renorm.arr2=FALSE, zapdig=NULL) {
   #Details {{{
   # Perform the Convolution of arr1 with arr2 using FFT
   # This convolution ignores all phase information from
   # the first image (arr1) - all positional information
   # is determined by the secondary image.
-  # If noMag2 is TRUE, then all magnitude information
+  # If renorm.arr2 is TRUE, then all magnitude information
   # is determined by the first array
   # If normalise is true, then the final Fourier arrays
   # are normalised.
@@ -14,7 +14,7 @@ function(arr1, arr2, normalise=TRUE, mag2=TRUE, zapdig=NULL) {
   # function to the degree of overflow in the final
   # aperture }}}
   #If wanted, remove array 2 magnitude information {{{
-  if (!mag2) {
+  if (renorm.arr2) {
      #Disregard Magnitude information
      #by normalisation
      arr2<-arr2*sum(arr2)/length(arr2)
