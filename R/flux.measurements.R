@@ -1619,14 +1619,21 @@ function(env=NULL) {
     }
     if (do.sky.est) {
       if (!quiet) { message("Perfoming Sky Subtraction"); cat("{\n   Performing Sky Subtraction") }
-      #Subrtract Sky Flux /*fold*/ {{{
+      #Subtract Sky Flux /*fold*/ {{{
       dfaflux<-dfaflux-skyflux
       sfaflux<-sfaflux-skylocal*ssfa
       dfaerr[which(!is.na(skyerr))]<-(dfaerr+(skyerr*sdfa*ApCorr)^2)[which(!is.na(skyerr))]
       sfaerr[which(!is.na(skyerr))]<-(sfaerr+(skyerr*sdfa*ApCorr)^2)[which(!is.na(skyerr))]
       if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
+      # /*fend*/ }}}
     }
   }
+
+  #Deblend error /*fold*/ {{{
+  deblerr<-((1-sdfa/ssfa)*(1/sqrt(12))*abs(sfaflux)*ApCorr)
+  dfaerr<-dfaerr + (deblerr)^2
+  # /*fend*/ }}}
+
   #Finalise Errors /*fold*/ {{{
   sfaerr<-sqrt(sfaerr)
   dfaerr<-sqrt(dfaerr)
@@ -1669,7 +1676,6 @@ function(env=NULL) {
     message(paste("After assignment",round(length(which(is.na(pixflux)))/length(pixflux)*100,digits=2),"% of the pixflux matrix are NA"))
   }# /*fend*/ }}}
   if (!quiet) { cat("\n} Galaxy Results Complete\n") }
-  # /*fend*/ }}}
   # /*fend*/ }}}
   # /*fend*/ }}}
   #PART FIVE: OUTPUT /*fold*/ {{{
