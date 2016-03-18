@@ -1595,12 +1595,8 @@ function(env=NULL) {
   if (blank.cor) { sfaerr<-sfaerr+(blanks$randMean.MAD*ApCorr)^2 }
   # /*fend*/ }}}
 
-  #Deblend error /*fold*/ {{{
-  deblerr<-((1-sdfa/ssfa)*(1/sqrt(12))*abs(sfaflux)*ApCorr)
-  # /*fend*/ }}}
-
   #Deblended Convolved aperture error /*fold*/ {{{
-  dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)*ApCorr)^2 + (deblerr)^2
+  dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)*ApCorr)^2
   if (blank.cor) { dfaerr<-dfaerr+(blanks$randMean.MAD*ApCorr)^2 }
   # /*fend*/ }}}
 
