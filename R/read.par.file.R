@@ -18,8 +18,9 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   #}}}
 
   #Print Header {{{
-  if (!quiet) { cat(paste('------------------------------------------------------\n'))
-                cat(paste('   LAMBDAR : version ',packageVersion("LAMBDAR"),': ',traceback()[1],'\n'))
+  if (!quiet) { calls<-sys.status()$sys.calls
+                cat(paste('------------------------------------------------------\n'))
+                cat(paste('   LAMBDAR : version ',packageVersion("LAMBDAR"),': ',strsplit(paste(calls[[length(calls)-2]]),"(",fixed=TRUE)[[1]][1],'\n'))
                 cat(paste('------------------------------------------------------\n'))
                 cat('Initialising Workspace {\n')
                 cat('   Reading Parameter File ') }
