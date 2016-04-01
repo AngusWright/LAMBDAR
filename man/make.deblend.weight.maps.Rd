@@ -12,7 +12,8 @@ The procedure takes individual weighted object apertures, and determines what pr
 It performs this analysis on all apertures from the input catalogue.
 }
 \usage{
-make.deblend.weight.maps(outenv=parent.env(environment()),env=NULL,subs=NULL)
+make.deblend.weight.maps(outenv=parent.env(environment()),
+env=NULL,subs=NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{

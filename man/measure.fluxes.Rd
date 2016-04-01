@@ -11,7 +11,8 @@ The procedure has many high-level options available, all of which are designated
 A default parameter file can be created by running measure.fluxes("--makepar"). For more in depth examples, see below.
 }
 \usage{
-measure.fluxes(par.file, quiet = FALSE, mpi.backend=FALSE, do.return=FALSE, ...)
+measure.fluxes(par.file, quiet = FALSE, mpi.backend=FALSE,
+do.return=FALSE, ...)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -102,17 +103,22 @@ warning on exiting measure.fluxes.
 # To generate a default parameter file for use
 measure.fluxes("--makepar")
 
-# When generating the parameter file, all parameters can be made custom
-# by including the parameter name and its desired value in the makepar call.
-# For Example, to generate a parameter file for use, with customised Catalogue
-# name value, and send it to the file 'Lambdar_Sample.par':
-measure.fluxes("--makepar", filename="Lambdar_Sample.par", Catalogue="MyCat.csv")
+# When generating the parameter file, all parameters can be
+# made custom by including the parameter name and its desired
+# value in the makepar call. For Example, to generate a
+# parameter file for use, with customised Catalogue name
+# value, and send it to the file 'Lambdar_Sample.par':
+measure.fluxes("--makepar", filename="Lambdar_Sample.par",
+Catalogue="MyCat.csv")
 
-# Or changing the input Catalogue name, and changing number of foreach/doParallel processors
-measure.fluxes("--makepar", filename="Lambdar_Sample.par", Catalogue="MyCat.csv", nProcessors=10)
+# Or changing the input Catalogue name, and changing number of
+# foreach/doParallel processors
+measure.fluxes("--makepar", filename="Lambdar_Sample.par",
+Catalogue="MyCat.csv", nProcessors=10)
 
 #Alternatively, you can call the create.par.file function yourself
-create.par.file(file="Lambdar_Sample.par", Catalogue="MyCat.csv", nProcessors=10)
+create.par.file(file="Lambdar_Sample.par", Catalogue="MyCat.csv",
+nProcessors=10)
 
 ###Example of Measuring Photometry:
 
@@ -124,9 +130,11 @@ lsos(envir=environment())
 #Write Sample Image to File
 write.fits(file="SampleImage.fits",SDSS.sample)
 #Write Sample Catalogue to File
-write.csv(file="SampleCat.csv",ApCat.sample,row.names=FALSE,quote=FALSE)
+write.csv(file="SampleCat.csv",ApCat.sample,row.names=FALSE,
+quote=FALSE)
 #Generate Parameter File
-create.par.file(file="Lambdar_Sample.par",DataMap="SampleImage.fits",Catalogue="SampleCat.csv")
+create.par.file(file="Lambdar_Sample.par",DataMap="SampleImage.fits",
+Catalogue="SampleCat.csv")
 
 #Measure Photometry
 measure.fluxes("Lambdar_Sample.par")
@@ -138,13 +146,14 @@ output<-read.csv("LAMBDAR_Results.csv",stringsAsFactors=FALSE)
 summary(output$DFAFlux_Jy)
 
 ###Running using MPI:
-# To execute the program using the MPI backend (provided that you have a functional
-# System installation of MPI, as well as the relevant R packages Rmpi, and doMPI)
-# you would execute:
+# To execute the program using the MPI backend (provided that
+# you have a functional System installation of MPI, as well as
+# the relevant R packages Rmpi, and doMPI) you would execute:
 
 \dontrun{
 
-mpirun -np <NUM_PROCESSORS> R --slave -e "measure.fluxes('/path/to/par.file.par',mpi.backend=TRUE)"
+mpirun -np <NUM_PROCESSORS> R --slave \
+-e "measure.fluxes('/path/to/par.file.par',mpi.backend=TRUE)"
 
 }
 

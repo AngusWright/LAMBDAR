@@ -28,7 +28,8 @@ as the measure.fluxes Parameter File, however only some parameters are relevant.
   \item{ObsParm}{
 Data frame containing Observation Parameters needed in creating simulated galaxies; Exposure Time (sec; exp=),
 Collecting Area (meters squared; area=), Effective wavelength of filter (Angstrom; lamEff=), and Effective width of filter (Angstrom; WEff=).
-For example, SDSS r-band has parameters ObsParm=data.frame(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165).
+For example, SDSS r-band has parameters
+ObsParm=data.frame(exp=53.9, area=4.91, lamEff=1111.2, Weff=6165).
 }
   \item{noNoise}{
 logical; if TRUE then noise is not added to the simulated image
@@ -104,19 +105,21 @@ write.fits(file="SampleImage.fits",SDSS.sample)
 #Write Sample Catalogue to File
 write.csv(file="SampleCat.csv",ApCat.sample,row.names=FALSE,quote=FALSE)
 #Generate Parameter File
-create.par.file(file="Lambdar_Sample.par",DataMap="SampleImage.fits",Catalogue="SampleCat.csv",IterateFluxes=1,nIterations=2,
-Gauss_FWHM_AS=2,PSFConvolve=1)
+create.par.file(file="Lambdar_Sample.par",DataMap="SampleImage.fits",
+Catalogue="SampleCat.csv",IterateFluxes=1,nIterations=2,Gauss_FWHM_AS=2,
+PSFConvolve=1)
 
 #Measure Photometry
 measure.fluxes("Lambdar_Sample.par")
 
 #Generate Simulation Parameter File
-create.par.file(file="Lambdar_Simulation.par",DataMap="SampleImage.fits",Catalogue="LAMBDAR_Results.csv",
-Gauss_FWHM_AS=2,SimGauss_AS=1.1,FluxWgtColumnLabel="DFAFlux_Jy",OutputDirectory="Simulation/",
-PSFConvolve=1)
+create.par.file(file="Lambdar_Simulation.par",DataMap="SampleImage.fits",
+Catalogue="LAMBDAR_Results.csv",Gauss_FWHM_AS=2,SimGauss_AS=1.1,
+FluxWgtColumnLabel="DFAFlux_Jy",OutputDirectory="Simulation/",PSFConvolve=1)
 
 #Create Simulation from Catalogued objects only
-create.sim('Lambdar_Simulation.par',ObsParm=data.frame(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165),convolveNoise=TRUE,padGalaxies=TRUE)
+create.sim('Lambdar_Simulation.par',ObsParm=data.frame(exp=53.9,area=4.91,
+lamEff=1111.2,Weff=6165),convolveNoise=TRUE,padGalaxies=TRUE)
 
 #Read the Input Image
 inp.im<-read.fits("SampleImage.fits")
@@ -126,32 +129,44 @@ sim.im<-read.fits("Simulation/sim_image.fits")
 #Plot the Input and Simulation Images
 layout(matrix(1:4,2,2,byrow=TRUE))
 #Get Object Positions
-xy<-ad.to.xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,read.astrometry("SampleImage.fits"))
+xy<-ad.to.xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,
+read.astrometry("SampleImage.fits"))
 aspp<-abs(read.astrometry("SampleImage.fits")$CD[1,1])*3600
 #Plot Input & Aperture Ellipses
-image(x=1:length(inp.im$dat[[1]][,1]),y=1:length(inp.im$dat[[1]][1,]),inp.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
-xlab='X (pix)',ylab="Y (pix)")
+image(x=1:length(inp.im$dat[[1]][,1]),y=1:length(inp.im$dat[[1]][1,]),
+inp.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],
+c(0,0.999)),asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
 invisible(Vectorize(function(x,y,a,b,pa) {
-   lines(ellipse(x,y,a,b,pa=pa),col='red',lty=2); points(x,y,pch=3,cex=0.5,col='red');
-})(xy[,1],xy[,2],ApCat.sample$radmajasec/aspp,ApCat.sample$radminasec/aspp,ApCat.sample$rotW2N))
+   lines(ellipse(x,y,a,b,pa=pa),col='red',lty=2)
+   points(x,y,pch=3,cex=0.5,col='red')
+})(xy[,1],xy[,2],ApCat.sample$radmajasec/aspp,ApCat.sample$radminasec/aspp,
+ApCat.sample$rotW2N))
 #Plot Simulation & Aperture Ellipses
-image(x=1:length(sim.im$dat[[1]][,1]),y=1:length(sim.im$dat[[1]][1,]),sim.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
-xlab='X (pix)',ylab="Y (pix)")
+image(x=1:length(sim.im$dat[[1]][,1]),y=1:length(sim.im$dat[[1]][1,]),
+sim.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],
+c(0,0.999)),asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
 invisible(Vectorize(function(x,y,a,b,pa) {
-   lines(ellipse(x,y,a,b,pa=pa),col='red',lty=2); points(x,y,pch=3,cex=0.5,col='red');
-})(xy[,1],xy[,2],ApCat.sample$radmajasec/aspp,ApCat.sample$radminasec/aspp,ApCat.sample$rotW2N))
+   lines(ellipse(x,y,a,b,pa=pa),col='red',lty=2)
+   points(x,y,pch=3,cex=0.5,col='red')
+})(xy[,1],xy[,2],ApCat.sample$radmajasec/aspp,ApCat.sample$radminasec/aspp,
+ApCat.sample$rotW2N))
 #Plot Zoomed Sections of the Image:
 #-> Input & Aperture Ellipses
-image(x=1:length(inp.im$dat[[1]][,1]),y=1:length(inp.im$dat[[1]][1,]),inp.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
-xlab='X (pix)',ylab="Y (pix)",xlim=c(800,1200),ylim=c(800,1200))
-points(xy[,1],xy[,2],pch=3,cex=0.5,col='red');
+image(x=1:length(inp.im$dat[[1]][,1]),y=1:length(inp.im$dat[[1]][1,]),
+inp.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],
+c(0,0.999)),asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",
+xlim=c(800,1200),ylim=c(800,1200))
+points(xy[,1],xy[,2],pch=3,cex=0.5,col='red')
 #-> Simulation & Aperture Ellipses
-image(x=1:length(sim.im$dat[[1]][,1]),y=1:length(sim.im$dat[[1]][1,]),sim.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
-xlab='X (pix)',ylab="Y (pix)",xlim=c(800,1200),ylim=c(800,1200))
-points(xy,pch=3,cex=0.5,col='red');
+image(x=1:length(sim.im$dat[[1]][,1]),y=1:length(sim.im$dat[[1]][1,]),
+sim.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],
+c(0,0.999)),asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",
+xlim=c(800,1200),ylim=c(800,1200))
+points(xy,pch=3,cex=0.5,col='red')
 
 #Measure Simulation Fluxes
-create.par.file(file="Lambdar_SimAnalysis.par",DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
+create.par.file(file="Lambdar_SimAnalysis.par",
+DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
 Gauss_FWHM_AS=2,OutputDirectory="SimResults/",PSFConvolve=1,BlankCor=1)
 measure.fluxes('Lambdar_SimAnalysis.par')
 
@@ -162,18 +177,24 @@ sim.in.cat<-sim.in.cat.full[which(sim.in.cat.full$CATAID \%in\% sim.out.cat$CATA
 
 #Plot Flux Comparisons
 layout(c(1,2))
-magplot(sim.in.cat$Sim.Flux.Jy, sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy, pch=20, log='xy', ylim=c(0.5,2),majorn=10,minorn=10,
-ylab='Measured / Input Flux',xlab='Input Flux (Jy)')
+magplot(sim.in.cat$Sim.Flux.Jy, sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
+pch=20, log='xy', ylim=c(0.5,2),majorn=10,minorn=10,ylab='Measured / Input Flux',
+xlab='Input Flux (Jy)')
 #Add Uncertainties
-suppressWarnings(magerr(x=sim.in.cat$Sim.Flux.Jy,y=sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
-ylo=abs(sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy)*sim.out.cat$DFAErr_Jy/sim.out.cat$DFAFlux_Jy))
+suppressWarnings(magerr(x=sim.in.cat$Sim.Flux.Jy,
+y=sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
+ylo=abs(sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy)*
+sim.out.cat$DFAErr_Jy/sim.out.cat$DFAFlux_Jy))
 abline(h=1,col='grey')
 abline(h=0.96,col='blue',lty=2)
-legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),col='blue',lty=2)
+legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),
+col='blue',lty=2)
 
 #Improve Flux Measurement by Iterating
-create.par.file(file="Lambdar_SimAnalysis.par",DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
-Gauss_FWHM_AS=2,OutputDirectory="SimResults/",IterateFluxes=1,nIterations=5,BlankCor=1)
+create.par.file(file="Lambdar_SimAnalysis.par",
+DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
+Gauss_FWHM_AS=2,OutputDirectory="SimResults/",IterateFluxes=1,
+nIterations=5,BlankCor=1)
 measure.fluxes('Lambdar_SimAnalysis.par')
 
 #Read simulation results
@@ -181,14 +202,18 @@ sim.out.cat<-read.csv("SimResults/LAMBDAR_Results.csv",stringsAsFactors=FALSE)
 sim.in.cat<-sim.in.cat.full[which(sim.in.cat.full$CATAID \%in\% sim.out.cat$CATAID),]
 
 #Plot Flux Comparisons
-magplot(sim.in.cat$Sim.Flux.Jy, sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy, pch=20, log='xy', ylim=c(0.5,2),majorn=10,minorn=10,
+magplot(sim.in.cat$Sim.Flux.Jy, sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
+pch=20, log='xy', ylim=c(0.5,2),majorn=10,minorn=10,
 ylab='Measured / Input Flux',xlab='Input Flux (Jy)')
 #Add Uncertainties
-suppressWarnings(magerr(x=sim.in.cat$Sim.Flux.Jy,y=sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
-ylo=abs(sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy)*sim.out.cat$DFAErr_Jy/sim.out.cat$DFAFlux_Jy))
+suppressWarnings(magerr(x=sim.in.cat$Sim.Flux.Jy,
+y=sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
+ylo=abs(sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy)*
+sim.out.cat$DFAErr_Jy/sim.out.cat$DFAFlux_Jy))
 abline(h=1,col='grey')
 abline(h=0.96,col='blue',lty=2)
-legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),col='blue',lty=2)
+legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),
+col='blue',lty=2)
 
 }
 % Add one or more standard keywords, see file `KEYWORDS' in the

@@ -65,12 +65,14 @@ assign("par4","xyz",env=parameter.env)
 assign("par5",function(x) print(x),env=parameter.env)
 
 #Assign the 2nd value of parameters 1, 2, and 5 to this environment
-get.nth.var(c("par1","par2","par4"),2,inenv=parameter.env,outenv=environment(),lim=12)
+get.nth.var(c("par1","par2","par4"),2,inenv=parameter.env,
+outenv=environment(),lim=12)
 #Show Parameters
 lsos(envir=environment())
 
 #Assign the 5th value of all parameters to this environment
-get.nth.var(ls(envir=parameter.env),2,inenv=parameter.env,outenv=environment(),lim=12)
+get.nth.var(ls(envir=parameter.env),2,inenv=parameter.env,
+outenv=environment(),lim=12)
 #Show Parameters
 lsos(envir=environment(),noShow=c('size','pretty'))
 

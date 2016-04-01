@@ -86,14 +86,18 @@ y0<-astr$CRPIX[2]
 xscale<-astr$CD[1,1]
 yscale<-astr$CD[2,2]
 #Determine the pixel-locations of the aperture catalogue objects
-xy<-radec.to.xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg, ra0=ra0, dec0=dec0, x0=x0, y0=y0, xscale=xscale, yscale=yscale)
+xy<-radec.to.xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg, ra0=ra0,
+dec0=dec0, x0=x0, y0=y0, xscale=xscale, yscale=yscale)
 #Print sample
 print(head(xy))
 
 #Show the positions on the image
 #Plot the Image
-image(x=1:length(SDSS.sample$dat[[1]][,1]),y=1:length(SDSS.sample$dat[[1]][1,]),z=SDSS.sample$dat[[1]],col=grey.colors(1E3),
-      zlim=quantile(SDSS.sample$dat[[1]],c(0,0.995)),useRaster=TRUE,xlab="X (pix)",ylab="Y (pix)",asp=1)
+image(x=1:length(SDSS.sample$dat[[1]][,1]),
+y=1:length(SDSS.sample$dat[[1]][1,]),
+z=SDSS.sample$dat[[1]],col=grey.colors(1E3),
+zlim=quantile(SDSS.sample$dat[[1]],c(0,0.995)),useRaster=TRUE,
+xlab="X (pix)",ylab="Y (pix)",asp=1)
 #Overlay the points
 points(xy,pch=3,col='red')
 

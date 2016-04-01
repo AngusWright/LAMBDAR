@@ -151,6 +151,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       psf.weighted<-0
     }
   }
+  optimal.aper<-psf.weighted==-1
   psf.weighted<-(psf.weighted==1)
   #}}}
 
@@ -857,22 +858,22 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   #Resample Apertures {{{
   #Do we want to perform higher precision integrations of
   #Apertures by resampling around the edges?
-  ID="SmoothAper"
+  ID="ResampleAper"
   ind<-which(params[ID,]!="")
   resample.aperture<-as.numeric(params[ID,ind])
   if ((length(ind)==0)||(is.na(resample.aperture))) {
     if ((length(ind)==1)) {
       resample.aperture<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(resample.aperture)=="try-error") {
-        param.warnings<-c(param.warnings,"SmoothAper Parameter table read failed; Using 1 (TRUE)")
+        param.warnings<-c(param.warnings,"ResampleAper Parameter table read failed; Using 1 (TRUE)")
         resample.aperture<-1
       }
       if (is.na(resample.aperture)) {
-        param.warnings<-c(param.warnings,"SmoothAper Parameter not in Parameter File; Using 1 (TRUE)")
+        param.warnings<-c(param.warnings,"ResampleAper Parameter not in Parameter File; Using 1 (TRUE)")
         resample.aperture<-1
       }
     } else {
-      param.warnings<-c(param.warnings,"SmoothAper Parameter not in Parameter File; Using 1 (TRUE)")
+      param.warnings<-c(param.warnings,"ResampleAper Parameter not in Parameter File; Using 1 (TRUE)")
       resample.aperture<-1
     }
   }
@@ -1004,7 +1005,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   sourcemask.only<-(sourcemask.only==1)
   #}}}
 
-  #Do we want to output the source mask at all?
+  #Do we want to output the source mask at all? {{{
   if (any(!sourcemask.only)) {
     ID="WriteSourceMask"
     ind<-which(params[ID,]!="")
@@ -1829,7 +1830,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   #}}}
 
   #Do we want to flux.weight Using Pixel Fluxes? {{{
-  ID="UsePixelFluxWgts"
+  ID="PixelFluxWgt"
   ind<-which(params[ID,]!="")
   use.pixel.fluxweight<-as.numeric(params[ID,ind])
   if ((length(ind)==0)||is.na(use.pixel.fluxweight)) {
@@ -1837,17 +1838,17 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       use.pixel.fluxweight<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(use.pixel.fluxweight)=="try-error") {
         #Warn on Error
-        param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter table read failed; Using 0 (FALSE)")
+        param.warnings<-c(param.warnings,"PixelFluxWgt Parameter table read failed; Using 0 (FALSE)")
         use.pixel.fluxweight<-0
       }
       if (is.na(use.pixel.fluxweight)) {
         #Warn on Error
-        param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter not in Parameter File; Using 0 (FALSE)")
+        param.warnings<-c(param.warnings,"PixelFluxWgt Parameter not in Parameter File; Using 0 (FALSE)")
         use.pixel.fluxweight<-0
       }
     } else {
       #Warn on Error
-      param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter not in Parameter File; Using 0 (FALSE)")
+      param.warnings<-c(param.warnings,"PixelFluxWgt Parameter not in Parameter File; Using 0 (FALSE)")
       use.pixel.fluxweight<-0
     }
   }
@@ -2006,6 +2007,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("num.cores"           , num.cores           , envir = env) #
   assign("num.blanks"          , num.blanks          , envir = env) #
   assign("num.randoms"         , num.randoms         , envir = env) #
+  assign("optimal.aper"         , optimal.aper         , envir = env) # O
   assign("path.root"         , path.root         , envir = env) # P
   assign("path.work"         , path.work         , envir = env) #
   assign("path.out"          , path.out          , envir = env) #

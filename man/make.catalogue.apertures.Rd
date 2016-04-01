@@ -10,7 +10,7 @@ __This function is not designed to be called directly, but rather is an internal
 Create a length (m) list of (n,n) arrays, containing object apertures given input aperture parameters
 }
 \usage{
-make.catalogue.apertures(outenv = parent.env(environment()), env = NULL)
+make.catalogue.apertures(outenv=parent.env(environment()),env=NULL)
 }
 \arguments{
   \item{env}{

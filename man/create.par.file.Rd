@@ -11,47 +11,47 @@ the routine with no parameters specified.
 }
 \usage{
    create.par.file(filename='Lambdar_default.par',
-                 RootDirectory = "./", WorkingDirectory = "./",
-                 OutputDirectory = "./", Catalogue = "catalogue.csv",
-                 DataMap = "image.fits", BeamArea_SqAS = 0, PSFConvolve
-                 = 0, PSFWeighted = 1, PSFMap = "NONE", Gauss_FWHM_AS =
-                 0, SimGauss_AS=0, RemoveContam = 0, CheckContam = 0, nNearestCheck =
-                 10, NoContamImageFile = "NoContamResidualImage.fits",
-                 CatIDColumnLabel = "CATAID", RAColumnLabel =
-                 "RAdeg", DecColumnLabel = "DECdeg",
-                 ThetaColumnLabel = "rotN2E", SemiMajColumnLabel =
-                 "radmajasec", SemiMinColumnLabel = "radminasec",
-                 ContamColumnLabel = "CONTAM", FluxWgtColumnLabel =
-                 "FLUXWEIGHT", ErrorMap = "NONE", MaskMap = "NONE",
-                 WeightMap = "NONE", WeightMapZP = 0, Saturation = Inf,
-                 SaturationLabel = "SATUR", GainLabel = "GAIN",
-                 DataExtn = 0, ErrorExtn = 0, MaskExtn = 0, WeightExtn
-                 = 0, PointSources = 0, EFactor = 0, FluxCorr = 1,
-                 CropImage = 0, CropFitsName = "croppedimage",
-                 CropImRA0 = -999, CropImDec0 = -999, CropImRad = 0.5,
-                 Confusion_units = 0, nProcessors = 1, AngularOffset = 0,
-                 MapUnitsPerBeam = 0, SmoothAper = 0, ResamplingRes = 3,
-                 ResamplingIters = 2, PSFConfidence = 1, ApStampWidth =
-                 1.05, SourceMaskOnly = 0, WriteSourceMask = 0,
-                 WriteAAMask = 0, AllApersFile =
-                 "AllApertures_Mask.fits", WriteFAMask = 0,
-                 ConvApersFile = "AllConvolvedApertures_Mask.fits",
-                 WriteDFAMask = 0, DeblConvApersFile =
-                 "AllDeblConvolvedApertures_Mask.fits", WriteResidMap =
-                 0, ResidImageFile = "ResidualImage.fits", WriteTable =
-                 1, TableName = "LAMBDAR_Results", ShowTime = 0,
-                 Interactive = 0, UseMaskLim = 0.2, Diagnostic = 0,
-                 Verbose = 0, PlotSample = 0, PlotAll = 0, Magnitudes =
-                 1, MagZPLabel = "MagZP", ABVegaFlux = 1, MagZeroPoint
-                 = 8.9, BlankCor = 0, nBlanks = 10, RanCor = 0, nRandoms
-                 = 10, DoSkyEst = 0, GetSkyRMS = 0, SkyEstIters = 5,
-                 SkyEstProbCut = 3, SkyCorrelNoise = 1, SkyDefault =
-                 "median", SourceMaskFile = "SourceMask.fits",
-                 TransmissionMap = 0, GetDeblFrac = 0,
-                 SourceMaskConfLim = 0.95, MinApRad = 0, MemorySafe =
-                 0, ApertureConfLimit = 0.9, IterateFluxes = 0,
-                 nIterations = 2, FluxWgtType = "scale",
-                 UsePixelFluxWgts = 0, LogFile = "LAMBDAR_Log.txt")
+       RootDirectory = "./", WorkingDirectory = "./",
+       OutputDirectory = "./", Catalogue = "catalogue.csv",
+       DataMap = "image.fits", BeamArea_SqAS = 0, PSFConvolve
+       = 0, PSFWeighted = 1, PSFMap = "NONE", Gauss_FWHM_AS =
+       0, SimGauss_AS=0, RemoveContam = 0, CheckContam = 0,
+       nNearestCheck = 10, NoContamImageFile =
+       "NoContamResidualImage.fits", CatIDColumnLabel =
+       "CATAID", RAColumnLabel = "RAdeg", DecColumnLabel =
+       "DECdeg", ThetaColumnLabel = "rotN2E",
+       SemiMajColumnLabel = "radmajasec", SemiMinColumnLabel
+       = "radminasec", ContamColumnLabel = "CONTAM",
+       FluxWgtColumnLabel = "FLUXWEIGHT", ErrorMap = "NONE",
+       MaskMap = "NONE", WeightMap = "NONE", WeightMapZP = 0,
+       Saturation = Inf, SaturationLabel = "SATUR", GainLabel =
+       "GAIN", DataExtn = 0, ErrorExtn = 0, MaskExtn = 0,
+       WeightExtn = 0, PointSources = 0, EFactor = 0, FluxCorr = 1,
+       CropImage = 0, CropFitsName = "croppedimage",
+       CropImRA0 = -999, CropImDec0 = -999, CropImRad = 0.5,
+       Confusion_units = 0, nProcessors = 1, AngularOffset = 0,
+       MapUnitsPerBeam = 0, SmoothAper = 0, ResamplingRes = 3,
+       ResamplingIters = 2, PSFConfidence = 1, ApStampWidth =
+       1.05, SourceMaskOnly = 0, WriteSourceMask = 0,
+       WriteAAMask = 0, AllApersFile =
+       "AllApertures_Mask.fits", WriteFAMask = 0,
+       ConvApersFile = "AllConvolvedApertures_Mask.fits",
+       WriteDFAMask = 0, DeblConvApersFile =
+       "AllDeblConvolvedApertures_Mask.fits", WriteResidMap =
+       0, ResidImageFile = "ResidualImage.fits", WriteTable =
+       1, TableName = "LAMBDAR_Results", ShowTime = 0,
+       Interactive = 0, UseMaskLim = 0.2, Diagnostic = 0,
+       Verbose = 0, PlotSample = 0, PlotAll = 0, Magnitudes =
+       1, MagZPLabel = "MagZP", ABVegaFlux = 1, MagZeroPoint
+       = 8.9, BlankCor = 0, nBlanks = 10, RanCor = 0, nRandoms
+       = 10, DoSkyEst = 0, GetSkyRMS = 0, SkyEstIters = 5,
+       SkyEstProbCut = 3, SkyCorrelNoise = 1, SkyDefault =
+       "median", SourceMaskFile = "SourceMask.fits",
+       TransmissionMap = 0, GetDeblFrac = 0,
+       SourceMaskConfLim = 0.95, MinApRad = 0, MemorySafe =
+       0, ApertureConfLimit = 0.9, IterateFluxes = 0,
+       nIterations = 2, FluxWgtType = "scale",
+       UsePixelFluxWgts = 0, LogFile = "LAMBDAR_Log.txt")
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -194,7 +194,8 @@ create.par.file()
 create.par.file(file="Lambdar_Custom.par")
 
 #Finally, all parameters can be set as they are output:
-create.par.file(file="Lambdar_Custom.par", Catalogue="MyCat.csv", DataMap="SampleImage.fits",nProcessors=10)
+create.par.file(file="Lambdar_Custom.par", Catalogue="MyCat.csv",
+DataMap="SampleImage.fits",nProcessors=10)
 
 }
 % Add one or more standard keywords, see file `KEYWORDS' in the

@@ -1,6 +1,53 @@
-plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stamplims,imstamplims,masklims,remask=TRUE,numIters=1E3,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120){
-  if(length(ap.stamp) != length(stamplims[,1])){stop('ap.stamp and stamplim lengths do not match!')}
-  if (remask) { if(length(ap.stamp) != length(masklims[,1])){stop('ap.stamp and masklim lengths do not match!')} }
+plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=TRUE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL){
+  if(is.matrix(ap.stamp)) {
+    #We have 1 object
+    ap.stamp<-list(ap.stamp)
+  }
+  #Check Ap Stamp limits
+  if (is.null(ap.stamp.lims)){
+    #Ap stamps must be the same dimension as the image!
+    warning('ap.stamp.lims is not provided, so we assume the limits are the stamp edges')
+    ap.stamp.lims<-rbind(foreach(ap=ap.stamp,.combine='rbind')%dopar%{return=c(1,length(ap[,1]),1,length(ap[1,]))})
+  } else if (length(ap.stamp) != length(ap.stamp.lims[,1])){
+    stop('ap.stamp.lims is not the same length as ap.stamp!')
+  }
+  #Check Data stamp Limits
+  if (is.null(data.stamp.lims)){
+    #Data stamps must be the same dimension as the image!
+    warning('data.stamp.lims is not provided, so we assume the limits are the stamp edges')
+    if (is.matrix(data.stamp)) {
+      data.stamp.lims<-matrix(c(1,length(data.stamp[,1]),1,length(data.stamp[1,])),nrow=length(ap.stamp),ncol=4,byrow=T)
+    } else {
+      data.stamp.lims<-rbind(foreach(ap=data.stamp,.combine='rbind')%dopar%{return=c(1,length(ap[,1]),1,length(ap[1,]))})
+    }
+  } else if (length(data.stamp) != length(data.stamp.lims[,1])){
+    stop('data.stamp.lims is not the same length as data.stamp!')
+  }
+  if (rem.mask) {
+    if (is.null(mask.stamp)) {
+      stop("No mask supplied with rem.mask=TRUE!")
+    }
+    #Check mask stamp Limits
+    if (is.null(mask.stamp.lims)){
+      #Mask stamps must be the same dimension as the image!
+      warning('mask.stamp.lims is not provided, so we assume the limits are the stamp edges')
+      if (is.matrix(mask.stamp)) {
+        mask.stamp.lims<-matrix(c(1,length(mask.stamp[,1]),1,length(mask.stamp[1,])),nrow=length(ap.stamp),ncol=4,byrow=T)
+      } else {
+        mask.stamp.lims<-rbind(foreach(ap=mask.stamp,.combine='rbind')%dopar%{return=c(1,length(ap[,1]),1,length(ap[1,]))})
+      }
+    } else if (length(mask.stamp) != length(mask.stamp.lims[,1])){
+      stop('mask.stamp.lims is not the same length as mask.stamp!')
+    }
+  }
+  if (rem.mask) {
+    if(length(ap.stamp) != length(mask.stamp.lims[,1])){
+      stop('ap.stamp and mask.stamp.lims lengths do not match!')
+    }
+  }
+  if(length(ap.stamp) != length(data.stamp.lims[,1])){
+    stop('ap.stamp and data.stamp.lims lengths do not match!')
+  }
   cutup<-TRUE
   if(length(ap.stamp) != length(data.stamp)){
     if (is.matrix(data.stamp)) {
@@ -9,7 +56,7 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
       stop("ap.stamp and data.stamp lengths do not match!")
     }
   }
-  if (remask) {
+  if (rem.mask) {
     if(length(ap.stamp) != length(mask.stamp)) {
       if (cutup){
         stop("ap.stamp and mask.stamp lengths do not match!")
@@ -18,12 +65,26 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
       }
     }
   }
-  if (!remask) {
-    dir.create(file.path(path,"ran.corIms"),showWarnings=FALSE)
-    path=file.path(path,"ran.corIms")
+  if (toFile) {
+    if (is.null(cat.id)) { stop("Output to file requires cat.id to be specified (used for filenames)") }
+    if (!rem.mask) {
+      dir.create(file.path(path,"ran.corIms"),showWarnings=FALSE)
+      path=file.path(path,"ran.corIms")
+    } else {
+      dir.create(file.path(path,"BlanksCorIms"),showWarnings=FALSE)
+      path=file.path(path,"BlanksCorIms")
+    }
+  }
+
+  if (is.null(cat.x)) {
+    x.pix<-rowMeans(rbind(data.stamp.lims[,cbind(1,2)]))
   } else {
-    dir.create(file.path(path,"BlanksCorIms"),showWarnings=FALSE)
-    path=file.path(path,"BlanksCorIms")
+    x.pix<-floor(cat.x)
+  }
+  if (is.null(cat.y)) {
+    y.pix<-rowMeans(rbind(data.stamp.lims[,cbind(3,4)]))
+  } else {
+    y.pix<-floor(cat.y)
   }
 
   if(plot.all) {
@@ -36,14 +97,14 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
      origim=data.stamp[[i]]
     maskim=mask.stamp[[i]]
          ap=ap.stamp[[i]]
-     sxl=stamplims[i,1]
-     sxh=stamplims[i,2]
-     syl=stamplims[i,3]
-     syh=stamplims[i,4]
-     imsxl=imstamplims[i,1]
-     imsxh=imstamplims[i,2]
-     imsyl=imstamplims[i,3]
-     imsyh=imstamplims[i,4]
+     sxl=ap.stamp.lims[i,1]
+     sxh=ap.stamp.lims[i,2]
+     syl=ap.stamp.lims[i,3]
+     syh=ap.stamp.lims[i,4]
+     imsxl=data.stamp.lims[i,1]
+     imsxh=data.stamp.lims[i,2]
+     imsyl=data.stamp.lims[i,3]
+     imsyh=data.stamp.lims[i,4]
 
       #Get number of cols & rows in image stamp
       nc<-ncol(origim)
@@ -60,7 +121,7 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
       gdap<-which(ap!=0)
       gdapv<-ap[which(ap!=0)]
       #If Remasking
-      if(remask){
+      if(rem.mask){
         #Set mask 0s to NA
         maskim[which(maskim==0)]<-NA
         #Multiply Image and Mask together
@@ -105,7 +166,7 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(floor(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res)
+        if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -179,7 +240,7 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
-        dev.off()
+        if (toFile) { dev.off() }
       }else{
         ranaps<-origim*0
         tempvec<-matrix(NA,ncol=length(which(ap!=0)),nrow=numIters)
@@ -219,11 +280,11 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res)
+        if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),magmap(origim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),matrix(magmap(origim,stretch='asinh')$map,ncol=ncol(origim),nrow=nrow(origim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
         image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
@@ -293,20 +354,20 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))+0.5),boxwex=2)
-        dev.off()
+        if (toFile) { dev.off() }
       }
     }
   } else {
     for (i in rand) {
          ap=ap.stamp[[i]]
-     sxl=stamplims[i,1]
-     sxh=stamplims[i,2]
-     syl=stamplims[i,3]
-     syh=stamplims[i,4]
-     imsxl=imstamplims[i,1]
-     imsxh=imstamplims[i,2]
-     imsyl=imstamplims[i,3]
-     imsyh=imstamplims[i,4]
+     sxl=ap.stamp.lims[i,1]
+     sxh=ap.stamp.lims[i,2]
+     syl=ap.stamp.lims[i,3]
+     syh=ap.stamp.lims[i,4]
+     imsxl=data.stamp.lims[i,1]
+     imsxh=data.stamp.lims[i,2]
+     imsyl=data.stamp.lims[i,3]
+     imsyh=data.stamp.lims[i,4]
 
       #Get number of cols & rows in image stamp
       nc<-ncol(data.stamp)
@@ -324,7 +385,7 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
       gdap<-which(ap!=0)
       gdapv<-ap[which(ap!=0)]
       #If Remasking
-      if(remask){
+      if(rem.mask){
         #Set mask 0s to NA
         mask.stamp[which(mask.stamp==0)]<-NA
         #Multiply Image and Mask together
@@ -368,11 +429,11 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(floor(log10(max(abs(quantile(data.stamp,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res)
+        if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
         image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
@@ -442,7 +503,7 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
-        dev.off()
+        if (toFile) { dev.off() }
       }else{
         ranaps<-tempim*0
         tempvec<-matrix(NA,ncol=length(which(ap!=0)),nrow=numIters)
@@ -483,11 +544,11 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(floor(log10(max(abs(quantile(tempim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res)
+        if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),magmap(tempim,stretch='asinh')$map,col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
         image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
@@ -557,9 +618,9 @@ plot.ran.cor<-function(cat.id,x.pix,y.pix,data.stamp,mask.stamp,ap.stamp,stampli
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
         boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
-        dev.off()
+        if (toFile) { dev.off() }
       }
     }
   }
-  return=NULL
+  return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
 }

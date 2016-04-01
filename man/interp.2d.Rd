@@ -36,6 +36,7 @@ length(n,3) data.frame; x indicies, y indicies, and the interpolated image value
 \author{
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}};
+
 Aaron Robotham{ ICRAR}
  {\email{aaron.robotham@icrar.org}}
 }
@@ -77,9 +78,12 @@ z.new<-matrix(z.new[,3],length(x.new),length(y.new))
 #Plot the two images
 layout(cbind(1,2))
 image(x=x,y=y,z=z,col=rainbow(1E1),xlab='X (pix)',
-ylab='Y (pix)',xlim=c(x.min,x.max)*2/3,ylim=c(x.min,x.max)*2/3,asp=1,zlim=c(0,max(z)/2))
-image(x=x.new,y=y.new,z=z.new,col=rainbow(1E1),zlim=c(0,max(z)/2),add=TRUE)
-rect(x.new.min,y.new.min,x.new.max,y.new.max,col='gold',density=0,lwd=3)
+ylab='Y (pix)',xlim=c(x.min,x.max)*2/3,ylim=c(x.min,x.max)*2/3,
+asp=1,zlim=c(0,max(z)/2))
+image(x=x.new,y=y.new,z=z.new,col=rainbow(1E1),zlim=c(0,max(z)/2),
+add=TRUE)
+rect(x.new.min,y.new.min,x.new.max,y.new.max,col='gold',density=0,
+lwd=3)
 
 #Using this implementation, the function can also be used
 #to interpolate and sample from a function simultaneously.

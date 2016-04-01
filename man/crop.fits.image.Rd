@@ -69,7 +69,8 @@ data("ApCat.sample",envir=environment())
 write.fits(file="SampleImage.fits",SDSS.sample)
 
 #Crop a 40" (radius) cutout from the centre of the sample image:
-crop.fits.image(inpim="SampleImage.fits",crop.radius=40/3600,fitsoutname="SampleImage_cropped.fits")
+crop.fits.image(inpim="SampleImage.fits",crop.radius=40/3600,
+fitsoutname="SampleImage_cropped.fits")
 
 #Read the cropped sample image
 SDSS.sample.cropped<-read.fits("SampleImage_cropped.fits")
@@ -77,30 +78,37 @@ SDSS.sample.cropped<-read.fits("SampleImage_cropped.fits")
 #Image the Uncropped and Cropped Images
 layout(cbind(1,2))
 #Full Image
-image(x=1:length(SDSS.sample$dat[[1]][,1]),y=1:length(SDSS.sample$dat[[1]][1,]),z=SDSS.sample$dat[[1]],
-col=grey.colors(1E3),zlim=quantile(SDSS.sample$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
-xlab='X (pix)',ylab="Y (pix)")
+image(x=1:length(SDSS.sample$dat[[1]][,1]),
+y=1:length(SDSS.sample$dat[[1]][1,]),z=SDSS.sample$dat[[1]],
+col=grey.colors(1E3),zlim=quantile(SDSS.sample$dat[[1]],
+c(0,0.999)),asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
 #Cropped Image
-image(x=1:length(SDSS.sample.cropped$dat[[1]][,1]),y=1:length(SDSS.sample.cropped$dat[[1]][1,]),
-z=SDSS.sample.cropped$dat[[1]],col=grey.colors(1E3),zlim=quantile(SDSS.sample.cropped$dat[[1]],c(0,0.99)),asp=1,
+image(x=1:length(SDSS.sample.cropped$dat[[1]][,1]),
+y=1:length(SDSS.sample.cropped$dat[[1]][1,]),
+z=SDSS.sample.cropped$dat[[1]],col=grey.colors(1E3),
+zlim=quantile(SDSS.sample.cropped$dat[[1]],c(0,0.99)),asp=1,
 useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
 
 #The cropped image has been modified to reflect the new astrometry:
 #Get Object Positions in the cropped and uncropped images
-xy<-ad.to.xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,read.astrometry("SampleImage.fits"))
-xy.cropped<-ad.to.xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,read.astrometry("SampleImage_cropped.fits"))
+xy<-ad.to.xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,
+read.astrometry("SampleImage.fits"))
+xy.cropped<-ad.to.xy(ApCat.sample$RAdeg,ApCat.sample$DECdeg,
+read.astrometry("SampleImage_cropped.fits"))
 aspp<-abs(read.astrometry("SampleImage.fits")$CD[1,1])*3600
 #Plot Full Image w/ Object positions
-image(x=1:length(SDSS.sample$dat[[1]][,1]),y=1:length(SDSS.sample$dat[[1]][1,]),z=SDSS.sample$dat[[1]],
-col=grey.colors(1E3),zlim=quantile(SDSS.sample$dat[[1]],c(0,0.999)),asp=1,useRaster=TRUE,
-xlab='X (pix)',ylab="Y (pix)")
+image(x=1:length(SDSS.sample$dat[[1]][,1]),
+y=1:length(SDSS.sample$dat[[1]][1,]),z=SDSS.sample$dat[[1]],
+col=grey.colors(1E3),zlim=quantile(SDSS.sample$dat[[1]],
+c(0,0.999)),asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
 points(xy,pch=3,col='red')
 #Plot Cropped Image w/ Object positions
-image(x=1:length(SDSS.sample.cropped$dat[[1]][,1]),y=1:length(SDSS.sample.cropped$dat[[1]][1,]),
-z=SDSS.sample.cropped$dat[[1]],col=grey.colors(1E3),zlim=quantile(SDSS.sample.cropped$dat[[1]],c(0,0.99)),asp=1,
-useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
+image(x=1:length(SDSS.sample.cropped$dat[[1]][,1]),
+y=1:length(SDSS.sample.cropped$dat[[1]][1,]),
+z=SDSS.sample.cropped$dat[[1]],col=grey.colors(1E3),
+zlim=quantile(SDSS.sample.cropped$dat[[1]],c(0,0.99)),
+asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
 points(xy.cropped,pch=3,col='red')
-
 
 }
 % Add one or more standard keywords, see file `KEYWORDS' in the

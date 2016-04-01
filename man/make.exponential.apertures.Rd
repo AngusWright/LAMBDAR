@@ -32,7 +32,8 @@ environment; the environment where the returned values are to be stored. If not 
   \item{ObsParm}{
 List containing Observation Parameters needed in creating simulated galaxies; Exposure Time (sec; exp=),
 Collecting Area (meters squared; area=), Effective wavelength of filter (Angstrom; lamEff=), and Effective width of filter (Angstrom; WEff=).
-For example, SDSS r-band has parameters ObsParm=list(exp=53.9,area=4.91,lamEff=1111.2,Weff=6165).
+For example, SDSS r-band has parameters
+ObsParm=list(exp=53.9, area=4.91, lamEff=1111.2, Weff=6165).
 }
   \item{padGals}{
 logical; if TRUE then the simulated image will have galaxies added beyond those in the input catalogue, such that

@@ -25,7 +25,7 @@ function(image,sfa_models,ap.lims.data.stamp,fluxes,outputfile,outputheader,beam
 
   #Get MPI options {{{
   chunk.size=ceiling(npos/getDoParWorkers())
-  mpi.opts<-list(chunk.size=chunk.size)
+  mpi.opts<-list(chunkSize=chunk.size)
   message("Number of objects per thread:",chunk.size)
   #}}}
 

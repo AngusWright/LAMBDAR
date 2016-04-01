@@ -47,7 +47,7 @@ create.par.file <-
     nProcessors=1,
     AngularOffset=0,
     MapUnitsPerBeam=0,
-    SmoothAper=0,
+    ResampleAper=0,
     ResamplingRes=3,
     ResamplingIters=2,
     PSFConfidence=1,
@@ -165,7 +165,7 @@ PSFWeighted            ",PSFWeighted       ,"    #Do you want PSFWeighted Photom
 AngularOffset          ",AngularOffset     ,"    #0 if the catalogue is in N0E90 angular coords, 1 if it is in N90E0 coords
 PointSources           ",PointSources      ,"    #Force point sources to be used?                                                [1/0]
 MinApRad               ",MinApRad          ,"    #State minimum aperture to use for sources
-SmoothAper             ",SmoothAper        ,"    #Smooth Apertures by resampling? (Improves aperture surface integral accuracy)  [1/0]
+ResampleAper           ",ResampleAper      ,"    #Smooth Apertures by resampling? (Improves aperture surface integral accuracy)  [1/0]
 ResamplingRes          ",ResamplingRes     ,"    #Rate of Upscaling in Resolution during Aperture Resampling (final res is n^[nIters] higher)
 ResamplingIters        ",ResamplingIters   ,"    #Number of iterations to perform in resampling
 UseMaskLim             ",UseMaskLim        ,"    #Limit for determining whether or not to use an object overlapping the mask edge

@@ -11,7 +11,8 @@ Convolve the input aperture stamps with the PSF, and weight the resultant apertu
 }
 \usage{
 make.convolved.apertures(outenv = parent.env(environment()),
-sa_mask, flux.weightin = NULL, immask = NULL, env = NULL, subs = NULL)
+sa_mask, flux.weightin = NULL, immask = NULL, env = NULL,
+subs = NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{

@@ -106,7 +106,7 @@ function(outenv=parent.env(environment()), env=NULL){
 
   #Setup MPI Options {{{
   chunk.size=ceiling(npos/getDoParWorkers())
-  mpi.opts<-list(chunk.size=chunk.size)
+  mpi.opts<-list(chunkSize=chunk.size)
   #}}}
 
   #Calculate image Stamp limits in image-pixel space {{{
@@ -244,7 +244,7 @@ function(outenv=parent.env(environment()), env=NULL){
 
     #Setup MPI Options {{{
     chunk.size=ceiling(npos/getDoParWorkers())
-    mpi.opts<-list(chunk.size=chunk.size)
+    mpi.opts<-list(chunkSize=chunk.size)
     #}}}
 
     #Create Mask Stamps {{{
@@ -346,7 +346,7 @@ function(outenv=parent.env(environment()), env=NULL){
 
     #Setup MPI Options {{{
     chunk.size=ceiling(npos/getDoParWorkers())
-    mpi.opts<-list(chunk.size=chunk.size)
+    mpi.opts<-list(chunkSize=chunk.size)
     #}}}
 
 

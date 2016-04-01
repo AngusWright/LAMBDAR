@@ -151,7 +151,7 @@ function(env=NULL) {
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (exists("contams")) { contams<-contams[which(inside.mask)] }
     chunk.size=length(cat.id)/getDoParWorkers()
-    mpi.opts<-list(chunk.size=chunk.size)
+    mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)
     # /*fend*/ }}}
     #Notify how many objects remain /*fold*/ {{{
@@ -187,7 +187,7 @@ function(env=NULL) {
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     contams<-contams[which(inside.mask)]
     chunk.size=length(cat.id)/getDoParWorkers()
-    mpi.opts<-list(chunk.size=chunk.size)
+    mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)
     # /*fend*/ }}}
     #Notify how many objects remain /*fold*/ {{{
@@ -228,11 +228,11 @@ function(env=NULL) {
   } else if (!quiet) { cat("   - Done\n") }
   # /*fend*/ }}}
   #Remove Image arrays as they are no longer needed /*fold*/ {{{
-  if (cutup) {
-    imenvlist<-ls(envir=image.env)
-    imenvlist<-imenvlist[which(imenvlist!="im"&imenvlist!="data.hdr")]
-    rm(list=imenvlist, envir=image.env)
-  }
+  #if (cutup) {
+  #  imenvlist<-ls(envir=image.env)
+  #  imenvlist<-imenvlist[which(imenvlist!="im"&imenvlist!="data.hdr")]
+  #  rm(list=imenvlist, envir=image.env)
+  #}
   # /*fend*/ }}}
   #Create an array of stamps containing the apertures for all objects /*fold*/ {{{
   timer=system.time(sa<-make.catalogue.apertures(outenv=environment()))
@@ -289,7 +289,7 @@ function(env=NULL) {
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
-  mpi.opts<-list(chunk.size=chunk.size)
+  mpi.opts<-list(chunkSize=chunk.size)
   message("Number of objects per thread:",chunk.size)
   # /*fend*/ }}}
   #Re-Initialise object count /*fold*/ {{{
@@ -499,7 +499,7 @@ function(env=NULL) {
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
-  mpi.opts<-list(chunk.size=chunk.size)
+  mpi.opts<-list(chunkSize=chunk.size)
   message("Number of objects per thread:",chunk.size)
   # /*fend*/ }}}
   # /*fend*/ }}}
@@ -568,19 +568,36 @@ function(env=NULL) {
     if (!exists("transmission.map")) { transmission.map<-FALSE }
     if (!quiet) { cat(paste("Creating Sourcemask    ")) }
     if (length(image.env$imm)>1) { sm<-image.env$imm } else { sm<-array(1, dim=dimim) }
+    #sm<-array(1, dim=dimim)
+    #Get Mask as is {{{
+    if (length(mask.stamp)>1) {
+      for (i in 1:npos) {
+        sm[mask.stamp.lims[i,1]:mask.stamp.lims[i,2],mask.stamp.lims[i,3]:mask.stamp.lims[i,4]]<-mask.stamp[[i]]
+        #sm[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]]<-mask.stamp[[i]]
+      }
+    } #}}}
+    mask.xrange<-c(min(mask.stamp.lims[,1]),max(mask.stamp.lims[,2]))
+    mask.yrange<-c(min(mask.stamp.lims[,3]),max(mask.stamp.lims[,4]))
+    data.xrange<-c(min(data.stamp.lims[,1]),max(data.stamp.lims[,2]))
+    data.yrange<-c(min(data.stamp.lims[,3]),max(data.stamp.lims[,4]))
     if (!psf.filt) {
       if (transmission.map) {
-        sm[which(!image.env$fa > 0)]<-0
+        sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]][which(!image.env$fa[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]] > 0)]<-0
+        #sm[which(!image.env$fa > 0)]<-0
       } else {
-        sm[which(image.env$fa > 0)]<-0
+        sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]][which(image.env$fa[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]] > 0)]<-0
+        #sm[which(image.env$fa > 0)]<-0
       }
     } else {
       if (transmission.map) {
-        sm[which(!image.env$fa > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
+        sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]][which(!image.env$fa[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]] > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
+        #sm[which(!image.env$fa > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
       } else {
-        sm[which(image.env$fa > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
+        sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]][which(image.env$fa[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]] > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
+        #sm[which(image.env$fa > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
       }
     }
+    #Cutup again
     if (do.sky.est||get.sky.rms||blank.cor) {
       if (cutup) {
         mask.stamp<-list(NULL)
@@ -588,6 +605,8 @@ function(env=NULL) {
           mask.stamp[[i]]<-sm[mask.stamp.lims[i,1]:mask.stamp.lims[i,2],mask.stamp.lims[i,3]:mask.stamp.lims[i,4]]
         }
       } else {
+        image.env$imm.dimim<-array(1, dim=dimim)
+        image.env$imm.dimim[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]]<-sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]]
         image.env$imm<-sm
         mask.stamp<-sm
       }
@@ -629,12 +648,13 @@ function(env=NULL) {
     if (!quiet) { message("Perfoming Sky Estimation"); cat("Performing Sky Estimation") }
     #Perform Sky Estimation /*fold*/ {{{
     if (cutup) {
-      timer<-system.time(skyest<-sky.estimate(x.pix-(data.stamp.lims[,1]-1),y.pix-(data.stamp.lims[,3]-1),cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
+      timer<-system.time(skyest<-sky.estimate(x.pix=x.pix,y.pix=y.pix,data.stamp.lims=data.stamp.lims,
+                      cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
                       clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts))
     } else {
-      timer<-system.time(skyest<-sky.estimate(x.pix-(data.stamp.lims[,1]-1),y.pix-(data.stamp.lims[,3]-1),cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
-                      data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],
+      timer<-system.time(skyest<-sky.estimate(x.pix=x.pix,y.pix=y.pix,data.stamp.lims=data.stamp.lims,
+                      cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
+                      data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
                       clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts))
     }
     # /*fend*/ }}}
@@ -686,11 +706,19 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Sky Estimation"); cat("Plotting Sky Estimation") }
         if (cutup) {
-          timer<-system.time(plot.sky.estimate(cat.id,cat.x,cat.y,data.stamp.lims,cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
-                          clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,path=file.path(path.root,path.work,path.out),mpi.opts=mpi.opts))
+          timer<-system.time(plot.sky.estimate(cat.id=cat.id,x.pix=cat.x,y.pix=cat.y,
+                          data.stamp.lims=data.stamp.lims,
+                          cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
+                          data.stamp=data.stamp,mask.stamp=mask.stamp,
+                          clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,
+                          path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         } else {
-          timer<-system.time(plot.sky.estimate(cat.id,cat.x,cat.y,data.stamp.lims,cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=image.env$im,mask.stamp=image.env$imm,
-                          clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,path=file.path(path.root,path.work,path.out),mpi.opts=mpi.opts))
+          timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
+                          data.stamp.lims=data.stamp.lims,
+                          cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
+                          data.stamp=image.env$im,mask.stamp=image.env$imm.dimim,
+                          clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,
+                          path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         }
       #Notify /*fold*/ {{{
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
@@ -1013,7 +1041,7 @@ function(env=NULL) {
       #/*fend*/ }}}
       #Update MPI options /*fold*/ {{{
       chunk.size=ceiling(length(xind)/getDoParWorkers())
-      mpi.opts<-list(chunk.size=chunk.size)
+      mpi.opts<-list(chunkSize=chunk.size)
       #/*fend*/ }}}
       #/*fend*/ }}}
       #Calculate the flux per object /*fold*/ {{{
@@ -1138,7 +1166,7 @@ function(env=NULL) {
     }
     #Update MPI options /*fold*/ {{{
     chunk.size=ceiling(length(cat.id)/getDoParWorkers())
-    mpi.opts<-list(chunk.size=chunk.size)
+    mpi.opts<-list(chunkSize=chunk.size)
     #/*fend*/ }}}
     #/*fend*/ }}}
     detach(image.env)
@@ -1174,11 +1202,11 @@ function(env=NULL) {
   if (ran.cor) {
     if (!quiet) { message("Perfoming Randoms Correction"); cat("Performing Randoms Correction") }
     if (cutup) {
-      timer<-system.time(randoms<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,stamplims=ap.lims.data.stamp,masklims=ap.lims.mask.stamp,numIters=num.randoms,mpi.opts=mpi.opts,remask=FALSE))
+      timer<-system.time(randoms<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,numIters=num.randoms,mpi.opts=mpi.opts,rem.mask=FALSE))
     } else {
       timer<-system.time(randoms<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
                       mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],
-      ap.stamp=sfa,stamplims=ap.lims.data.map,masklims=ap.lims.mask.map,numIters=num.randoms,mpi.opts=mpi.opts,remask=FALSE))
+      ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,numIters=num.randoms,mpi.opts=mpi.opts,rem.mask=FALSE))
     }
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Randoms Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1186,10 +1214,10 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Randoms Correction"); cat("Plotting Randoms Correction") }
       if (cutup) {
-        timer<-system.time(plot.ran.cor(cat.id,cat.x,cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,stamplims=ap.lims.data.stamp,imstamplims=data.stamp.lims,masklims=ap.lims.mask.stamp,numIters=num.randoms,remask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
+        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
       } else {
         timer<-system.time(plot.ran.cor(cat.id,cat.x,cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,stamplims=ap.lims.data.map,imstamplims=data.stamp.lims,masklims=ap.lims.mask.map,numIters=num.randoms,remask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
       }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Randoms Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1202,10 +1230,10 @@ function(env=NULL) {
   if (blank.cor) {
     if (!quiet) { message("Perfoming Blanks Correction"); cat("Performing Blanks Correction") }
     if (cutup) {
-      timer<-system.time(blanks<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,stamplims=ap.lims.data.stamp,masklims=ap.lims.mask.stamp,numIters=num.blanks,mpi.opts=mpi.opts,remask=TRUE))
+      timer<-system.time(blanks<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
     } else {
       timer<-system.time(blanks<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,stamplims=ap.lims.data.map,masklims=ap.lims.mask.map,numIters=num.blanks,mpi.opts=mpi.opts,remask=TRUE))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
     }
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1213,10 +1241,10 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Blanks Correction"); cat("Plotting Blanks Correction") }
     if (cutup) {
-      timer<-system.time(plot.ran.cor(cat.id,cat.x,cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,stamplims=ap.lims.data.stamp,imstamplims=data.stamp.lims,masklims=ap.lims.mask.stamp,numIters=num.blanks,remask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
+      timer<-system.time(plot.ran.cor(cat.id,cat.x,cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
     } else {
       timer<-system.time(plot.ran.cor(cat.id,cat.x,cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,stamplims=ap.lims.data.map,imstamplims=data.stamp.lims,masklims=ap.lims.mask.map,numIters=num.blanks,remask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
     }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1754,6 +1782,9 @@ function(env=NULL) {
       #Label with ID /*fold*/ {{{
       label("topleft",lab=cat.id[i],cex=1.5, col='red')
       # /*fend*/ }}}
+      #Label Panel /*fold*/ {{{
+      label("topleft",lab="(a)",cex=2.5,inset=c(0.1,0.23))
+      # /*fend*/ }}}
       #Draw Axes /*fold*/ {{{
       magaxis(frame.plot=TRUE,main="Image & Aperture",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
       # /*fend*/ }}}
@@ -1882,6 +1913,9 @@ function(env=NULL) {
         # /*fend*/ }}}
       }
       # /*fend*/ }}}
+      #Label Panel /*fold*/ {{{
+      label("topleft",lab="(b)",cex=2.5,inset=c(0.1,0.23))
+      # /*fend*/ }}}
       #Plot the Deblended Image /*fold*/ {{{
       nc<-length(ap.lims.data.map[i,1]:ap.lims.data.map[i,2])
       nr<-length(ap.lims.data.map[i,3]:ap.lims.data.map[i,4])
@@ -1898,6 +1932,9 @@ function(env=NULL) {
       #Draw the Axes and scalebar /*fold*/ {{{
       magaxis(frame.plot=TRUE,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
       # /*fend*/ }}}
+      #Label Panel /*fold*/ {{{
+      label("topleft",lab="(c)",cex=2.5,inset=c(0.1,0.23))
+      # /*fend*/ }}}
       #Plot the Deblend Matrix /*fold*/ {{{
       z=dbw[[i]]
       image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apB, main="Weight Matrix", asp=1, col=grey.colors(256), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims)
@@ -1907,6 +1944,9 @@ function(env=NULL) {
       # /*fend*/ }}}
       #Draw the Axes and scalebar /*fold*/ {{{
       magaxis(frame.plot=TRUE,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      # /*fend*/ }}}
+      #Label Panel /*fold*/ {{{
+      label("topleft",lab="(d)",cex=2.5,inset=c(0.1,0.23))
       # /*fend*/ }}}
       #Close the file /*fold*/ {{{
       dev.off()

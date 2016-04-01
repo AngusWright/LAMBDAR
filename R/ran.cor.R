@@ -1,6 +1,36 @@
-ran.cor<-function(data.stamp,mask.stamp,ap.stamp,stamplims,masklims,remask=TRUE,numIters=1E3,mpi.opts="",sigclip=3,nclip=0){
-  if(length(ap.stamp) != length(stamplims[,1])){stop('ap.stamp and stamplim lengths do not match!')}
-  if (remask) { if(length(ap.stamp) != length(masklims[,1])){stop('ap.stamp and masklim lengths do not match!')} }
+ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,rem.mask=FALSE,numIters=1E2,mpi.opts="",sigclip=3,nclip=0,cat.x=NULL,cat.y=NULL){
+  if(is.matrix(ap.stamp)) {
+    #We have 1 object
+    ap.stamp<-list(ap.stamp)
+  }
+  #Check Ap Stamp limits
+  if (is.null(ap.stamp.lims)){
+    #Ap stamps must be the same dimension as the image!
+    warning('ap.stamp.lims is not provided, so we assume the limits are the stamp edges')
+    ap.stamp.lims<-rbind(foreach(ap=ap.stamp,.combine='rbind')%dopar%{return=c(1,length(ap[,1]),1,length(ap[1,]))})
+  } else if (length(ap.stamp) != length(ap.stamp.lims[,1])){
+    stop('ap.stamp.lims is not the same length as ap.stamp!')
+  }
+  #Check Data stamp Limits
+  if (is.null(data.stamp.lims)){
+    #Data stamps must be the same dimension as the image!
+    warning('data.stamp.lims is not provided, so we assume the limits are the stamp edges')
+    if (is.matrix(data.stamp)) {
+      data.stamp.lims<-matrix(c(1,length(data.stamp[,1]),1,length(data.stamp[1,])),nrow=length(ap.stamp),ncol=4,byrow=T)
+    } else {
+      data.stamp.lims<-rbind(foreach(ap=data.stamp,.combine='rbind')%dopar%{return=c(1,length(ap[,1]),1,length(ap[1,]))})
+    }
+  } else if (length(data.stamp) != length(data.stamp.lims[,1])){
+    stop('data.stamp.lims is not the same length as data.stamp!')
+  }
+  if (rem.mask) {
+    if (is.null(mask.stamp)) {
+      stop("No mask supplied with rem.mask=TRUE!")
+    }
+  }
+  if(length(ap.stamp) != length(data.stamp.lims[,1])){
+    stop('ap.stamp and data.stamp.lims lengths do not match!')
+  }
   cutup<-TRUE
   if(length(ap.stamp) != length(data.stamp)){
     if (is.matrix(data.stamp)) {
@@ -9,7 +39,7 @@ ran.cor<-function(data.stamp,mask.stamp,ap.stamp,stamplims,masklims,remask=TRUE,
       stop("ap.stamp and data.stamp lengths do not match!")
     }
   }
-  if (remask) {
+  if (rem.mask) {
     if(length(ap.stamp) != length(mask.stamp)) {
       if (cutup){
         stop("ap.stamp and mask.stamp lengths do not match!")
@@ -19,10 +49,41 @@ ran.cor<-function(data.stamp,mask.stamp,ap.stamp,stamplims,masklims,remask=TRUE,
     }
   }
 
+  if (is.null(cat.x)) {
+    x.pix<-rowMeans(rbind(data.stamp.lims[,cbind(1,2)]))
+  } else {
+    x.pix<-floor(cat.x)
+  }
+  if (is.null(cat.y)) {
+    y.pix<-rowMeans(rbind(data.stamp.lims[,cbind(3,4)]))
+  } else {
+    y.pix<-floor(cat.y)
+  }
+
+  #if(length(ap.stamp) != length(ap.stamp.lims[,1])){stop('ap.stamp and stamplim lengths do not match!')}
+  #if (rem.mask) { if(length(ap.stamp) != length(mask.stamp.lims[,1])){stop('ap.stamp and mask.stamp.lims lengths do not match!')} }
+  #cutup<-TRUE
+  #if(length(ap.stamp) != length(data.stamp)){
+  #  if (is.matrix(data.stamp)) {
+  #    cutup<-FALSE
+  #  } else {
+  #    stop("ap.stamp and data.stamp lengths do not match!")
+  #  }
+  #}
+  #if (rem.mask) {
+  #  if(length(ap.stamp) != length(mask.stamp)) {
+  #    if (cutup){
+  #      stop("ap.stamp and mask.stamp lengths do not match!")
+  #    } else if (!is.matrix(mask.stamp)) {
+  #      stop("data.stamp and mask.stamp are not of the same form (both matrix or both list)")
+  #    }
+  #  }
+  #}
+
   if (cutup) {
     output<-foreach(origim=data.stamp, maskim=mask.stamp, ap=ap.stamp,
-                    sxl=stamplims[,1],sxh=stamplims[,2],syl=stamplims[,3],syh=stamplims[,4],
-                    mxl=masklims[,1],mxh=masklims[,2],myl=masklims[,3],myh=masklims[,4], .options.mpi=mpi.opts, .combine='rbind') %dopar% {
+                    sxl=ap.stamp.lims[,1],sxh=ap.stamp.lims[,2],syl=ap.stamp.lims[,3],syh=ap.stamp.lims[,4],
+                    .options.mpi=mpi.opts, .combine='rbind') %dopar% {
       #Get number of cols & rows in image stamp
       nc<-ncol(origim)
       nr<-nrow(origim)
@@ -40,7 +101,7 @@ ran.cor<-function(data.stamp,mask.stamp,ap.stamp,stamplims,masklims,remask=TRUE,
       gdap<-which(ap!=0)
       gdapv<-ap[which(ap!=0)]
       #If Remasking
-      if(remask){
+      if(rem.mask){
         #Set mask 0s to NA
         maskim[which(maskim==0)]<-NA
         #Multiply Image and Mask together
@@ -104,7 +165,7 @@ ran.cor<-function(data.stamp,mask.stamp,ap.stamp,stamplims,masklims,remask=TRUE,
         wflux<-sum(flux*sumap)/sum(sumap)
         wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
         wmad<-weightedMad(flux,sumap)
-        if (sigclip>0) {
+        if (nclip>0) {
           for (iter in 1:nclip) {
             ind<-which((flux-wflux)/wsd <= sigclip)
             wflux<-sum(flux[ind]*sumap[ind])/sum(sumap[ind])
@@ -117,7 +178,7 @@ ran.cor<-function(data.stamp,mask.stamp,ap.stamp,stamplims,masklims,remask=TRUE,
     }
   } else {
     #Make Temp Image
-    if (remask) {
+    if (rem.mask) {
       tempim<-mask.stamp
       #Set mask 0s to NA
       tempim[which(tempim==0)]<-NA
@@ -126,9 +187,9 @@ ran.cor<-function(data.stamp,mask.stamp,ap.stamp,stamplims,masklims,remask=TRUE,
     } else {
       tempim<-data.stamp
     }
-    output<-foreach(ap=ap.stamp, .noexport=ls(envir=environment()), .export=c('tempim','numIters','remask'),
-                    sxl=stamplims[,1],sxh=stamplims[,2],syl=stamplims[,3],syh=stamplims[,4],
-                    mxl=masklims[,1],mxh=masklims[,2],myl=masklims[,3],myh=masklims[,4], .options.mpi=mpi.opts, .combine='rbind') %dopar% {
+    output<-foreach(ap=ap.stamp, .noexport=ls(envir=environment()), .export=c('tempim','numIters','rem.mask','sigclip','nclip'),
+                    sxl=ap.stamp.lims[,1],sxh=ap.stamp.lims[,2],syl=ap.stamp.lims[,3],syh=ap.stamp.lims[,4],
+                    .options.mpi=mpi.opts, .combine='rbind') %dopar% {
       #Get number of cols & rows in image stamp
       nc<-ncol(tempim)
       nr<-nrow(tempim)
@@ -169,7 +230,7 @@ ran.cor<-function(data.stamp,mask.stamp,ap.stamp,stamplims,masklims,remask=TRUE,
       wflux<-sum(flux*sumap)/sum(sumap)
       wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
       wmad<-weightedMad(flux,sumap)
-      if (sigclip>0) {
+      if (nclip>0) {
         for (iter in 1:nclip) {
           ind<-which((flux-wflux)/wsd <= sigclip)
           wflux<-sum(flux[ind]*sumap[ind])/sum(sumap[ind])

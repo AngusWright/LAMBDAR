@@ -35,7 +35,7 @@ logical; if TRUE, only the first `n' objects are listed
 integer; number of items to list when `head' is specified
 }
   \item{noShow}{
-character vector; fields to not show. Can be any combination of "type","size","pretty","dim","vals".
+character vector; fields to not show. Can be any combination of "type", "size", "pretty", "dim", "vals".
 }
   \item{exact}{
 logical; only show items that match 'pattern' exactly.
@@ -57,8 +57,11 @@ data frame;
 %% ~put references to the literature/web site here ~
 }
 \author{
-Procedure was authored by Dirk Eddelbuettel and Tony Breyal in the StackOverflow Forum:
+Procedure was authored by Dirk Eddelbuettel and Tony Breyal
+in the StackOverflow Forum:
+
 http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
+
 It has been modified by A.H.Wright.
 }
 \note{

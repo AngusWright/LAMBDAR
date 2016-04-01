@@ -102,7 +102,8 @@ and can be used to screen out poorly derived/constrained fluxes.
 }
 \author{
 Aaron Robotham{ ICRAR}
- {\email{aaron.robotham@icrar.org}};
+ {\email{aaron.robotham@icrar.org}}
+
 Angus H Wright{ ICRAR}
  {\email{angus.wright@icrar.org}}
 }
@@ -123,7 +124,8 @@ xy<-ad.to.xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg,astr.struc=astr)
 main<-which.min(sqrt((xy[,1]-astr$NAXIS[1]/2)^2+(xy[,2]-astr$NAXIS[2]/2)^2))
 
 #Perform a sky estimate for the Primary target
-skyest<-sky.estimate(xy[main,1],xy[main,2],data.stamp=SDSS.sample$dat[[1]],remmask=FALSE)
+skyest<-sky.estimate(xy[main,1],xy[main,2],data.stamp=SDSS.sample$dat[[1]],
+remmask=FALSE)
 #Show Sky Estimate
 print(skyest[,c('sky','skyerr','skyRMS','Nnearsky')])
 #Note that the sky is likely non-gaussian:
@@ -131,18 +133,22 @@ print(skyest[,'skyRMSpval'])
 
 #Perform a sky estimates for purely gaussian noise
 gauss<-array(rnorm(length(SDSS.sample$dat[[1]])),dim=dim(SDSS.sample$dat[[1]]))
-skyest.gauss<-sky.estimate(xy[,1],xy[,2], cutlo=rep(0,length(xy[,1])), cuthi=rep(100,length(xy[,1])),
-data.stamp=gauss,remmask=FALSE)
+skyest.gauss<-sky.estimate(xy[,1],xy[,2], cutlo=rep(0,length(xy[,1])),
+cuthi=rep(100,length(xy[,1])),data.stamp=gauss,remmask=FALSE)
 #But the p-value is still systematically low:
-hist(skyest.gauss[,'skyRMSpval'],breaks=20,xlab='Sky RMS Normality p-value',col='red',density=20,angle=-45)
+hist(skyest.gauss[,'skyRMSpval'],breaks=20,xlab='Sky RMS Normality p-value',
+col='red',density=20,angle=-45)
 #This is becuase of the sigma-clipping:
-skyest.gauss.noclip<-sky.estimate(xy[,1],xy[,2], cutlo=rep(0,length(xy[,1])), cuthi=rep(100,length(xy[,1])),
-,data.stamp=gauss,remmask=FALSE,clipiters=0)
-hist(skyest.gauss.noclip[,'skyRMSpval'],breaks=20,xlab='Sky RMS Normality p-value',add=TRUE,col='blue',density=10)
-legend('topright',legend=c("With Clipping","Without Clipping"),col=c('red','blue'),lty=1,pch=0)
+skyest.gauss.noclip<-sky.estimate(xy[,1],xy[,2], cutlo=rep(0,length(xy[,1])),
+cuthi=rep(100,length(xy[,1])),data.stamp=gauss,remmask=FALSE,clipiters=0)
+hist(skyest.gauss.noclip[,'skyRMSpval'],breaks=20,xlab='Sky RMS Normality p-value',
+add=TRUE,col='blue',density=10)
+legend('topright',legend=c("With Clipping","Without Clipping"),col=c('red','blue'),
+lty=1,pch=0)
 
 #Plot the Sky Estimate
-skyest<-plot.sky.estimate(cat.id="",x.pix=xy[main,1],y.pix=xy[main,2],data.stamp=gauss,remmask=FALSE,toFile=FALSE)
+skyest<-plot.sky.estimate(cat.id="",x.pix=xy[main,1],y.pix=xy[main,2],
+data.stamp=gauss,remmask=FALSE,toFile=FALSE)
 
 }
 % Add one or more standard keywords, see file `KEYWORDS' in the

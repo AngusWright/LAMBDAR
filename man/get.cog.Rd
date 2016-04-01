@@ -67,7 +67,8 @@ sky<-matrix(rnorm(n^2,sd=0.1), ncol=n)
 cog<-get.cog(z+sky, c(n/2,n/2))
 #Plot
 layout(cbind(1,2,3))
-magplot(cog, main="Curve of growth", xlab="Radius (pix)", ylab="Flux within Radius", type='l')
+magplot(cog, main="Curve of growth", xlab="Radius (pix)",
+ylab="Flux within Radius", type='l')
 abline(h=flux,lty=2,col='darkgreen')
 
 #Gauusian (PSF) signal with Gaussian noise and negative sky
@@ -76,7 +77,8 @@ sky<-matrix(rnorm(n^2,mean=-0.02,sd=0.1), ncol=n)
 #Get Curve of Growth
 cog<-get.cog(z+sky, c(n/2,n/2))
 #Plot
-magplot(cog, main="Curve of growth; -ve sky", xlab="Radius (pix)", ylab="Flux within Radius", type='l')
+magplot(cog, main="Curve of growth; -ve sky", xlab="Radius (pix)",
+ylab="Flux within Radius", type='l')
 abline(h=flux,lty=2,col='darkgreen')
 
 #Gauusian (PSF) signal with Gaussian noise and positive sky
@@ -85,7 +87,8 @@ sky<-matrix(rnorm(n^2,mean=+0.02,sd=0.1), ncol=n)
 #Get Curve of Growth
 cog<-get.cog(z+sky, c(n/2,n/2))
 #Plot
-magplot(cog, main="Curve of growth; +ve sky", xlab="Radius (pix)", ylab="Flux within Radius", type='l')
+magplot(cog, main="Curve of growth; +ve sky", xlab="Radius (pix)",
+ylab="Flux within Radius", type='l')
 abline(h=flux,lty=2,col='darkgreen')
 
 #Exponential signal with Gaussian noise
@@ -113,19 +116,25 @@ sky<-matrix(rnorm(n^2,sd=0.1), ncol=n)
 cog<-get.cog(z+sky, c(n/2,n/2))
 #Plot
 layout(cbind(1,2))
-magplot(cog, main="Curve of growth; Exponential", xlab="Radius (pix)", ylab="Flux within Radius", type='l')
+magplot(cog, main="Curve of growth; Exponential", xlab="Radius (pix)",
+ylab="Flux within Radius", type='l')
 abline(h=flux,lty=2,col='darkgreen')
 
-#Curve of Growth can be measured using 'Deprojected' radii, if apertures are robust:
+#Curve of Growth can be measured using 'Deprojected' radii,
+#if apertures are robust:
 #Get Deprojected Curve of Growth
 deproj.cog<-get.cog(z+sky, c(n/2,n/2),proj=c(axel.ratio,pa))
-magplot(cog, main="Deprojected Curve of growth; Exponential", xlab="Deprojected Radius (pix)", ylab="Flux within Dep. Radius", type='l')
+magplot(cog, main="Deprojected Curve of growth; Exponential",
+xlab="Deprojected Radius (pix)", ylab="Flux within Dep. Radius",
+type='l')
 abline(h=flux,lty=2,col='darkgreen')
 
 
-#CoGs can be used to measure half-light radii, which are useful for aperture diagnostics
+#CoGs can be used to measure half-light radii,
+#which are useful for aperture diagnostics
 #Plot Source Image
-image(x=seq(ceiling(-n/2),floor(n/2)),y=seq(ceiling(-n/2),floor(n/2)),z=z,xlab="X (pix)",ylab="Y (pix)",main="Source",col=grey.colors(1E3),asp=1)
+image(x=seq(ceiling(-n/2),floor(n/2)),y=seq(ceiling(-n/2),floor(n/2)),z=z,
+xlab="X (pix)",ylab="Y (pix)",main="Source",col=grey.colors(1E3),asp=1)
 #Get Half Light Radius
 hlr<-min(cog$x[which(cog$y>=max(cog$y,na.rm=TRUE)/2)])
 deproj.hlr<-min(cog$x[which(deproj.cog$y>=max(deproj.cog$y,na.rm=TRUE)/2)])
@@ -137,7 +146,9 @@ lines(ellipse(a=hlr,e=0,pa=0),col='red',lty=3)
 lines(ellipse(a=deproj.hlr,e=1-axel.ratio,pa=pa),col='gold',lty=2)
 
 #Plot Source Image
-image(x=seq(ceiling(-n/2),floor(n/2)),y=seq(ceiling(-n/2),floor(n/2)),z=z+sky,xlab="X (pix)",ylab="Y (pix)",main="Source+Noise",col=grey.colors(1E3),asp=1)
+image(x=seq(ceiling(-n/2),floor(n/2)),y=seq(ceiling(-n/2),floor(n/2)),
+z=z+sky,xlab="X (pix)",ylab="Y (pix)",main="Source+Noise",
+col=grey.colors(1E3),asp=1)
 #Get Half Light Radius
 hlr<-min(which(cog$y>=max(cog$y,na.rm=TRUE)/2))
 deproj.hlr<-min(which(deproj.cog$y>=max(deproj.cog$y,na.rm=TRUE)/2))

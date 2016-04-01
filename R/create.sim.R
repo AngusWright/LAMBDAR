@@ -243,7 +243,7 @@ function(par.file=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (filt.contam) { contams<-contams[which(inside.mask)] }
     chunk.size=length(cat.id)/getDoParWorkers()
-    mpi.opts<-list(chunk.size=chunk.size)
+    mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)
     #}}}
     #Notify how many objects remain {{{
