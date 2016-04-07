@@ -194,7 +194,7 @@ col='blue',lty=2)
 create.par.file(file="Lambdar_SimAnalysis.par",
 DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
 Gauss_FWHM_AS=2,OutputDirectory="SimResults/",IterateFluxes=1,
-nIterations=5,BlankCor=1)
+PSFConvolve=1,nIterations=5,BlankCor=1)
 measure.fluxes('Lambdar_SimAnalysis.par')
 
 #Read simulation results

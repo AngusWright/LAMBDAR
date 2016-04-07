@@ -1,7 +1,7 @@
 #
 #
 #
-plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0/0.339,hardlo=3,hardhi=10,sigmacut=3,plot.all=FALSE,path=NULL,toFile=FALSE,cat.id=NULL,cat.x=NULL,cat.y=NULL,res=220,bin.lwd=1,est.lwd=1.5,all.est.lwd=1.5){
+plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0/0.339,hardlo=3,hardhi=10,sigma.cut=3,plot.all=FALSE,path=NULL,toFile=FALSE,cat.id=NULL,cat.x=NULL,cat.y=NULL,res=220,bin.lwd=1,est.lwd=1.5,all.est.lwd=1.5){
   #Check Data stamp Limits
   if (is.null(data.stamp.lims)){
     #Data stamps must be the same dimension as the image!
@@ -56,7 +56,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
   cuthi[cuthi<hardhi*PSFFWHMinPIX]<-hardhi*PSFFWHMinPIX
   cutlovec<-round(cutlo)
   cuthivec<-round(cuthi)
-  probcut<-1-pnorm(sigmacut)
+  probcut<-1-pnorm(sigma.cut)
 
   if(plot.all) {
     rand<-1:length(x.pix)

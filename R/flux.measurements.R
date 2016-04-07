@@ -648,14 +648,14 @@ function(env=NULL) {
     if (!quiet) { message("Perfoming Sky Estimation"); cat("Performing Sky Estimation") }
     #Perform Sky Estimation /*fold*/ {{{
     if (cutup) {
-      timer<-system.time(skyest<-sky.estimate(x.pix=x.pix,y.pix=y.pix,data.stamp.lims=data.stamp.lims,
+      timer<-system.time(skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
                       cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
-                      clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts))
+                      clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts))
     } else {
-      timer<-system.time(skyest<-sky.estimate(x.pix=x.pix,y.pix=y.pix,data.stamp.lims=data.stamp.lims,
+      timer<-system.time(skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
                       cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                       data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
-                      clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts))
+                      clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts))
     }
     # /*fend*/ }}}
     #Get sky parameters /*fold*/ {{{
@@ -706,18 +706,18 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Sky Estimation"); cat("Plotting Sky Estimation") }
         if (cutup) {
-          timer<-system.time(plot.sky.estimate(cat.id=cat.id,x.pix=cat.x,y.pix=cat.y,
+          timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
                           data.stamp.lims=data.stamp.lims,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                           data.stamp=data.stamp,mask.stamp=mask.stamp,
-                          clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,
+                          clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         } else {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
                           data.stamp.lims=data.stamp.lims,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                           data.stamp=image.env$im,mask.stamp=image.env$imm.dimim,
-                          clipiters=sky.clip.iters,probcut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,
+                          clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         }
       #Notify /*fold*/ {{{
@@ -1214,10 +1214,10 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Randoms Correction"); cat("Plotting Randoms Correction") }
       if (cutup) {
-        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
+        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
       } else {
-        timer<-system.time(plot.ran.cor(cat.id,cat.x,cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
+        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
       }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Randoms Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1241,10 +1241,10 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Blanks Correction"); cat("Plotting Blanks Correction") }
     if (cutup) {
-      timer<-system.time(plot.ran.cor(cat.id,cat.x,cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
+      timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
     } else {
-      timer<-system.time(plot.ran.cor(cat.id,cat.x,cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all))
+      timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
     }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))

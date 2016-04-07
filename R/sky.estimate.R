@@ -1,7 +1,7 @@
 #
 #
 #
-sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0/0.339,hardlo=3,hardhi=10,sigmacut=3,cat.x=NULL,cat.y=NULL,mpi.opts=NULL){
+sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0/0.339,hardlo=3,hardhi=10,sigma.cut=3,cat.x=NULL,cat.y=NULL,mpi.opts=NULL){
   #Check Data stamp Limits
   if (is.null(data.stamp.lims)){
     #Data stamps must be the same dimension as the image!
@@ -48,7 +48,7 @@ sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims
   cuthi[cuthi<hardhi*PSFFWHMinPIX]<-hardhi*PSFFWHMinPIX
   cutlovec<-round(cutlo)
   cuthivec<-round(cuthi)
-  probcut<-1-pnorm(sigmacut)
+  probcut<-1-pnorm(sigma.cut)
 
   if (cutup) {
     output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x.pix, pixlocy=y.pix, origim=data.stamp, maskim=mask.stamp, sxl=data.stamp.lims[,1],syl=data.stamp.lims[,3],.options.mpi=mpi.opts, .combine='rbind') %dopar% {
