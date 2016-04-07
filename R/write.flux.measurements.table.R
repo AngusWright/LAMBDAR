@@ -70,8 +70,8 @@ function(env=NULL,filename) {
     newtable[[semimin.lab]] = cat.b; cat(paste0(semimin.lab," #Aperture SemiMinor Axis length, in arcseconds. Same as provided in the input catalogue\n"))
     if (exists("contam")) { newtable[[contam.lab]] = contams; cat(paste0(contam.lab," #Contaminant Flag. Same as provided in the input catalogue\n")) }
 #   IMAGE PARAMETERS
-    newtable[["X.imAGE"]] = cat.x; cat(paste0("X.imAGE"," #Aperture Location in Image Coordinates; X-axis\n"))
-    newtable[["Y.imAGE"]] = cat.y; cat(paste0("Y.imAGE"," #Aperture Location in Image Coordinates; Y-axis\n"))
+    newtable[["X.IMAGE"]] = cat.x; cat(paste0("X.IMAGE"," #Aperture Location in Image Coordinates; X-axis\n"))
+    newtable[["Y.IMAGE"]] = cat.y; cat(paste0("Y.IMAGE"," #Aperture Location in Image Coordinates; Y-axis\n"))
     newtable[["NX_PIX2EDGE"]] = dx.pix; cat(paste0("NX_PIX2EDGE"," #Number of Pixels to the Nearest Edge of the Image; X-Axis. Useful for avoiding selection effects at image edges\n"))
     newtable[["NY_PIX2EDGE"]] = dy.pix; cat(paste0("NY_PIX2EDGE"," #Number of Pixels to the Nearest Edge of the Image; Y-Axis. Useful for avoiding selection effects at image edges\n"))
     newtable[["StampDiameter_pix"]] = stamplen; cat(paste0("StampDiameter_pix"," #Diameter of the Aperture Stamp, in Pixels.\n"))
