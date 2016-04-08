@@ -1,7 +1,7 @@
 #
 #
 #
-sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0/0.339,hardlo=3,hardhi=10,sigma.cut=3,cat.x=NULL,cat.y=NULL,mpi.opts=NULL){
+sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,cat.x=NULL,cat.y=NULL,mpi.opts=NULL){
   #Check Data stamp Limits
   if (is.null(data.stamp.lims)){
     #Data stamps must be the same dimension as the image!

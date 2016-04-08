@@ -11,24 +11,34 @@ values of weighted annuli that are located around the ra and dec of the object o
 sky problems and is robust to outliers. It returns a single sky value and error for each requested ra and dec location.
 }
 \usage{
-sky.estimate(x.pix, y.pix, cutlo = 0, cuthi = 100, data.stamp,
-mask.stamp=NULL, remmask = TRUE, radweight = 1, clipiters = 5,
-PSFFWHMinPIX = 2/0.339, hardlo = 3, hardhi = 10,
-probcut = 3, mpi.opts = "")
-plot.sky.estimate(cat.id,x.pix,y.pix,stamplims=NULL,cutlo=0,
-cuthi=100,data.stamp,mask.stamp=NULL,remmask=TRUE,radweight=1,
-clipiters=5,PSFFWHMinPIX=2/0.339,hardlo=3,hardhi=10,
-probcut=3,plot.all=FALSE,path=NULL,
-toFile=TRUE,res=120)
-
+sky.estimate(data.stamp,mask.stamp=NULL,rem.mask=FALSE,
+data.stamp.lims=NULL, cutlo = 0, cuthi = 100,
+radweight = 1, clipiters = 5, PSFFWHMinPIX = 0,
+hardlo = 3, hardhi = 10, sigma.cut = 3, cat.x=NULL, cat.y=NULL,
+mpi.opts = "")
+plot.sky.estimate(data.stamp, mask.stamp = NULL, rem.mask = FALSE,
+data.stamp.lims = NULL, cutlo = 0, cuthi = 100,
+radweight = 1, clipiters = 5, PSFFWHMinPIX = 0,
+hardlo = 3, hardhi = 10, sigma.cut = 3, plot.all =
+FALSE, path = NULL, toFile = FALSE, cat.id = NULL,
+cat.x = NULL, cat.y = NULL, res = 220, bin.lwd = 1,
+est.lwd = 1.5, all.est.lwd = 1.5)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
-  \item{x.pix}{
-numeric (i) array; Vector of x-pixel values for the sky locations of interest (typically these will be the positions of objects).
+  \item{data.stamp}{
+numeric (n,m) array or list [[i]] of numeric [j,k] arrays; The data image stamp (or stamps) to use in sky estimation.
 }
-  \item{y.pix}{
-numeric (i) array; Vector of y-pixel values for the sky locations of interest (typically these will be the positions of objects).
+  \item{mask.stamp}{
+numeric (n,m) array or list [[i]] of numeric [j,k] arrays; The sourcemask image stamp (or stamps).
+This must be pixel matched to data.stamp, with pixel values of 1 where the pixels are likely to
+be sky, and 0 where they are likely to be sources. The SourceMask output of LAMBDAR can be used.
+}
+  \item{rem.mask}{
+logical; should the maskim be used to remove known sources.
+}
+  \item{data.stamp.lims}{
+numeric (i,4) array; The limits of the data stamps in the data image space.
 }
   \item{cutlo}{
 numeric (i) array; Vector of low radius values (in pixels) where the code will start to calculate the sky annuli around the object.
@@ -37,16 +47,6 @@ Should be large enough to avoid significant object flux, i.e. a few times the fl
   \item{cuthi}{
 numeric (i) array; Vector of low radius values (in pixels) where the code will stop calculating sky annuli around the object.
 Should be large enough to avoid significant object flux, i.e. a few times the flux 90 radius.
-}
-  \item{data.stamp}{
-numeric (n,m) array; The data image stamps to use in sky estimation.
-}
-  \item{mask.stamp}{
-numeric (n,m) array; The sourcemask image stamps. This must be pixel matched to data.stamp, with pixel values of 1 where the pixels are likely to
-be sky, and 0 where they are likely to be sources. The SourceMask output of LAMBDAR can be used.
-}
-  \item{remmask}{
-logical; should the maskim be used to remove known sources.
 }
   \item{radweight}{
 numeric; What radius power-law weighting should be used to bias the sky towards sky annuli nearer to the source. Larger values
@@ -64,18 +64,17 @@ numeric; The lower limit for the inner sky annuli, where the limit used is hardl
   \item{hardhi}{
 numeric; The lower limit for the outer sky annuli, where the limit used is hardhi * PSFFWHMinPIX.
 }
-  \item{probcut}{
-numeric; probability-level used for iterative clipping of sky-pixels in estimation.
+  \item{sigma.cut}{
+numeric; sigma-level used for iterative clipping of sky-pixels in estimation.
+}
+  \item{cat.x}{
+numeric (i) array; Vector of x-pixel values for the sky locations of interest (typically these will be the positions of objects).
+}
+  \item{cat.y}{
+numeric (i) array; Vector of y-pixel values for the sky locations of interest (typically these will be the positions of objects).
 }
   \item{mpi.opts}{
 list; options to be passed to the MPI foreach backend, if it is being used.
-}
-  \item{cat.id}{
-character (n) vector; id's of the sources.
-}
-  \item{stamplims}{
-numeric (n,4) matrix; indicies of the image stamps in the full image space. If stamps are not cutup (data.stamp is a matrix),
-then the stamplims can be NULL.
 }
   \item{plot.all}{
 logical; should all objects be plotted?
@@ -86,8 +85,20 @@ character; path to use for output, if images are being written to file.
   \item{toFile}{
 logical; should figures be sent to file?
 }
+  \item{cat.id}{
+character (n) vector; id's of the sources.
+}
   \item{res}{
 numeric; resolution in pixels per inch of the output PNGs.
+}
+  \item{bin.lwd}{
+numeric; Line width of bin-lines in output figures.
+}
+  \item{est.lwd}{
+numeric; Line width of the 'estimate' lines, for bins used in final estimates, in output figures.
+}
+  \item{all.est.lwd}{
+numeric; Line width of the 'estimate' lines for all bins in output figures.
 }
 }
 %%\details{

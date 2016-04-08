@@ -30,7 +30,7 @@ the routine with no parameters specified.
        CropImage = 0, CropFitsName = "croppedimage",
        CropImRA0 = -999, CropImDec0 = -999, CropImRad = 0.5,
        Confusion_units = 0, nProcessors = 1, AngularOffset = 0,
-       MapUnitsPerBeam = 0, SmoothAper = 0, ResamplingRes = 3,
+       MapUnitsPerBeam = 0, ResampleAper = 0, ResamplingRes = 3,
        ResamplingIters = 2, PSFConfidence = 1, ApStampWidth =
        1.05, SourceMaskOnly = 0, WriteSourceMask = 0,
        WriteAAMask = 0, AllApersFile =
@@ -103,7 +103,7 @@ the routine with no parameters specified.
  \item{ApertureConfLimit}{ float; when not using PSF Weighted Apertures, this is the integral point at which the boxcar boundary occurs }
  \item{AngularOffset}{ boolean 0/1; 0 if the catalogue is in N90E0 angular coords, 1 if it is in N0E90 coords [0/1]}
  \item{PointSources}{ boolean 0/1; Force point sources to be used? [1/0] }
- \item{SmoothAper}{ boolean 0/1; Smooth Apertures by resampling? (Improves aperture surface integral accuracy) [1/0] }
+ \item{ResampleAper}{ boolean 0/1; Smooth Apertures by resampling? (Improves aperture surface integral accuracy) [1/0] }
  \item{ResamplingRes}{ integer; Rate of Upscaling in Resolution during Aperture Resampling (final res is ResamplingRes^[nIters] higher) }
  \item{ResamplingIters}{ integer; Number of iterations to perform in resampling }
  \item{UseMaskLim}{ float in \{0,1\}; fraction of aperture stamp that must be within the mask. If less, aperture is discarded. }

@@ -1,4 +1,4 @@
-plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=TRUE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL){
+plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL){
   if(is.matrix(ap.stamp)) {
     #We have 1 object
     ap.stamp<-list(ap.stamp)
@@ -164,13 +164,13 @@ plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.st
           }
         }
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
-        lim<-(floor(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
+        lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
         if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,lo=0.01,hi=0.99,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
         image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
@@ -234,11 +234,11 @@ plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.st
             lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
           }
         }
-        abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
-        boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
+        boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         if (toFile) { dev.off() }
       }else{
@@ -284,7 +284,7 @@ plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.st
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),matrix(magmap(origim,stretch='asinh')$map,ncol=ncol(origim),nrow=nrow(origim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),matrix(magmap(origim,lo=0.01,hi=0.99,stretch='asinh')$map,ncol=ncol(origim),nrow=nrow(origim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
         image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
@@ -348,12 +348,12 @@ plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.st
             lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
           }
         }
-        abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
-        boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-        boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))+0.5),boxwex=2)
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
+        boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+        boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
         if (toFile) { dev.off() }
       }
     }
@@ -427,13 +427,13 @@ plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.st
           }
         }
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
-        lim<-(floor(log10(max(abs(quantile(data.stamp,c(0.001,0.999),na.rm=TRUE))))))
+        lim<-(ceiling(log10(max(abs(quantile(data.stamp,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
         if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,lo=0.01,hi=0.99,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
         image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
@@ -497,11 +497,11 @@ plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.st
             lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
           }
         }
-        abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
-        boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
+        boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         if (toFile) { dev.off() }
       }else{
@@ -542,13 +542,13 @@ plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.st
           }
         }
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
-        lim<-(floor(log10(max(abs(quantile(tempim,c(0.001,0.999),na.rm=TRUE))))))
+        lim<-(ceiling(log10(max(abs(quantile(tempim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
         if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
-        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
+        image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),matrix(magmap(tempim,lo=0.01,hi=0.99,stretch='asinh')$map,ncol=ncol(tempim),nrow=nrow(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="Image Stamp",asp=1,useRaster=TRUE)
         image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
@@ -612,11 +612,11 @@ plot.ran.cor<-function(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,data.st
             lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
           }
         }
-        abline(v=magmap(dat$randMean.mean,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",round(dat$randMean.mean,digits=3),"\nStd Dev = ",round(dat$randMean.SD,digits=3),sep=""),cex=0.6)
-        boxx<-magmap(flux,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
+        boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         if (toFile) { dev.off() }
       }
