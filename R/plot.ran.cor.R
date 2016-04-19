@@ -20,7 +20,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
     } else {
       data.stamp.lims<-rbind(foreach(ap=data.stamp,.combine='rbind')%dopar%{return=c(1,length(ap[,1]),1,length(ap[1,]))})
     }
-  } else if (length(data.stamp) != length(data.stamp.lims[,1])){
+  } else if (!is.matrix(data.stamp) & (length(data.stamp) != length(data.stamp.lims[,1]))){
     stop('data.stamp.lims is not the same length as data.stamp!')
   }
   if (rem.mask) {
