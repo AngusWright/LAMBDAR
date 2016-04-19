@@ -11,7 +11,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
     } else {
       data.stamp.lims<-rbind(foreach(ap=data.stamp,.combine='rbind')%dopar%{return=c(1,length(ap[,1]),1,length(ap[1,]))})
     }
-  } else if (length(data.stamp) != length(data.stamp.lims[,1])){
+  } else if (!is.matrix(data.stamp) & (length(data.stamp) != length(data.stamp.lims[,1]))){
     stop('data.stamp.lims is not the same length as data.stamp!')
   }
   if (rem.mask) {
