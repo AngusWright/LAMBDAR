@@ -118,18 +118,27 @@ function(outenv=parent.env(environment()), env=NULL){
   data.stamp.lims[which(data.stamp.lims[,2]>length(image.env$im[,1])),2]<-length(image.env$im[,1])
   #}}}
 
+  #Construct Data Stamps {{{
   data.stamp<-list(NULL)
-  #Determine if cutting up the images is worthwhile {{{
-  nchild<-getDoParWorkers()
-  #Memory of Cutups {{{
-  cutmem<-sum(stamplen^2)*3+sum((factor*2+1)^2)
-  #}}}
-  if ((cutmem)>(length(image.env$im[,1])*length(image.env$im[1,])*nchild)) {
-    cutup<-FALSE
-    message("Memory required by cutting up image is more than parsing whole image to children\n>  USE INDIVIDUAL STAMPS: FALSE")
+  if (mem.safe) {
+    #Determine if cutting up the images is worthwhile {{{
+    nchild<-getDoParWorkers()
+    #Memory of Cutups {{{
+    cutmem<-sum(stamplen^2)*3+sum((factor*2+1)^2)
+    #}}}
+    if ((cutmem)>(length(image.env$im[,1])*length(image.env$im[1,])*nchild)) {
+      cutup<-FALSE
+      message("Memory required by cutting up image is more than parsing whole image to children\n>  USE INDIVIDUAL STAMPS: FALSE")
+    } else {
+      cutup<-TRUE
+      message("Memory required by parsing whole image to children is more than cutting into individual stamps\n>  USE INDIVIDUAL STAMPS: TRUE")
+    }
+    #}}}
   } else {
+    #Memory not a concern {{{
     cutup<-TRUE
-    message("Memory required by parsing whole image to children is more than cutting into individual stamps\n>  USE INDIVIDUAL STAMPS: TRUE")
+    message("Memory considerations not required. Cutting datamap into individual stamps\n>  USE INDIVIDUAL STAMPS: TRUE")
+    #}}}
   }
   if (!cutup) {
     #total memory from stamps is larger than total memory of moving whole image around; Not worth cutting up {{{
@@ -153,7 +162,7 @@ function(outenv=parent.env(environment()), env=NULL){
     ap.lims.data.stamp<-ap.lims.data.stamp-(data.stamp.lims[,c(1,1,3,3)]-1)
     #}}}
   }
-  # }}}
+  #}}}
 
   #Notify {{{
   if (verbose) { message(paste("There are",length(cat.x),"supplied objects have stamps entirely inside the image (",
