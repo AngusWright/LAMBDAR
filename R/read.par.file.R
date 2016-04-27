@@ -164,7 +164,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     psf.map<-"NONE"
   }
   #Determine if provided psf.map is an image or filelist {{{
-  if ((length(psf.map)==1)&(psf.map!="NONE")&(!grepl(".fits", psf.map))) {
+  if ((length(psf.map)==1)&(psf.map!="NONE")&(!grepl(".fits", psf.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     psf.map<-try(c(t(read.table(file.path(path.root,psf.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(psf.map)=="try-error") {
@@ -317,7 +317,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     stop("Catalogue Parameter not in Parameter File")
   }
   #Determine if provided weightmap is an image or filelist {{{
-  if ((length(catalogue)==1)&(!grepl(".csv",catalogue))&(!grepl(".Rdata",catalogue))&(!grepl(".fits", catalogue))) {
+  if ((length(catalogue)==1)&(!grepl(".csv",catalogue,ignore.case=TRUE))&(!grepl(".Rdata",catalogue,ignore.case=TRUE))&(!grepl(".fits", catalogue,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     catalogue<-try(c(t(read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(catalogue)=="try-error") {
@@ -404,7 +404,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     stop("DataMap Parameter not in Parameter File")
   }
   #Determine if provided data.map is an image or filelist {{{
-  if ((length(data.map)==1)&(data.map!="NONE")&(!grepl(".fits", data.map))) {
+  if ((length(data.map)==1)&(data.map!="NONE")&(!grepl(".fits", data.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     data.map<-try(c(t(read.table(file.path(path.root,data.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(data.map)=="try-error") {
@@ -427,7 +427,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     error.map<-"NONE"
   }
   #Determine if provided error.map is an image or filelist {{{
-  if ((length(error.map)==1)&(is.na(as.numeric(error.map)))&(error.map!="NONE")&(!grepl(".fits", error.map))) {
+  if ((length(error.map)==1)&(is.na(as.numeric(error.map)))&(error.map!="NONE")&(!grepl(".fits", error.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     error.map<-try(c(t(read.table(file.path(path.root,error.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(error.map)=="try-error") {
@@ -451,7 +451,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     mask.map<-"NONE"
   }
   #Determine if provided mask.map is an image or filelist {{{
-  if ((length(mask.map)==1)&(mask.map!="NONE")&(!grepl(".fits", mask.map))) {
+  if ((length(mask.map)==1)&(mask.map!="NONE")&(!grepl(".fits", mask.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     mask.map<-try(c(t(read.table(file.path(path.root,mask.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(mask.map)=="try-error") {
@@ -475,7 +475,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     weight.map<-"NONE"
   }
   #Determine if provided weightmap is an image or filelist {{{
-  if ((length(weight.map)==1)&(weight.map!="NONE")&(!grepl(".fits", weight.map))) {
+  if ((length(weight.map)==1)&(weight.map!="NONE")&(!grepl(".fits", weight.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     weight.map<-try(c(t(read.table(file.path(path.root,weight.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(weight.map)=="try-error") {
@@ -1624,7 +1624,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       ID="SourceMaskFile"
       ind<-which(params[ID,]!="")
       sourcemask.filename<-params[ID,ind]
-      if (length(ind)==0||is.na(sourcemask.filename)||((length(sourcemask.filename)==1)&(!grepl(".fits", sourcemask.filename)))) {
+      if (length(ind)==0||is.na(sourcemask.filename)||((length(sourcemask.filename)==1)&(!grepl(".fits", sourcemask.filename,ignore.case=TRUE)))) {
         if (length(ind)==1) {
           sourcemask.filename<-(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
           if (class(sourcemask.filename)=="try-error") {
