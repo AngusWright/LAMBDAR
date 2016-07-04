@@ -445,6 +445,20 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
       #/*fend*/ }}}
     }#/*fend*/ }}}
 
+    #Check that the minor and major axes are the correct way around /*fold*/ {{{
+    if (all(cat.a <= cat.b) & !all(cat.a == cat.b)) {
+      warning("All major axes are smaller than all minor axes! Are the labels in the Parameter File the correct wayy around?")
+      message(paste("#################\n",
+                    "WARNING:  All of the major axes are smaller than all of the minor axes. They are probably the wrong way around!\n",
+                    "This is technically not allowed, because it can cause issues. So they have been swapped, and the angles rotated by 90deg.\n",
+                    "That will allow us to continue anyway, but you're probably going to get garbage fits...\n#################\n"))
+      tmp<-cat.a
+      cat.b<-cat.a
+      cat.a<-tmp
+      cat.theta<-cat.theta-90
+    }
+    #/*fend*/ }}}
+
     #Set apertures with NA/NULL aperture axis or minoraxis<aperturediag to point-sources /*fold*/ {{{
     #Details /*fold*/ {{{
     #If an aperture has no provided aperture parameters
