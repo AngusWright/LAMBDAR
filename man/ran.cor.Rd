@@ -13,11 +13,13 @@ This function performs a parallelised random/blank aperture analysis on the imag
 \usage{
 ran.cor(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,
 data.stamp.lims=NULL,rem.mask=FALSE,numIters=1E2,mpi.opts="",
-sigclip=3,nclip=0,cat.x=NULL,cat.y=NULL)
-plot.ran.cor(data.stamp,mask.stamp,ap.stamp,ap.stamp.lims=NULL,
+sigclip=3,nclip=0,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,
+ran.main.mask.lim=0.99)
+plot.ran.cor(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,
 data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=FALSE,
 numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,
-cat.id=NULL,cat.x=NULL,cat.y=NULL)
+cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,
+ran.main.mask.lim=0.99)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -72,6 +74,15 @@ numeric; resolution (ppi) of output PNG
 }
   \item{cat.id}{
 character [m] vector; id's of sources, for naming output files
+}
+  \item{rand.x}{
+numeric [m] vector; x (pixel) coordinates of randoms in the data image space. If NULL, x values are generated at random.
+}
+  \item{rand.y}{
+numeric [m] vector; y (pixel) coordinates of randoms in the data image space. If NULL, y values are generated at random.
+}
+  \item{ran.main.mask.lim}{
+numeric; integration limit in [0,1] for masking the main source in the image
 }
 }
 %%\details{

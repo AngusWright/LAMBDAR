@@ -367,6 +367,7 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
     cat.b<-cat.b[which(inside.mask)]
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (filt.contam) { contams<-contams[which(inside.mask)] }
+    if (exists('groups')) { groups<-groups[which(inside.mask)] }
     inside.mask<-inside.mask[which(inside.mask)]
     #/*fend*/ }}}
     if (filt.contam) {
@@ -414,6 +415,7 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
     cat.b<-cat.b[which(inside.mask)]
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (filt.contam) { contams<-contams[which(inside.mask)] }
+    if (exists('groups')) { groups<-groups[which(inside.mask)] }
     chunk.size=length(cat.id)/getDoParWorkers()
     mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)

@@ -1,4 +1,4 @@
-ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,rem.mask=FALSE,numIters=1E2,mpi.opts="",sigclip=3,nclip=0,cat.x=NULL,cat.y=NULL){
+ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,rem.mask=FALSE,numIters=1E2,mpi.opts="",sigclip=3,nclip=0,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99){
   if(is.matrix(ap.stamp)) {
     #We have 1 object
     ap.stamp<-list(ap.stamp)
@@ -52,51 +52,62 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
   if (is.null(cat.x)) {
     x.pix<-rowMeans(rbind(data.stamp.lims[,cbind(1,2)]))
   } else {
+    if (length(cat.x) != length(data.stamp.lims[,1])) {
+      stop("Supplied cat.x is not of the same length as the ap.stamp")
+    }
     x.pix<-floor(cat.x)
   }
   if (is.null(cat.y)) {
     y.pix<-rowMeans(rbind(data.stamp.lims[,cbind(3,4)]))
   } else {
+    if (length(cat.y) != length(data.stamp.lims[,1])) {
+      stop("Supplied cat.y is not of the same length as the ap.stamp")
+    }
     y.pix<-floor(cat.y)
   }
-
-  #if(length(ap.stamp) != length(ap.stamp.lims[,1])){stop('ap.stamp and stamplim lengths do not match!')}
-  #if (rem.mask) { if(length(ap.stamp) != length(mask.stamp.lims[,1])){stop('ap.stamp and mask.stamp.lims lengths do not match!')} }
-  #cutup<-TRUE
-  #if(length(ap.stamp) != length(data.stamp)){
-  #  if (is.matrix(data.stamp)) {
-  #    cutup<-FALSE
-  #  } else {
-  #    stop("ap.stamp and data.stamp lengths do not match!")
-  #  }
-  #}
-  #if (rem.mask) {
-  #  if(length(ap.stamp) != length(mask.stamp)) {
-  #    if (cutup){
-  #      stop("ap.stamp and mask.stamp lengths do not match!")
-  #    } else if (!is.matrix(mask.stamp)) {
-  #      stop("data.stamp and mask.stamp are not of the same form (both matrix or both list)")
-  #    }
-  #  }
-  #}
 
   if (cutup) {
     output<-foreach(origim=data.stamp, maskim=mask.stamp, ap=ap.stamp,
                     sxl=ap.stamp.lims[,1],sxh=ap.stamp.lims[,2],syl=ap.stamp.lims[,3],syh=ap.stamp.lims[,4],
-                    .options.mpi=mpi.opts, .combine='rbind') %dopar% {
+                    catx=x.pix,caty=y.pix,.export=c('rand.x','rand.y'),.options.mpi=mpi.opts, .combine='rbind') %dopar% {
       #Get number of cols & rows in image stamp
       nc<-ncol(origim)
       nr<-nrow(origim)
       #Get shift numbers
-      dx<-round(runif(numIters, min=1,max=nr))
-      dy<-round(runif(numIters, min=1,max=nc))
+      if (is.null(rand.x)) {
+        dx<-round(runif(numIters, min=-1*floor(nr/2),max=floor(nr/2)))
+      } else {
+        if (length(rand.x != numIters)) {
+          warning("Overwriting requested numIters with supplied number of rand.x entries")
+          numIters<-length(rand.x)
+        }
+        dx<-catx-floor(rand.x)
+      }
+      if (is.null(rand.y)) {
+        dy<-round(runif(numIters, min=-1*floor(nc/2),max=floor(nc/2)))
+      } else {
+        if (length(rand.y != numIters)) {
+          warning("Overwriting requested numIters with supplied number of rand.y entries")
+          numIters<-length(rand.y)
+        }
+        dy<-caty-floor(rand.y)
+      }
+      ind.use<-which(abs(dx) <= ceiling(nc/2) & abs(dy) <= ceiling(nr/2))
+      if (length(ind.use) != numIters) {
+        warning("There are supplied Randoms positions that are beyond the limits of the image\nThese are discarded.")
+        dx<-dx[ind.use]
+        dy<-dy[ind.use]
+        numIters<-length(ind.use)
+      }
       #Initialise Vectors
       flux<-rep(NA,numIters)
       sumap<-rep(NA,numIters)
       sdap<-rep(NA,numIters)
       madap<-rep(NA,numIters)
-      #Mask object aperture
-      origim[sxl:sxh,syl:syh][which(zapsmall(ap)!=0,arr.ind=TRUE)]<-NA
+      #If doing randoms, still Mask object aperture
+      if (!rem.mask) {
+        origim[sxl:sxh,syl:syh][which(zapsmall(ap)>=1-ran.main.mask.lim,arr.ind=TRUE)]<-NA
+      }
       #Get aperture details
       gdap<-which(ap!=0)
       gdapv<-ap[which(ap!=0)]
@@ -123,7 +134,7 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
           flux[iter]<-sum(temp*val,na.rm=TRUE)
         }
         #Return Result
-        s<-which(is.finite(flux)&is.finite(sumap))
+        s<-which(is.finite(flux)&is.finite(sumap)&(sumap > 0))
         if (length(s)!=length(flux)) {
           flux<-flux[s]
           sumap<-sumap[s]
@@ -157,7 +168,7 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
           flux[iter]<-sum(temp*val,na.rm=TRUE)
         }
         #Return Result
-        s<-which(is.finite(flux)&is.finite(sumap))
+        s<-which(is.finite(flux)&is.finite(sumap)&(sumap > 0))
         if (length(s)!=length(flux)) {
           flux<-flux[s]
           sumap<-sumap[s]
@@ -173,7 +184,7 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
             wmad<-weightedMad(flux[ind],sumap[ind])
           }
         }
-        return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
+        return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux) & sumap>0)),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
       }
     }
   } else {
@@ -187,15 +198,31 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
     } else {
       tempim<-data.stamp
     }
-    output<-foreach(ap=ap.stamp, .noexport=ls(envir=environment()), .export=c('tempim','numIters','rem.mask','sigclip','nclip'),
-                    sxl=ap.stamp.lims[,1],sxh=ap.stamp.lims[,2],syl=ap.stamp.lims[,3],syh=ap.stamp.lims[,4],
+    output<-foreach(ap=ap.stamp, .noexport=ls(envir=environment()), .export=c('rand.x','rand.y','tempim','numIters','rem.mask','sigclip','nclip'),
+                    sxl=ap.stamp.lims[,1],sxh=ap.stamp.lims[,2],syl=ap.stamp.lims[,3],syh=ap.stamp.lims[,4],catx=x.pix,caty=y.pix,
                     .options.mpi=mpi.opts, .combine='rbind') %dopar% {
       #Get number of cols & rows in image stamp
       nc<-ncol(tempim)
       nr<-nrow(tempim)
       #Get shift numbers
-      dx<-round(runif(numIters, min=1,max=nr))
-      dy<-round(runif(numIters, min=1,max=nc))
+      if (is.null(rand.x)) {
+        dx<-round(runif(numIters, min=1,max=nr))
+      } else {
+        if (length(rand.x != numIters)) {
+          warning("Overwriting requested numIters with supplied number of rand.x entries")
+          numIters<-length(rand.x)
+        }
+        dx<-catx-floor(rand.x)
+      }
+      if (is.null(rand.y)) {
+        dy<-round(runif(numIters, min=1,max=nc))
+      } else {
+        if (length(rand.y != numIters)) {
+          warning("Overwriting requested numIters with supplied number of rand.y entries")
+          numIters<-length(rand.y)
+        }
+        dy<-caty-floor(rand.y)
+      }
       #Initialise Vectors
       flux<-rep(NA,numIters)
       sumap<-rep(NA,numIters)
@@ -222,7 +249,7 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
         flux[iter]<-sum(temp*val,na.rm=TRUE)
       }
       #Return Result
-      s<-which(is.finite(flux)&is.finite(sumap))
+      s<-which(is.finite(flux)&is.finite(sumap)&(sumap > 0))
       if (length(s)!=length(flux)) {
         flux<-flux[s]
         sumap<-sumap[s]

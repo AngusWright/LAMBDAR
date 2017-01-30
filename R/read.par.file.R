@@ -277,7 +277,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       }
     } else { check.contam<-check.contam==1 }
     #}}}
-    #Check for irrelevant contaminants? {{{
+    #Number of nearest Neighbours to check? {{{
     ID="nNearestCheck"
     ind<-which(params[ID,]!="")
     num.nearest.neighbours<-as.numeric(params[ID,ind])
@@ -308,6 +308,28 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     }
     #}}}
   }
+
+  #Check for irrelevant contaminants? {{{
+  ID="GroupWeights"
+  ind<-which(params[ID,]!="")
+  group.weights<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(group.weights))) {
+    if ((length(ind)==1)) {
+      group.weights<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(group.weights)=="try-error") {
+        param.warnings<-c(param.warnings,"GroupWeights Parameter table read failed; Using 0 (FALSE)")
+        group.weights<-FALSE
+      } else { group.weights<-(group.weights==1) }
+      if (is.na(group.weights)) {
+        param.warnings<-c(param.warnings,"GroupWeights Parameter not in Parameter File; Using 0 (FALSE)")
+        group.weights<-FALSE
+      }
+    } else {
+      param.warnings<-c(param.warnings,"GroupWeights Parameter not in Parameter File; Using 0 (FALSE)")
+      group.weights<-FALSE
+    }
+  } else { group.weights<-group.weights==1 }
+  #}}}
 
   #Name of Source Catalogue {{{
   ID="Catalogue"
@@ -372,7 +394,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     semimaj.lab<-"SEMIMAJ.arcsec"
   }#}}}
 
-  #What is the title of the Catalogue's SemiMaj Axis Column? {{{
+  #What is the title of the Catalogue's SemiMin Axis Column? {{{
   ID="SemiMinColumnLabel"
   semimin.lab<-params[ID,1]
   if (is.na(semimin.lab)) {
@@ -380,7 +402,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     semimin.lab<-"SEMIMIN.arcsec"
   }#}}}
 
-  #What is the title of the Catalogue's SemiMaj Axis Column? {{{
+  #What is the title of the Catalogue's Contaminant Axis Column? {{{
   ID="ContamColumnLabel"
   contam.lab<-params[ID,1]
   if (is.na(contam.lab)) {
@@ -388,12 +410,20 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     contam.lab<-"CONTAM"
   }#}}}
 
-  #What is the title of the Catalogue's SemiMaj Axis Column? {{{
+  #What is the title of the Catalogue's FluxWeight Axis Column? {{{
   ID="FluxWgtColumnLabel"
   flux.weight.lab<-params[ID,1]
   if (is.na(flux.weight.lab)) {
     param.warnings<-c(param.warnings,"FluxWgtColumnLabel Parameter not in Parameter File; Using 'FLUXWEIGHT'")
     flux.weight.lab<-"FLUXWEIGHT"
+  }#}}}
+
+  #What is the title of the Catalogue's Grouping Axis Column? {{{
+  ID="GroupColumnLabel"
+  group.lab<-params[ID,1]
+  if (is.na(group.lab)) {
+    param.warnings<-c(param.warnings,"GroupColumnLabel Parameter not in Parameter File; Using 'GROUP'")
+    group.lab<-"GROUP"
   }#}}}
 
   #Name of Data Image {{{
@@ -1981,6 +2011,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("gauss.fwhm.arcsec"    , gauss.fwhm.arcsec    , envir = env) # G
   assign("get.debl.frac"      , get.debl.frac      , envir = env) #
   assign("get.sky.rms"        , get.sky.rms        , envir = env) #
+  assign("group.weights"       , group.weights       , envir = env) #
   assign("resample.iterations"        , resample.iterations        , envir = env) # I
   assign("iterate.fluxes"    , iterate.fluxes    , envir = env) # I
   assign("num.iterations"      , num.iterations      , envir = env) # I

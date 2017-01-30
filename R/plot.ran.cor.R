@@ -1,4 +1,4 @@
-plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL){
+plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,rand.main.mask.lim=0.99){
   if(is.matrix(ap.stamp)) {
     #We have 1 object
     ap.stamp<-list(ap.stamp)
@@ -79,11 +79,17 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
   if (is.null(cat.x)) {
     x.pix<-rowMeans(rbind(data.stamp.lims[,cbind(1,2)]))
   } else {
+    if (length(cat.x) != length(data.stamp.lims[,1])) {
+      stop("Supplied cat.x is not of the same length as the ap.stamp")
+    }
     x.pix<-floor(cat.x)
   }
   if (is.null(cat.y)) {
     y.pix<-rowMeans(rbind(data.stamp.lims[,cbind(3,4)]))
   } else {
+    if (length(cat.y) != length(data.stamp.lims[,1])) {
+      stop("Supplied cat.y is not of the same length as the ap.stamp")
+    }
     y.pix<-floor(cat.y)
   }
 
@@ -105,18 +111,45 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
      imsxh=data.stamp.lims[i,2]
      imsyl=data.stamp.lims[i,3]
      imsyh=data.stamp.lims[i,4]
+     catx=x.pix[i]
+     caty=y.pix[i]
 
       #Get number of cols & rows in image stamp
       nc<-ncol(origim)
       nr<-nrow(origim)
       #Get shift numbers
-      dx<-round(runif(numIters, min=1,max=nr))
-      dy<-round(runif(numIters, min=1,max=nc))
+      if (is.null(rand.x)) {
+        dx<-round(runif(numIters, min=-1*floor(nr/2),max=floor(nr/2)))
+      } else {
+        if (length(rand.x != numIters)) {
+          warning("Overwriting requested numIters with supplied number of rand.x entries")
+          numIters<-length(rand.x)
+        }
+        dx<-rand.x-catx
+      }
+      if (is.null(rand.y)) {
+        dy<-round(runif(numIters, min=-1*floor(nc/2),max=floor(nc/2)))
+      } else {
+        if (length(rand.y != numIters)) {
+          warning("Overwriting requested numIters with supplied number of rand.y entries")
+          numIters<-length(rand.y)
+        }
+        dy<-rand.y-caty
+      }
+      ind<-which(abs(dx) > nc | abs(dy) > nr)
+      if (length(ind) != numIters) {
+        warning("There are supplied Randoms positions that are beyond the limits of the image\nThese are discarded.")
+        dx<-dx[ind]
+        dy<-dy[ind]
+        numIters<-length(ind)
+      }
       #Initialise Vectors
       flux<-rep(NA,numIters)
       sumap<-rep(NA,numIters)
       #Mask object aperture
-      origim[sxl:sxh,syl:syh][which(zapsmall(ap)!=0,arr.ind=TRUE)]<-NA
+      if (!rem.mask) {
+        origim[sxl:sxh,syl:syh][which(zapsmall(ap)>=1-rand.main.mask.lim,arr.ind=TRUE)]<-NA
+      }
       #Get Aperture details
       gdap<-which(ap!=0)
       gdapv<-ap[which(ap!=0)]
@@ -136,6 +169,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
           yind<-yind[yind>0][1:length(ap[1,])]
           ind<-expand.grid(xind,yind)[gdap,]
+          if (any(is.na(ind))) { browser() }
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
           #Sum shifted image and Aperture to return Flux
@@ -166,7 +200,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
+        if (toFile) { CairoPNG(filename=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -251,6 +285,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
           yind<-yind[yind>0][1:length(ap[1,])]
           ind<-expand.grid(xind,yind)[gdap,]
+          if (any(is.na(ind))) { browser() }
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-origim[as.matrix(ind)]*gdapv
           val<-which(!is.na(origim[as.matrix(ind)]))
@@ -280,7 +315,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
+        if (toFile) { CairoPNG(filename=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -368,19 +403,46 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
      imsxh=data.stamp.lims[i,2]
      imsyl=data.stamp.lims[i,3]
      imsyh=data.stamp.lims[i,4]
+     catx=x.pix[i]
+     caty=y.pix[i]
 
       #Get number of cols & rows in image stamp
       nc<-ncol(data.stamp)
       nr<-nrow(data.stamp)
       #Get shift numbers
-      dx<-round(runif(numIters, min=1,max=nr))
-      dy<-round(runif(numIters, min=1,max=nc))
+      if (is.null(rand.x)) {
+        dx<-round(runif(numIters, min=-1*floor(nr/2),max=floor(nr/2)))
+      } else {
+        if (length(rand.x != numIters)) {
+          warning("Overwriting requested numIters with supplied number of rand.x entries")
+          numIters<-length(rand.x)
+        }
+        dx<-rand.x-catx
+      }
+      if (is.null(rand.y)) {
+        dy<-round(runif(numIters, min=-1*floor(nc/2),max=floor(nc/2)))
+      } else {
+        if (length(rand.y != numIters)) {
+          warning("Overwriting requested numIters with supplied number of rand.y entries")
+          numIters<-length(rand.y)
+        }
+        dy<-rand.y-caty
+      }
+      ind.use<-which(abs(dx) <= ceiling(nc/2) & abs(dy) <= ceiling(nr/2))
+      if (length(ind.use) != numIters) {
+        warning("There are supplied Randoms positions that are beyond the limits of the image\nThese are discarded.")
+        dx<-dx[ind.use]
+        dy<-dy[ind.use]
+        numIters<-length(ind.use)
+      }
       #Initialise Vectors
       flux<-rep(NA,numIters)
       sumap<-rep(NA,numIters)
       #Mask object aperture
       tempim<-data.stamp
-      tempim[sxl:sxh,syl:syh][which(zapsmall(ap)!=0,arr.ind=TRUE)]<-NA
+      if (!rem.mask) {
+        tempim[sxl:sxh,syl:syh][which(zapsmall(ap)>=1-rand.main.mask.lim,arr.ind=TRUE)]<-NA
+      }
       #Get Aperture details
       gdap<-which(ap!=0)
       gdapv<-ap[which(ap!=0)]
@@ -400,6 +462,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
           yind<-yind[yind>0][1:length(ap[1,])]
           ind<-expand.grid(xind,yind)[gdap,]
+          if (any(is.na(ind))) { browser() }
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
           val<-which(!is.na(tempim[as.matrix(ind)]))
@@ -429,7 +492,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(data.stamp,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
+        if (toFile) { CairoPNG(filename=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -497,7 +560,9 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
           }
         }
-        abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) {
+          abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        }
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
@@ -514,6 +579,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
           yind<-yind[yind>0][1:length(ap[1,])]
           ind<-expand.grid(xind,yind)[gdap,]
+          if (any(is.na(ind))) { browser() }
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
           #Sum shifted image and Aperture to return Flux
@@ -544,7 +610,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(tempim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { CairoPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
+        if (toFile) { CairoPNG(filename=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))

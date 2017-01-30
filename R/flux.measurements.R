@@ -150,6 +150,7 @@ function(env=NULL) {
     cat.b<-cat.b[which(inside.mask)]
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (exists("contams")) { contams<-contams[which(inside.mask)] }
+    if (exists("groups")) { groups<-groups[which(inside.mask)] }
     chunk.size=length(cat.id)/getDoParWorkers()
     mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)
@@ -287,6 +288,7 @@ function(env=NULL) {
   cat.b<-cat.b[which(inside.mask)]
   if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
+  if (exists("groups")) { groups<-groups[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
   mpi.opts<-list(chunkSize=chunk.size)
@@ -497,6 +499,7 @@ function(env=NULL) {
   cat.b<-cat.b[which(inside.mask)]
   if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
+  if (exists("groups")) { groups<-groups[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
   mpi.opts<-list(chunkSize=chunk.size)
@@ -1204,7 +1207,8 @@ function(env=NULL) {
     if (cutup) {
       timer<-system.time(randoms<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,numIters=num.randoms,mpi.opts=mpi.opts,rem.mask=FALSE))
     } else {
-      timer<-system.time(randoms<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
+      #timer<-system.time(randoms<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
+      timer<-system.time(randoms<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],rand.x=cat.x,rand.y=cat.y,
                       mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],
       ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,numIters=num.randoms,mpi.opts=mpi.opts,rem.mask=FALSE))
     }
@@ -1216,7 +1220,8 @@ function(env=NULL) {
       if (cutup) {
         timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
       } else {
-        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
+        #timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
+        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],rand.x=cat.x,rand.y=cat.y,
                       mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
       }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")

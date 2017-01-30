@@ -1,5 +1,5 @@
 get.cog<-
-function(zdist, centre=NULL,sample=NULL,proj=NULL){
+function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE){
 #Details {{{
 #function returns the FHWM of the image from
 #*maxima*, in pixels.
@@ -28,6 +28,9 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL){
   zvec<-as.numeric(zdist[lim[1]:lim[2],lim[3]:lim[4]])
   zbin<-zvec[tmp.order]
   cog<-data.frame(x=r[tmp.order],y=cumsum(zbin))
+  if (SNR) {
+    cog$y<-cog$y/(pi*cog$x^2)
+  }
   if (!is.null(sample) && sample > length(cog$y)) {
     sample<-seq.int(1,length(cog$y),length.out=sample)
     cog<-cog[sample,]

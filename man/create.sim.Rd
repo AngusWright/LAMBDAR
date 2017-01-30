@@ -184,7 +184,7 @@ xlab='Input Flux (Jy)')
 suppressWarnings(magerr(x=sim.in.cat$Sim.Flux.Jy,
 y=sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
 ylo=abs(sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy)*
-sim.out.cat$DFAErr_Jy/sim.out.cat$DFAFlux_Jy))
+as.numeric(sim.out.cat$DFAErr_Jy)/sim.out.cat$DFAFlux_Jy))
 abline(h=1,col='grey')
 abline(h=0.96,col='blue',lty=2)
 legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),
@@ -209,7 +209,7 @@ ylab='Measured / Input Flux',xlab='Input Flux (Jy)')
 suppressWarnings(magerr(x=sim.in.cat$Sim.Flux.Jy,
 y=sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy,
 ylo=abs(sim.out.cat$DFAFlux_Jy / sim.in.cat$Sim.Flux.Jy)*
-sim.out.cat$DFAErr_Jy/sim.out.cat$DFAFlux_Jy))
+as.numeric(sim.out.cat$DFAErr_Jy)/sim.out.cat$DFAFlux_Jy))
 abline(h=1,col='grey')
 abline(h=0.96,col='blue',lty=2)
 legend('topright',legend=c("Expected Fraction\n(2.5Kron w/ exponential profile)"),

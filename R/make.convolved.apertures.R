@@ -97,7 +97,6 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       #}}}
     }
     #}}}
-    #}}}
   } else if (weight.type=="flux") {
     #Fluxweights are Previously determined object Fluxes in Jy {{{
     #Get Range {{{
@@ -167,6 +166,18 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
     }
     #}}}
   }
+  #}}}
+
+  #If grouping weights, recalculate the weights {{{
+  if (group.weights) {
+    vals<-foreach(sel=levels(factor(groups)),.export=c('flux.weight','groups'),.combine='c') %dopar% { median(flux.weight[which(groups==sel)],na.rm=T) }
+    vals<-magmap(vals,range=c(0.1,1),stretch='lin')$map
+    names(vals)<-levels(factor(groups))
+    for (sel in levels(factor(groups))) {
+      flux.weight[which(groups==sel)]<-flux.weight[which(groups==sel)]*vals[sel]
+    }
+  }
+  #}}}
   #}}}
 
   #Perform calculations {{{

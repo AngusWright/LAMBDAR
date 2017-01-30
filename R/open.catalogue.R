@@ -141,6 +141,18 @@ function(outenv=parent.env(environment()), env=NULL){
     #Otherwise, set all weights to unity
     flux.weight<-1
   }#}}}
+
+  #If wanted, read grouping column {{{
+  if (!exists("group.weights")) { group.weights<-FALSE }
+  if (group.weights) {
+    if (!exists("group.lab")) { group.lab<-"GROUP" }
+    groups<-try(as.numeric(fitstable[1:num.rows,group.lab]),silent=TRUE)
+    if ((class(groups)=="try-error")||(length(groups)==0)||all(is.na(groups))) {
+      sink(type="message")
+      stop(paste("Catalogue does not contain",group.lab,"column"))
+    }
+    message(paste("There are ",length(factor(groups))," Groups being used in weighting"))
+  }#}}}
   #}}}
 
   #Parse Parameter Space {{{
@@ -151,6 +163,7 @@ function(outenv=parent.env(environment()), env=NULL){
   assign("cat.b"       ,cat.b       ,envir=outenv)
   assign("cat.theta"   ,cat.theta   ,envir=outenv)
   if (filt.contam) { assign("contams"   ,contams   ,envir=outenv) }
+  if (group.weights) { assign("groups"   ,groups   ,envir=outenv) }
   assign("flux.weight",flux.weight,envir=outenv)
   assign("num.rows"     ,num.rows     ,envir=outenv)
   #}}}
