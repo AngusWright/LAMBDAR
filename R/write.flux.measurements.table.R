@@ -86,6 +86,7 @@ function(env=NULL,filename) {
       newtable[["SumDFAsq"]] = sdfa2; cat(paste0("SumDFAsq"," #Integral of the Deblended Post-Convolution Aperture squared.\n"))
     }
     newtable[["SumSFAxPSF"]] = ssfap; cat(paste0("SumSFAxPSF"," #Integral of the Post-Convolution Aperture times the PSF. Used in calculating the Minimum Aperture Correction.\n"))
+    newtable[["SumPSFxData"]] = spsfd; cat(paste0("SumPSFxData"," #Integral of the PSF times the Data Image. The point-source-estimated flux.\n"))
     newtable[["SumSFAxData"]] = ssfad; cat(paste0("SumSFAxData"," #Integral of the Post-Convolution Aperture times the Data Image. The simplest flux LAMBDAR provides.\n"))
     newtable[["SumDFAxData"]] = sdfad; cat(paste0("SumDFAxData"," #Integral of the Deblended Post-Convolution Aperture times the Data Image. The raw deblended flux LAMBDAR.\n"))
     if (diagnostic) {
@@ -126,6 +127,8 @@ function(env=NULL,filename) {
     }
     if (!magnitudes) {
 #   FLUXES: Units
+      newtable[["PSFFlux_units"]] = psfflux; cat(paste0("PSFFlux_units"," #Final Point Source Flux, in image units.\n"))
+      newtable[["PSFErr_units"]] = psferr; cat(paste0("PSFErr_units"," #Error on Final Point Source Flux, in image units. Incorporates Sky Subtraction, and Sky RMS Uncertainty \n"))
       newtable[["SFAFlux_units"]] = sfaflux; cat(paste0("SFAFlux_units"," #Final Blended Flux, in image units.\n"))
       newtable[["SFAErr_units"]] = sfaerr; cat(paste0("SFAErr_units"," #Error on Final Blended Flux, in image units. Incorporates Shot Noise, Sky Subtraction, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DFAFlux_units"]] = dfaflux; cat(paste0("DFAFlux_units"," #Final Deblended Flux, in image units.\n"))
@@ -151,6 +154,8 @@ function(env=NULL,filename) {
       }
     } else {
 #     FLUXES: Jansky
+      newtable[["PSFFlux_Jy"]] = psfflux*janskyConv; cat(paste0("PSFFlux_Jy"," #Final Point Source Flux, in Jansky.\n"))
+      newtable[["PSFErr_Jy"]] = psferr*janskyConv; cat(paste0("PSFErr_Jy"," #Error on Final Point Source Flux, in Jansky. Incorporates Sky Subtraction, and Sky RMS Uncertainty \n"))
       newtable[["SFAFlux_Jy"]] = sfaflux*janskyConv; cat(paste0("SFAFlux_Jy"," #Final Blended Flux, in Jansky.\n"))
       newtable[["SFAErr_Jy"]] = sfaerr*janskyConv; cat(paste0("SFAErr_Jy"," #Error on Final Blended Flux, in Jansky. Incorporates Shot Noise, Sky Subtraction, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DFAFlux_Jy"]] = dfaflux*janskyConv; cat(paste0("DFAFlux_Jy"," #Final Deblended Flux, in Jansky.\n"))
@@ -272,7 +277,8 @@ function(env=NULL,filename) {
     cat(paste0("","                      S - Sky Estimate Warning; Sky estimate determined in by 3 or less bins\n"))
     cat(paste0("","                      X - Saturation Warning; Pixels in this object aperture are saturated\n"))
     cat(paste0("","                      I - Iteration Warning; This object was lost during iteration because its flux was measured to be <= 0.\n"))
-    write.csv(newtable,file=filename, na="-", row.names=FALSE)
+    newtable[["PhotometryBitWarning"]] = photWarnBitFlag; cat(paste0(""," #Photometry Warnings expressed as a bitflag := IXSQ; so if S only warning: bitflag := 0010 := 2 \n"))
+    write.csv(newtable,file=filename,na='NA',quote=FALSE,row.names=FALSE)
   } else {
 ####CATALOGUE PARAMETER
     newtable<-data.frame(CATA_INDEX = cat.id)
@@ -292,6 +298,7 @@ function(env=NULL,filename) {
     newtable[["SumSA"]] = ssa; cat(paste0("SumSA"," #Integral of the Catalogue Aperture (i.e. the 'Prior') in pixels\n"))
     newtable[["SumSFA"]] = ssfa; cat(paste0("SumSFA"," #Integral of the Post-Convolution Aperture.\n"))
     newtable[["SumDFA"]] = sdfa; cat(paste0("SumDFA"," #Integral of the Deblended Post-Convolution Aperture.\n"))
+    newtable[["SumPSFxData"]] = spsfd; cat(paste0("SumPSFxData"," #Integral of the PSF times the image.\n"))
     if (do.sky.est | get.sky.rms) {
       if (magnitudes) {
 #       SKY PARAMETERS: Jansky
@@ -317,6 +324,8 @@ function(env=NULL,filename) {
     }
     if (!magnitudes) {
 #   FLUXES: Units
+      newtable[["PSFFlux_units"]] = psfflux; cat(paste0("PSFFlux_units"," #Final Point Source Flux, in image units.\n"))
+      newtable[["PSFErr_units"]] = psferr; cat(paste0("PSFErr_units"," #Error on Final Point Source Flux, in image units. Incorporates Sky Subtraction, and Sky RMS Uncertainty \n"))
       newtable[["SFAFlux_units"]] = sfaflux; cat(paste0("SFAFlux_units"," #Final Blended Flux, in image units.\n"))
       newtable[["SFAErr_units"]] = sfaerr; cat(paste0("SFAErr_units"," #Error on Final Blended Flux, in image units. Incorporates Shot Noise, Sky Subtraction, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DFAFlux_units"]] = dfaflux; cat(paste0("DFAFlux_units"," #Final Deblended Flux, in image units.\n"))
@@ -342,6 +351,8 @@ function(env=NULL,filename) {
       }
     } else {
 #     FLUXES: Jansky
+      newtable[["PSFFlux_Jy"]] = psfflux*janskyConv; cat(paste0("PSFFlux_Jy"," #Final Point Source Flux, in Jansky.\n"))
+      newtable[["PSFErr_Jy"]] = psferr*janskyConv; cat(paste0("PSFErr_Jy"," #Error on Final Point Source Flux, in Jansky. Incorporates Sky Subtraction, and Sky RMS Uncertainty only \n"))
       newtable[["SFAFlux_Jy"]] = sfaflux*janskyConv; cat(paste0("SFAFlux_Jy"," #Final Blended Flux, in Jansky.\n"))
       newtable[["SFAErr_Jy"]] = sfaerr*janskyConv; cat(paste0("SFAErr_Jy"," #Error on Final Blended Flux, in Jansky. Incorporates Shot Noise, Sky Subtraction, and Blanks (pref) or Sky RMS Uncertainty \n"))
       newtable[["DFAFlux_Jy"]] = dfaflux*janskyConv; cat(paste0("DFAFlux_Jy"," #Final Deblended Flux, in Jansky.\n"))
@@ -410,7 +421,8 @@ function(env=NULL,filename) {
     cat(paste0("","                      S - Sky Estimate Warning; Sky estimate determined in by 3 or less bins\n"))
     cat(paste0("","                      X - Saturation Warning; Pixels in this object aperture are saturated\n"))
     cat(paste0("","                      I - Iteration Warning; This object was lost during iteration because its flux was measured to be <= 0.\n"))
-    write.csv(newtable,file=filename, na="-", row.names=FALSE)
+    newtable[["PhotometryBitWarning"]] = photWarnBitFlag; cat(paste0(""," #Photometry Warnings expressed as a bitflag := IXSQ; so if S only warning: bitflag := 0010 := 2 \n"))
+    write.csv(newtable,file=filename,na='NA',quote=FALSE,row.names=FALSE)
   }
 
   if (!is.null(env)) { detach(env) }

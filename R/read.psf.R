@@ -15,8 +15,21 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
   #}}}
 
   #Read/Generate PSF {{{
-  if (gauss.fwhm.arcsec > 0) {
+  if (gauss.fwhm.arcsec != 0) {
     #Generate Gaussian PSF {{{
+    if (gauss.fwhm.arcsec < 0) {
+      message("Reading Gaussian PSF FWHM from datamap")
+      if (grepl('sig',psf.label,ignore.case=TRUE)) {
+        gauss.sigma.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))
+        gauss.fwhm.arcsec<-gauss.sigma.arcsec*(2*sqrt(2*log(2)))
+        message(paste0("PSF width in header is as SIGMA: value = ",gauss.sigma.arcsec," arcsec"))
+      } else {
+        gauss.fwhm.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))
+        message(paste0("PSF width in header is as FWHM: value = ",gauss.fwhm.arcsec," arcsec")) 
+      }
+      if (is.na(gauss.fwhm.arcsec)) { sink(type="message") ; stop("Read of PSF FWHM from datamap failed. Cannot continue") }
+      if (verbose) { message(" -Done\n") }
+    }
     if (verbose) { message("Creating Gaussian PSF from input parameters") }
     #Get gaussian parameters {{{
     psffwhm.pix<-gauss.fwhm.arcsec/arcsec.per.pix
@@ -34,7 +47,13 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
     } else {
       stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix))*2+5)
     }
-
+    if (psf.clip > stampsizepix) {
+      message(paste("WARNING: psf stamp is larger than the largest aperture stamp.\n",
+      "It is being cut down in size, which will bias the aperture correction.\n",
+      "To avoid this, increase the defBuff size in the parameter file."))
+      psf.clip<-stampsizepix
+      psfwidth<-psf.clip*arcsec.per.pix
+    }
     x0=ceiling(psf.clip/2.)
     y0=ceiling(psf.clip/2.)
     if (verbose) { message(paste("gauss.fwhm.arcsec, x0, y0, sigma_p, stampsizepix\n",

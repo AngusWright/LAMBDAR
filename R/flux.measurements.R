@@ -274,6 +274,7 @@ function(env=NULL) {
   error.stamp.lims<-rbind(error.stamp.lims[which(inside.mask),])
   ap.lims.data.map<-rbind(ap.lims.data.map[which(inside.mask),])
   ap.lims.mask.map<-rbind(ap.lims.mask.map[which(inside.mask),])
+  ap.lims.error.map<-rbind(ap.lims.error.map[which(inside.mask),])
   x.pix<-x.pix[which(inside.mask)]
   y.pix<-y.pix[which(inside.mask)]
   cat.x<-cat.x[which(inside.mask)]
@@ -485,6 +486,7 @@ function(env=NULL) {
   error.stamp.lims<-rbind(error.stamp.lims[which(inside.mask),])
   ap.lims.data.map<-rbind(ap.lims.data.map[which(inside.mask),])
   ap.lims.mask.map<-rbind(ap.lims.mask.map[which(inside.mask),])
+  ap.lims.error.map<-rbind(ap.lims.error.map[which(inside.mask),])
   x.pix<-x.pix[which(inside.mask)]
   y.pix<-y.pix[which(inside.mask)]
   cat.x<-cat.x[which(inside.mask)]
@@ -525,7 +527,7 @@ function(env=NULL) {
   if (plot.sample) {
     res<-120
     #Set output name /*fold*/ {{{
-    CairoPNG(file.path(path.root,path.work,path.out,"PSF_Samples.png"))
+    PlotPNG(file.path(path.root,path.work,path.out,"PSF_Samples.png"))
     # /*fend*/ }}}
     #Set Layout /*fold*/ {{{
     par(mfrow=c(2,2))
@@ -771,14 +773,23 @@ function(env=NULL) {
   if (!exists("psf.weighted")) { psf.weighted<-FALSE }
   if (psf.filt & !psf.weighted) {
     # If we have convolved with a PSF, & not doing PSF Weighting, convert back to tophat apertures (now expanded by PSF convolution) /*fold*/ {{{
-    # For each aperture, Binary filter at aplim*max(ap) /*fold*/ {{{
+    # For each aperture, Binary filter at aplim*max(ap) or optimally /*fold*/ {{{
     sba<-foreach(sfam=sfa, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="ap.limit")%dopar%{
       apvals<-rev(sort(sfam))
-      tempsum<-cumsum(apvals)
-      tempfunc<-approxfun(tempsum,apvals)
-      apLim<-tempfunc(ap.limit*max(tempsum, na.rm=TRUE))
-      sfam[which(sfam <  apLim)]<-0
-      sfam[which(sfam >= apLim)]<-1
+      if (optimal.aper) { 
+        #If optimal, flip at point that SNR peaks
+        tempsum<-cumsum(apvals)/sqrt(cumsum(seq(apvals)))
+        apLim<-apvals[which.max(tempsum)]
+        sfam[which(sfam <  apLim)]<-0
+        sfam[which(sfam >= apLim)]<-1
+      } else {
+        #If not optimal, flip at integration point from par file
+        tempsum<-cumsum(apvals)
+        tempfunc<-approxfun(tempsum,apvals)
+        apLim<-tempfunc(ap.limit*max(tempsum, na.rm=TRUE))
+        sfam[which(sfam <  apLim)]<-0
+        sfam[which(sfam >= apLim)]<-1
+      }
       return=sfam
     }
     # /*fend*/ }}}
@@ -835,7 +846,7 @@ function(env=NULL) {
   #If PSF Supplied & sample wanted, Plot PSF and Min Aperture Correction /*fold*/ {{{
   if (!(no.psf)&(plot.sample)) {
     #PSF with Contours /*fold*/ {{{
-    CairoPNG(file.path(path.root,path.work,path.out,"PSF.png"))
+    PlotPNG(file.path(path.root,path.work,path.out,"PSF.png"))
     psfvals<-rev(sort(psf))
     tempsum<-cumsum(psfvals)
     tempfunc<-approxfun(tempsum,psfvals)
@@ -878,7 +889,7 @@ function(env=NULL) {
     ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
     # /*fend*/ }}}
     #Aperture Correction Plot /*fold*/ {{{
-    CairoPNG(file.path(path.root,path.work,path.out,"ApertureCorrection.png"))
+    PlotPNG(file.path(path.root,path.work,path.out,"ApertureCorrection.png"))
     Rast<-ifelse(length(ap)>1E4,TRUE,FALSE)
     if (!psf.weighted) {
       #Binary Aperture /*fold*/ {{{
@@ -1002,6 +1013,7 @@ function(env=NULL) {
   }
   # /*fend*/ }}}
   # /*fend*/ }}}
+  # /*fend*/ }}}
   #If wanted; Iterate the fluxes to improve final measurements /*fold*/ {{{
   if (iterate.fluxes) {
     #Notify /*fold*/ {{{
@@ -1030,7 +1042,7 @@ function(env=NULL) {
     #/*fend*/ }}}
     for (iter in 1:num.iterations) {
       #Determine objects to iterate over /*fold*/ {{{
-      if (iter!=1) {
+      if (iter!=1 | length(sdfa)==1) {
         xind<-which(sdfa!=ssfa & sdfa!=0)
         iterateLost<-sdfa==0
       } else {
@@ -1053,13 +1065,28 @@ function(env=NULL) {
       if (!quiet) { cat("  Calculating Flux (#",iter,")") }
       # /*fend*/ }}}
       timer<-proc.time()
-      if (cutup) {
-        sdfad[xind]<-foreach(dfam=dfa[xind],im=data.stamp[xind], xlo=ap.lims.data.stamp[xind,1],xup=ap.lims.data.stamp[xind,2], ylo=ap.lims.data.stamp[xind,3],yup=ap.lims.data.stamp[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-           sum(dfam*(im[xlo:xup,ylo:yup]))
+      if (iter==1) {
+        #if the first iteration, use 'quasi-segmented flux' for 0th step /*fold*/ {{{
+        if (cutup) {
+          sdfad[xind]<-foreach(dfam=dfa[xind],im=data.stamp[xind], xlo=ap.lims.data.stamp[xind,1],xup=ap.lims.data.stamp[xind,2], ylo=ap.lims.data.stamp[xind,3],yup=ap.lims.data.stamp[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+             sum((im[xlo:xup,ylo:yup][which(dfam >= 0.75,arr.ind=T)]))
+          }
+        } else {
+          sdfad[xind]<-foreach(dfam=dfa[xind], xlo=ap.lims.data.map[xind,1],xup=ap.lims.data.map[xind,2], ylo=ap.lims.data.map[xind,3],yup=ap.lims.data.map[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()),.export='im') %dopar% {
+             sum((im[xlo:xup,ylo:yup][which(dfam >= 0.75,arr.ind=T)]))
+          }
         }
+        # /*fend*/ }}}
       } else {
-        sdfad[xind]<-foreach(dfam=dfa[xind], xlo=ap.lims.data.map[xind,1],xup=ap.lims.data.map[xind,2], ylo=ap.lims.data.map[xind,3],yup=ap.lims.data.map[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()),.export='im') %dopar% {
-           sum(dfam*(im[xlo:xup,ylo:yup]))
+        #if not the first iteration, use weighted deblended flux /*fold*/ {{{
+        if (cutup) {
+          sdfad[xind]<-foreach(dfam=dfa[xind],im=data.stamp[xind], xlo=ap.lims.data.stamp[xind,1],xup=ap.lims.data.stamp[xind,2], ylo=ap.lims.data.stamp[xind,3],yup=ap.lims.data.stamp[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+             sum(dfam*(im[xlo:xup,ylo:yup]))
+          }
+        } else {
+          sdfad[xind]<-foreach(dfam=dfa[xind], xlo=ap.lims.data.map[xind,1],xup=ap.lims.data.map[xind,2], ylo=ap.lims.data.map[xind,3],yup=ap.lims.data.map[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()),.export='im') %dopar% {
+             sum(dfam*(im[xlo:xup,ylo:yup]))
+          }
         }
       }
       #Notify /*fold*/ {{{
@@ -1207,7 +1234,6 @@ function(env=NULL) {
     if (cutup) {
       timer<-system.time(randoms<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,numIters=num.randoms,mpi.opts=mpi.opts,rem.mask=FALSE))
     } else {
-      #timer<-system.time(randoms<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
       timer<-system.time(randoms<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],rand.x=cat.x,rand.y=cat.y,
                       mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],
       ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,numIters=num.randoms,mpi.opts=mpi.opts,rem.mask=FALSE))
@@ -1220,9 +1246,8 @@ function(env=NULL) {
       if (cutup) {
         timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
       } else {
-        #timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
         timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],rand.x=cat.x,rand.y=cat.y,
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
       }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Randoms Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1238,7 +1263,7 @@ function(env=NULL) {
       timer<-system.time(blanks<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
     } else {
       timer<-system.time(blanks<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,mask.stamp.lims=ap.lims.mask.map,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
     }
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1249,7 +1274,7 @@ function(env=NULL) {
       timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
     } else {
       timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
     }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1369,6 +1394,16 @@ function(env=NULL) {
   }
   # /*fend*/ }}}
 #-----
+  #Integral of the reinterpolated psf^2; spsf2 /*fold*/ {{{
+  if (!no.psf) {
+    if (verbose) { cat("      Integral of the reinterpolated psf") }
+    spsf2<-rep(sum(psf^2),length(cat.id))
+    if (verbose) { cat(" - Done\n") }
+  } else {
+    spsf2<-rep(NA, length(sfa))
+  }
+  # /*fend*/ }}}
+#-----
   #Integral of the (convolved aperture * psf); ssfap /*fold*/ {{{
   if (!no.psf) {
     if (verbose) { cat("      Integral of the (convolved aperture * psf)") }
@@ -1405,6 +1440,76 @@ function(env=NULL) {
     if (verbose) { cat(" - Done\n") }
   } else {
     ssfap<-rep(NA, length(sfa))
+  }
+  # /*fend*/ }}}
+#-----
+  #Integral of the (psf * image); spsfd /*fold*/ {{{
+  if (!no.psf) {
+    if (verbose) { cat("      Integral of the (psf * image)") }
+    if (cutup) {
+      spsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export="psf") %dopar% {
+        #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
+        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+        delta<-floor(slen/2)*c(-1,+1)
+        lims<-rbind(centre[1]+delta,centre[2]+delta)
+        dx<-lims[1,1]-1
+        dy<-lims[2,1]-1
+        dx<-ifelse(dx>0,dx+1,dx)
+        dy<-ifelse(dy>0,dy+1,dy)
+        # /*fend*/ }}}
+        #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
+        lenxpsf<-length(psf[,1])
+        lenypsf<-length(psf[1,])
+        lenx<-length(1:slen)
+        leny<-length(1:slen)
+        #Make grid for psf at old pixel centres /*fold*/ {{{
+        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+        # /*fend*/ }}}
+        #Make expanded grid of new pixel centres /*fold*/ {{{
+        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
+        xnew<-expanded[,1]-xc%%1
+        ynew<-expanded[,2]-yc%%1
+        # /*fend*/ }}}
+        #Interpolate /*fold*/ {{{
+        ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
+        # /*fend*/ }}}
+        # /*fend*/ }}}
+        sum(ap*im[xlo:xup,ylo:yup])
+      }
+    } else {
+      spsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("psf","im")) %dopar% {
+        #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
+        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+        delta<-floor(slen/2)*c(-1,+1)
+        lims<-rbind(centre[1]+delta,centre[2]+delta)
+        dx<-lims[1,1]-1
+        dy<-lims[2,1]-1
+        dx<-ifelse(dx>0,dx+1,dx)
+        dy<-ifelse(dy>0,dy+1,dy)
+        # /*fend*/ }}}
+        #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
+        lenxpsf<-length(psf[,1])
+        lenypsf<-length(psf[1,])
+        lenx<-length(1:slen)
+        leny<-length(1:slen)
+        #Make grid for psf at old pixel centres /*fold*/ {{{
+        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+        # /*fend*/ }}}
+        #Make expanded grid of new pixel centres /*fold*/ {{{
+        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
+        xnew<-expanded[,1]-xc%%1
+        ynew<-expanded[,2]-yc%%1
+        # /*fend*/ }}}
+        #Interpolate /*fold*/ {{{
+        ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
+        # /*fend*/ }}}
+        # /*fend*/ }}}
+        sum(ap*im[xlo:xup,ylo:yup])
+      }
+    }
+    if (verbose) { cat(" - Done\n") }
+  } else {
+    spsfd<-rep(NA, length(sfa))
   }
   # /*fend*/ }}}
 #-----
@@ -1604,6 +1709,9 @@ function(env=NULL) {
   #Final Flux & Error Calculations /*fold*/ {{{
   if (!cutup) { detach(image.env) }
   if (verbose) { cat("      Final Fluxes and Error Calculations ") }
+  #Calculate PSF-Weighting Correction /*fold*/ {{{
+  PSCorr<-spsf/spsf2
+  # /*fend*/ }}}
   #Calculate Aperture-Weighting Correction /*fold*/ {{{
   WtCorr<-ssfa/ssfau
   # /*fend*/ }}}
@@ -1615,12 +1723,20 @@ function(env=NULL) {
   }
   # /*fend*/ }}}
 
+  #Point Source flux = Int(PSF*Im) /*fold*/ {{{
+  psfflux<-spsfd
+  # /*fend*/ }}}
+
   #Convolved aperture flux = Int(fltAp*Im) /*fold*/ {{{
   sfaflux<-ssfad
   # /*fend*/ }}}
 
   #Deblended convolved aperture flux = Int(DBfltAp*Im) /*fold*/ {{{
   dfaflux<-sdfad
+  # /*fend*/ }}}
+
+  #Point Source Flux error /*fold*/ {{{
+  psferr<-((conf*beamarea)^2.*sqrt(spsf)*PSCorr)^2
   # /*fend*/ }}}
 
   #Convolved aperture error /*fold*/ {{{
@@ -1650,13 +1766,16 @@ function(env=NULL) {
       sfaerr[which(!is.na(skyrms))]<-(sfaerr+(skyrms*sqrt(ssfa)*ApCorr)^2)[which(!is.na(skyrms))]
       dfaerr[which(!is.na(skyrms))]<-(dfaerr+(skyrms*sqrt(sdfa)*ApCorr)^2)[which(!is.na(skyrms))]
     }
+    psferr[which(!is.na(skyrms))]<-(psferr+(skyrms*sqrt(spsf)*PSCorr)^2)[which(!is.na(skyrms))]
     if (do.sky.est) {
       if (!quiet) { message("Perfoming Sky Subtraction"); cat("{\n   Performing Sky Subtraction") }
       #Subtract Sky Flux /*fold*/ {{{
       dfaflux<-dfaflux-skyflux
       sfaflux<-sfaflux-skylocal*ssfa
+      psfflux<-psfflux-skylocal*spsf
       dfaerr[which(!is.na(skyerr))]<-(dfaerr+(skyerr*sdfa*ApCorr)^2)[which(!is.na(skyerr))]
-      sfaerr[which(!is.na(skyerr))]<-(sfaerr+(skyerr*sdfa*ApCorr)^2)[which(!is.na(skyerr))]
+      sfaerr[which(!is.na(skyerr))]<-(sfaerr+(skyerr*ssfa*ApCorr)^2)[which(!is.na(skyerr))]
+      psferr[which(!is.na(skyerr))]<-(psferr+(skyerr*spsf*PSCorr)^2)[which(!is.na(skyerr))]
       if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
       # /*fend*/ }}}
     }
@@ -1668,18 +1787,22 @@ function(env=NULL) {
   # /*fend*/ }}}
 
   #Finalise Errors /*fold*/ {{{
+  psferr<-sqrt(psferr)
   sfaerr<-sqrt(sfaerr)
   dfaerr<-sqrt(dfaerr)
   # /*fend*/ }}}
   # /*fend*/ }}}
   #Apply Aperture Correction to the Aperture Fluxess /*fold*/ {{{
+  psfflux<-psfflux*PSCorr
   sfaflux<-sfaflux*ApCorr
   dfaflux<-dfaflux*ApCorr
   # /*fend*/ }}}
   #Apply Additional Flux Correction to the Finalised Values /*fold*/ {{{
   if (flux.corr!=1) {
+    psfflux<-psfflux*flux.corr
     sfaflux<-sfaflux*flux.corr
     dfaflux<-dfaflux*flux.corr
+    psferr<-psferr*flux.corr
     sfaerr<-sfaerr*flux.corr
     dfaerr<-dfaerr*flux.corr
   }# /*fend*/ }}}
@@ -1739,7 +1862,7 @@ function(env=NULL) {
     # /*fend*/ }}}
     for (i in ind) {
       #Open Device /*fold*/ {{{
-      CairoPNG(file.path(path.root,path.work,path.out,paste("COGs/",cat.id[i],".png",sep="")),width=8*res,height=8*res,res=res)
+      PlotPNG(file.path(path.root,path.work,path.out,paste("COGs/",cat.id[i],".png",sep="")),width=8*res,height=8*res,res=res)
       #pdf(file.path(path.root,path.work,path.out,paste("COGs/",cat.id[i],".pdf",sep="")),width=14,height=3.5)
       # /*fend*/ }}}
       #Set Layout /*fold*/ {{{
@@ -1791,7 +1914,8 @@ function(env=NULL) {
       label("topleft",lab="(a)",cex=2.5,inset=c(0.1,0.23))
       # /*fend*/ }}}
       #Draw Axes /*fold*/ {{{
-      magaxis(frame.plot=TRUE,main="Image & Aperture",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      magaxis(frame.plot=TRUE,main="Image & Aperture",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)",cex.axis=1.2)
+      magaxis(side=c(3,4),labels=FALSE)
       # /*fend*/ }}}
       #Generate COGs /*fold*/ {{{
       #Raw Image /*fold*/ {{{
@@ -1835,7 +1959,8 @@ function(env=NULL) {
         # /*fend*/ }}}
         #Plot Raw COG /*fold*/ {{{
         suppressWarnings(magplot(x=cog$x*arcsec.per.pix, y=-2.5*(log10(cog$y)-log10(ab.vega.flux))+mag.zp, pch=20, col='grey', xlab="Radius (arcsec)", ylab="Enclosed Magnitude",
-                ylim=ylim,type='l',lty=2,main="Curve of Growth"))
+                ylim=ylim,xlim=c(0,max(xlims)),type='l',lty=2,main="Curve of Growth",cex.axis=1.2))
+        magaxis(side=c(3,4),labels=FALSE)
         # /*fend*/ }}}
         #Add Lines showing fluxes /*fold*/ {{{
         #Undeblended /*fold*/ {{{
@@ -1858,19 +1983,19 @@ function(env=NULL) {
         # /*fend*/ }}}
         #Draw Legend /*fold*/ {{{
         legend('bottomright',legend=c("Image COG","Deblended COG","Sky removed COG","Deblended & Sky Rem. COG","Undeblended ApMag","Deblended ApMag"),lty=c(2,2,1,1,1,1),
-               col=c('grey','black','grey','black','orange','green'),pch=-1, cex=1)
+               col=c('grey','black','grey','black','orange','green'),pch=-1, cex=1.2)
         # /*fend*/ }}}
         #Note Half Light Radius /*fold*/ {{{
         if (do.sky.est) {
           deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]))
           hlr<-which(debl.cog.nosky$y>=max(debl.cog.nosky$y,na.rm=TRUE)/2)
           dhlr<-which(deproj.debl.cog.nosky$y>max(debl.cog.nosky$y,na.rm=TRUE)/2)
-          label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog.nosky$x[dhlr]),digits=2)))
+          label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog.nosky$x[dhlr]),digits=2)),cex=1.2)
         } else {
           deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]))
           hlr<-which(debl.cog$y>=max(debl.cog$y,na.rm=TRUE)/2)
           dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
-          label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog$x[dhlr]),digits=2)))
+          label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog$x[dhlr]),digits=2)),cex=1.2)
         }
         # /*fend*/ }}}
         # /*fend*/ }}}
@@ -1881,7 +2006,8 @@ function(env=NULL) {
         ylim<-range(cog$y)
         #If a limit in ±Inf, plot around median /*fold*/ {{{
         if (!all(is.finite(ylim))) { ylim=median(cog$y, na.rm=TRUE)+c(-1E2,1E2) }
-        magplot(x=cog$x*arcsec.per.pix, y=cog$y, pch=20, col='grey', xlab="Radius (arcsec)", ylab="Enclosed Flux",ylim=ylim,main="Curve of Growth",type='l')
+        magplot(x=cog$x*arcsec.per.pix, y=cog$y, pch=20, col='grey', xlab="Radius (arcsec)", ylab="Enclosed Flux",ylim=ylim,xlim=c(0,max(xlims)),main="Curve of Growth",type='l',cex.axis=1.2)
+        magaxis(side=c(3,4),labels=FALSE)
         # /*fend*/ }}}
         # /*fend*/ }}}
         #Draw Lines showing fluxes /*fold*/ {{{
@@ -1901,7 +2027,7 @@ function(env=NULL) {
         lines(x=debl.cog.nosky$x*arcsec.per.pix, y=debl.cog.nosky$y, pch=20, col='black',lty=1)
         # /*fend*/ }}}
         legend('bottomright',legend=c("Image COG","Deblended COG","Sky removed COG","Deblended & Sky Rem. COG","Undeblended Flux","Deblended Flux"),lty=c(2,2,1,1,1,1),
-               col=c('grey','black','grey','black','orange','green'),pch=-1, cex=1)
+               col=c('grey','black','grey','black','orange','green'),pch=-1, cex=1.2)
         #Note Half Light Radius /*fold*/ {{{
         if (do.sky.est) {
           deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]))
@@ -1932,10 +2058,11 @@ function(env=NULL) {
       suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apT, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims,add=TRUE))
       # /*fend*/ }}}
       #Draw the projected half-light ellipse {{{
-      lines(ellipse(a=min(debl.cog$x[dhlr]),e=1-cat.b[i]/cat.a[i],pa=90-theta.offset[i],xcen=0,ycen=0),col='black',lty=3,lwd=2)
+      lines(ellipse(a=min(debl.cog$x[dhlr]),e=1-cat.b[i]/cat.a[i],pa=90-theta.offset[i],xcen=cat.x[i]%%1,ycen=cat.y[i]%%1),col='black',lty=3,lwd=2)
       #}}}
       #Draw the Axes and scalebar /*fold*/ {{{
-      magaxis(frame.plot=TRUE,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      magaxis(frame.plot=TRUE,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)",cex.axis=1.2)
+      magaxis(side=c(3,4),labels=FALSE)
       # /*fend*/ }}}
       #Label Panel /*fold*/ {{{
       label("topleft",lab="(c)",cex=2.5,inset=c(0.1,0.23))
@@ -1948,7 +2075,8 @@ function(env=NULL) {
       suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apT, main="Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims,add=TRUE))
       # /*fend*/ }}}
       #Draw the Axes and scalebar /*fold*/ {{{
-      magaxis(frame.plot=TRUE,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)")
+      magaxis(frame.plot=TRUE,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)",cex.axis=1.2)
+      magaxis(side=c(3,4),labels=FALSE)
       # /*fend*/ }}}
       #Label Panel /*fold*/ {{{
       label("topleft",lab="(d)",cex=2.5,inset=c(0.1,0.23))
@@ -2009,6 +2137,7 @@ function(env=NULL) {
     ssfad  <-ssfad[which(contams==0)]
     qssfad <-qssfad[which(contams==0),]
     spsf   <-spsf[which(contams==0)]
+    spsf2  <-spsf2[which(contams==0)]
     ssfap  <-ssfap[which(contams==0)]
     sfaflux<-sfaflux[which(contams==0)]
     skyflux<-skyflux[which(contams==0)]
@@ -2037,11 +2166,14 @@ function(env=NULL) {
       sdfaiters<-sdfaiters[which(contams==0),]
       iterateLost<-iterateLost[which(contams==0)]
     }
+    psfflux<-psfflux[which(contams==0)]
+    psferr<-psferr[which(contams==0)]
     dfaflux<-dfaflux[which(contams==0)]
     deblerr <-deblerr[which(contams==0)]
     dfaerr <-dfaerr[which(contams==0)]
     saturated<-saturated[which(contams==0)]
     pixflux<-pixflux[which(contams==0)]
+    PSCorr <-PSCorr[which(contams==0)]
     ApCorr <-ApCorr[which(contams==0)]
     WtCorr <-WtCorr[which(contams==0)]
     stamplen<-stamplen[which(contams==0)]
@@ -2062,24 +2194,29 @@ function(env=NULL) {
 
   #Create Photometry Warning Flags /*fold*/ {{{
   photWarnFlag<-rep("",length(cat.ra))
+  photWarnBitFlag<-rep(0,length(cat.ra))
   #Bad Quartered Photometry /*fold*/ {{{
   Qbad<-(apply(qsdfad,1,'max',na.rm=TRUE)/apply(qsdfad,1,'sum',na.rm=TRUE))>=0.7
   Qbad[which(!is.finite(Qbad))]<-1
   photWarnFlag<-paste0(photWarnFlag,ifelse(Qbad,"Q",""))
+  photWarnBitFlag<-photWarnBitFlag+ifelse(Qbad,2^0,0)
   # /*fend*/ }}}
   #Saturation /*fold*/ {{{
   photWarnFlag<-paste0(photWarnFlag,ifelse(saturated,"X",""))
+  photWarnBitFlag<-photWarnBitFlag+ifelse(saturated,2^1,0)
   # /*fend*/ }}}
   #Bad Sky Estimate /*fold*/ {{{
   if (do.sky.est|get.sky.rms) {
     temp<-skyNBinNear
     temp[which(!is.finite(temp))]<-0
     photWarnFlag<-paste0(photWarnFlag,ifelse(temp<=3,"S",""))
+    photWarnBitFlag<-photWarnBitFlag+ifelse(temp<=3,2^2,0)
   }
   # /*fend*/ }}}
   #Iterative Deblend Warning /*fold*/ {{{
   if (iterate.fluxes) {
     photWarnFlag<-paste0(photWarnFlag,ifelse(iterateLost,"I",""))
+    photWarnBitFlag<-photWarnBitFlag+ifelse(iterateLost,2^3,0)
   }
   # /*fend*/ }}}
   # /*fend*/ }}}
@@ -2087,9 +2224,9 @@ function(env=NULL) {
   #If wanted, output the Results Table /*fold*/ {{{
   if (write.tab) {
     #Output the results table /*fold*/ {{{
-    if ((loop.total!=1)&&(length(param.env$tableout.name)!=loop.total)) {
-      if (!quiet) { cat(paste('Writing Results Table to ',file.path(path.root,path.work,path.out,paste(sep="",tableout.name,"_file",f,".csv")),'   ')) }
-      timer=system.time(write.flux.measurements.table(filename=file.path(path.root,path.work,path.out,paste(sep="",tableout.name,"_file",f,".csv"))) )
+    if ((loop.total!=1)&&(length(param.env$tableout.name)!=loop.total || any(duplicated(file.path(param.env$path.root,param.env$path.work,param.env$path.out,param.env$tableout.name))))) {
+      if (!quiet) { cat(paste('Writing Results Table to ',file.path(path.root,path.work,path.out,paste(sep="",tableout.name,"_loop",f,".csv")),'   ')) }
+      timer=system.time(write.flux.measurements.table(filename=file.path(path.root,path.work,path.out,paste(sep="",tableout.name,"_loop",f,".csv"))) )
     } else {
       if (!quiet) { cat(paste('Writing Results Table to ',file.path(path.root,path.work,path.out,paste(sep="",tableout.name,".csv")),'   ')) }
       timer=system.time(write.flux.measurements.table(filename=file.path(path.root,path.work,path.out,paste(sep="",tableout.name,".csv"))) )

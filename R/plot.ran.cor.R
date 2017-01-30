@@ -200,7 +200,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { CairoPNG(filename=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
+        if (toFile) { PlotPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -315,7 +315,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { CairoPNG(filename=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
+        if (toFile) { PlotPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -492,7 +492,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(data.stamp,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { CairoPNG(filename=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
+        if (toFile) { PlotPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -610,7 +610,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(tempim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { CairoPNG(filename=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
+        if (toFile) { PlotPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))

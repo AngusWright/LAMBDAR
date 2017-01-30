@@ -226,6 +226,48 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #PSF FWHM Label {{{
+  ID="PSFLabel"
+  ind<-which(params[ID,]!="")
+  psf.label<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(psf.label))) {
+    param.warnings<-c(param.warnings,"PSFLabel Parameter not present in the Parameter File; Using 'PSFSEE'")
+    psf.label<-"PSFSEE"
+  } else if (length(ind)==1&&(file.exists(file.path(path.root,psf.label)))) {
+    #One file provided
+    psf.label<-try(c(t(read.table(file.path(path.root,psf.label), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(psf.label)=="try-error") {
+      param.warnings<-c(param.warnings,"psfLabel Parameter table read failed; Using 'PSFSEE'")
+      psf.label<-"PSFSEE"
+    }
+    if (is.na(psf.label)) {
+      param.warnings<-c(param.warnings,"psfLabel Parameter not in Parameter File; Using 'PSFSEE'")
+      psf.label<-"PSFSEE"
+    }
+  }
+  #}}}
+
+  #PSF FWHM Label Type {{{
+  ID="PSFLabelType"
+  ind<-which(params[ID,]!="")
+  psf.label.type<-params[ID,ind]
+  if ((length(ind)==0)||(is.na(psf.label.type))) {
+    param.warnings<-c(param.warnings,"PSFLabelType Parameter not present in the Parameter File; Using 'FWHM'")
+    psf.label.type<-"FWHM"
+  } else if (length(ind)==1&&(file.exists(file.path(path.root,psf.label.type)))) {
+    #One file provided
+    psf.label.type<-try(c(t(read.table(file.path(path.root,psf.label.type), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+    if (class(psf.label.type)=="try-error") {
+      param.warnings<-c(param.warnings,"psfLabel Parameter table read failed; Using 'PSFSEE'")
+      psf.label.type<-"FWHM"
+    }
+    if (is.na(psf.label.type)) {
+      param.warnings<-c(param.warnings,"psfLabel Parameter not in Parameter File; Using 'PSFSEE'")
+      psf.label.type<-"FWHM"
+    }
+  }
+  #}}}
+
   #Flag loops with no provided PSF {{{
   no.psf<-((psf.map=="NONE") & (gauss.fwhm.arcsec==0.0))
   #}}}
@@ -1772,6 +1814,8 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       param.warnings<-c(param.warnings,"MemorySafe Parameter not in Parameter File; Using 0 (FALSE)")
     }
   }
+  if (mem.safe > 1) { force.safe=TRUE } else { force.safe=FALSE }
+  mem.safe<-mem.safe >= 1
   #}}}
 
   #What limit value do we want for the Aperture generation? #{{{
@@ -2005,6 +2049,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("flux.corr"         , flux.corr         , envir = env) # F
   assign("fa.filename"       , fa.filename       , envir = env) #
   assign("force.point.sources", force.point.sources, envir = env) #
+  assign("force.safe", force.safe, envir = env) #
   assign("filt.contam"       , filt.contam       , envir = env) #
   assign("flux.weight.lab"    , flux.weight.lab    , envir = env) #
   assign("gain.label"        , gain.label        , envir = env) #
@@ -2047,6 +2092,8 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("psf.map"           , psf.map           , envir = env) #
   assign("psf.weighted"      , psf.weighted      , envir = env) #
   assign("psf.filt"          , psf.filt          , envir = env) #
+  assign("psf.label"         , psf.label         , envir = env) #
+  assign("psf.label.type"    , psf.label.type    , envir = env) #
   assign("resample.aperture" , resample.aperture , envir = env) # QR
   assign("ra0"              , ra0              , envir = env) #
   assign("ra.lab"            , ra.lab            , envir = env) #

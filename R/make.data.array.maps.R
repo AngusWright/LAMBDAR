@@ -403,6 +403,7 @@ function(outenv=parent.env(environment()), env=NULL){
   } else if (!any(image.env$ime!=image.env$ime[1])) {
     error.x.pix<-x.pix
     error.y.pix<-y.pix
+    image.env$ime<-image.env$ime[1]
     error.stamp<-image.env$ime[1]
     error.stamp.lims<-data.stamp.lims
     ap.lims.error.map<-ap.lims.data.map

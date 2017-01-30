@@ -234,7 +234,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
       }
       #Plot
       if (toFile) {
-        CairoPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=5*res,width=10*res,res=res,pointsize=14)
+        PlotPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=5*res,width=10*res,res=res,pointsize=14)
       }
       layout(cbind(1,2))
       par(mar=c(3.1,3.1,1.1,1.1))
@@ -247,7 +247,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
       if (length(tempx)!=0 & !any(is.na(templty))) {
         for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=bin.lwd) }
       }
-      magaxis(side=1:4,labels=FALSE)
+      magaxis(side=3:4,labels=FALSE)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
@@ -255,8 +255,10 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         #Thin out
         samp<-sample(length(tempval),1E4)
         magplot(x=temprad[samp],y=tempval[samp],pch=20,xlab='Radius (pix); Thinned to 1E4 points',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad[samp],na.rm=TRUE)),100,max(temprad[samp],na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim),skyRMS),col=hsv(inten[samp]))
+        magaxis(side=3:4,labels=FALSE)
       } else {
         magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim),skyRMS),col=hsv(inten))
+        magaxis(side=3:4,labels=FALSE)
       }
       abline(v=tempxbak,col=grey(0.5),lty=templtybak,lwd=bin.lwd)
       abline(v=tempx,col='purple',lty=templty,lwd=bin.lwd)
@@ -437,7 +439,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
       }
       #Plot
       if (toFile) {
-        CairoPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=5*res,width=10*res,res=res,pointsize=14)
+        PlotPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=5*res,width=10*res,res=res,pointsize=14)
       }
       layout(cbind(1,2))
       par(mar=c(3.1,3.1,1.1,1.1))
@@ -452,7 +454,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
       if (length(tempx)!=0 & !any(is.na(templty))) {
         for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=bin.lwd) }
       }
-      magaxis(side=1:4,labels=FALSE)
+      magaxis(side=3:4,labels=FALSE)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
@@ -460,8 +462,10 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         #Thin out
         samp<-sample(length(tempval),1E4)
         magplot(x=temprad[samp],y=tempval[samp],pch=20,xlab='Radius (pix); Thinned to 1E4 points',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad[samp],na.rm=TRUE)),100,max(temprad[samp],na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(data.stamp),skyRMS),col=hsv(inten[samp]))
+        magaxis(side=3:4,labels=FALSE)
       } else {
         magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=TRUE)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(data.stamp),skyRMS),col=hsv(inten))
+        magaxis(side=3:4,labels=FALSE)
       }
       if (!any(is.na(templtybak))) {
         abline(v=tempxbak,col=grey(0.5),lty=templtybak,lwd=bin.lwd)

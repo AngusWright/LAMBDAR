@@ -46,7 +46,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   #}}}
 
   #Test Read of Data Image for errors {{{
-  im_fits<-try(read.fits(paste(path.root,path.work,data.map,sep=""),hdu=data.extn, comments=FALSE),silent=TRUE)
+  im_fits<-try(read.fits.im(paste(path.root,path.work,data.map,sep=""),hdu=data.extn, comments=FALSE),silent=TRUE)
   if (class(im_fits)=="try-error") {
     #Stop on Error
     sink(type='message')
@@ -81,7 +81,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   if ((weight.map!="NONE")&(mask.map=="NONE"|error.map=="NONE")) {
     if (!quiet) { cat(paste("   Reading Data from Weight Map",weight.map,"   ")) }
     #Try read weight map {{{
-    imwt_fits<-try(read.fits(paste(path.root,path.work,weight.map,sep=""),hdu=data.weight.extn,comments=FALSE),silent=TRUE)
+    imwt_fits<-try(read.fits.im(paste(path.root,path.work,weight.map,sep=""),hdu=data.weight.extn,comments=FALSE),silent=TRUE)
     if (class(imwt_fits)=="try-error") {
       #Stop on Error
       sink(type='message')
@@ -124,7 +124,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     #Mask Present, Read {{{
     if (!quiet) { cat(paste("   Reading Data from MaskMap",mask.map,"   ")) }
     #Test Read of Mask Map for errors {{{
-    imm_fits<-try(read.fits(paste(path.root,path.work,mask.map,sep=""),hdu=data.mask.extn, comments=FALSE),silent=TRUE)
+    imm_fits<-try(read.fits.im(paste(path.root,path.work,mask.map,sep=""),hdu=data.mask.extn, comments=FALSE),silent=TRUE)
     if (class(imm_fits)=="try-error") {
       #Stop on Error
       sink(type='message')
@@ -139,6 +139,17 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
     #Remove NA/NaN/Inf's {{{
     imm[which(!is.finite(imm))]<-0.0
     mask.hdr<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
+    #}}}
+    #Check for bad scaling {{{
+    if (any(!as.numeric(imm)%in%c(0,1))) {
+      message("WARNING: Mask map has values that are not either 0 or 1.")
+      message("         Modifying mask range to be [0,1]. If there are ")
+      message("         values *between* (0,1) this will act to WEIGHT ")
+      message("         PIXELS DOWN when determining if an aperture ")
+      message("         should be kept or discarded.... ")
+      imm<-imm-min(imm)
+      imm<-imm/max(imm)
+    }
     #}}}
     #}}}
   }
@@ -215,7 +226,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
       if (!quiet) { cat(paste("   Reading Data from ErrorMap",error.map,"   ")) }
       gain<-NA
       #Test Read of Error Map for errors {{{
-      ime_fits<-try(read.fits(paste(path.root,path.work,error.map,sep=""),hdu=data.error.extn, comments=FALSE),silent=TRUE)
+      ime_fits<-try(read.fits.im(paste(path.root,path.work,error.map,sep=""),hdu=data.error.extn, comments=FALSE),silent=TRUE)
       if (class(ime_fits)=="try-error") {
         #Stop on Error
         sink(type='message')

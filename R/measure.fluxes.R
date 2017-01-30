@@ -1,5 +1,5 @@
 measure.fluxes <-
-function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
+function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.missing=TRUE, ...){
 #Proceedure measures object fluxes from an arbitrary fits image
 
   #If needed, register the parallel backend /*fold*/ {{{
@@ -163,6 +163,24 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
   }
   #/*fend*/ }}}
 
+  #If doing multiple loops; check if we can save time on table reads /*fold*/ {{{
+  if (loop.total>1) {
+    if (length(param.env$catalogue)==1) {
+      #There is only one table; save time on every loop except the first
+      reuse.table<-c(FALSE,rep(TRUE,loop.total-1))
+    } else if (any(param.env$catalogue[-length(param.env$catalogue)]==param.env$catalogue[-1])) { 
+      #There are some loops where the table is the same as the one before it; save time on those loops (and not the first)
+      reuse.table<-c(FALSE,param.env$catalogue[-1]==param.env$catalogue[-length(param.env$catalogue)])
+    } else { 
+      #There are no sequential duplicate tables 
+      reuse.table<-rep(FALSE,loop.total)
+    }
+    if (resume) { 
+      reuse.table[loop.start]<-FALSE
+    }
+  }
+  #/*fend*/ }}}
+
   #Loop through files supplied /*fold*/ {{{
   for (f in loop.start:loop.total) {
     #Set restart value /*fold*/ {{{
@@ -172,7 +190,7 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
     #Initialise Timer and Get Parameters for this run /*fold*/ {{{
     loop.start.time<-proc.time()[3]
     get.nth.var(parameter.list,n=f,inenv=param.env,outenv=environment(),lim=loop.total)
-    dir.create(file.path(path.root,path.work, path.out), showWarnings = FALSE)
+    dir.create(file.path(path.root,path.work, path.out), showWarnings = FALSE,recursive=TRUE)
     #/*fend*/ }}}
 
     #Send Message output to logfile /*fold*/ {{{
@@ -284,7 +302,19 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
     #/*fend*/ }}}
 
     #Read in Data, Mask map, & Error map /*fold*/ {{{
-    read.images(env=NULL,quiet,showtime,outenv=image.env)
+    if (stop.on.missing) { 
+      read.images(env=NULL,quiet,showtime,outenv=image.env)
+    } else {
+      status<-try(read.images(env=NULL,quiet,showtime,outenv=image.env))
+      if (class(status)=='try-error') { 
+        if (!quiet) { cat("Failed! Files missing\n") }
+        sink(type="message")
+        close(sink.file)
+        #If we were supposed to read & reuse this table, we can't (this table never gets read) 
+        if (!reuse.table[f] && (f!=loop.total) && reuse.table[f+1]) { reuse.table[f+1]<-FALSE } 
+        next
+      }
+    }
     #Move Astrometry list from image env to main env /*fold*/ {{{
     astr.struc<-image.env$astr.struc
     saturation<-image.env$saturation
@@ -304,7 +334,22 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
     }#/*fend*/ }}}
 
     #Read source catalogue /*fold*/ {{{
-    open.catalogue(outenv=environment())
+    if (reuse.table[f] && f!=loop.start) { 
+      if (!quiet) { cat(paste("   Restoring Previous Catalogue",catalogue,"   ")) }
+      #Restore the previous catalogue columns 
+      cat.id<-saved.table[,cata.lab]
+      cat.ra<-saved.table[,ra.lab]
+      cat.dec<-saved.table[,dec.lab]
+      cat.a<-saved.table[,semimaj.lab]
+      cat.b<-saved.table[,semimin.lab]
+      cat.theta<-saved.table[,theta.lab]
+      flux.weight<-saved.table[,flux.weight.lab]
+      contams<-saved.table[,contam.lab]
+      if (!quiet) { cat("-- Done\n") }
+    } else {
+      #Read the catalogue
+      open.catalogue(outenv=environment(),save.table=(f!=loop.total && reuse.table[f+1]))
+    }
     #/*fend*/ }}}
 
     #If wanted, Set Minimum Aperture Radius /*fold*/ {{{
@@ -341,15 +386,20 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
     if (length(which(inside.mask==TRUE))==0) {
       warning("No catalogue entries are centred within the limits of the input image.")
       #Notify & Close Logfile /*fold*/ {{{
-      message(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
-      message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
-      message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
+      looptimestring<-as.time(proc.time()[3]-loop.start.time, digits=0)
+      totaltimestring<-as.time(proc.time()[3]-start.time, digits=0)
+      remaintimestring<-as.time((proc.time()[3]-start.time)/(f-loop.start+1)*(loop.total-f),digits=0)
+      message(paste0('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
+      message(paste0('Loop Completed: Indiv. Loop Time Elapsed: ',looptimestring,'\n'))
+      message(paste0('                      Total Time Elapsed: ',totaltimestring,'\n'))
+      message(paste0('                  Approx. Time Remaining: ',remaintimestring,'\n'))
       sink(type='message')
       close(sink.file)
       if (!quiet) {
         cat(paste('- Done\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
-        cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
-        cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
+      message(paste0('Loop Completed: Indiv. Loop Time Elapsed: ',looptimestring,'\n'))
+      message(paste0('                      Total Time Elapsed: ',totaltimestring,'\n'))
+      message(paste0('                  Approx. Time Remaining: ',remaintimestring,'\n'))
         if (f !=loop.total) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
       }
       next
@@ -376,16 +426,21 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
       if (length(which(inside.mask==TRUE))==0) {
         warning("No science targets are centred within the limits of the input image.")
         #Notify & Close Logfile /*fold*/ {{{
-        message(paste('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
-        message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
-        message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
+        looptimestring<-as.time(proc.time()[3]-loop.start.time, digits=0)
+        totaltimestring<-as.time(proc.time()[3]-start.time, digits=0)
+        remaintimestring<-as.time((proc.time()[3]-start.time)/(f-loop.start+1)*(loop.total-f),digits=0)
+        message(paste0('\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
+        message(paste0('Loop Completed: Indiv. Loop Time Elapsed: ',looptimestring,'\n'))
+        message(paste0('                      Total Time Elapsed: ',totaltimestring,'\n'))
+        message(paste0('                  Approx. Time Remaining: ',remaintimestring,'\n'))
         sink(type='message')
         close(sink.file)
         if (!quiet) {
           cat(paste('- Done\n-----------------------------------------------------\nDatamap Skipped - No Apertures in the Mask\n'))
-          cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
-          cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
-          if (f !=loop.total) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap (',f+1,' of ',loop.total,')\nInitialising Workspace {\n',sep="")) }
+        message(paste0('Loop Completed: Indiv. Loop Time Elapsed: ',looptimestring,'\n'))
+        message(paste0('                      Total Time Elapsed: ',totaltimestring,'\n'))
+        message(paste0('                  Approx. Time Remaining: ',remaintimestring,'\n'))
+          if (f !=loop.total) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap\nInitialising Workspace {\n')) }
         }
         next
         #/*fend*/ }}}
@@ -416,6 +471,7 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (filt.contam) { contams<-contams[which(inside.mask)] }
     if (exists('groups')) { groups<-groups[which(inside.mask)] }
+    inside.mask<-inside.mask[which(inside.mask)]
     chunk.size=length(cat.id)/getDoParWorkers()
     mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)
@@ -453,7 +509,7 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
       message(paste("#################\n",
                     "WARNING:  All of the major axes are smaller than all of the minor axes. They are probably the wrong way around!\n",
                     "This is technically not allowed, because it can cause issues. So they have been swapped, and the angles rotated by 90deg.\n",
-                    "That will allow us to continue anyway, but you're probably going to get garbage fits...\n#################\n"))
+                    "That will allow us to continue anyway, but you're probably going to get garbage fits if you have accidentally supplied the axes in the wrong order (check the parameter file!)...\n#################\n"))
       tmp<-cat.a
       cat.b<-cat.a
       cat.a<-tmp
@@ -577,11 +633,20 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
           #If this is too much, less threads cannot help. Stop /*fold*/ {{{
           cat("Failed\n")
           sink(type='message')
+          if (force.safe) {
+          sink(type='message')
           stop(paste("This computation may exceed the available memory on this machine.",
                      "The required memory (",(apmem+immem+memCur)*1E-9/8,"Gb) is greater than that which is available to the system (",(mem.lim)*1E-9/8,"Gb).",
                      "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
                      "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, ",round(immem*1E-9/8,digits=3),"Gb for images.",
                      "\n",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n"))
+          } else {
+          message(paste("This computation may exceed the available memory on this machine.",
+                     "The required memory (",(apmem+immem+memCur)*1E-9/8,"Gb) is greater than that which is available to the system (",(mem.lim)*1E-9/8,"Gb).",
+                     "\nHowever, using the in-built crop function, seperating the image into smaller chuncks will enable computation.",
+                     "\nThe memory usage is",round(apmem*1E-9/8,digits=3),"Gb for apertures, ",round(immem*1E-9/8,digits=3),"Gb for images.",
+                     "\n",round(memCur*1E-9/8,digits=3),"Gb was assigned during Parameter & Image initialisation.\n"))
+          }
           #/*fend*/ }}}
       }#/*fend*/ }}}
       #Notify Memory Usage Status /*fold*/ {{{
@@ -638,18 +703,23 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
 
 
     #Notify & Close Logfile /*fold*/ {{{
-    message(paste('-----------------------------------------------------\nDatamap Complete\n'))
-    message(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
-    message(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
+    looptimestring<-as.time(proc.time()[3]-loop.start.time, digits=0)
+    totaltimestring<-as.time(proc.time()[3]-start.time, digits=0)
+    remaintimestring<-as.time((proc.time()[3]-start.time)/(f-loop.start+1)*(loop.total-f),digits=0)
+    message(paste0('\n-----------------------------------------------------\nDatamap Complete\n'))
+    message(paste0('Loop Completed: Indiv. Loop Time Elapsed: ',looptimestring,'\n'))
+    message(paste0('                      Total Time Elapsed: ',totaltimestring,'\n'))
+    message(paste0('                  Approx. Time Remaining: ',remaintimestring,'\n'))
     sink(type='message')
     close(sink.file)
     #/*fend*/ }}}
 
     #Loop Completed - Print Update, Loop /*fold*/ {{{
     if (!quiet) {
-      cat(paste('-----------------------------------------------------\nDatamap Complete\n'))
-      cat(paste('Loop Completed: Indiv. Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'\n'))
-      cat(paste('                      Total Time Elapsed (s): ',round(proc.time()[3]-start.time, digits=3),'\n'))
+      cat(paste0('-----------------------------------------------------\nDatamap Complete\n'))
+      cat(paste0('Loop Completed: Indiv. Loop Time Elapsed: ',looptimestring,'\n'))
+      cat(paste0('                      Total Time Elapsed: ',totaltimestring,'\n'))
+      cat(paste0('                  Approx. Time Remaining: ',remaintimestring,'\n'))
       if (f !=loop.total) { cat(paste('-----------------------------------------------------\nLooping to Next DataMap (',f+1,' of ',loop.total,')\nInitialising Workspace {\n',sep="")) }
     }
     #/*fend*/ }}}
@@ -672,3 +742,26 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, ...){
   #/*fend*/ }}}
 
 }
+#As Time functions /*fold*/ {{{ 
+as.time<-function(sec,digits) { 
+  if (sec > 60*60*24) { 
+    day<-floor(sec/(60*60*24)) 
+    hr<-floor((sec-day*(60*60*24))/(60*60))
+    min<-round((sec-day*(60*60*24)-hr*(60*60))/60,digits=digits)
+    timestr<-paste(day,'day',hr,'hr',min,'min')
+  } else if (sec > 60*60) {
+    hr<-floor(sec/(60*60))
+    min<-floor((sec-hr*(60*60))/60)
+    sec<-round(sec-hr*(60*60)-min*60,digits=digits)
+    timestr<-paste(hr,'hr',min,'min',sec,'sec')
+  } else if (sec > 60 ) { 
+    min<-floor(sec/60)
+    sec<-round(sec-min*60,digits=digits)
+    timestr<-paste(min,'min',sec,'sec')
+  } else {
+    sec<-round(sec,digits=digits)
+    timestr<-paste(sec,'sec')
+  }
+  return=timestr
+}
+#/*fend*/ }}}

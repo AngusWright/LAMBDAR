@@ -104,10 +104,10 @@ sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims
         num.in.bin<-tempmedian$Nbins
         #Remove bins with 1 or less skypixels present
         if (any(num.in.bin<=1)) {
-          ind<-which(num.in.bin<=1)
+          ind<-which(!num.in.bin<=1)
           tempy  <-tempy[ind]
           tempx  <-tempx[ind]
-          templty<-templty[ind]
+          #templty<-templty[ind]
           tempylims<-rbind(tempylims[ind,])
         }
         if (length(tempy)!=0) {
@@ -218,10 +218,10 @@ sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims
         num.in.bin<-tempmedian$Nbins
         #Remove bins with 1 or less skypixels present
         if (any(num.in.bin<=1)) {
-          ind<-which(num.in.bin<=1)
+          ind<-which(!num.in.bin<=1)
           tempy  <-tempy[ind]
           tempx  <-tempx[ind]
-          templty<-templty[ind]
+          #templty<-templty[ind]
           tempylims<-rbind(tempylims[ind,])
         }
         if (length(tempy)!=0) {

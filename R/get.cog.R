@@ -29,7 +29,7 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE){
   zbin<-zvec[tmp.order]
   cog<-data.frame(x=r[tmp.order],y=cumsum(zbin))
   if (SNR) {
-    cog$y<-cog$y/(pi*cog$x^2)
+    cog$y<-cog$y/sqrt((pi*cog$x^2))
   }
   if (!is.null(sample) && sample > length(cog$y)) {
     sample<-seq.int(1,length(cog$y),length.out=sample)

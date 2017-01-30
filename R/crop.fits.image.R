@@ -1,5 +1,5 @@
 crop.fits.image <-
-function(ra0=-999,dec0=-999,path.root="./",inpim=NA,crop.radius=1,fitsoutname=NA,data.data.data.data.data.extn=1){
+function(ra0=-999,dec0=-999,path.root="./",inpim=NA,crop.radius=1,fitsoutname=NA,data.extn=1){
 #Details {{{
 # Procedure takes a fits image and produces a new
 # image, cropped to a region <crop.radius> in diameter
@@ -57,7 +57,7 @@ function(ra0=-999,dec0=-999,path.root="./",inpim=NA,crop.radius=1,fitsoutname=NA
     # Get header & cut radius values {{{
     for (i in 1:len) {
       #Get astrometry values {{{
-      astr.struc<-read.astrometry(image[i],hdu=data.data.data.data.data.extn)
+      astr.struc<-read.astrometry(image[i],hdu=data.extn)
       if (all(is.na(astr.struc$CD))) { sink(type='message'); stop("FITS extension does not have a valid WCS astrometry") }
       naxis1[i]<-astr.struc$NAXIS[1]
       naxis2[i]<-astr.struc$NAXIS[2]
@@ -140,7 +140,7 @@ function(ra0=-999,dec0=-999,path.root="./",inpim=NA,crop.radius=1,fitsoutname=NA
     #Crop Image(s) {{{
     for (i in 1:len) {
       #Get the Image header {{{
-      header<-read.fitshdr(file.path(path.root,inpim[i]),hdu=data.data.data.data.data.extn)
+      header<-read.fitshdr(file.path(path.root,inpim[i]),hdu=data.extn)
       #}}}
       #Update header values for new image {{{
       header[which(header[,'key']=='NAXIS1'),'value']<-paste(ncol[i])

@@ -230,8 +230,9 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
             im<-im/sum(im)*10^((8.9-mag)/2.5)
           }
         }
+        es_mask<-c(es_mask, list(im))
       #}}}
-      } else {
+      } else if (N > 0) {
         #Generate Profile with Shot noise & Convolution
         if (Reff!=0) {
           #Galaxy
@@ -265,8 +266,8 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
 
         #Convert from ADU to Jy
         im<-im/sum(im)*10^((8.9-mag)/2.5)
-      }
-      es_mask<-c(es_mask, list(im))
+        es_mask<-c(es_mask, list(im))
+      } 
   }
   close(pb)
   message("Aperture Creation Complete")
