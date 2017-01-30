@@ -36,7 +36,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
       } else {
         mask.stamp.lims<-rbind(foreach(ap=mask.stamp,.combine='rbind')%dopar%{return=c(1,length(ap[,1]),1,length(ap[1,]))})
       }
-    } else if (length(mask.stamp) != length(mask.stamp.lims[,1])){
+    } else if (!is.matrix(mask.stamp) & length(mask.stamp) != length(mask.stamp.lims[,1])){
       stop('mask.stamp.lims is not the same length as mask.stamp!')
     }
   }

@@ -168,16 +168,18 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     if (length(param.env$catalogue)==1) {
       #There is only one table; save time on every loop except the first
       reuse.table<-c(FALSE,rep(TRUE,loop.total-1))
-    } else if (any(param.env$catalogue[-length(param.env$catalogue)]==param.env$catalogue[-1])) { 
+    } else if (any(param.env$catalogue[-length(param.env$catalogue)]==param.env$catalogue[-1])) {
       #There are some loops where the table is the same as the one before it; save time on those loops (and not the first)
       reuse.table<-c(FALSE,param.env$catalogue[-1]==param.env$catalogue[-length(param.env$catalogue)])
-    } else { 
-      #There are no sequential duplicate tables 
+    } else {
+      #There are no sequential duplicate tables
       reuse.table<-rep(FALSE,loop.total)
     }
-    if (resume) { 
+    if (resume) {
       reuse.table[loop.start]<-FALSE
     }
+  } else {
+    reuse.table<-FALSE
   }
   #/*fend*/ }}}
 
@@ -302,16 +304,16 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     #/*fend*/ }}}
 
     #Read in Data, Mask map, & Error map /*fold*/ {{{
-    if (stop.on.missing) { 
+    if (stop.on.missing) {
       read.images(env=NULL,quiet,showtime,outenv=image.env)
     } else {
       status<-try(read.images(env=NULL,quiet,showtime,outenv=image.env))
-      if (class(status)=='try-error') { 
+      if (class(status)=='try-error') {
         if (!quiet) { cat("Failed! Files missing\n") }
         sink(type="message")
         close(sink.file)
-        #If we were supposed to read & reuse this table, we can't (this table never gets read) 
-        if (!reuse.table[f] && (f!=loop.total) && reuse.table[f+1]) { reuse.table[f+1]<-FALSE } 
+        #If we were supposed to read & reuse this table, we can't (this table never gets read)
+        if (!reuse.table[f] && (f!=loop.total) && reuse.table[f+1]) { reuse.table[f+1]<-FALSE }
         next
       }
     }
@@ -334,9 +336,9 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     }#/*fend*/ }}}
 
     #Read source catalogue /*fold*/ {{{
-    if (reuse.table[f] && f!=loop.start) { 
+    if (reuse.table[f] && f!=loop.start) {
       if (!quiet) { cat(paste("   Restoring Previous Catalogue",catalogue,"   ")) }
-      #Restore the previous catalogue columns 
+      #Restore the previous catalogue columns
       cat.id<-saved.table[,cata.lab]
       cat.ra<-saved.table[,ra.lab]
       cat.dec<-saved.table[,dec.lab]
@@ -742,10 +744,10 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
   #/*fend*/ }}}
 
 }
-#As Time functions /*fold*/ {{{ 
-as.time<-function(sec,digits) { 
-  if (sec > 60*60*24) { 
-    day<-floor(sec/(60*60*24)) 
+#As Time functions /*fold*/ {{{
+as.time<-function(sec,digits) {
+  if (sec > 60*60*24) {
+    day<-floor(sec/(60*60*24))
     hr<-floor((sec-day*(60*60*24))/(60*60))
     min<-round((sec-day*(60*60*24)-hr*(60*60))/60,digits=digits)
     timestr<-paste(day,'day',hr,'hr',min,'min')
@@ -754,7 +756,7 @@ as.time<-function(sec,digits) {
     min<-floor((sec-hr*(60*60))/60)
     sec<-round(sec-hr*(60*60)-min*60,digits=digits)
     timestr<-paste(hr,'hr',min,'min',sec,'sec')
-  } else if (sec > 60 ) { 
+  } else if (sec > 60 ) {
     min<-floor(sec/60)
     sec<-round(sec-min*60,digits=digits)
     timestr<-paste(min,'min',sec,'sec')

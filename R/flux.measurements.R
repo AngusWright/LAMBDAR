@@ -776,7 +776,7 @@ function(env=NULL) {
     # For each aperture, Binary filter at aplim*max(ap) or optimally /*fold*/ {{{
     sba<-foreach(sfam=sfa, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="ap.limit")%dopar%{
       apvals<-rev(sort(sfam))
-      if (optimal.aper) { 
+      if (optimal.aper) {
         #If optimal, flip at point that SNR peaks
         tempsum<-cumsum(apvals)/sqrt(cumsum(seq(apvals)))
         apLim<-apvals[which.max(tempsum)]
@@ -1263,7 +1263,7 @@ function(env=NULL) {
       timer<-system.time(blanks<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
     } else {
       timer<-system.time(blanks<-ran.cor(data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,mask.stamp.lims=ap.lims.mask.map,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
     }
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
