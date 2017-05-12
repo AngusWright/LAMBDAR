@@ -252,18 +252,18 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   ind<-which(params[ID,]!="")
   psf.label.type<-params[ID,ind]
   if ((length(ind)==0)||(is.na(psf.label.type))) {
-    param.warnings<-c(param.warnings,"PSFLabelType Parameter not present in the Parameter File; Using 'FWHM'")
-    psf.label.type<-"FWHM"
+    param.warnings<-c(param.warnings,"PSFLabelType Parameter not present in the Parameter File; Using 'FWHM.AS'")
+    psf.label.type<-"FWHM.AS"
   } else if (length(ind)==1&&(file.exists(file.path(path.root,psf.label.type)))) {
     #One file provided
     psf.label.type<-try(c(t(read.table(file.path(path.root,psf.label.type), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(psf.label.type)=="try-error") {
-      param.warnings<-c(param.warnings,"psfLabel Parameter table read failed; Using 'PSFSEE'")
-      psf.label.type<-"FWHM"
+      param.warnings<-c(param.warnings,"PSFLabelType Parameter table read failed; Using 'FWHM.AS'")
+      psf.label.type<-"FWHM.AS"
     }
     if (is.na(psf.label.type)) {
-      param.warnings<-c(param.warnings,"psfLabel Parameter not in Parameter File; Using 'PSFSEE'")
-      psf.label.type<-"FWHM"
+      param.warnings<-c(param.warnings,"PSFLabelType Parameter not in Parameter File; Using 'FWHM.AS'")
+      psf.label.type<-"FWHM.AS"
     }
   }
   #}}}
@@ -659,28 +659,28 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
-  #Do we want to force use of point sources? {{{
-  ID="PointSources"
+  #Do we want to use normal apertures, force use of point sources, or use gaussian apertures? {{{
+  ID="ApertureType"
   ind<-which(params[ID,]!="")
-  force.point.sources<-as.numeric(params[ID,ind])
-  if ((length(ind)==0)||is.na(force.point.sources)) {
+  aperture.type<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||is.na(aperture.type)) {
     if ((length(ind)==1)) {
-      force.point.sources<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(force.point.sources)=='try-error') {
-        param.warnings<-c(param.warnings,"PointSources Parameter table read failed; Using 0 (FALSE)")
-        force.point.sources<-0
+      aperture.type<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(aperture.type)=='try-error') {
+        param.warnings<-c(param.warnings,"ApertureType Parameter table read failed; Using 0 (Normal Apertures)")
+        aperture.type<-1
       }
-      if (is.na(force.point.sources)) {
-        param.warnings<-c(param.warnings,"PointSources Parameter not in Parameter File; Using 0 (FALSE)")
-        force.point.sources<-0
+      if (is.na(aperture.type)) {
+        param.warnings<-c(param.warnings,"ApertureType Parameter not in Parameter File; Using 0 (Normal Apertures)")
+        aperture.type<-1
       }
     } else {
-      param.warnings<-c(param.warnings,"PointSources Parameter not in Parameter File; Using 0 (FALSE)")
-      force.point.sources<-0
+      param.warnings<-c(param.warnings,"ApertureType Parameter not in Parameter File; Using 1 (Normal Apertures)")
+      aperture.type<-1
     }
 
   }
-  force.point.sources<-(force.point.sources==1)
+  force.point.sources<-(aperture.type==0)
   #}}}
 
   #Error Map scale factor #{{{
@@ -873,10 +873,23 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
 
   #Number of Processors available for computations {{{
   ID="nProcessors"
-  num.cores<-as.numeric(params[ID,1])
-  if (is.na(num.cores)) {
-    param.warnings<-c(param.warnings,"nProcessors Parameter not in Parameter File; Using 1")
-    num.cores<-1
+  ind<-which(params[ID,]!="")
+  num.cores<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(num.cores))) {
+    if ((length(ind)==1)) {
+      num.cores<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(num.cores)=='try-error') {
+        param.warnings<-c(param.warnings,"nProcessors Parameter table read failed; Using 0")
+        num.cores<-1
+      }
+      if (is.na(num.cores)) {
+        param.warnings<-c(param.warnings,"nProcessors Parameter not in Parameter File; Using 0")
+        num.cores<-1
+      }
+    } else {
+      param.warnings<-c(param.warnings,"nProcessors Parameter not in Parameter File; Using 0")
+      num.cores<-1
+    }
   }
   #}}}
 
@@ -2022,6 +2035,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("ab.vega.flux"       , ab.vega.flux       , envir = env) #
   assign("ang.offset"        , ang.offset        , envir = env) #
   assign("ap.limit"          , ap.limit          , envir = env) #
+  assign("aperture.type"     , aperture.type     , envir = env) #
   assign("beam.area.input.as"  , beam.area.input.as  , envir = env) # B
   assign("blank.cor"         , blank.cor         , envir = env) # B
   assign("conf"             , conf             , envir = env) # C

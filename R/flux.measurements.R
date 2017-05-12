@@ -12,6 +12,7 @@ function(env=NULL) {
 
   #Set function Environments /*fold*/ {{{
   environment(make.catalogue.apertures)<-environment()
+  environment(make.gaussian.apertures)<-environment()
   environment(make.convolved.apertures)<-environment()
   environment(make.aperture.map)<-environment()
   environment(make.data.array.maps)<-environment()
@@ -151,6 +152,9 @@ function(env=NULL) {
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (exists("contams")) { contams<-contams[which(inside.mask)] }
     if (exists("groups")) { groups<-groups[which(inside.mask)] }
+    if (num.cores < 0) { 
+      registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+    }
     chunk.size=length(cat.id)/getDoParWorkers()
     mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)
@@ -187,6 +191,9 @@ function(env=NULL) {
     cat.b<-cat.b[which(inside.mask)]
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     contams<-contams[which(inside.mask)]
+    if (num.cores < 0) { 
+      registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+    }
     chunk.size=length(cat.id)/getDoParWorkers()
     mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)
@@ -236,7 +243,11 @@ function(env=NULL) {
   #}
   # /*fend*/ }}}
   #Create an array of stamps containing the apertures for all objects /*fold*/ {{{
-  timer=system.time(sa<-make.catalogue.apertures(outenv=environment()))
+  if (aperture.type <= 1) { 
+    timer=system.time(sa<-make.catalogue.apertures(outenv=environment()))
+  } else if (aperture.type == 2) { 
+    timer=system.time(sa<-make.gaussian.apertures(outenv=environment()))
+  }
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
     message(paste('Make SA Mask - Done (',round(timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }
@@ -291,6 +302,9 @@ function(env=NULL) {
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
+  if (num.cores < 0) { 
+    registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+  }
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
   mpi.opts<-list(chunkSize=chunk.size)
   message("Number of objects per thread:",chunk.size)
@@ -503,6 +517,9 @@ function(env=NULL) {
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
+  if (num.cores < 0) { 
+    registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+  }
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
   mpi.opts<-list(chunkSize=chunk.size)
   message("Number of objects per thread:",chunk.size)
@@ -651,6 +668,8 @@ function(env=NULL) {
   if (do.sky.est||get.sky.rms) {
     #Get sky estimates /*fold*/ {{{
     if (!quiet) { message("Perfoming Sky Estimation"); cat("Performing Sky Estimation") }
+    #SkyEst is NP hard, so set the processors to Max
+    if (num.cores < 0) { registerDoParallel(cores=abs(num.cores)) }
     #Perform Sky Estimation /*fold*/ {{{
     if (cutup) {
       timer<-system.time(skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
@@ -1055,6 +1074,9 @@ function(env=NULL) {
       }
       #/*fend*/ }}}
       #Update MPI options /*fold*/ {{{
+      if (num.cores < 0) { 
+        registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+      }
       chunk.size=ceiling(length(xind)/getDoParWorkers())
       mpi.opts<-list(chunkSize=chunk.size)
       #/*fend*/ }}}
@@ -1195,6 +1217,9 @@ function(env=NULL) {
       sdfaiters[i,which(is.na(sdfaiters[i,]))]<-rev(sdfaiters[i,which(!is.na(sdfaiters[i,]))])[1]
     }
     #Update MPI options /*fold*/ {{{
+    if (num.cores < 0) { 
+      registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+    }
     chunk.size=ceiling(length(cat.id)/getDoParWorkers())
     mpi.opts<-list(chunkSize=chunk.size)
     #/*fend*/ }}}
@@ -1231,6 +1256,8 @@ function(env=NULL) {
   }
   if (ran.cor) {
     if (!quiet) { message("Perfoming Randoms Correction"); cat("Performing Randoms Correction") }
+    #Randoms Estimate is NP hard, so set the processors to Max
+    if (num.cores < 0) { registerDoParallel(cores=abs(num.cores)) }
     if (cutup) {
       timer<-system.time(randoms<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,numIters=num.randoms,mpi.opts=mpi.opts,rem.mask=FALSE))
     } else {
@@ -1259,6 +1286,8 @@ function(env=NULL) {
   if (!exists("blank.cor")) { blank.cor<-FALSE }
   if (blank.cor) {
     if (!quiet) { message("Perfoming Blanks Correction"); cat("Performing Blanks Correction") }
+    #Blanks Estimate is NP hard, so set the processors to Max
+    if (num.cores < 0) { registerDoParallel(cores=abs(num.cores)) }
     if (cutup) {
       timer<-system.time(blanks<-ran.cor(data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,numIters=num.blanks,mpi.opts=mpi.opts,rem.mask=TRUE))
     } else {

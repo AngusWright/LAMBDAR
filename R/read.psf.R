@@ -20,11 +20,15 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
     if (gauss.fwhm.arcsec < 0) {
       message("Reading Gaussian PSF FWHM from datamap")
       if (grepl('sig',psf.label,ignore.case=TRUE)) {
-        gauss.sigma.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))
+        #Add factor to convert pixel to arcsec, if needed
+        if (grepl('pix',psf.label,ignore.case=TRUE)) { fact=arcsec.per.pix } else { fact=1 }
+        gauss.sigma.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))*fact
         gauss.fwhm.arcsec<-gauss.sigma.arcsec*(2*sqrt(2*log(2)))
         message(paste0("PSF width in header is as SIGMA: value = ",gauss.sigma.arcsec," arcsec"))
       } else {
-        gauss.fwhm.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))
+        #Add factor to convert pixel to arcsec, if needed
+        if (grepl('pix',psf.label,ignore.case=TRUE)) { fact=arcsec.per.pix } else { fact=1 }
+        gauss.fwhm.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))*fact
         message(paste0("PSF width in header is as FWHM: value = ",gauss.fwhm.arcsec," arcsec")) 
       }
       if (is.na(gauss.fwhm.arcsec)) { sink(type="message") ; stop("Read of PSF FWHM from datamap failed. Cannot continue") }
@@ -43,10 +47,23 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
     psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
     psfwidth<-psf.clip*arcsec.per.pix
     if (psf.filt) {
-      stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
+      if (aperture.type==2) { 
+        stampsizepix<-(floor(ceiling(def.buff*nsig*apsize/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
+      } else {
+        stampsizepix<-(floor(ceiling(def.buff*apsize/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
+      }
     } else {
-      stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix))*2+5)
+      if (aperture.type==2) { 
+        stampsizepix<-(floor(ceiling(def.buff*nsig*apsize/arcsec.per.pix))*2+5)
+      } else {
+        stampsizepix<-(floor(ceiling(def.buff*apsize/arcsec.per.pix))*2+5)
+      }
     }
+    #if (psf.filt) {
+    #  stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
+    #} else {
+    #  stampsizepix=(floor(ceiling(def.buff*apsize/arcsec.per.pix))*2+5)
+    #}
     if (psf.clip > stampsizepix) {
       message(paste("WARNING: psf stamp is larger than the largest aperture stamp.\n",
       "It is being cut down in size, which will bias the aperture correction.\n",

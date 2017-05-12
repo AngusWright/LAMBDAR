@@ -136,12 +136,12 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         }
         dy<-rand.y-caty
       }
-      ind<-which(abs(dx) > nc | abs(dy) > nr)
-      if (length(ind) != numIters) {
+      ind.use<-which(abs(dx) <= ceiling(nc/2) & abs(dy) <= ceiling(nr/2))
+      if (length(ind.use) != numIters) {
         warning("There are supplied Randoms positions that are beyond the limits of the image\nThese are discarded.")
-        dx<-dx[ind]
-        dy<-dy[ind]
-        numIters<-length(ind)
+        dx<-dx[ind.use]
+        dy<-dy[ind.use]
+        numIters<-length(ind.use)
       }
       #Initialise Vectors
       flux<-rep(NA,numIters)

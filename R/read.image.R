@@ -200,8 +200,18 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
         ind<-which(is.finite(imwt))
         #use relative sigma to get absolute pixel varying gain
         imwt<-imwt/max(imwt[ind],na.rm=TRUE)*gain
-        #sigma map = sqrt(abs(im)/gain)
-        ime<-sqrt(abs(im/(imwt)))
+        #Check that the arrays are conformable
+        if (any(dim(im)!=dim(imwt))) { 
+          ime<-array(Inf,dim(im))
+          #Match the arrays 
+          astr.im<-read.astrometry(paste(path.root,path.work,data.map,sep=""),hdu=data.extn)
+          astr.imwt<-read.astrometry(paste(path.root,path.work,weight.map,sep=""),hdu=data.extn)
+          indexs<-get.overlap.indicies(astr.im,astr.imwt)
+          ime[indexs$arr1$X,indexs$arr1$Y]<-sqrt(abs(im[indexs$arr1$X,indexs$arr1$Y]/imwt[indexs$arr2$X,indexs$arr2$Y]))
+        } else { 
+          #sigma map = sqrt(abs(im)/gain)
+          ime<-sqrt(abs(im/(imwt)))
+        }
         #}}}
       }
       #}}}

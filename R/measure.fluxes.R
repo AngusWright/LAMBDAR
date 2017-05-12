@@ -143,14 +143,6 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
   options(warn=1)
   #/*fend*/ }}}
 
-  #If needed, register the parallel backend /*fold*/ {{{
-  if (!mpi.backend) {
-    #Straight Register of cores
-    registerDoParallel(cores=param.env$num.cores)
-    if (!quiet) { cat("   Program running with ",getDoParWorkers()," workers/threads.\n") }
-  }
-  #/*fend*/ }}}
-
   #Initialise Loop Counter /*fold*/ {{{
   results<-{}
   loop.total<-max(sapply(ls(envir=param.env), function(x) length(param.env[[x]])))
@@ -193,6 +185,14 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     loop.start.time<-proc.time()[3]
     get.nth.var(parameter.list,n=f,inenv=param.env,outenv=environment(),lim=loop.total)
     dir.create(file.path(path.root,path.work, path.out), showWarnings = FALSE,recursive=TRUE)
+    #/*fend*/ }}}
+
+    #If needed, register the parallel backend /*fold*/ {{{
+    if (!mpi.backend) {
+      #Register Number of cores
+      registerDoParallel(cores=num.cores)
+      if (!quiet) { cat("   Program running with ",getDoParWorkers()," workers/threads.\n") }
+    }
     #/*fend*/ }}}
 
     #Send Message output to logfile /*fold*/ {{{
@@ -324,17 +324,6 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     #/*fend*/ }}}
     #/*fend*/ }}}
 
-    #If needed, read ZP Magnitude from Image header /*fold*/ {{{
-    if ((magnitudes) & (mag.zp==-999)){
-      mag.zp<-as.numeric(read.fitskey(mag.zp.label,paste(path.root,path.work,data.map,sep=""),hdu=data.extn))
-      #If Failed, do not output magnitudes /*fold*/ {{{
-      if (!is.finite(mag.zp)) {
-        message("Zero Point Magnitude determination failed - Not outputting magnitudes")
-        warning("Zero Point Magnitude determination failed")
-        magnitudes<-FALSE
-      }#/*fend*/ }}}
-    }#/*fend*/ }}}
-
     #Read source catalogue /*fold*/ {{{
     if (reuse.table[f] && f!=loop.start) {
       if (!quiet) { cat(paste("   Restoring Previous Catalogue",catalogue,"   ")) }
@@ -353,6 +342,17 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
       open.catalogue(outenv=environment(),save.table=(f!=loop.total && reuse.table[f+1]))
     }
     #/*fend*/ }}}
+
+    #If needed, read ZP Magnitude from Image header /*fold*/ {{{
+    if ((magnitudes) & (mag.zp==-999)){
+      mag.zp<-as.numeric(read.fitskey(mag.zp.label,paste(path.root,path.work,data.map,sep=""),hdu=data.extn))
+      #If Failed, do not output magnitudes /*fold*/ {{{
+      if (!is.finite(mag.zp)) {
+        message("Zero Point Magnitude determination failed - Not outputting magnitudes")
+        warning("Zero Point Magnitude determination failed")
+        magnitudes<-FALSE
+      }#/*fend*/ }}}
+    }#/*fend*/ }}}
 
     #If wanted, Set Minimum Aperture Radius /*fold*/ {{{
     if(min.ap.rad>0){
@@ -474,6 +474,9 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     if (filt.contam) { contams<-contams[which(inside.mask)] }
     if (exists('groups')) { groups<-groups[which(inside.mask)] }
     inside.mask<-inside.mask[which(inside.mask)]
+    if (num.cores < 0) { 
+      registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+    }
     chunk.size=length(cat.id)/getDoParWorkers()
     mpi.opts<-list(chunkSize=chunk.size)
     message("Number of objects per thread:",chunk.size)

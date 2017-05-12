@@ -65,9 +65,25 @@ function(outenv=parent.env(environment()), env=NULL){
   #This happens when we have a point source and are not convolving with PSF
   #If ALL apertures are point sources, then this will have length 5}}}
   if (psf.filt) {
-    stamplen<-(floor(ceiling(def.buff*cat.a/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
+    if (aperture.type==2) { 
+      if (confidence==1) {
+        confidence=1-1E-16
+      }
+      nsig<-sqrt(qchisq(confidence,df=2))
+      stamplen<-(floor(ceiling(def.buff*nsig*cat.a/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
+    } else {
+      stamplen<-(floor(ceiling(def.buff*cat.a/arcsec.per.pix)+(ceiling(psf.clip)/2))*2+5)
+    }
   } else {
-    stamplen<-(floor(ceiling(def.buff*cat.a/arcsec.per.pix))*2+5)
+    if (aperture.type==2) { 
+      if (confidence==1) {
+        confidence=1-1E-16
+      }
+      nsig<-sqrt(qchisq(confidence,df=2))
+      stamplen<-(floor(ceiling(def.buff*nsig*cat.a/arcsec.per.pix))*2+5)
+    } else {
+      stamplen<-(floor(ceiling(def.buff*cat.a/arcsec.per.pix))*2+5)
+    }
   }
   #Deal with Point Sources {{{
   if      (all(stamplen==5)) { stamplen[which(stamplen==5)]<-5 }
@@ -85,7 +101,12 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
 
   #Remove any apertures whos stamps would cross the boundary {{{
-  if (length(which(inside.mask==TRUE))==0) { sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") }
+  if (length(which(inside.mask==TRUE))==0) { 
+    #sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") }
+    #Return NULL
+    assign("cutup",TRUE,envir=outenv)
+    return(NULL)
+  }
   x.pix<-x.pix[which(inside.mask)]
   y.pix<-y.pix[which(inside.mask)]
   cat.x<-cat.x[which(inside.mask)]
@@ -223,7 +244,12 @@ function(outenv=parent.env(environment()), env=NULL){
     #Remove any apertures whos stamps would cross the boundary {{{
     if (any(!inside.mask)) {
       message("Removing Stamps that lie outside the mask image limits")
-      if (length(which(inside.mask==TRUE))==0) { sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") }
+      if (length(which(inside.mask==TRUE))==0) { 
+        #sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") 
+        #Return NULL
+        assign("cutup",cutup,envir=outenv)
+        return(NULL)
+      }
       factor<-factor[which(inside.mask)]
       x.pix<-x.pix[which(inside.mask)]
       y.pix<-y.pix[which(inside.mask)]
@@ -319,7 +345,12 @@ function(outenv=parent.env(environment()), env=NULL){
     #Remove any apertures whos stamps would cross the boundary {{{
     if (any(!inside.mask)) {
       message("Removing Stamps that lie outside the error image limits")
-      if (length(which(inside.mask==TRUE))==0) { sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") }
+      if (length(which(inside.mask==TRUE))==0) { 
+        #sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") 
+        #Return NULL
+        assign("cutup",cutup,envir=outenv)
+        return(NULL)
+      }
       factor<-factor[which(inside.mask)]
       x.pix<-x.pix[which(inside.mask)]
       y.pix<-y.pix[which(inside.mask)]

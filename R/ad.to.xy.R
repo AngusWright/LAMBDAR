@@ -5,6 +5,11 @@ function(ra,dec,astr.struc,diagnostic=FALSE){
 # point of interest RA & DEC, anchor point RA & DEC, anchor point x & y, x & y scale (degrees per pixel)
 # FROM: http://mathworld.wolfram.com/GnomonicProjection.html
 #}}}
+  if (missing(dec) & length(dim(ra))==2) { 
+    if (ncol(ra)!=2) { stop(paste0('ra must be of dim 2, not ',ncol(ra))) }
+    dec<-ra[,2]
+    ra<-ra[,1]
+  }
   #Get Astrometry Values {{{
   ra0=astr.struc$CRVAL[1]
   dec0=astr.struc$CRVAL[2]

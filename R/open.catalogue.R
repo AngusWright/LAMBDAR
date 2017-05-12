@@ -29,7 +29,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #}}}
   #Open Catalogue {{{
   if (csv) {
-    fitstable<-try(fread(paste(path.root,path.work,catalogue,sep=""),data.table=FALSE,stringsAsFactors=FALSE),silent=TRUE)
+    fitstable<-try(fread(paste(path.root,path.work,catalogue,sep=""),data.table=FALSE,stringsAsFactors=FALSE,showProgress=FALSE),silent=TRUE)
     #Test Read of Catalogue for errors
     if (class(fitstable)=="try-error") {
       #Stop on Error
