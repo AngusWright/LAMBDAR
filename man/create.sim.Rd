@@ -107,7 +107,7 @@ write.csv(file="SampleCat.csv",ApCat.sample,row.names=FALSE,quote=FALSE)
 #Generate Parameter File
 create.par.file(file="Lambdar_Sample.par",DataMap="SampleImage.fits",
 Catalogue="SampleCat.csv",IterateFluxes=1,nIterations=2,Gauss_FWHM_AS=2,
-PSFConvolve=1)
+PSFConvolve=1,GainLabel='WTGAIN',SaturationLabel='SWPSATUR')
 
 #Measure Photometry
 measure.fluxes("Lambdar_Sample.par")
@@ -115,7 +115,8 @@ measure.fluxes("Lambdar_Sample.par")
 #Generate Simulation Parameter File
 create.par.file(file="Lambdar_Simulation.par",DataMap="SampleImage.fits",
 Catalogue="LAMBDAR_Results.csv",Gauss_FWHM_AS=2,SimGauss_AS=1.1,
-FluxWgtColumnLabel="DFAFlux_Jy",OutputDirectory="Simulation/",PSFConvolve=1)
+FluxWgtColumnLabel="DFAFlux_Jy",OutputDirectory="Simulation/",PSFConvolve=1,
+GainLabel='WTGAIN',SaturationLabel='SWPSATUR')
 
 #Create Simulation from Catalogued objects only
 create.sim('Lambdar_Simulation.par',ObsParm=data.frame(exp=53.9,area=4.91,
@@ -167,7 +168,8 @@ points(xy,pch=3,cex=0.5,col='red')
 #Measure Simulation Fluxes
 create.par.file(file="Lambdar_SimAnalysis.par",
 DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
-Gauss_FWHM_AS=2,OutputDirectory="SimResults/",PSFConvolve=1,BlankCor=1)
+Gauss_FWHM_AS=2,OutputDirectory="SimResults/",PSFConvolve=1,BlankCor=1,
+GainLabel='WTGAIN',SaturationLabel='SWPSATUR')
 measure.fluxes('Lambdar_SimAnalysis.par')
 
 #Read simulation results
@@ -194,7 +196,8 @@ col='blue',lty=2)
 create.par.file(file="Lambdar_SimAnalysis.par",
 DataMap="Simulation/sim_image.fits",Catalogue="Simulation/SimFlux.csv",
 Gauss_FWHM_AS=2,OutputDirectory="SimResults/",IterateFluxes=1,
-PSFConvolve=1,nIterations=5,BlankCor=1)
+PSFConvolve=1,nIterations=5,BlankCor=1,
+GainLabel='WTGAIN',SaturationLabel='SWPSATUR')
 measure.fluxes('Lambdar_SimAnalysis.par')
 
 #Read simulation results

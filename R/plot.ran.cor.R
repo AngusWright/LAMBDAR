@@ -237,7 +237,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         #Get pixel histogram on transformed axes
         pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
         #Plot Histogram and Count axis
-        magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='Randoms Pixel Values (pix)',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
+        magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
         #Convert Labels to Pretty style
         labs<-floor(log10(abs(axespoints)))
         pref<-ifelse(axespoints<0,"-","")
@@ -268,7 +268,9 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
           }
         }
-        abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
+          abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        }
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
@@ -352,7 +354,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         #Get pixel histogram on transformed axes
         pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
         #Plot Histogram and Count axis
-        magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='Randoms Pixel Values (pix)',ylab="Count",side=2,xlim=c(0,1),log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
+        magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
         #Convert Labels to Pretty style
         labs<-floor(log10(abs(axespoints)))
         pref<-ifelse(axespoints<0,"-","")
@@ -383,7 +385,9 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
           }
         }
-        abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
+          abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        }
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
@@ -529,7 +533,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         #Get pixel histogram on transformed axes
         pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
         #Plot Histogram and Count axis
-        magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='Randoms Pixel Values (pix)',ylab="Count",side=2,xlim=c(0,1),ylim=c(1,10^(log10(max(pix$counts))+1)),main="Pixel Histogram",log='y')
+        magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),ylim=c(1,10^(log10(max(pix$counts))+1)),main="Pixel Histogram",log='y')
         #Convert Labels to Pretty style
         labs<-floor(log10(abs(axespoints)))
         pref<-ifelse(axespoints<0,"-","")
@@ -647,7 +651,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         #Get pixel histogram on transformed axes
         pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
         #Plot Histogram and Count axis
-        magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='Randoms Pixel Values (pix)',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
+        magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
         #Convert Labels to Pretty style
         labs<-floor(log10(abs(axespoints)))
         pref<-ifelse(axespoints<0,"-","")
@@ -678,7 +682,9 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
           }
         }
-        abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
+          abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+        }
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
         label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)

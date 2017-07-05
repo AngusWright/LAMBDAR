@@ -153,7 +153,7 @@ function(env=NULL) {
     if (exists("contams")) { contams<-contams[which(inside.mask)] }
     if (exists("groups")) { groups<-groups[which(inside.mask)] }
     if (num.cores < 0) { 
-      registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+      registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
     }
     chunk.size=length(cat.id)/getDoParWorkers()
     mpi.opts<-list(chunkSize=chunk.size)
@@ -192,7 +192,7 @@ function(env=NULL) {
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     contams<-contams[which(inside.mask)]
     if (num.cores < 0) { 
-      registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+      registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
     }
     chunk.size=length(cat.id)/getDoParWorkers()
     mpi.opts<-list(chunkSize=chunk.size)
@@ -303,7 +303,7 @@ function(env=NULL) {
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   if (num.cores < 0) { 
-    registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+    registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
   }
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
   mpi.opts<-list(chunkSize=chunk.size)
@@ -518,7 +518,7 @@ function(env=NULL) {
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   if (num.cores < 0) { 
-    registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+    registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
   }
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
   mpi.opts<-list(chunkSize=chunk.size)
@@ -1075,7 +1075,7 @@ function(env=NULL) {
       #/*fend*/ }}}
       #Update MPI options /*fold*/ {{{
       if (num.cores < 0) { 
-        registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+        registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
       }
       chunk.size=ceiling(length(xind)/getDoParWorkers())
       mpi.opts<-list(chunkSize=chunk.size)
@@ -1088,14 +1088,19 @@ function(env=NULL) {
       # /*fend*/ }}}
       timer<-proc.time()
       if (iter==1) {
-        #if the first iteration, use 'quasi-segmented flux' for 0th step /*fold*/ {{{
+        #if the first iteration, try to use 'quasi-segmented flux' for 0th step /*fold*/ {{{
         if (cutup) {
           sdfad[xind]<-foreach(dfam=dfa[xind],im=data.stamp[xind], xlo=ap.lims.data.stamp[xind,1],xup=ap.lims.data.stamp[xind,2], ylo=ap.lims.data.stamp[xind,3],yup=ap.lims.data.stamp[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-             sum((im[xlo:xup,ylo:yup][which(dfam >= 0.75,arr.ind=T)]))
+             ind<-which(dfam >= 0.5,arr.ind=T)
+             if (length(ind)<length(dfam)*0.1) { 
+               sum((im[xlo:xup,ylo:yup]*dfam))
+             } else {
+               sum((im[xlo:xup,ylo:yup][ind]))
+             }
           }
         } else {
           sdfad[xind]<-foreach(dfam=dfa[xind], xlo=ap.lims.data.map[xind,1],xup=ap.lims.data.map[xind,2], ylo=ap.lims.data.map[xind,3],yup=ap.lims.data.map[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()),.export='im') %dopar% {
-             sum((im[xlo:xup,ylo:yup][which(dfam >= 0.75,arr.ind=T)]))
+             sum((im[xlo:xup,ylo:yup][which(dfam >= 0.5,arr.ind=T)]))
           }
         }
         # /*fend*/ }}}
@@ -1172,17 +1177,17 @@ function(env=NULL) {
       if (!quiet) { cat("  Calculating Weighting Apertures (#",iter,")") }
       # /*fend*/ }}}
       quiet<-TRUE
-      if (psf.weighted) {
-        #If using psf.weighted, we may be able to skip an unnecessary convolution /*fold*/ {{{
+      #if (psf.weighted) {
+      #  #If using psf.weighted, we may be able to skip an unnecessary convolution /*fold*/ {{{
         psf.filt<-FALSE
-        timer=system.time(wsfa[xind]<-make.convolved.apertures(outenv=environment(), sfa,flux.weightin=sdfad,subs=xind))
-        # /*fend*/ }}}
-      } else {
-        #If not using psf.weighted, we may need to re-convolve /*fold*/ {{{
-        psf.filt<-psf.filtbak
-        timer=system.time(wsfa[xind]<-make.convolved.apertures(outenv=environment(), sa,flux.weightin=sdfad,subs=xind))
-        # /*fend*/ }}}
-      }
+        timer=system.time(wsfa[xind]<-make.convolved.apertures(outenv=environment(), sfabak,flux.weightin=sdfad,subs=xind))
+      #  # /*fend*/ }}}
+      #} else {
+      #  #If not using psf.weighted, we may need to re-convolve /*fold*/ {{{
+      #  psf.filt<-psf.filtbak
+      #  timer=system.time(wsfa[xind]<-make.convolved.apertures(outenv=environment(), sa,flux.weightin=sdfad,subs=xind))
+      #  # /*fend*/ }}}
+      #}
       timer2=system.time(image.env$wfa<-make.aperture.map(outenv=environment(), wsfa, dimim,subs=xind))
       psf.filt<-psf.filtbak
       quiet<-quietbak
@@ -1218,7 +1223,7 @@ function(env=NULL) {
     }
     #Update MPI options /*fold*/ {{{
     if (num.cores < 0) { 
-      registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
+      registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
     }
     chunk.size=ceiling(length(cat.id)/getDoParWorkers())
     mpi.opts<-list(chunkSize=chunk.size)

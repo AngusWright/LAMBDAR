@@ -510,7 +510,7 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
 
     #Check that the minor and major axes are the correct way around /*fold*/ {{{
     if (all(cat.a <= cat.b) & !all(cat.a == cat.b)) {
-      warning("All major axes are smaller than all minor axes! Are the labels in the Parameter File the correct wayy around?")
+      warning("All major axes are smaller than all minor axes! Are the labels in the Parameter File the correct way around?")
       message(paste("#################\n",
                     "WARNING:  All of the major axes are smaller than all of the minor axes. They are probably the wrong way around!\n",
                     "This is technically not allowed, because it can cause issues. So they have been swapped, and the angles rotated by 90deg.\n",
@@ -617,7 +617,7 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
       #Aperture Memory requirements /*fold*/ {{{
       cat.len<-length(cat.id)
       #Use 90th Quantile of aperture semimajor axes /*fold*/ {{{
-      aprad.quant<-quantile(cat.a[which(cat.a>0)],0.9)
+      aprad.quant<-quantile(cat.a[which(cat.a>0)],0.6)
       if (is.na(aprad.quant)) {
         #All apertures are point sources - make a default width @ 10 pix
         aprad.quant<-10
@@ -636,8 +636,7 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
       #Check Memory Allocation is less than available free memory /*fold*/ {{{
       if ((apmem+immem+memCur) >= mem.lim) {
           #If this is too much, less threads cannot help. Stop /*fold*/ {{{
-          cat("Failed\n")
-          sink(type='message')
+          cat("  Failed\n")
           if (force.safe) {
           sink(type='message')
           stop(paste("This computation may exceed the available memory on this machine.",

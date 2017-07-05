@@ -5,11 +5,15 @@
 #
 #
 
-setup.laminp.crop<-function(laminp.imagelist,laminp.workdirlist,crop.rad,buffer,other.laminp.filelists) { 
+setup.laminp.crop<-function(laminp.imagelist,laminp.workdirlist,crop.rad,buffer,other.laminp.filelists,append='') { 
 
+  #Initialise filenames 
+  LPCRA=paste0('LAMINP_CROPRA',append,'.dat')
+  LPCDEC=paste0('LAMINP_CROPDEC',append,'.dat')
+  LPCRAD=paste0('LAMINP_CROPRAD',append,'.dat')
   #Initialise the LAMINP_ files
-  system("rm -f LAMINP_CROPRA.dat LAMINP_CROPDEC.dat LAMINP_CROPRAD.dat")
-  system("touch LAMINP_CROPRA.dat LAMINP_CROPDEC.dat LAMINP_CROPRAD.dat")
+  system(paste("rm -f", LPCRA, LPCDEC, LPCRAD))
+  system(paste("touch", LPCRA, LPCDEC, LPCRAD))
   #If other LAMINP filelist, move them to a .bak extension 
   if (!missing(other.laminp.filelists)) {
     system(paste0('mv ',other.laminp.filelists,' ',other.laminp.filelists,".bak",collapse=' ; '))
@@ -37,18 +41,20 @@ setup.laminp.crop<-function(laminp.imagelist,laminp.workdirlist,crop.rad,buffer,
     #calculate the grid of crops
     grid<-fill.grid(ra=lims[,1],dec=lims[,2],rad=crop.rad,buffer=buffer,plot=FALSE)
     #Add to LAMINP_ lists
-    write.table(file='LAMINP_CROPRA.dat' ,grid[,1],quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
-    write.table(file='LAMINP_CROPDEC.dat',grid[,2],quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
-    write.table(file='LAMINP_CROPRAD.dat',rep(crop.rad,length(grid[,1])),quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
+    write.table(file=LPCRA ,grid[,1],quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
+    write.table(file=LPCDEC,grid[,2],quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
+    write.table(file=LPCRAD,rep(crop.rad,length(grid[,1])),quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
     write.table(file=laminp.imagelist,rep(images[i],length(grid[,1])),quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
     #Update LAMINP_workdirs file
     if (!missing(laminp.workdirlist)) { 
       write.table(file=laminp.workdirlist,rep(workdirlist[i],length(grid[,1])),quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
     }
     #Update other LAMINP_ files 
-    for (j in 1:length(other.laminp.filelists)) { 
-      val<-read.table(file=paste0(other.laminp.filelists[j],'.bak'),header=FALSE,stringsAsFactors=FALSE)$V1[i]
-      write.table(file=other.laminp.filelists[j],rep(val,length(grid[,1])),quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
-    } 
+    if (!missing(other.laminp.filelists)) {
+      for (j in 1:length(other.laminp.filelists)) { 
+        val<-read.table(file=paste0(other.laminp.filelists[j],'.bak'),header=FALSE,stringsAsFactors=FALSE)$V1[i]
+        write.table(file=other.laminp.filelists[j],rep(val,length(grid[,1])),quote=FALSE,row.names=FALSE,append=TRUE,col.names=FALSE)
+      } 
+    }
   }
 }

@@ -88,11 +88,12 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
     warning("convolveNoise is TRUE, but SimGauss_AS is 0\". Noise convolution will not take place...")
     message("WARNING: convolveNoise is TRUE, but SimGauss_AS is 0\". Noise convolution will not take place...")
   }
-  message(paste('BLAH'))
   #Convert Noise mode & stdev to Jys
   message("Converting Sim Image to Jy from ADU.")
   x.mode<-x.mode*10^((8.9-mag.zp)/2.5)
   stdev<-stdev*10^((8.9-mag.zp)/2.5)
+  image.env$data.hdr[gain.label,1]<-gain*10^((8.9-mag.zp)/2.5)
+  image.env$data.hdr[satur.label,1]<-saturation*10^((8.9-mag.zp)/2.5)
   if (!noNoise) { noisemap<-(noisemap*(stdev/sd(as.numeric(noisemap))))+x.mode }
   message("Noise Properties in input Image (Jy): mode=",x.mode,"; sd=",stdev)
   message("Noise Properties in Sim Image (Jy): mean=",mean(as.numeric(noisemap)),"; sd=",sd(as.numeric(noisemap)))
