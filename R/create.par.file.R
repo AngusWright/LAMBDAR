@@ -12,7 +12,7 @@ create.par.file <-
     PSFMap='NONE',
     Gauss_FWHM_AS=0,
     PSFLabel='SEEING',
-    PSFLabelType='FWHM',
+    PSFLabelType='FWHM.ARCSEC',
     SimGauss_AS=0,
     RemoveContam=0,
     CheckContam=0,

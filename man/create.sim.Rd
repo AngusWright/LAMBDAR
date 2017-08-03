@@ -95,6 +95,9 @@ Angus H Wright{ ICRAR}
 }
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
 #Create simulated image using an SDSS r-band image and observation parameters:
 #Load a Sample Image and Catalogue
 data("SDSS.sample",envir=environment())

@@ -43,6 +43,9 @@ Angus H Wright{ ICRAR}
 }
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
 #Show the last 6 characters of a random string
 string<-"Methinks it is like a weasel"
 print(last.n.char(string,6))

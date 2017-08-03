@@ -1,16 +1,18 @@
 \name{open.catalogue}
 \alias{open.catalogue}
+\alias{generate.catalogue}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
-Open and Read Catalogue
+Open and Read, or Generate, a Catalogue
 }
 \description{
 __This function is not designed to be called directly, but rather is an internal function to measure.fluxes__
 
-Open and read an input catalogue for the measure.fluxes procedure.
+Open and read an input catalogue for the measure.fluxes procedure, or generate one from a segmentation image.
 }
 \usage{
-open.catalogue(outenv = parent.env(environment()), env = NULL)
+open.catalogue(outenv = parent.env(environment()), save.table=FALSE, env = NULL)
+generate.catalogue(outenv = parent.env(environment()), save.table=FALSE, env = NULL)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -19,6 +21,9 @@ environment; the environment containing the parameters used in `measure.fluxes'
 }
   \item{outenv}{
 environment; the environment where the returned values are to be stored. If not provided, outenv defaults to the input env.
+}
+  \item{save.table}{
+logical; Should a copy of the table be saved to the environment (for fast reading in subsequent loops).
 }
 }
 \details{
@@ -41,6 +46,10 @@ environment; the environment where the returned values are to be stored. If not 
 
   Finally, the user may optionally provide a column containing object weightings in conjunction with any other series of parameters. The weightings
   can be specified in terms of flux, magnitude, or scale, as determined by the users specification of the `FluxWgtType' parameter.
+
+  If the catalogue is being generated from a segmentation image, then the function creates quasi-aperture parameters from the size of 
+  the segmentation map for each source. These are used in creating aperture stamps, so that the stamps are an appropriate size for each source. 
+  The program will subsequently use the make.segmentation.apertures function to assign each source's segmentation map as an aperture. 
 }
 \value{
 NULL; The procedure assigns variables into the parameter environment `outenv'.

@@ -117,6 +117,9 @@ Angus H Wright{ ICRAR}
 \link{measure.fluxes}, \link{flux.measurements}
 }
 \examples{
+
+#Load LAMBDAR
+library(LAMBDAR)
 ## Example 1: Simple Placement of an aperture
 #Generate a random grid radius
 grid.width<-floor(runif(1)*100)

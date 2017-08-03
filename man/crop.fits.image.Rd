@@ -62,6 +62,9 @@ Angus H Wright{ ICRAR}
 }
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
 #Load a Sample Image and Catalogue
 data("SDSS.sample",envir=environment())
 data("ApCat.sample",envir=environment())

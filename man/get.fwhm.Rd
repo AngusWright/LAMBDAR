@@ -40,6 +40,9 @@ Angus H Wright{ ICRAR}
 }
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
   #Make Gaussian data: stdev 5 pix
   sd<-5
   x<-matrix(-10:10,21,21,byrow=TRUE)

@@ -118,6 +118,8 @@ function(outenv=parent.env(environment()), env=NULL){
   cat.a<-cat.a[which(inside.mask)]
   cat.b<-cat.b[which(inside.mask)]
   stamplen<-stamplen[which(inside.mask)]
+  if (use.segmentation) { seg.x<-seg.x[which(inside.mask)] } 
+  if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
   ap.lims.data.stamp<-rbind(ap.lims.data.stamp[which(inside.mask),])
   if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
   if (filt.contam) { contams<-contams[which(inside.mask)] }
@@ -264,6 +266,8 @@ function(outenv=parent.env(environment()), env=NULL){
       cat.a<-cat.a[which(inside.mask)]
       cat.b<-cat.b[which(inside.mask)]
       stamplen<-stamplen[which(inside.mask)]
+      if (use.segmentation) { seg.x<-seg.x[which(inside.mask)] } 
+      if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
       if (length(data.stamp )>1) { data.stamp<-data.stamp[which(inside.mask)] }
       ap.lims.data.stamp<-rbind(ap.lims.data.stamp[which(inside.mask),])
       ap.lims.data.map<-rbind(ap.lims.data.map[which(inside.mask),])
@@ -366,6 +370,8 @@ function(outenv=parent.env(environment()), env=NULL){
       cat.theta<-cat.theta[which(inside.mask)]
       cat.a<-cat.a[which(inside.mask)]
       cat.b<-cat.b[which(inside.mask)]
+      if (use.segmentation) { seg.x<-seg.x[which(inside.mask)] } 
+      if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
       if (length(data.stamp )>1) { data.stamp<-data.stamp[which(inside.mask)] }
       if (length(mask.stamp)>1) { mask.stamp<-mask.stamp[which(inside.mask)] }
       stamplen<-stamplen[which(inside.mask)]
@@ -681,6 +687,8 @@ function(outenv=parent.env(environment()), env=NULL){
       cat.a<-cat.a[which(inside.mask)]
       cat.b<-cat.b[which(inside.mask)]
       stamplen<-stamplen[which(inside.mask)]
+      if (use.segmentation) { seg.x<-seg.x[which(inside.mask)] } 
+      if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
       if (length(data.stamp )>1) { data.stamp<-data.stamp[which(inside.mask)] }
       if (length(mask.stamp)>1) { mask.stamp<-mask.stamp[which(inside.mask)] }
       if (length(error.stamp)>1) { error.stamp<-error.stamp[which(inside.mask)] }
@@ -730,6 +738,8 @@ function(outenv=parent.env(environment()), env=NULL){
   assign("error.stamp",error.stamp,envir=outenv)
   assign("flux.weight",flux.weight,envir=outenv)
   if (filt.contam) { assign("contams",contams,envir=outenv) }
+  if (use.segmentation) { assign("seg.x",seg.x,envir=outenv) }
+  if (use.segmentation) { assign("seg.y",seg.y,envir=outenv) }
   assign("inside.mask",inside.mask,envir=outenv)
   assign("mpi.opts",mpi.opts,envir=outenv)
   #}}}

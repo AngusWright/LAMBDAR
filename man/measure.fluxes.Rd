@@ -12,7 +12,7 @@ A default parameter file can be created by running measure.fluxes("--makepar"). 
 }
 \usage{
 measure.fluxes(par.file, quiet = FALSE, mpi.backend=FALSE,
-do.return=FALSE, ...)
+do.return=FALSE, stop.on.missing=TRUE, ...)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -27,6 +27,9 @@ logical; if TRUE, will use Rmpi and doMPI backends to foreach.
 }
   \item{do.return}{
 logical; if TRUE, a set of core outputs (for every object) will be passed to the R console on program completion.
+}
+  \item{stop.on.missing}{
+logical; if TRUE, the program stops when an image is not found. If FALSE, the program will simply move to the next loop stage (i.e. the next image). 
 }
   \item{...}{
 Any arguments that are intended to be passed to the `create.par.file' routine; see examples below.
@@ -99,6 +102,9 @@ warning on exiting measure.fluxes.
 \link{create.par.file}
 }
 \examples{
+
+#Load LAMBDAR
+library(LAMBDAR)
 ###Parameter File Generation:
 # To generate a default parameter file for use
 measure.fluxes("--makepar")

@@ -1,5 +1,5 @@
 measure.fluxes <-
-function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.missing=TRUE, ...){
+function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.missing=TRUE, ...){
 #Proceedure measures object fluxes from an arbitrary fits image
 
   #If needed, register the parallel backend /*fold*/ {{{
@@ -35,13 +35,14 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
 
   #Set function Environments /*fold*/ {{{
   environment(open.catalogue)<-environment()
+  environment(generate.catalogue)<-environment()
   environment(read.images)<-environment()
   environment(read.par.file)<-environment()
   environment(flux.measurements)<-environment()
   #/*fend*/ }}}
 
   #Check for appropriate calling syntax /*fold*/ {{{
-  if (is.na(par.file)) {
+  if (missing(par.file)) {
   stop(paste("Parameter file not supplied.\n",
              "Calling Syntax:\n",
              "       measure.fluxes(<ParameterFile>,<QuietFlag>)\n",
@@ -291,6 +292,30 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
           warning("Crop input and output are the same file. Crop will fail, so it is skipped")
         }
       }#/*fend*/ }}}
+      #Data Image /*fold*/ {{{
+      if (use.segmentation) {
+        segment.fits.output.filename<-'cropped_segmentation.fits'
+        if (verbose) { message(paste("Cropping Segmentation Image: Outputting to", segment.fits.output.filename)) }
+        if (!file.exists(file.path(path.root,path.work,catalogue))) { sink(type='message'); stop("Segmentation Image does not exist at location:",file.path(path.root,path.work,catalogue)) }
+        crop.fits.image(ra0=ra0, dec0=dec0, path.root=file.path(path.root,path.work), inpim=catalogue, crop.radius=crop.radius, fitsoutname=segment.fits.output.filename,data.extn=1)
+        if (verbose) { message(paste("Using", data.fits.output.filename, "as data image")) }
+        catalogue<-segment.fits.output.filename
+      }
+      #If RA and/or DEC are -999, get RA and DEC of the data cutout /*fold*/ {{{
+      if (ra0==-999 | dec0==-999) {
+        astrtmp<-read.astrometry(file.path(path.root,path.work,data.map),hdu=1)
+        pos<-xy.to.ad(astrtmp$NAXIS[1]/2,astrtmp$NAXIS[2]/2,astrtmp)
+        if (ra0==-999) {
+          ra0<-pos[1]
+          message(paste("Setting RA0 to centre of data.map:",round(ra0,4)))
+        }
+        if (dec0==-999) {
+          dec0<-pos[2]
+          message(paste("Setting DEC0 to centre of data.map:",round(dec0,4)))
+        }
+      }
+      #/*fend*/ }}}
+      #/*fend*/ }}}
     }#/*fend*/ }}}
 
     #Create Seperate Images Environment /*fold*/ {{{
@@ -324,6 +349,9 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     #/*fend*/ }}}
     #/*fend*/ }}}
 
+    if(!exists('use.segmentation')) { 
+      use.segmentation<-FALSE
+    }
     #Read source catalogue /*fold*/ {{{
     if (reuse.table[f] && f!=loop.start) {
       if (!quiet) { cat(paste("   Restoring Previous Catalogue",catalogue,"   ")) }
@@ -336,10 +364,20 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
       cat.theta<-saved.table[,theta.lab]
       flux.weight<-saved.table[,flux.weight.lab]
       contams<-saved.table[,contam.lab]
+      groups<-saved.table[,group.lab]
+      if (use.segmentation) { 
+        seg.x<-saved.table[,"SegIm_X"]
+        seg.y<-saved.table[,"SegIm_Y"]
+      }
       if (!quiet) { cat("-- Done\n") }
     } else {
-      #Read the catalogue
-      open.catalogue(outenv=environment(),save.table=(f!=loop.total && reuse.table[f+1]))
+      if (use.segmentation) { 
+        #Generate the catalogue from the Segmentation map
+        generate.catalogue(outenv=environment(),save.table=(f!=loop.total && reuse.table[f+1]))
+      } else { 
+        #Read the catalogue
+        open.catalogue(outenv=environment(),save.table=(f!=loop.total && reuse.table[f+1]))
+      }
     }
     #/*fend*/ }}}
 
@@ -417,6 +455,10 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     cat.theta<-cat.theta[which(inside.mask)]
     cat.a<-cat.a[which(inside.mask)]
     cat.b<-cat.b[which(inside.mask)]
+    if (use.segmentation) { 
+      seg.x<-seg.x[which(inside.mask)]
+      seg.y<-seg.y[which(inside.mask)]
+    }
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (filt.contam) { contams<-contams[which(inside.mask)] }
     if (exists('groups')) { groups<-groups[which(inside.mask)] }
@@ -470,6 +512,10 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
     cat.theta<-cat.theta[which(inside.mask)]
     cat.a<-cat.a[which(inside.mask)]
     cat.b<-cat.b[which(inside.mask)]
+    if (use.segmentation) { 
+      seg.x<-seg.x[which(inside.mask)]
+      seg.y<-seg.y[which(inside.mask)]
+    }
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (filt.contam) { contams<-contams[which(inside.mask)] }
     if (exists('groups')) { groups<-groups[which(inside.mask)] }
@@ -746,26 +792,3 @@ function(par.file=NA, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.m
   #/*fend*/ }}}
 
 }
-#As Time functions /*fold*/ {{{
-as.time<-function(sec,digits) {
-  if (sec > 60*60*24) {
-    day<-floor(sec/(60*60*24))
-    hr<-floor((sec-day*(60*60*24))/(60*60))
-    min<-round((sec-day*(60*60*24)-hr*(60*60))/60,digits=digits)
-    timestr<-paste(day,'day',hr,'hr',min,'min')
-  } else if (sec > 60*60) {
-    hr<-floor(sec/(60*60))
-    min<-floor((sec-hr*(60*60))/60)
-    sec<-round(sec-hr*(60*60)-min*60,digits=digits)
-    timestr<-paste(hr,'hr',min,'min',sec,'sec')
-  } else if (sec > 60 ) {
-    min<-floor(sec/60)
-    sec<-round(sec-min*60,digits=digits)
-    timestr<-paste(min,'min',sec,'sec')
-  } else {
-    sec<-round(sec,digits=digits)
-    timestr<-paste(sec,'sec')
-  }
-  return=timestr
-}
-#/*fend*/ }}}

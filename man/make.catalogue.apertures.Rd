@@ -1,5 +1,7 @@
 \name{make.catalogue.apertures}
 \alias{make.catalogue.apertures}
+\alias{make.gaussian.apertures}
+\alias{make.segmentation.apertures}
 %- Also NEED an `\alias' for EACH other topic documented here.
 \title{
 Make Aperture Stamps
@@ -11,6 +13,8 @@ Create a length (m) list of (n,n) arrays, containing object apertures given inpu
 }
 \usage{
 make.catalogue.apertures(outenv=parent.env(environment()),env=NULL)
+make.gaussian.apertures(outenv=parent.env(environment()),env=NULL)
+make.segmentation.apertures(outenv=parent.env(environment()),env=NULL)
 }
 \arguments{
   \item{env}{
@@ -24,6 +28,9 @@ environment; the environment where the returned values are to be stored. If not 
 \details{
 Aperture parameters, which are used in the creation of the aperture stamps, are stored in the parameter environment `env'.
 The returned list of aperture stamps is sent to `outenv'. If not supplied, `outenv' is set to be the same environment as `env'.
+The function make.catalogue.apertures creates boxcar apertures from the parameters provided. The make.gaussian.apertures function 
+creates gaussian apertures, assuming that the axis parameters provided in the catalogue are gaussian StDevs. The 
+make.segmentation.apertures function creates apertures from an input segmentation image, of arbitrary resolution. 
 }
 \value{
 numeric [[m]][n,n] list; aperture stamps with pixel range [0,1]

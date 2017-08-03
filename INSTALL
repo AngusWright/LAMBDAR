@@ -34,11 +34,20 @@ library("LAMBDAR")
 
 https://github.com/AngusWright/LAMBDAR
 
-#By clicking on the "Download Zip" Option on the lower-right-side of
-#the window.
+#It can be cloned using git, simply with the command: 
+
+git clone https://github.com/AngusWright/LAMBDAR
+
+#This will generate a clone of the LAMBDAR package in 
+#the current directory
+
+#Alternatively it can be installed by 
+#clicking on the "Download Zip" Option on 
+#the lower-right-side of the github browser window.
 
 #Once downloaded, unzip the file using your favourite unzip method.
-#The unzipped folder will be named 'LAMBDAR-master'
+#The unzipped folder will be named 'LAMBDAR-master'. You should 
+#rename it to 'LAMBDAR'. 
 
 #####################
 #   Install
@@ -50,7 +59,7 @@ https://github.com/AngusWright/LAMBDAR
 #
 #As such, after the download is unzipped, from the folder containing the package directory, run:
 
-R CMD INSTALL LAMBDAR-master
+R CMD INSTALL LAMBDAR
 
 # i.e. if you unzipped the folder in the 'Downloads' directory, run the above command from inside
 #      'Downloads'
@@ -59,11 +68,11 @@ R CMD INSTALL LAMBDAR-master
 #that LAMBDAR requires to run (see Dependencies below), or you
 #lack sufficient permissions to load the package into the R library.
 #Usually this will prompt for loading the package in your personal
-#library, which should then be successful. If not, run:
+#library, which should then be successful. If not, you may need to 
+#install LAMBDAR with root permission by running:
 
 sudo R CMD INSTALL LAMBDAR-master
 
-#This will install the package in the main R library with root permissions.
 #Once installed, the package can be loaded from inside the R environment
 #using the command
 
@@ -85,9 +94,25 @@ library(LAMBDAR)
 # > matrixStats
 #
 #as well as any packages that these depend on themselves.
+
 #To install these packages, in the R terminal, run
 
 install.packages('<package name>', dependencies=TRUE)
+
+#There are also two Suggests packages. One is the Cairo 
+#plotting package, for nicer PNG and PDF figures. The program 
+#will still function as required without this. 
+#The second is the EBImage package, which can be installed from 
+#Bioconductor using the following commands (within R):
+
+source("http://bioconductor.org/biocLite.R")
+biocLite("EBImage")
+
+#This package is used when generating apertures from 
+#segmentation maps. Without this package, segmented apertures
+#will still be usable, but there may be pathalogically bad 
+#results in cases when the segmentation map and data map are of 
+#_very_ different scales. 
 
 #Once all dependant packages are loaded, run the commands to
 #install LAMBDAR.

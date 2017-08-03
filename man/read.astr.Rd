@@ -43,6 +43,9 @@ Angus H Wright{ ICRAR}
 }
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
 #Load sample image
 data(SDSS.sample)
 #Save sample image to File

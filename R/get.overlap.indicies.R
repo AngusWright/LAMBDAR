@@ -1,6 +1,6 @@
 get.overlap.indicies<-function(astr1,astr2,expand=FALSE) { 
-  arr2<-(ad.to.xy(xy.to.ad(c(1.5,astr1$NAXIS[1]+0.5),c(1.5,astr1$NAXIS[2]+0.5),astr=astr1),astr=astr2))
-  arr1<-(ad.to.xy(xy.to.ad(c(1.5,astr2$NAXIS[1]+0.5),c(1.5,astr2$NAXIS[2]+0.5),astr=astr2),astr=astr1))
+  arr2<-(ad.to.xy(xy.to.ad(c(1.5,astr1$NAXIS[1]+0.5),c(1.5,astr1$NAXIS[2]+0.5),astr.struc=astr1),astr.struc=astr2))
+  arr1<-(ad.to.xy(xy.to.ad(c(1.5,astr2$NAXIS[1]+0.5),c(1.5,astr2$NAXIS[2]+0.5),astr.struc=astr2),astr.struc=astr1))
   if (any(arr1<1)) { arr1[which(arr1<1)]<-1.5 }
   if (any(arr1[,1]>astr1$NAXIS[1])) { arr1[which(arr1[,1]>astr1$NAXIS[1]),1]<-astr1$NAXIS[1]+0.5 }
   if (any(arr1[,2]>astr1$NAXIS[2])) { arr1[which(arr1[,2]>astr1$NAXIS[2]),2]<-astr1$NAXIS[2]+0.5 }

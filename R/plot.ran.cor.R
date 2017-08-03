@@ -1,4 +1,4 @@
-plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,rand.main.mask.lim=0.99){
+plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99){
   if(is.matrix(ap.stamp)) {
     #We have 1 object
     ap.stamp<-list(ap.stamp)
@@ -148,7 +148,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
       sumap<-rep(NA,numIters)
       #Mask object aperture
       if (!rem.mask) {
-        origim[sxl:sxh,syl:syh][which(zapsmall(ap)>=1-rand.main.mask.lim,arr.ind=TRUE)]<-NA
+        origim[sxl:sxh,syl:syh][which(zapsmall(ap)>=1-ran.main.mask.lim,arr.ind=TRUE)]<-NA
       }
       #Get Aperture details
       gdap<-which(ap!=0)
@@ -445,7 +445,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
       #Mask object aperture
       tempim<-data.stamp
       if (!rem.mask) {
-        tempim[sxl:sxh,syl:syh][which(zapsmall(ap)>=1-rand.main.mask.lim,arr.ind=TRUE)]<-NA
+        tempim[sxl:sxh,syl:syh][which(zapsmall(ap)>=1-ran.main.mask.lim,arr.ind=TRUE)]<-NA
       }
       #Get Aperture details
       gdap<-which(ap!=0)

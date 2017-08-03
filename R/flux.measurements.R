@@ -13,6 +13,7 @@ function(env=NULL) {
   #Set function Environments /*fold*/ {{{
   environment(make.catalogue.apertures)<-environment()
   environment(make.gaussian.apertures)<-environment()
+  environment(make.segmentation.apertures)<-environment()
   environment(make.convolved.apertures)<-environment()
   environment(make.aperture.map)<-environment()
   environment(make.data.array.maps)<-environment()
@@ -149,6 +150,8 @@ function(env=NULL) {
     cat.theta<-cat.theta[which(inside.mask)]
     cat.a<-cat.a[which(inside.mask)]
     cat.b<-cat.b[which(inside.mask)]
+    if (use.segmentation) { seg.x<-seg.x[which(inside.mask)] } 
+    if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (exists("contams")) { contams<-contams[which(inside.mask)] }
     if (exists("groups")) { groups<-groups[which(inside.mask)] }
@@ -189,6 +192,8 @@ function(env=NULL) {
     cat.theta<-cat.theta[which(inside.mask)]
     cat.a<-cat.a[which(inside.mask)]
     cat.b<-cat.b[which(inside.mask)]
+    if (use.segmentation) { seg.x<-seg.x[which(inside.mask)] } 
+    if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     contams<-contams[which(inside.mask)]
     if (num.cores < 0) { 
@@ -247,6 +252,8 @@ function(env=NULL) {
     timer=system.time(sa<-make.catalogue.apertures(outenv=environment()))
   } else if (aperture.type == 2) { 
     timer=system.time(sa<-make.gaussian.apertures(outenv=environment()))
+  } else if (aperture.type == 3) { 
+    timer=system.time(sa<-make.segmentation.apertures(outenv=environment()))
   }
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
     message(paste('Make SA Mask - Done (',round(timer[3], digits=2),'sec )'))
@@ -298,6 +305,8 @@ function(env=NULL) {
   cat.a<-cat.a[which(inside.mask)]
   cat.a.pix<-cat.a.pix[which(inside.mask)]
   cat.b<-cat.b[which(inside.mask)]
+  if (use.segmentation) { seg.x<-seg.x[which(inside.mask)] } 
+  if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
   if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
@@ -513,6 +522,8 @@ function(env=NULL) {
   cat.a<-cat.a[which(inside.mask)]
   cat.a.pix<-cat.a.pix[which(inside.mask)]
   cat.b<-cat.b[which(inside.mask)]
+  if (use.segmentation) { seg.x<-seg.x[which(inside.mask)] } 
+  if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
   if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
@@ -866,12 +877,12 @@ function(env=NULL) {
   if (!(no.psf)&(plot.sample)) {
     #PSF with Contours /*fold*/ {{{
     PlotPNG(file.path(path.root,path.work,path.out,"PSF.png"))
-    psfvals<-rev(sort(psf))
+    psfvals<-rev(sort(psf[which(is.finite(psf),arr.ind=TRUE)]))
     tempsum<-cumsum(psfvals)
     tempfunc<-approxfun(tempsum,psfvals)
     psfLimit<-tempfunc(ap.limit*max(tempsum, na.rm=TRUE))
     suppressWarnings(image(log10(psf),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=ifelse(length(psf)>1E4,TRUE,FALSE)))
-    contour(psf, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+    contour(psf, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
     if (psf.filt) { contour(psf, levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
     dev.off()
     # /*fend*/ }}}
@@ -913,7 +924,7 @@ function(env=NULL) {
     if (!psf.weighted) {
       #Binary Aperture /*fold*/ {{{
       suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (smallest source)", asp=1,col=heat.colors(256),useRaster=Rast))
-      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       contour(ap, levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE)
       suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
@@ -923,7 +934,7 @@ function(env=NULL) {
     } else {
       #PSF Weighted Aperture /*fold*/ {{{
       suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (smallest source)", asp=1,col=heat.colors(256),useRaster=Rast))
-      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
       ssfap<-sum(sfa[[ind]]*ap)
@@ -965,7 +976,7 @@ function(env=NULL) {
     if (!psf.weighted) {
       #Binary Aperture /*fold*/ {{{
       suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (median source)", asp=1,col=heat.colors(256),useRaster=Rast))
-      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       if (psf.filt) { contour(ap, levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
       suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
@@ -975,7 +986,7 @@ function(env=NULL) {
     } else {
       #PSF Weighted Aperture /*fold*/ {{{
       suppressWarnings(image(log10(ap)-log10(sfa[[ind]]),main="Example: Minimum Aperture Correction (median source; shown as residual)", asp=1,col=heat.colors(256),useRaster=Rast))
-      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
       spsf<-sum(ap)
       ssfap<-sum(sfa[[ind]]*ap)
       label("topright",lab=paste("SumPSF=",round(spsf,digits=2),"\nSum(PSF*Ap)=",round(ssfap,digits=2),"\nApCorr=",round(spsf/ssfap,digits=2),sep=""))
@@ -2139,7 +2150,10 @@ function(env=NULL) {
     if (filt.contam) {
       if (!quiet) { cat(paste("Writing Contaminant-subtracted Map to",no.contam.map,"   ")) }
       #Perform Source Subtraction /*fold*/ {{{
-      timer=system.time(source.subtraction(image.env$im,sfa,ap.lims.data.map,dfaflux/ApCorr,file.path(path.root,path.work,path.out,no.contam.map),image.env$data.hdr,ba,contams,diagnostic,verbose))
+      timer=system.time(source.subtraction(image.env$im,sfa,ap.lims.data.map,dfaflux/ApCorr,
+                        file.path(path.root,path.work,path.out,no.contam.map),
+                        image.env$data.hdr,ba,contams,diagnostic,verbose,
+                        file.path(path.root,path.work,path.out,"Cotaminant_FluxMap.fits")))
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Contam Subtraction - Done (',round(timer[3], digits=2),'sec )'))
       } else if (!quiet) { cat("   - Done\n") }
@@ -2147,7 +2161,10 @@ function(env=NULL) {
     if (!quiet) { cat(paste("Writing Source-subtracted Map to",residual.map,"   ")) }
     # /*fend*/ }}}
     #Perform Source Subtraction /*fold*/ {{{
-    timer=system.time(source.subtraction(image.env$im,sfa,ap.lims.data.map,dfaflux/ApCorr,file.path(path.root,path.work,path.out,residual.map),image.env$data.hdr,ba,inside.mask,diagnostic,verbose))
+    timer=system.time(source.subtraction(image.env$im,sfa,ap.lims.data.map,dfaflux/ApCorr,
+                      file.path(path.root,path.work,path.out,residual.map),
+                      image.env$data.hdr,ba,inside.mask,diagnostic,verbose,
+                      file.path(path.root,path.work,path.out,"FluxMap.fits")))
     if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
       message(paste('Source Subtraction - Done (',round(timer[3], digits=2),'sec )'))
     } else if (!quiet) { cat("   - Done\n") }
