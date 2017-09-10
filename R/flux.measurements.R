@@ -152,7 +152,7 @@ function(env=NULL) {
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (exists("contams")) { contams<-contams[which(inside.mask)] }
     if (exists("groups")) { groups<-groups[which(inside.mask)] }
-    if (num.cores < 0) { 
+    if (num.cores < 0) {
       registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
     }
     chunk.size=length(cat.id)/getDoParWorkers()
@@ -191,7 +191,7 @@ function(env=NULL) {
     cat.b<-cat.b[which(inside.mask)]
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     contams<-contams[which(inside.mask)]
-    if (num.cores < 0) { 
+    if (num.cores < 0) {
       registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
     }
     chunk.size=length(cat.id)/getDoParWorkers()
@@ -243,9 +243,9 @@ function(env=NULL) {
   #}
   # /*fend*/ }}}
   #Create an array of stamps containing the apertures for all objects /*fold*/ {{{
-  if (aperture.type <= 1) { 
+  if (aperture.type <= 1) {
     timer=system.time(sa<-make.catalogue.apertures(outenv=environment()))
-  } else if (aperture.type == 2) { 
+  } else if (aperture.type == 2) {
     timer=system.time(sa<-make.gaussian.apertures(outenv=environment()))
   }
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
@@ -302,7 +302,7 @@ function(env=NULL) {
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
-  if (num.cores < 0) { 
+  if (num.cores < 0) {
     registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
   }
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
@@ -517,7 +517,7 @@ function(env=NULL) {
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
-  if (num.cores < 0) { 
+  if (num.cores < 0) {
     registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
   }
   chunk.size=ceiling(length(cat.id)/getDoParWorkers())
@@ -1074,7 +1074,7 @@ function(env=NULL) {
       }
       #/*fend*/ }}}
       #Update MPI options /*fold*/ {{{
-      if (num.cores < 0) { 
+      if (num.cores < 0) {
         registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
       }
       chunk.size=ceiling(length(xind)/getDoParWorkers())
@@ -1217,7 +1217,7 @@ function(env=NULL) {
       sdfaiters[i,which(is.na(sdfaiters[i,]))]<-rev(sdfaiters[i,which(!is.na(sdfaiters[i,]))])[1]
     }
     #Update MPI options /*fold*/ {{{
-    if (num.cores < 0) { 
+    if (num.cores < 0) {
       registerDoParallel(cores=(min(floor(length(cat.x)/5000),abs(num.cores))))
     }
     chunk.size=ceiling(length(cat.id)/getDoParWorkers())
@@ -2292,9 +2292,9 @@ function(env=NULL) {
     on.exit(detach(env), add=TRUE)
   }
   if (!diagnostic) {
-    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr)
+    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr,MinApCorr=ApCorr,MaxApCorr=WtCorr)
   } else {
-    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr, SA_Stamps=sa, SFA_Stamps=sfa, WSFA_Stamps=wsfa, DFA_Stamps=dfa)
+    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr, SA_Stamps=sa, SFA_Stamps=sfa, WSFA_Stamps=wsfa, DFA_Stamps=dfa,MinApCorr=Apcorr,MaxApCorr=WtCorr)
   }
   # /*fend*/ }}}
   # /*fend*/ }}}
