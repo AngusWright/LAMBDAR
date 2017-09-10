@@ -68,6 +68,9 @@ Aaron Robotham{ ICRAR}
 %%}
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
 #Load sample image
 data(SDSS.sample)
 #Load sample catalogue

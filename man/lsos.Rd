@@ -75,6 +75,9 @@ It has been modified by A.H.Wright.
 }
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
 #Add some things to the an environment
 param.env<-new.env(parent=environment())
 assign("x",runif(1),envir=param.env)

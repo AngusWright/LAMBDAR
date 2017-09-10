@@ -14,8 +14,9 @@ the routine with no parameters specified.
        RootDirectory = "./", WorkingDirectory = "./",
        OutputDirectory = "./", Catalogue = "catalogue.csv",
        DataMap = "image.fits", BeamArea_SqAS = 0, PSFConvolve
-       = 0, PSFWeighted = 1, PSFMap = "NONE", Gauss_FWHM_AS =
-       0, SimGauss_AS=0, RemoveContam = 0, CheckContam = 0,
+       = 0, PSFWeighted = 1, PSFMap = "NONE", Gauss_FWHM_AS = 0, 
+       PSFLabel='SEEING', PSFLabelType='FWHM.ARCSEC',SimGauss_AS=0, 
+       RemoveContam = 0, CheckContam = 0,
        nNearestCheck = 10, NoContamImageFile =
        "NoContamResidualImage.fits", CatIDColumnLabel =
        "CATAID", RAColumnLabel = "RAdeg", DecColumnLabel =
@@ -26,7 +27,7 @@ the routine with no parameters specified.
        MaskMap = "NONE", WeightMap = "NONE", WeightMapZP = 0,
        Saturation = Inf, SaturationLabel = "SATUR", GainLabel =
        "GAIN", DataExtn = 0, ErrorExtn = 0, MaskExtn = 0,
-       WeightExtn = 0, PointSources = 0, EFactor = 0, FluxCorr = 1,
+       WeightExtn = 0, ApertureType = 1, EFactor = 1, FluxCorr = 1,
        CropImage = 0, CropFitsName = "croppedimage",
        CropImRA0 = -999, CropImDec0 = -999, CropImRad = 0.5,
        Confusion_units = 0, nProcessors = 1, AngularOffset = 0,
@@ -79,6 +80,8 @@ the routine with no parameters specified.
  \item{SaturationLabel}{ string; saturation fits keyword }
  \item{GainLabel}{ string; gain fits keyword. Used to determine gain if no weightmap or error.map is provided  }
  \item{Gauss_FWHM_AS}{ float; Gaussian FWHM of Seeing in ArcSec (used if generating a PSF)}
+ \item{PSFLabel}{ string; what is the header keyword for the PSF size (used if generating a PSF and Gauss_FWHM_AS is negative)}
+ \item{PSFLabelType}{ string; is the PSF size in the header specified a FWHM [FWHM] or StDev [SD], and is it in units of arcsec [ARCSEC] or Pixels [PIX]. }
  \item{SimGauss_AS}{ float; FWHM of Gaussian used when performing Gaussianisation of the input image. Used when generating a Simulated Image,
  to accurately reproduce the background correlations. }
  \item{BeamArea_SqAS}{ float; Beam area in Square Arcsec (used if MapUnitsPerBeam=1)}
@@ -102,7 +105,7 @@ the routine with no parameters specified.
  \item{PSFWeighted}{ boolean 0/1; Use PSF Weighted Apertures [1] or convert all apertures to boxcar prior to measurement [0]? }
  \item{ApertureConfLimit}{ float; when not using PSF Weighted Apertures, this is the integral point at which the boxcar boundary occurs }
  \item{AngularOffset}{ boolean 0/1; 0 if the catalogue is in N90E0 angular coords, 1 if it is in N0E90 coords [0/1]}
- \item{PointSources}{ boolean 0/1; Force point sources to be used? [1/0] }
+ \item{ApertureType}{ integer; What type of aperture do we want? Force point sources [0], BoxCar Apertures [1], Gaussian Apertures [2], or Segmentation Apertures [3]? }
  \item{ResampleAper}{ boolean 0/1; Smooth Apertures by resampling? (Improves aperture surface integral accuracy) [1/0] }
  \item{ResamplingRes}{ integer; Rate of Upscaling in Resolution during Aperture Resampling (final res is ResamplingRes^[nIters] higher) }
  \item{ResamplingIters}{ integer; Number of iterations to perform in resampling }
@@ -187,6 +190,9 @@ Angus H Wright{ ICRAR}
 \link{measure.fluxes}
 }
 \examples{
+
+#Load LAMBDAR
+library(LAMBDAR)
 #To output the default parameter file to 'Lambdar_default.par', simply call:
 create.par.file()
 

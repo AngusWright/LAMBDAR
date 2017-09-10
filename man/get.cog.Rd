@@ -8,7 +8,7 @@ Generate Curve of Growth
 When provided with an image matrix, generate the 2D curve of growth.
 }
 \usage{
-get.cog(zdist, centre = NULL, sample = NULL, proj = NULL)
+get.cog(zdist, centre = NULL, sample = NULL, proj = NULL, SNR = FALSE)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -25,6 +25,9 @@ numeric; Number of radial points to sample COG at. Dictates output length.
   \item{proj}{
 numeric (length 2) vector; Parameters for calculating de-projected COG. Must be length 2
 with first value Axel Ratio (b/a) and second value position angle (PA).
+}
+  \item{SNR}{
+logical; Do you want the CoG returned as a SNR rather than straight flux? 
 }
 }
 %%\details{
@@ -46,6 +49,9 @@ Angus H Wright{ ICRAR}
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \examples{
+
+#Load LAMBDAR
+library(LAMBDAR)
 
 n<-101
 #Gaussian (PSF) signal with Gaussian noise

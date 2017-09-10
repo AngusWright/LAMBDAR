@@ -202,8 +202,10 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       }
     }
     #Make sure PSF maps and Gauss FWHM vals are conformable {{{
-    if (length(gauss.fwhm.arcsec)!=length(psf.map)) {
+    if (length(gauss.fwhm.arcsec)!=length(psf.map) & length(psf.map) != 1) {
       gauss.fwhm.arcsec<-rep(gauss.fwhm.arcsec[1], length(psf.map))
+    } else if (length(gauss.fwhm.arcsec)!=length(psf.map) & length(psf.map) != 1) {
+      psf.map<-rep(psf.map,length(gauss.fwhm.arcsec)) 
     }#}}}
 
     #Make sure files with PSF maps have Gauss FWHM vals set to 0 {{{
@@ -681,6 +683,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
 
   }
   force.point.sources<-(aperture.type==0)
+  use.segmentation<-(aperture.type==3)
   #}}}
 
   #Error Map scale factor #{{{
@@ -2070,6 +2073,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("gauss.fwhm.arcsec"    , gauss.fwhm.arcsec    , envir = env) # G
   assign("get.debl.frac"      , get.debl.frac      , envir = env) #
   assign("get.sky.rms"        , get.sky.rms        , envir = env) #
+  assign("group.lab"       , group.lab       , envir = env) #
   assign("group.weights"       , group.weights       , envir = env) #
   assign("resample.iterations"        , resample.iterations        , envir = env) # I
   assign("iterate.fluxes"    , iterate.fluxes    , envir = env) # I
@@ -2133,6 +2137,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("resample.upres"            , resample.upres            , envir = env) # U
   assign("use.mask.lim"       , use.mask.lim       , envir = env)
   assign("use.pixel.fluxweight", use.pixel.fluxweight , envir = env)
+  assign("use.segmentation"   , use.segmentation   , envir = env)
   assign("verbose"          , verbose          , envir = env) # V
   assign("verbose.out"       , verbose.out       , envir = env) #
   assign("write.tab"         , write.tab         , envir = env) # W

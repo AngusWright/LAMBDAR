@@ -19,7 +19,7 @@ Objects that are supplied with zero width (ie. point sources) are simulated as p
 \usage{
 make.exponential.apertures(outenv = parent.env(environment()),
 env = NULL, ObsParm, padGals, col.corr = 0, confuse = FALSE)
-rotate.data.2d(x,y,theta)
+rotate.data.2d(x,y,theta,about.centre=FALSE)
 make.rotation.matrix.2d(theta)
 }
 \arguments{
@@ -56,6 +56,9 @@ numeric vector; y-values to rotate. Used in profile generation.
 }
   \item{theta}{
 numeric; theta (in N90E0) for matrix rotation. Used in profile generation.
+}
+  \item{about.centre}{
+logical; do you want the rotation to happen around the centre of the matrix, rather than the corner? 
 }
 }
 %- maybe also `usage' for other objects documented here.

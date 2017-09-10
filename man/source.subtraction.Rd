@@ -12,7 +12,7 @@ Perform a subtraction of sources and/or contaminants from a FITS image.
 \usage{
 source.subtraction(image, sfa_models, ap.lims.data.stamp,
 fluxes, outputfile, outputheader, beamarea, inside.mask,
-diagnostic = FALSE, verbose = FALSE)
+diagnostic = FALSE, verbose = FALSE, fluxmap.outputfile = "fluxmap.fits")
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -45,6 +45,9 @@ logical; if TRUE, then perform diagnostic checks and outputs
 }
   \item{verbose}{
 logical; if TRUE, then perform verbose outputs
+}
+  \item{fluxmap.outputfile}{
+string; relative path to, and filename of, the output fluxmap image
 }
 }
 \details{

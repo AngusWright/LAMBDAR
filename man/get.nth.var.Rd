@@ -55,6 +55,9 @@ Angus H Wright{ ICRAR}
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+
+#Load LAMBDAR
+library(LAMBDAR)
 #Create the 'parameters' environment
 parameter.env<-new.env(parent=environment())
 #Assign a bunch of values there, of different lengths

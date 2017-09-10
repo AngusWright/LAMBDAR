@@ -1,10 +1,11 @@
 source.subtraction <-
-function(image,sfa_models,ap.lims.data.stamp,fluxes,outputfile,outputheader,beamarea,inside.mask,diagnostic=FALSE,verbose=FALSE) {
+function(image,sfa_models,ap.lims.data.stamp,fluxes,outputfile,outputheader,beamarea,inside.mask,diagnostic=FALSE,verbose=FALSE,fluxmap.outputfile="fluxmap.fits") {
   # Procedure subtracts stamps from the input image.
 
   message('------------------------Source_Subtraction-----------------------------')
   #Initialise Residual Image {{{
   resid_im<-image  #image is currently in Jy/pix
+  flux.map<-array(0,dim(image))
   npos<-length(sfa_models)
   if (length(fluxes)==1) { fluxes<-replicate(npos, fluxes) }
   #}}}
@@ -49,11 +50,13 @@ function(image,sfa_models,ap.lims.data.stamp,fluxes,outputfile,outputheader,beam
     if (!(is.finite(ap.lims.data.stamp))) { sink(type="message") ; stop("Bad limits in Source Subtraction") }
   }
   #}}}
-  #Subtract model from image {{{
+  #Subtract model from image, and add to flux map {{{
   for (i in 1:npos) {
     if (!is.null(modelsource[[i]])) {
       resid_im[ap.lims.data.stamp[i,1]:ap.lims.data.stamp[i,2],ap.lims.data.stamp[i,3]:ap.lims.data.stamp[i,4]]<-
       resid_im[ap.lims.data.stamp[i,1]:ap.lims.data.stamp[i,2],ap.lims.data.stamp[i,3]:ap.lims.data.stamp[i,4]]-modelsource[[i]]
+      flux.map[ap.lims.data.stamp[i,1]:ap.lims.data.stamp[i,2],ap.lims.data.stamp[i,3]:ap.lims.data.stamp[i,4]]<-
+      flux.map[ap.lims.data.stamp[i,1]:ap.lims.data.stamp[i,2],ap.lims.data.stamp[i,3]:ap.lims.data.stamp[i,4]]+modelsource[[i]]
     }
   }
   #}}}
@@ -61,8 +64,9 @@ function(image,sfa_models,ap.lims.data.stamp,fluxes,outputfile,outputheader,beam
   resid_im<-resid_im*beamarea
   #}}}
   if (diagnostic) { message(paste("After assignment",round(length(which(is.na(resid_im)))/length(resid_im)*100,digits=2),"% of the resid_im matrix are NA")) }
-  #Output Residual Image {{{
+  #Output Residual Image & Flux Map {{{
   write.fits.image.file(outputfile,resid_im,outputheader, nochange=TRUE,verbose=verbose,diagnostic=diagnostic)
+  write.fits.image.file(fluxmap.outputfile,flux.map,outputheader, nochange=TRUE,verbose=verbose,diagnostic=diagnostic)
   #}}}
   message('=========END==========Source_Subtraction===========END=================\n')
   return=NULL

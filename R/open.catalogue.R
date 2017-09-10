@@ -173,6 +173,9 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
     #Otherwise, set all weights to unity
     flux.weight<-1
   }#}}}
+  if (save.table) { 
+    fitstable[,flux.weight.lab]<-flux.weight
+  }
 
   #If wanted, read grouping column {{{
   if (!exists("group.weights")) { group.weights<-FALSE }
@@ -184,12 +187,14 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
       stop(paste("Catalogue does not contain",group.lab,"column"))
     }
     message(paste("There are ",length(factor(groups))," Groups being used in weighting"))
+  } else { 
+    groups<-rep(1,length(cat.id)) 
   }#}}}
   #If save.table, recreate the catalogue with the checked-parameters {{{
   if (save.table) { 
-    fitstable[,flux.weight.lab]<-flux.weight
+    fitstable[,group.lab]<-groups
     #Remove unneeded columns
-    fitstable<-fitstable[,c(cata.lab,ra.lab,dec.lab,semimaj.lab,semimin.lab,theta.lab,flux.weight.lab,contam.lab)]
+    fitstable<-fitstable[,c(cata.lab,ra.lab,dec.lab,semimaj.lab,semimin.lab,theta.lab,flux.weight.lab,contam.lab,group.lab)]
   }
   #}}}
   #}}}

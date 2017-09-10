@@ -51,6 +51,9 @@ Aaron Robotham{ ICRAR}
 }
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
 #Generate the original grid/image
 x.min<-y.min<--50
 x.max<-y.max<-50

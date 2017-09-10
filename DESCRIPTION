@@ -1,12 +1,12 @@
 Package: LAMBDAR
 Type: Package
 Title: Measure galaxy fluxes from an arbitrary FITS image using input aperture locations and dimensions
-Version: 0.17.0
-Date: 2017-04-19
+Version: 0.18.0
+Date: 2017-07-26
 Author: Angus H. Wright
 Maintainer: Angus H. Wright <angus.wright@icrar.org>
 Description: LAMBDAR (Lambda Adaptive Multi-Band Deblending Algorithm in R) is a procedure for measuring the fluxes of galaxies in an arbitrary FITS image, covering an arbitrary photometric wave-band, when provided all paramters needed to construct galactic apertures at the required locations. The motivation for the creation of this program is the determination of multi-band matched aperture galactic photometry. Through sophisticated matched aperture photometry, it is possible to develop robust Spectral Energy Distributions (SEDs) and accurately establish the physical properties of galactic objects. This code is based primarily on a program written by Dr Nathan Bourne, which was designed for determining galactic fluxes in low resolution Herschel images. The code has been developed primarily by the Author, and in close collaboration with Dr Aaron Robotham. The Author welcomes any comments/criticisms/suggestions and encourages users to pass on any of the above through the repository page on GitHub or directly via email.
-Depends: astro, doParallel, foreach, magicaxis, nortest, seqinr, iterators, plotrix, RANN, matrixStats, data.table, FITSio,R (>= 2.10)
-Suggests: Cairo
+Depends: astro, doParallel, foreach, magicaxis, nortest, seqinr, iterators, plotrix, RANN, matrixStats, data.table, FITSio
+Suggests: Cairo, EBImage
 License: GPL-2
 Packaged: 2013-10-23 14:30:43 UTC; awright

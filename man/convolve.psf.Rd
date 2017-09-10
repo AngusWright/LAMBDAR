@@ -57,6 +57,9 @@ Angus H Wright{ ICRAR}
 }
 \examples{
 
+#Load LAMBDAR
+library(LAMBDAR)
+
 #Generate a 2D Gaussian PSF
 #Stamp size (in pix)
 n<-100

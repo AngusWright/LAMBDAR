@@ -12,7 +12,7 @@ create.par.file <-
     PSFMap='NONE',
     Gauss_FWHM_AS=0,
     PSFLabel='SEEING',
-    PSFLabelType='FWHM',
+    PSFLabelType='FWHM.ARCSEC',
     SimGauss_AS=0,
     RemoveContam=0,
     CheckContam=0,
@@ -37,8 +37,8 @@ create.par.file <-
     ErrorExtn=0,
     MaskExtn=0,
     WeightExtn=0,
-    ApertureType=0,
-    EFactor=0,
+    ApertureType=1,
+    EFactor=1,
     FluxCorr=1,
     CropImage=0,
     CropFitsName='croppedimage',
@@ -139,7 +139,7 @@ MapUnitsPerBeam        ",paste(MapUnitsPerBeam   ,collapse=' '),"    #Is the Ima
 Confusion_units        ",paste(Confusion_units   ,collapse=' '),"    #Image Confusion in units
 Gauss_FWHM_AS          ",paste(Gauss_FWHM_AS     ,collapse=' '),"    #Gaussian FWHM of Seeing in ArcSec
 PSFLabel               ",paste(PSFLabel          ,collapse=' '),"    #If Gaussian FWHM above is -ve, look for the PSF Sigma/FWHM in header with this keyword
-PSFLabelType           ",paste(PSFLabelType      ,collapse=' '),"    #Is the PSFLabel keyword a Sigma or FWHM [SIGMA/FWHM]
+PSFLabelType           ",paste(PSFLabelType      ,collapse=' '),"    #Is the PSFLabel keyword a Sigma or FWHM [SIGMA/FWHM] and in Pixels or Arcsec [PIX/AS]
 SimGauss_AS            ",paste(SimGauss_AS       ,collapse=' '),"    #Gaussian FWHM of Gaussianisation Kernel (used for convolution of Simulation Image Noise), in ArcSec
 BeamArea_SqAS          ",paste(BeamArea_SqAS     ,collapse=' '),"    #Beam area in Square Arcsec
 FluxCorr               ",paste(FluxCorr          ,collapse=' '),"    #Flux Correction Factor
@@ -155,9 +155,9 @@ MaskExtn               ",paste(MaskExtn          ,collapse=' '),"    #Fits heade
 WeightExtn             ",paste(WeightExtn        ,collapse=' '),"    #Fits header extension of Data in Weight Map File
 #                #--------Image Cropping Options------------#
 CropImage              ",paste(CropImage          ,collapse=' '),"    #Do we want to crop the input image to a particular subsection?                 [1/0]
-CropImRA0              ",paste(CropImRA0          ,collapse=' '),"    #RA that crop will centre around (deg; NA will focus crop on image centre)
-CropImDec0             ",paste(CropImDec0         ,collapse=' '),"    #Dec that crop will centre around (deg; NA will focus crop on image centre)
-CropImRad              ",paste(CropImRad          ,collapse=' '),"    #Radius of crop (deg; NA will default to 1deg radius)
+CropImRA0              ",paste(CropImRA0          ,collapse=' '),"    #RA that crop will centre around (deg; -999 will focus crop on image centre)
+CropImDec0             ",paste(CropImDec0         ,collapse=' '),"    #Dec that crop will centre around (deg; -999 will focus crop on image centre)
+CropImRad              ",paste(CropImRad          ,collapse=' '),"    #Radius of crop (deg; Negative will default to 1deg radius)
 CropFitsName           ",paste(CropFitsName       ,collapse=' '),"    #Name of the output cropped image (without '.fits' extension)
 #                #--------Additional Options----------------#
 RemoveContam           ",paste(RemoveContam      ,collapse=' '),"    #Remove Contaminants from the image?         [1/0]
