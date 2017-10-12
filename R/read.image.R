@@ -27,8 +27,7 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   #Setup Astrometry Structure {{{
   astr.struc<-read.astrometry(paste(path.root,path.work,data.map,sep=""),hdu=data.extn)
   # Check WCS {{{
-  if (any(is.na(astr.struc$CTYPE[c(1:2)]))) {
-  } else if (all(grepl("TAN", astr.struc$CTYPE[c(1:2)]))) {
+  if (all(grepl("TAN", astr.struc$CTYPE[c(1:2)]))) {
     #WCS is TAN Gnomonic; Continue without issue
   } else if (all(grepl("SIN", astr.struc$CTYPE[c(1:2)]))) {
     #WCS is SIN Orthographic; if no rotation, continue without error

@@ -1,7 +1,7 @@
 #
 #
 #
-sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,cat.x=NULL,cat.y=NULL,mpi.opts=NULL){
+sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,cat.x=NULL,cat.y=NULL,mpi.opts=NULL,subset){
   #Check Data stamp Limits
   if (is.null(data.stamp.lims)){
     #Data stamps must be the same dimension as the image!
@@ -50,6 +50,18 @@ sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims
   cuthivec<-round(cuthi)
   probcut<-1-pnorm(sigma.cut)
 
+  if (!missing(subset)) { 
+    cutlovec<-cutlovec[subset]
+    cuthivec<-cuthivec[subset]
+    x.pix<-x.pix[subset]
+    y.pix<-y.pix[subset]
+    data.stamp.lims<-data.stamp.lims[subset,]
+    if (cutup) { 
+      data.stamp<-data.stamp[subset]
+      mask.stamp<-mask.stamp[subset]
+    }
+  }
+
   if (cutup) {
     output<-foreach(cutlo=cutlovec, cuthi=cuthivec, pixlocx=x.pix, pixlocy=y.pix, origim=data.stamp, maskim=mask.stamp, sxl=data.stamp.lims[,1],syl=data.stamp.lims[,3],.options.mpi=mpi.opts, .combine='rbind') %dopar% {
 
@@ -91,8 +103,8 @@ sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims
             } else {
               vallims<-2*mean(tempval)-quantile(tempval,probcut, na.rm=TRUE)
             }
-            temprad<-temprad[tempval<=vallims]
-            tempval<-tempval[tempval<=vallims]
+            temprad<-temprad[which(tempval<=vallims)]
+            tempval<-tempval[which(tempval<=vallims)]
           }
         }
         #Find the running medians(run1) or means(run2) for the data

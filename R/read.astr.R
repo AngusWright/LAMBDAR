@@ -9,7 +9,7 @@ function(fitsname, hdu=1){
   oldwarn<-options(warn=-1)
   #Check for Typical Keywords of known Lengths {{{
   astr.struc<-c(astr.struc, list(BITPIX  =read.fitskey("BITPIX",fitsname,hdu=hdu)))
-  astr.struc<-c(astr.struc, list(CTYPE   =as.numeric(c(read.fitskey(c("CTYPE1","CTYPE2","CTYPE3"),fitsname,hdu=hdu)))))
+  astr.struc<-c(astr.struc, list(CTYPE   =(c(read.fitskey(c("CTYPE1","CTYPE2","CTYPE3"),fitsname,hdu=hdu)))))
   astr.struc<-c(astr.struc, list(NAXIS   =as.numeric(c(read.fitskey(c("NAXIS1","NAXIS2","NAXIS3"),fitsname,hdu=hdu)))))
   astr.struc<-c(astr.struc, list(PC      =as.numeric(c(read.fitskey(c("PC1_1","PC1_2","PC1_3"),fitsname,hdu=hdu)))))
   astr.struc<-c(astr.struc, list(CDELT   =as.numeric(c(read.fitskey(c("CDELT1","CDELT2","CDELT3"),fitsname,hdu=hdu)))))

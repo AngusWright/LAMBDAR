@@ -18,18 +18,18 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
   if (gauss.fwhm.arcsec != 0) {
     #Generate Gaussian PSF {{{
     if (gauss.fwhm.arcsec < 0) {
-      message("Reading Gaussian PSF FWHM from datamap")
-      if (grepl('sig',psf.label,ignore.case=TRUE)) {
+      message("Reading Gaussian PSF FWHM from datamap header")
+      if (grepl('sig',psf.label.type,ignore.case=TRUE)) {
         #Add factor to convert pixel to arcsec, if needed
-        if (grepl('pix',psf.label,ignore.case=TRUE)) { fact=arcsec.per.pix } else { fact=1 }
+        if (grepl('pix',psf.label.type,ignore.case=TRUE)) { fact=arcsec.per.pix } else { fact=1 }
         gauss.sigma.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))*fact
         gauss.fwhm.arcsec<-gauss.sigma.arcsec*(2*sqrt(2*log(2)))
-        message(paste0("PSF width in header is as SIGMA: value = ",gauss.sigma.arcsec," arcsec"))
+        message(paste0("PSF width in header is as SIGMA: value = ",gauss.sigma.arcsec," arcsec (factor was: ",fact,")"))
       } else {
         #Add factor to convert pixel to arcsec, if needed
-        if (grepl('pix',psf.label,ignore.case=TRUE)) { fact=arcsec.per.pix } else { fact=1 }
+        if (grepl('pix',psf.label.type,ignore.case=TRUE)) { fact=arcsec.per.pix } else { fact=1 }
         gauss.fwhm.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))*fact
-        message(paste0("PSF width in header is as FWHM: value = ",gauss.fwhm.arcsec," arcsec")) 
+        message(paste0("PSF width in header is as FWHM: value = ",gauss.fwhm.arcsec," arcsec (factor was: ",fact,")")) 
       }
       if (is.na(gauss.fwhm.arcsec)) { sink(type="message") ; stop("Read of PSF FWHM from datamap failed. Cannot continue") }
       if (verbose) { message(" -Done\n") }
@@ -115,15 +115,22 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
       hdr_psf$CD[2,2]<-hdr_psf$CD[1,1]
     }
     if ((abs(1-(hdr_psf$CD[1,1]*3600/arcsec.per.pix))>1E-3)||(abs(1-(hdr_psf$CD[2,2]*3600/arcsec.per.pix)>1E-3))) {
-      #If it isn't, reinterpolate the psf onto the same pixel spacing
-      narcsec_x<-((hdr_psf$NAXIS[1]-1)*hdr_psf$CD[1,1]*3600)
-      narcsec_y<-((hdr_psf$NAXIS[2]-1)*hdr_psf$CD[2,2]*3600)
-      x_oldres<-seq(0,narcsec_x,by=hdr_psf$CD[1,1]*3600)
-      y_oldres<-seq(0,narcsec_y,by=hdr_psf$CD[2,2]*3600)
-      x_newres<-seq(0,narcsec_x,by=arcsec.per.pix            )
-      y_newres<-seq(0,narcsec_y,by=arcsec.per.pix            )
-      grid<-expand.grid(x_newres,y_newres)
-      im_psf<-matrix(interp.2d(x=grid[,1],y=grid[,2],list(x=x_oldres,y=y_oldres,z=im_psf))[,3],ncol=length(x_newres))
+      if (hdr_psf$CD[1,1]*3600 > 10*arcsec.per.pix) { 
+        #The psf is significantly lower resolution than the image; 
+        #this is probably a mistake in the header, so ignore it
+        message("WARNING: ignoring the PSF header information because it doesn't make sense...")
+        message("         The PSF resolution is more than 10x lower than the image! ")
+      } else { 
+        #If it isn't, reinterpolate the psf onto the same pixel spacing
+        narcsec_x<-((hdr_psf$NAXIS[1]-1)*hdr_psf$CD[1,1]*3600)
+        narcsec_y<-((hdr_psf$NAXIS[2]-1)*hdr_psf$CD[2,2]*3600)
+        x_oldres<-seq(0,narcsec_x,by=hdr_psf$CD[1,1]*3600)
+        y_oldres<-seq(0,narcsec_y,by=hdr_psf$CD[2,2]*3600)
+        x_newres<-seq(0,narcsec_x,by=arcsec.per.pix            )
+        y_newres<-seq(0,narcsec_y,by=arcsec.per.pix            )
+        grid<-expand.grid(x_newres,y_newres)
+        im_psf<-matrix(interp.2d(x=grid[,1],y=grid[,2],list(x=x_oldres,y=y_oldres,z=im_psf))[,3],ncol=length(x_newres))
+      }
     }
     #}}}
     #Get PSF FWHM {{{

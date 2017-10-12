@@ -28,17 +28,9 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   else { stop("Catalogue does not have a recognised extension (.csv/.dat/.fits/.Rdata)") }
   #}}}
   #Open Catalogue {{{
-  if (csv) {
+  if (csv | ascii) {
     fitstable<-try(fread(paste(path.root,path.work,catalogue,sep=""),data.table=FALSE,stringsAsFactors=FALSE,showProgress=FALSE),silent=TRUE)
     #Test Read of Catalogue for errors
-    if (class(fitstable)=="try-error") {
-      #Stop on Error
-      geterrmessage()
-      sink(type="message")
-      stop("Catalogue File read failed")
-    }
-  } else if (ascii) {
-    fitstable<-try(as.data.frame(read.table(paste(path.root,path.work,catalogue,sep="")),stringsAsFactors=FALSE),silent=TRUE)
     if (class(fitstable)=="try-error") {
       #Stop on Error
       geterrmessage()

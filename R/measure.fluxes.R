@@ -39,6 +39,11 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
   environment(read.images)<-environment()
   environment(read.par.file)<-environment()
   environment(flux.measurements)<-environment()
+  for (nam in ls.deb("package:LAMBDAR",simple=TRUE)) { 
+    if (nam%in%ls(envir=environment())) { 
+      debug(get(nam,envir=environment()))
+    }
+  }
   #/*fend*/ }}}
 
   #Check for appropriate calling syntax /*fold*/ {{{
@@ -663,14 +668,14 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
       #Aperture Memory requirements /*fold*/ {{{
       cat.len<-length(cat.id)
       #Use 90th Quantile of aperture semimajor axes /*fold*/ {{{
-      aprad.quant<-quantile(cat.a[which(cat.a>0)],0.6)
-      if (is.na(aprad.quant)) {
+      aprad.quant<-quantile(cat.a,0.6)
+      if (is.na(aprad.quant)|aprad.quant==0) {
         #All apertures are point sources - make a default width @ 10 pix
-        aprad.quant<-10
+        aprad.quant<-10*arcsec.per.pix
       }
       #/*fend*/ }}}
-      apsizeinbits<-(2*aprad.quant/arcsec.per.pix)^2*64*2
-      apmem<-cat.len*apsizeinbits*12
+      apsizeinbits<-(2*aprad.quant/arcsec.per.pix)^2*64
+      apmem<-cat.len*apsizeinbits*3
       #/*fend*/ }}}
       #Image Memory requirements /*fold*/ {{{
       nimage=4
@@ -678,6 +683,12 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
       if (length(image.env$ime)>1){ nimage=nimage+1 }
       if (sourcemask){ nimage=nimage+1 }
       immem<-nimage*lsos(pattern="im",envir=image.env)[1,'Size']
+      #Are we going probably to be cutting up the images? 
+      if (mem.safe & apmem>immem/nimage*num.cores) { 
+        apmem = apmem + immem/nimage*num.cores 
+      } else { 
+        apmem = apmem*2 
+      }
       #/*fend*/ }}}
       #Check Memory Allocation is less than available free memory /*fold*/ {{{
       if ((apmem+immem+memCur) >= mem.lim) {

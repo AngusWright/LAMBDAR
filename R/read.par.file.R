@@ -164,7 +164,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     psf.map<-"NONE"
   }
   #Determine if provided psf.map is an image or filelist {{{
-  if ((length(psf.map)==1)&(psf.map!="NONE")&(!grepl(".fits", psf.map,ignore.case=TRUE))) {
+  if ((length(psf.map)==1)&(psf.map!="NONE")&(psf.map!="ESTIMATE")&(!grepl(".fits", psf.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     psf.map<-try(c(t(read.table(file.path(path.root,psf.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
     if (class(psf.map)=="try-error") {
@@ -382,16 +382,32 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(catalogue))) {
     stop("Catalogue Parameter not in Parameter File")
   }
-  #Determine if provided weightmap is an image or filelist {{{
+  #Determine if provided catalogue is a file or filelist {{{
   if ((length(catalogue)==1)&(!grepl(".csv",catalogue,ignore.case=TRUE))&(!grepl(".Rdata",catalogue,ignore.case=TRUE))&(!grepl(".fits", catalogue,ignore.case=TRUE))) {
-    #One file provided without .fits extension - must be filelist
-    catalogue<-try(c(t(read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(catalogue)=="try-error") {
-      #Stop on Error
-      stop("Catalogue Filelist read failed")
-    }
-    if (is.na(catalogue)) {
-      stop("Catalogue Filelist read failed")
+    if (!grepl(".dat",catalogue,ignore.case=TRUE)) { 
+      #One file provided without relevant extension - must be filelist
+      catalogue<-try(c(t(read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+      if (class(catalogue)=="try-error") {
+        #Stop on Error
+        stop("Catalogue Filelist read failed")
+      }
+      if (is.na(catalogue)) {
+        stop("Catalogue Filelist read failed")
+      }
+    } else { 
+      #One file provided with ambiguous extension - check if it is a filelist
+      tmp.catalogue<-try(((read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+      if (class(tmp.catalogue)=="try-error") {
+        #Stop on Error
+        stop("Catalogue Filelist read failed")
+      }
+      if (is.na(tmp.catalogue)) {
+        stop("Catalogue Filelist read failed")
+      }
+      if (length(tmp.catalogue)==1) { 
+        #The file has only one column, so must be a filelist 
+        catalogue<-c(t(tmp.catalogue))
+      }
     }
   }
   #}}}

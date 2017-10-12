@@ -34,7 +34,8 @@ function(outenv=parent.env(environment()), env=NULL,subs=NULL) {
   #in full (weighted) mask array-space, and divide stamp
   #by the full value. }}}
   #Perform Calculation and assignment {{{
-  deblend.weight.map<-foreach(wsfam=wsfa[subs], i=1:ngal,xlo=ap.lims.data.map[subs,1],xup=ap.lims.data.map[subs,2],ylo=ap.lims.data.map[subs,3],yup=ap.lims.data.map[subs,4], .export="image.env$wfa", .inorder=TRUE)%do%{
+  if (cutup) { registerDoParallel(cores=1) } 
+  deblend.weight.map<-foreach(wsfam=wsfa[subs], i=1:ngal,xlo=ap.lims.data.map[subs,1],xup=ap.lims.data.map[subs,2],ylo=ap.lims.data.map[subs,3],yup=ap.lims.data.map[subs,4], .export="image.env$wfa", .inorder=TRUE)%dopar%{
       #Check for errors and create deblended stamps {{{
       if ((sum(wsfam) > 0)&&(sum(image.env$wfa[xlo:xup,ylo:yup])>0)) {
         #Aperture stamps are error free {{{
@@ -72,6 +73,7 @@ function(outenv=parent.env(environment()), env=NULL,subs=NULL) {
       fmap
       #}}}
   }#}}}
+  if (cutup) { registerDoParallel(cores=num.cores) } 
   #}}}
 
   message('=========END=======Make_Deblended_Weightmap========END=================\n')

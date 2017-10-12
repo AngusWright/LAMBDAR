@@ -121,8 +121,8 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
             } else {
               vallims<-2*mean(tempval,na.rm=TRUE)-quantile(tempval,probcut, na.rm=TRUE)
             }
-            temprad<-temprad[tempval<=vallims]
-            tempval<-tempval[tempval<=vallims]
+            temprad<-temprad[which(tempval<=vallims)]
+            tempval<-tempval[which(tempval<=vallims)]
           }
         }
         #Find the running medians(run1) or means(run2) for the data
@@ -135,7 +135,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         num.in.bin<-tempmedian$Nbins
         #Remove bins with 1 or less skypixels present
         if (any(num.in.bin<=1)) {
-          ind<-which(num.in.bin<=1)
+          ind<-which(!num.in.bin<=1)
           tempy  <-tempy[ind]
           tempx  <-tempx[ind]
           templty<-templty[ind]
@@ -260,17 +260,19 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim),skyRMS),col=hsv(inten))
         magaxis(side=3:4,labels=FALSE)
       }
-      abline(v=tempxbak,col=grey(0.5),lty=templtybak,lwd=bin.lwd)
-      abline(v=tempx,col='purple',lty=templty,lwd=bin.lwd)
-      lines(x=tempxbak,y=tempybak,lwd=all.est.lwd,col=grey(0.5))
-      lines(x=tempx,y=tempy,lwd=est.lwd)
-      lines(x=tempxbak,y=tempylimsbak[,1],lwd=all.est.lwd,lty=2,col=grey(0.5))
-      lines(x=tempxbak,y=tempylimsbak[,2],lwd=all.est.lwd,lty=2,col=grey(0.5))
-      lines(x=tempx,y=tempylims[,1],lwd=est.lwd,lty=2)
-      lines(x=tempx,y=tempylims[,2],lwd=est.lwd,lty=2)
-      abline(h=0,col='darkgreen')
-      abline(h=meanStat$sky,col='red')
-      abline(h=medianStat$sky,col='red',lty=2)
+      if (!any(is.na(templtybak))) {
+        abline(v=tempxbak,col=grey(0.5),lty=templtybak,lwd=bin.lwd)
+        abline(v=tempx,col='purple',lty=templty,lwd=bin.lwd)
+        lines(x=tempxbak,y=tempybak,lwd=all.est.lwd,col=grey(0.5))
+        lines(x=tempx,y=tempy,lwd=est.lwd)
+        lines(x=tempxbak,y=tempylimsbak[,1],lwd=all.est.lwd,lty=2,col=grey(0.5))
+        lines(x=tempxbak,y=tempylimsbak[,2],lwd=all.est.lwd,lty=2,col=grey(0.5))
+        lines(x=tempx,y=tempylims[,1],lwd=est.lwd,lty=2)
+        lines(x=tempx,y=tempylims[,2],lwd=est.lwd,lty=2)
+        abline(h=0,col='darkgreen')
+        abline(h=meanStat$sky,col='red')
+        abline(h=medianStat$sky,col='red',lty=2)
+      }
       dev.off()
     }
   } else {
@@ -340,7 +342,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         num.in.bin<-tempmedian$Nbins
         #Remove bins with 1 or less skypixels present
         if (any(num.in.bin<=1)) {
-          ind<-which(num.in.bin<=1)
+          ind<-which(!num.in.bin<=1)
           tempy  <-tempy[ind]
           tempx  <-tempx[ind]
           templty<-templty[ind]

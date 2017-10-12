@@ -1,5 +1,5 @@
 make.convolved.apertures <-
-function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NULL, env=NULL,subs=NULL) {
+function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NULL, env=NULL,sumsa,subs=NULL) {
 #Make the Single Filtered Aperture mask
 
   #Print appropriate banner  {{{
@@ -29,6 +29,18 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
   } else {
     npos<-length(subs)
     message(paste("-> There are",npos,"apertures in this subset\n"))
+  }
+  #}}}
+
+  #Check for sumsa (and its size) {{{
+  if (!missing(sumsa)) { 
+    if (length(sumsa) != npos) {
+      if (length(sumsa) == length(cat.id)) {
+        sumsa<-sumsa[subs]
+      } else {
+        sink(type="message") ; stop("Bad SumSA Array")
+      }
+    }
   }
   #}}}
 
@@ -81,7 +93,11 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       #}}}
     }#}}}
     #Adjust Fluxweights by aperture integral
-    flux.weight<-foreach(samask=sa_mask[subs],fluxwgt=flux.weight, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
+    if (missing(sumsa)) {
+      flux.weight<-foreach(samask=sa_mask[subs],fluxwgt=flux.weight, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
+    } else { 
+      flux.weight<-flux.weight/sumsa
+    }
     #}}}
     #Check for Errors & Fluxweight {{{
     if (max(flux.weight,na.rm=TRUE)<=0) {
@@ -119,7 +135,11 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       #}}}
     }#}}}
     #Adjust Fluxweights by aperture integral
-    flux.weight<-foreach(samask=sa_mask[subs],fluxwgt=flux.weight, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
+    if (missing(sumsa)) {
+      flux.weight<-foreach(samask=sa_mask[subs],fluxwgt=flux.weight, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c') %dopar%{ fluxwgt/sum(samask)  }
+    } else { 
+      flux.weight<-flux.weight/sumsa
+    }
     #}}}
     #Check for Errors & Fluxweight {{{
     if (max(flux.weight,na.rm=TRUE)<=0) {
@@ -194,8 +214,32 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
     #Else if we are filtering apertures with the PSFs, perform the convolution and
     #multiply by the flux.weight simultaneously }}}
     message('--------------------------Convolution----------------------------------')
+    #In the event that we have point sources (they are not convolved), check that the PSF is correctly centred {{{
+    conv<-array(0,dim=dim(psf))
+    conv[which(psf==max(psf),arr.ind=T)]<-1
+    psf.cen<-convolve.psf(psf,conv)
+    psf.resid<-psf-psf.cen
+    if (plot.sample) { 
+      PlotPNG(file.path(path.root,path.work,path.out,"PointSourceCentre_test.png"),width=110*8,height=110*4,res=110)
+      layout(cbind(1,2,3))
+      magimage(psf)
+      magimage(psf.cen)
+      magimage(psf.resid)
+    }
+    if (max(abs(psf.resid),na.rm=T) > 0.001) { 
+      recent<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf==max(psf,na.rm=T),arr.ind=T)[1,]
+    } else { 
+      recent<-c(0,0)
+    }
+    if (any(abs(recent)>1)) { recent[which(abs(recent)>1)]<-0 }
+    recent<-recent/2
+    if(plot.sample) { 
+      label('top',lab=paste0('diagnosis: recentre fact = c(',recent[1],',',recent[2],')'),col='red')
+      dev.off()
+    }
+    #}}}
     sfa_mask<-foreach(samask=sa_mask[subs], slen=stamplen[subs], fluxwgt=flux.weight, i=1:npos, xc=cat.x[subs], yc=cat.y[subs], .inorder=TRUE,
-    .export=c("psf", "diagnostic"), .options.mpi=mpi.opts) %dopar% {
+    .export=c("psf", "diagnostic","recent"), .options.mpi=mpi.opts) %dopar% {
       #Use subset of psf conformable with current aperture stamp {{{
       if (slen<length(psf[,1])){
         #Aperture Stamp is smaller than PSF stamp {{{
@@ -274,7 +318,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         #Recalculate Limits to make sure PSF is centred correctly {{{
         #Aperture Stamp is smaller than PSF stamp {{{
         #limits from PSF peak - 1/2 stampwidth {{{
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))-recent
         delta<-floor(slen/2)*c(-1,+1)
         lims<-rbind(centre[1]+delta,centre[2]+delta)
         #}}}

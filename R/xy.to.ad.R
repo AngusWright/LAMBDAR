@@ -1,13 +1,13 @@
 xy.to.ad <-
 function(x,y,astr.struc,diagnostic=FALSE){
 
+  if (missing(x)) {
+    x<-c(1,astr.struc$NAXIS[1])+0.5
+  }
   if (missing(y) & length(dim(x))==2) { 
     if (ncol(x)!=2) { stop(paste0('x must be of dim 2, not ',ncol(x))) }
     y<-x[,2]
     x<-x[,1]
-  }
-  if (missing(x)) {
-    x<-c(1,astr.struc$NAXIS[1])+0.5
   }
   if (missing(y)) {
     y<-c(1,astr.struc$NAXIS[2])+0.5
