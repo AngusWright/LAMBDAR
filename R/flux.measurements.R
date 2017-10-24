@@ -47,7 +47,7 @@ function(env=NULL) {
     if (psf.map=='ESTIMATE') { 
       #Estimate the stamplims with conservative guess at PSF FWHM; Nyquist sampled with 10xFHWM width{{{
       psffwhm<-3*2.335
-      stamplen<-71 #(3*2.335*10)+1)
+      stamplen<-20 #(3*2.335*10)+1)
       psf.clip<-stamplen
       #}}}
       #Convert decimal pixel values into actual pixel values /*fold*/ {{{
@@ -60,47 +60,89 @@ function(env=NULL) {
       } else if (!quiet) { cat("   - Done\n") }
       #}}}
       #Estimate the PSF from the data {{{
+      timer<-proc.time()
       if (!quiet) { cat('Generating the PSF from the data') }
       message('Generating the PSF from the data')
       if (plot.sample) { pdf(height=10,width=10,file=file.path(path.root,path.work,path.out,'PSFEst_Samples.pdf')) } 
       psf.est<-estimate.psf(outenv=environment(),plot=plot.sample)
+      psf.id<-tmp.psf.id
+      psf.val<-tmp.psfest.val
+      skyest<-tmp.skyest
+      skyest.sources<-tmp.skyest.sources
       if (plot.sample) { dev.off() } 
-      if (!all(psf.est$WEIGHT[[1]]==0)) { 
-        #If the estimate succeeded {{{
-        #Normalise the estimate {{{
-        estpsf<-psf.est$PSF[[1]]
-        estpsf<-estpsf-min(estpsf,na.rm=TRUE)
-        estpsf<-estpsf/max(estpsf,na.rm=TRUE)
-        #}}}
-        #Truncate any upturn in the PSF {{{
-        if (plot.sample) { 
-          res=120
-          PlotPNG(file.path(path.root,path.work,path.out,"PSFEst_truncation.png"),width=12*res,height=6*res,res=res)
-          layout(matrix(1:6,nrow=2,byrow=T))
+      estpsf<-psf<-list(NULL)
+      sumpsf<-rep(NA,length(psf.est$WEIGHT))
+      warn<-FALSE
+      for (i in 1:length(psf.est$WEIGHT)) { 
+        if (!all(psf.est$WEIGHT[[i]]==0)) { 
+          #If the estimate succeeded {{{
+          #Normalise the estimate {{{
+          estpsf[[i]]<-psf.est$PSF[[i]]
+          estpsf[[i]]<-estpsf[[i]]-min(estpsf[[i]],na.rm=TRUE)
+          estpsf[[i]]<-estpsf[[i]]/max(estpsf[[i]],na.rm=TRUE)
+          #}}}
+          #Truncate any upturn in the PSF {{{
+          if (plot.sample) { 
+            res=120
+            PlotPNG(file.path(path.root,path.work,path.out,paste0("PSFEst_truncation_",i,".png")),width=12*res,height=6*res,res=res)
+            layout(matrix(1:6,nrow=2,byrow=T))
+          }
+          psf[[i]]<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+          psf[[i]]<-psf[[i]]-min(psf[[i]],na.rm=TRUE)
+          psf[[i]]<-psf[[i]]/max(psf[[i]],na.rm=TRUE)
+          sumpsf[i]<-sum(psf[[i]])
+          if (plot.sample) { 
+            dev.off()
+          }
+          big<-matrix(0,ncol=max(stamplen),nrow=max(stamplen))
+          big[1:dim(psf[[i]])[1],1:dim(psf[[i]])[2]]<-psf[[i]]
+          psf[[i]]<-big
+          #}}}
+          #}}}
+        } else { 
+          warn<-TRUE
+          #PSF estimate failed; warn if we can continue, or error if we cannot {{{ 
+          if (length(psf.est$WEIGHT)==1) { 
+            if (showtime) { stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
+            } else if (!quiet) { stop("   - ERROR: PSF estimate failed; no suitable point sources found!\n") }
+          } else { 
+            estpsf[[i]]<-NA
+            psf[[i]]<-NA
+            if (i==min(psf.id)) { 
+              #If this is the lowest psf.id, give 
+              #these sources the id of the next psf up 
+              psf.id[which(psf.id==i)]<-min(psf.id)+1
+            } else { 
+              #If this is not the lowest psf.id, give 
+              #these sources the id of the last psf 
+              psf.id[which(psf.if==i)]<-max(psf.id[which(psf.id)<i])
+            }
+          }
+          #}}}
         }
-        psf<-truncate.upturn(estpsf,plot=plot.sample,centre=dim(estpsf)/2)
-        psf<-psf-min(psf,na.rm=TRUE)
-        psf<-psf/max(psf,na.rm=TRUE)
-        sumpsf<-sum(psf)
-        if (plot.sample) { 
-          dev.off()
-        }
-        #}}}
-        #Save the PSF as output {{{
-        psflist=list(final=psf,normalised=estpsf,raw=psf.est)
-        save(file=file.path(path.root,path.work,path.out,"PSF_estimate.Rdata"),psflist)
-        #}}}
-        if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
-        } else if (!quiet) { cat("   - Done\n") }
-        #}}}
-      } else { 
-        #PSF estimate failed; warn and continue {{{ 
-        if (showtime) { stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(timer[3],digits=2),"sec )\n") 
-        } else if (!quiet) { stop("   - ERROR: PSF estimate failed; no suitable point sources found!\n") }
-        #}}}
       }
+      if (all(psf.id==psf.id[1])&&is.na(psf[[psf.id[1]]])) {
+        #All psf determinations failed
+        if (showtime) { stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
+        } else if (!quiet) { stop("   - ERROR: PSF estimate failed; no suitable point sources found!\n") }
+      } else if (warn) {
+        if (showtime) { cat("   - WARNING: PSF estimate failed in one or more bins; they inherit the PSF of another bin! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
+        } else if (!quiet) { cat("   - WARNING: PSF estimate failed in one or more bins; they inherit the PSF of another bin!\n") }
+      } else { 
+        if (showtime) { cat("   - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
+        } else if (!quiet) { cat("   - Done\n") }
+      }
+      #Save the PSF as output {{{
+      psf.weight<-rep(NA,length(psf))
+      for (i in 1:length(psf)) { 
+        psf.weight[i]<-length(which(psf.id==i))
+      } 
+      psflist=list(final=psf,normalised=estpsf,raw=psf.est,psf.weight=psf.weight)
+      save(file=file.path(path.root,path.work,path.out,"PSFEst_estimate.Rdata"),psflist)
+      #}}}
       #}}}
     } else { 
+      timer<-proc.time()
       if (gauss.fwhm.arcsec<0 & !file.exists(file.path(path.root,path.work,psf.map))) { 
         if (!quiet) { cat('Reading PSF details from Header') }
         message('Reading PSF details from Header')
@@ -115,19 +157,30 @@ function(env=NULL) {
         message('How did we get here?!')
       }
       #Read/Generate the PSF {{{
-      psf<-read.psf(outenv=environment(),file.path(path.root,path.work,psf.map),arcsec.per.pix,max(cat.a),confidence,gauss.fwhm.arcsec=gauss.fwhm.arcsec)
+      psf<-list(read.psf(outenv=environment(),file.path(path.root,path.work,psf.map),arcsec.per.pix,max(cat.a),confidence,gauss.fwhm.arcsec=gauss.fwhm.arcsec))
+      psf.id<-rep(1,length(cat.x))
+      psf.weight<-1
       #}}}
+      #Notify /*fold*/ {{{
+      if (showtime) { cat(paste(' - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )\n'))
+        message(paste('Getting PSF details - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )'))
+      } else if (!quiet) { cat(' - Done\n') }
+      # /*fend*/ }}}
     }
     # /*fend*/ }}}
     #Notify /*fold*/ {{{
-    if (verbose) { message(paste("Maxima of the PSF is at pixel", which(psf == max(psf)),"and has value",max(psf))) }
+    if (verbose) { 
+      for (i in 1:length(psf)) { 
+        message(paste("Maxima of the PSF",i,"is at pixel", which(psf[[i]] == max(psf[[i]])),"and has value",max(psf[[i]])))
+      }
+    }
     # /*fend*/ }}}
     #Get radius of FWHM using FWHM confidence value = erf(2*sqrt(2*log(2))/sqrt(2)) /*fold*/ {{{
-    psffwhm<-get.fwhm(psf)
+    psffwhm<-sum(sapply(psf,get.fwhm)*psf.weight,na.rm=T)/sum(psf.weight)
     # /*fend*/ }}}
     #Normalise Beam Area /*fold*/ {{{
     beam.area.nn<-sumpsf
-    beam.area.n<-as.single(sum(psf))
+    beam.area.n<-sumpsf/sapply(psf,max)
     # /*fend*/ }}}
     #-----Diagnostic-----## /*fold*/ {{{
     if (diagnostic) { message(paste('Beam area before/after norm: ',beam.area.nn,beam.area.n)) }
@@ -172,16 +225,15 @@ function(env=NULL) {
 
   #Convert images from Jy/beam to Jy/pixel /*fold*/ {{{
   if (Jybm) {
+    if (length(beamarea)>1) { 
+      message("WARNING: Jybm to Jypx; Using Weighted Average beam area for conversion!")
+      beamarea<-sum(beamarea*psf.weight,na.rm=T)/sum(psf.weight)
+    }
     image.env$im<-image.env$im/beamarea
     if (length(image.env$ime)>1) { image.env$ime<-image.env$ime/beamarea }
     conf<-conf/beamarea
   } # /*fend*/ }}}
 
-  #Notify /*fold*/ {{{
-  if (showtime) { cat(paste(' - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )\n'))
-    message(paste('Getting PSF details - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )'))
-  } else if (!quiet) { cat(' - Done\n') }
-  # /*fend*/ }}}
   # /*fend*/ }}}
   #PART ONE:  SINGLE APERTURE MASKS /*fold*/ {{{
   #Details /*fold*/ {{{
@@ -205,10 +257,10 @@ function(env=NULL) {
     if (!quiet) { cat("Selecting out only objects that are completely alone ") }
     cat.len<-length(cat.x)
     num.nearest.neighbours<-max(num.nearest.neighbours,cat.len-1)
-    nearest<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y),k=num.nearest.neighbours+1)
+    nearest<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y),radius=4*max(psffwhm),k=2,type='radius')
     if (psffwhm!=0) {
       #If any of the nearest neighbors overlap with the object /*fold*/ {{{
-      inside.mask<-rowSums(nearest$nn.dist[,2:num.nearest.neighbours] < 4*psffwhm)==0
+      inside.mask<-nearest$nn.id[,2] == 0
     } else {
       inside.mask<-rep(NA,cat.len)
       for(ind in 1:cat.len) {
@@ -232,6 +284,7 @@ function(env=NULL) {
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     if (exists("contams")) { contams<-contams[which(inside.mask)] }
     if (exists("groups")) { groups<-groups[which(inside.mask)] }
+    if (exists("psf.id")) { psf.id<-psf.id[which(inside.mask)] }
     if (num.cores < 0) { 
       registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
     }
@@ -273,6 +326,8 @@ function(env=NULL) {
     if (use.segmentation) { seg.y<-seg.y[which(inside.mask)] } 
     if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
     contams<-contams[which(inside.mask)]
+    if (exists("groups")) { groups<-groups[which(inside.mask)] }
+    if (exists("psf.id")) { psf.id<-psf.id[which(inside.mask)] }
     if (num.cores < 0) { 
       registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
     }
@@ -387,6 +442,7 @@ function(env=NULL) {
   if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
+  if (exists("psf.id")) { psf.id<-psf.id[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   if (num.cores < 0) { 
     registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
@@ -604,6 +660,7 @@ function(env=NULL) {
   if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
   if (exists("contams")) { contams<-contams[which(inside.mask)] }
   if (exists("groups")) { groups<-groups[which(inside.mask)] }
+  if (exists("psf.id")) { psf.id<-psf.id[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   if (num.cores < 0) { 
     registerDoParallel(cores=(min(ceiling(length(cat.x)/50000),abs(num.cores))))
@@ -678,6 +735,12 @@ function(env=NULL) {
     if (!exists("transmission.map")) { transmission.map<-FALSE }
     if (!quiet) { cat(paste("Creating Sourcemask    ")) }
     if (length(image.env$imm)>1) { sm<-image.env$imm } else { sm<-array(1, dim=dimim) }
+    #Mask the region where apertures cannot be placed (around edges) 
+    minlen<-ceiling(min(stamplen)/2)
+    sm[1:minlen,]<-0
+    sm[,1:minlen]<-0
+    sm[dim(sm)[1]-(1:minlen-1),]<-0
+    sm[,dim(sm)[2]-(1:minlen-1)]<-0
     #sm<-array(1, dim=dimim)
     #Get Mask as is {{{
     if (length(mask.stamp)>1) {
@@ -700,10 +763,10 @@ function(env=NULL) {
       }
     } else {
       if (transmission.map) {
-        sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]][which(!image.env$fa[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]] > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
+        sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]][which(!image.env$fa[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]] > max(sapply(psf,max,na.rm=TRUE), na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
         #sm[which(!image.env$fa > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
       } else {
-        sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]][which(image.env$fa[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]] > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
+        sm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]][which(image.env$fa[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]] > max(sapply(psf,max,na.rm=TRUE), na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
         #sm[which(image.env$fa > max(psf, na.rm=TRUE)*(1-sourcemask.conf.lim))]<-0
       }
     }
@@ -754,38 +817,120 @@ function(env=NULL) {
   # /*fend*/ }}}
   #PART THREE:  DEBLENDING /*fold*/ {{{
   #If wanted, perform sky estimation. Otherwise set to NA /*fold*/ {{{
+  skylocal<-skyflux<-skyerr<-skyrms<-skypval<-detecthres<-detecthres.mag<-
+  skyNBinNear<-skyNBinNear.mean<-skyflux.mean<-skyerr.mean<-skylocal.mean<-
+  skypval.mean<-skyrms.mean<-rep(NA,length(sfa))
   if (do.sky.est||get.sky.rms) {
+    if (!exists('quick.sky')) { quick.sky<-FALSE } 
     #Get sky estimates /*fold*/ {{{
-    if (!quiet) { message("Perfoming Sky Estimation"); cat("Performing Sky Estimation") }
     #SkyEst is NP hard, so set the processors to Max
     if (num.cores < 0) { registerDoParallel(cores=abs(num.cores)) }
     #Perform Sky Estimation /*fold*/ {{{
-    if (cutup) {
-      timer<-system.time(skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
-                      cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
-                      clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts))
-    } else {
-      timer<-system.time(skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
-                      cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
-                      data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
-                      clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts))
+    if (quick.sky) { 
+      if (!quiet) { message("Perfoming Fast Sky Estimation"); cat("Performing Fast Sky Estimation") }
+      if (exists('skyest')) { 
+        if (fit.sky) { 
+          skyest.sources<-skyest.sources[which(is.finite(skyest[,'skyMu']))]
+          skyest<-skyest[which(is.finite(skyest[,'skyMu'])),]
+          subs<-which((cat.id%in%skyest.sources))
+          skylocal[subs]<-skyest[,'skyMu']
+          skyerr[subs]<-skyest[,'skyMuErr']*correl.noise
+          skyrms[subs]<-skyest[,'skySD']
+        } else {
+          skyest.sources<-skyest.sources[which(is.finite(skyest[,'skyMedian']))]
+          skyest<-skyest[which(is.finite(skyest[,'skyMedian'])),]
+          subs<-which((cat.id%in%skyest.sources))
+          skylocal[subs]<-skyest[,'skyMedian']
+          skyerr[subs]<-skyest[,'skyMedianErr']*correl.noise
+          skyrms[subs]<-skyest[,'skyRMS']
+        }
+        skypval[subs]<-skyest[,'skyRMSpval']
+        skyNBinNear[subs]<-skyest[,'Nnearsky']
+        skylocal.mean[subs]<-skyest[,'skyMedian']
+        skyerr.mean[subs]<-skyest[,'skyMedianErr']*correl.noise
+        skyrms.mean[subs]<-skyest[,'skyRMS']
+        skypval.mean[subs]<-skyest[,'skyRMSpval']
+        skyNBinNear.mean[subs]<-skyest[,'Nnearsky']
+        subs<-which(!(cat.id%in%skyest.sources))
+        rm('skyest')
+      } else { 
+        subs<-1:length(cat.x)
+      }
+      if (cutup) { 
+        timer<-system.time(skyest<-fast.sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,fit.gauss=fit.sky,
+                        cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
+                        clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=subs))
+      } else { 
+        timer<-system.time(skyest<-fast.sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,fit.gauss=fit.sky,
+                        cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
+                        data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
+                        clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=subs))
+      } 
+      #Get sky parameters /*fold*/ {{{
+      if (fit.sky) { 
+        skylocal[subs]<-skyest[,'skyMu']
+        skyerr[subs]<-skyest[,'skyMuErr']*correl.noise
+        skyrms[subs]<-skyest[,'skySD']
+      } else {
+        skylocal[subs]<-skyest[,'skyMedian']
+        skyerr[subs]<-skyest[,'skyMedianErr']*correl.noise
+        skyrms[subs]<-skyest[,'skyRMS']
+      }
+      skypval[subs]<-skyest[,'skyRMSpval']
+      skyNBinNear[subs]<-skyest[,'Nnearsky']
+      skylocal.mean[subs]<-skyest[,'skyMedian']
+      skyerr.mean[subs]<-skyest[,'skyMedianErr']*correl.noise
+      skyrms.mean[subs]<-skyest[,'skyRMS']
+      skypval.mean[subs]<-skyest[,'skyRMSpval']
+      skyNBinNear.mean[subs]<-skyest[,'Nnearsky']
+      #}}}
+    } else { 
+      if (!quiet) { message("Perfoming Sky Estimation"); cat("Performing Sky Estimation") }
+      #Check if we can cutdown on the workload {{{
+      if (exists('skyest')) { 
+        skyest.sources<-skyest.sources[which(is.finite(skyest[,'sky']))]
+        skyest<-skyest[which(is.finite(skyest[,'sky'])),]
+        subs<-which(cat.id%in%skyest.sources)
+        skylocal[subs]<-skyest[,'sky']
+        skylocal.mean[subs]<-skyest[,'sky.mean']
+        skyerr[subs]<-skyest[,'skyerr']*correl.noise
+        skyrms[subs]<-skyest[,'skyRMS']
+        skypval[subs]<-skyest[,'skyRMSpval']
+        skyNBinNear[subs]<-skyest[,'Nnearsky']
+        skyerr.mean[subs]<-skyest[,'skyerr.mean']*correl.noise
+        skyrms.mean[subs]<-skyest[,'skyRMS.mean']
+        skypval.mean[subs]<-skyest[,'skyRMSpval.mean']
+        skyNBinNear.mean[subs]<-skyest[,'Nnearsky.mean']
+        subs<-which(!(cat.id%in%skyest.sources))
+        rm('skyest')
+      } else { 
+        subs<-1:length(cat.x)
+      }
+      if (cutup) { 
+        timer<-system.time(skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
+                        cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
+                        clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=subs))
+      } else { 
+        timer<-system.time(skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
+                        cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
+                        data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
+                        clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=subs))
+      } 
+      #Get sky parameters /*fold*/ {{{
+      skylocal[subs]<-skyest[,'sky']
+      skylocal.mean[subs]<-skyest[,'sky.mean']
+      skyerr[subs]<-skyest[,'skyerr']*correl.noise
+      skyrms[subs]<-skyest[,'skyRMS']
+      skypval[subs]<-skyest[,'skyRMSpval']
+      skyNBinNear[subs]<-skyest[,'Nnearsky']
+      skyerr.mean[subs]<-skyest[,'skyerr.mean']*correl.noise
+      skyrms.mean[subs]<-skyest[,'skyRMS.mean']
+      skypval.mean[subs]<-skyest[,'skyRMSpval.mean']
+      skyNBinNear.mean[subs]<-skyest[,'Nnearsky.mean']
+      #}}}
     }
     # /*fend*/ }}}
     #Get sky parameters /*fold*/ {{{
-    skylocal<-skyest[,'sky']
-    skylocal.mean<-skyest[,'sky.mean']
-    if (correl.noise==0) {
-      warning("Noise Correlation coefficient is set to 0; All flux errors will end up as 0")
-      message("WARNING: Noise Correlation coefficient is set to 0; All flux errors will end up as 0")
-    }
-    skyerr<-skyest[,'skyerr']*correl.noise
-    skyrms<-skyest[,'skyRMS']
-    skypval<-skyest[,'skyRMSpval']
-    skyNBinNear<-skyest[,'Nnearsky']
-    skyerr.mean<-skyest[,'skyerr.mean']*correl.noise
-    skyrms.mean<-skyest[,'skyRMS.mean']
-    skypval.mean<-skyest[,'skyRMSpval.mean']
-    skyNBinNear.mean<-skyest[,'Nnearsky.mean']
     if(!is.na(as.numeric(sky.default))) {
       sky.default<-as.numeric(sky.default)
       rmsdefault<-0.0
@@ -816,7 +961,7 @@ function(env=NULL) {
     } else if (!quiet) { cat("   - Done\n") }
     # /*fend*/ }}}
     #If wanted, plot some of the Sky Estimates /*fold*/ {{{
-    if (plot.sample) {
+    if (plot.sample & !quick.sky) {
       if (!quiet) { message("Plotting Sky Estimation"); cat("Plotting Sky Estimation") }
         if (cutup) {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
@@ -851,21 +996,7 @@ function(env=NULL) {
     }
     if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
     # /*fend*/ }}}
-  } else {
-    skylocal<-array(NA, dim=c(length(sfa)))
-    skyflux<-array(NA, dim=c(length(sfa)))
-    skyerr<-array(NA, dim=c(length(sfa)))
-    skyrms<-array(NA, dim=c(length(sfa)))
-    skypval<-array(NA, dim=c(length(sfa)))
-    detecthres<-array(NA, dim=c(length(sfa)))
-    detecthres.mag<-array(NA, dim=c(length(sfa)))
-    skyNBinNear<-array(NA, dim=c(length(sfa)))
-    skyNBinNear.mean<-array(NA, dim=c(length(sfa)))
-    skyflux.mean<-array(NA, dim=c(length(sfa)))
-    skyerr.mean   <- array(NA, dim=c(length(sfa)))
-    skylocal.mean <- array(NA, dim=c(length(sfa)))
-    skypval.mean  <- array(NA, dim=c(length(sfa)))
-    skyrms.mean   <- array(NA, dim=c(length(sfa)))
+    # /*fend*/ }}}
   }# /*fend*/ }}}
   #Perform Deblending of apertures /*fold*/ {{{
   timer=system.time(dbw<-make.deblend.weight.maps(outenv=environment()))
@@ -954,15 +1085,17 @@ function(env=NULL) {
   #If PSF Supplied & sample wanted, Plot PSF and Min Aperture Correction /*fold*/ {{{
   if (!(no.psf)&(plot.sample)) {
     #PSF with Contours /*fold*/ {{{
-    PlotPNG(file.path(path.root,path.work,path.out,"PSF.png"))
-    psfvals<-rev(sort(psf[which(is.finite(psf),arr.ind=TRUE)]))
-    tempsum<-cumsum(psfvals)
-    tempfunc<-approxfun(tempsum,psfvals)
-    psfLimit<-tempfunc(ap.limit*max(tempsum, na.rm=TRUE))
-    suppressWarnings(image(log10(psf),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=ifelse(length(psf)>1E4,TRUE,FALSE)))
-    contour(psf, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
-    if (psf.filt) { contour(psf, levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
-    dev.off()
+    for (i in 1:length(psf)) { 
+      PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_",i,".png")))
+      psfvals<-rev(sort(psf[[i]][which(is.finite(psf[[i]]),arr.ind=TRUE)]))
+      tempsum<-cumsum(psfvals)
+      tempfunc<-approxfun(tempsum,psfvals)
+      psfLimit<-tempfunc(ap.limit*max(tempsum, na.rm=TRUE))
+      suppressWarnings(image(log10(psf[[i]]),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=ifelse(length(psf[[i]])>1E4,TRUE,FALSE)))
+      contour(psf[[i]], levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      if (psf.filt) { contour(psf[[i]], levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
+      dev.off()
+    }
     # /*fend*/ }}}
     #Plot Example of PS minimum aperture Correction; minimum source /*fold*/ {{{
     ind<-(which(cat.a==0)[1])
@@ -971,7 +1104,7 @@ function(env=NULL) {
     if (is.na(ind)) { ind<-which.min(cat.a) }
     # /*fend*/ }}}
     #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-    centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+    centre<-as.numeric(which(psf[[psf.id[ind]]]==max(psf[[psf.id[ind]]]), arr.ind=TRUE))
     delta<-floor(stamplen[ind]/2)*c(-1,+1)
     lims<-rbind(centre[1]+delta,centre[2]+delta)
     dx<-lims[1,1]-1
@@ -979,13 +1112,13 @@ function(env=NULL) {
     dx<-ifelse(dx>0,dx+1,dx)
     dy<-ifelse(dy>0,dy+1,dy)
     #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-    lenxpsf<-length(psf[,1])
-    lenypsf<-length(psf[1,])
+    lenxpsf<-length(psf[[psf.id[ind]]][,1])
+    lenypsf<-length(psf[[psf.id[ind]]][1,])
     lenx<-length(1:stamplen[ind])
     leny<-length(1:stamplen[ind])
     # /*fend*/ }}}
     #Make grid for psf at old pixel centres /*fold*/ {{{
-    psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+    psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[[psf.id[ind]]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
     # /*fend*/ }}}
     # /*fend*/ }}}
     #Make expanded grid of new pixel centres /*fold*/ {{{
@@ -1023,7 +1156,7 @@ function(env=NULL) {
     #Plot Example of PS minimum aperture Correction; median source /*fold*/ {{{
     ind<-(which.min(abs(cat.a-median(cat.a)))[1])
     #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-    centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+    centre<-as.numeric(which(psf[[psf.id[ind]]]==max(psf[[psf.id[ind]]]), arr.ind=TRUE))
     delta<-floor(stamplen[ind]/2)*c(-1,+1)
     lims<-rbind(centre[1]+delta,centre[2]+delta)
     dx<-lims[1,1]-1
@@ -1032,13 +1165,13 @@ function(env=NULL) {
     dy<-ifelse(dy>0,dy+1,dy)
     # /*fend*/ }}}
     #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-    lenxpsf<-length(psf[,1])
-    lenypsf<-length(psf[1,])
+    lenxpsf<-length(psf[[psf.id[ind]]][,1])
+    lenypsf<-length(psf[[psf.id[ind]]][1,])
     lenx<-length(1:stamplen[ind])
     leny<-length(1:stamplen[ind])
     # /*fend*/ }}}
     #Make grid for psf at old pixel centres /*fold*/ {{{
-    psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+    psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[[psf.id[ind]]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
     # /*fend*/ }}}
     #Make expanded grid of new pixel centres /*fold*/ {{{
     expanded<-expand.grid(seq(1,lenx),seq(1,leny))
@@ -1102,7 +1235,10 @@ function(env=NULL) {
     if (verbose) { cat("Integral of the deblended convolved aperture") }
     sdfa<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(dfam) }
     if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-    spsf<-rep(sumpsf, length(sdfa))
+    spsf<-rep(NA, length(sdfa))
+    for (i in 1:length(psf)) { 
+      spsf[which(psf.id==i)]<-sumpsf[i]
+    }
     #If wanted, output the Results Table /*fold*/ {{{
     if (write.tab) {
       #Output the results table /*fold*/ {{{
@@ -1330,150 +1466,174 @@ function(env=NULL) {
   # /*fend*/ }}}
   }
   # /*fend*/ }}}
+  #Integral of the deblended convolved aperture; sdfa /*fold*/ {{{
+  if (verbose) { cat("Measuring blend fractions") }
+  sdfa<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(dfam)  }
+  ssfa<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam)  }
+  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
   #Estimate the PSF from the image, and compare to that given /*fold*/ {{{ 
   if (!quiet) { cat(paste('Estimating the PSF from the image - ')) }
   #Estimate the PSF {{{
   if (plot.sample) { pdf(height=10,width=10,file=file.path(path.root,path.work,path.out,'PSF_Samples.pdf')) } 
-  timer=system.time(psf.est<-estimate.psf(outenv=environment(),plot=plot.sample,blend.tolerance=1-sourcemask.conf.lim))
+  timer=system.time(psf.est<-estimate.psf(outenv=environment(),plot=plot.sample,blend.tolerance=0.2))
+  epsf.id<-tmp.psf.id
+  psfest.val<-tmp.psfest.val
   if (plot.sample) { dev.off() } 
   #}}}\
-  if (!all(psf.est$WEIGHT[[1]]==0)) { 
-    #If the estimate succeeded {{{
-    #Normalise the estimate {{{
-    estpsf<-psf.est$PSF[[1]]
-    estpsf<-estpsf-min(estpsf,na.rm=TRUE)
-    estpsf<-estpsf/max(estpsf,na.rm=TRUE)
-    #}}}
-    #Truncate any upturn in the PSF {{{
-    if (plot.sample) { 
-      res=120
-      PlotPNG(file.path(path.root,path.work,path.out,"PSF_truncation.png"),width=12*res,height=6*res,res=res)
-      layout(matrix(1:6,nrow=2,byrow=T))
-    }
-    estpsf2<-truncate.upturn(estpsf,plot=plot.sample,centre=dim(estpsf)/2)
-    estpsf2<-estpsf2-min(estpsf2,na.rm=TRUE)
-    estpsf2<-estpsf2/max(estpsf2,na.rm=TRUE)
-    if (plot.sample) { dev.off() } 
-    #}}}
-    #Recentre the PSF {{{
-    conv<-array(0,dim=dim(estpsf2))
-    conv[dim(conv)[1]/2,dim(conv)[2]/2]<-1
-    estpsf.plot<-convolve.psf(estpsf2,conv)
-    estpsf.plot<-estpsf.plot-min(estpsf.plot,na.rm=TRUE)
-    estpsf.plot<-estpsf.plot/max(estpsf.plot,na.rm=TRUE)
-    #}}}
-    #Save the PSF as output {{{
-    psflist=list(recentred=estpsf.plot,final=estpsf2,normalised=estpsf,raw=psf.est)
-    save(file=file.path(path.root,path.work,path.out,"PSF_estimate.Rdata"),psflist)
-    #}}}
-    if (!no.psf) {  
-      #We have a PSF that we can compare to: {{{
-      #Centre the input PSF {{{
-      if (all(dim(psf) > dim(estpsf.plot))) { 
-        #PSF is larger than estpsf in all dims
-        cen<-which(psf==max(psf),arr.ind=T)
-        #Check that centre isnt less than dim(estpsf)/2
-        for (j in 1:2) { 
-          if (cen[j] < dim(estpsf.plot)[j]) { 
-            cen[j]<-dim(estpsf.plot)[j]/2+1
-          }
-        }
-        #Get psf indicies 
-        psf.ind.x<-seq(cen[1]-dim(estpsf.plot)[1]/2,cen[1]+dim(estpsf.plot)[1]/2)
-        psf.ind.y<-seq(cen[2]-dim(estpsf.plot)[2]/2,cen[1]+dim(estpsf.plot)[2]/2)
-        #Get PSF plot 
-        psf.plot<-convolve.psf(psf[psf.ind.x,psf.ind.y],conv)
-      } else if (any(dim(psf) < dim(estpsf.plot))) { 
-        #PSF is smaller than estpsf in one dim
-        psf.plot<-array(0,dim=dim(estpsf))
-        cen<-which(psf==max(psf),arr.ind=T)
-        j<-which(dim(psf) > dim(estpsf)) 
-        if (cen[j] < dim(estpsf.plot)[j]) { 
-          cen[j]<-dim(estpsf.plot)[j]/2+1
-        }
-        psf.ind<-seq(cen[j]-dim(estpsf.plot)[j]/2,cen[j]+dim(estpsf.plot)[j]/2)
-        if (j==1) { 
-          psf.plot[psf.ind,1:dim(psf)[2]]<-psf
-        } else { 
-          psf.plot[1:dim(psf)[1],psf.ind]<-psf
-        }
-        psf.plot<-convolve.psf(psf[psf.ind.x,psf.ind.y],conv)
-      } else { 
-        #PSF is smaller than estpsf in all dims
-        psf.plot<-array(0,dim=dim(estpsf))
-        psf.plot[1:dim(psf)[1],1:dim(psf)[2]]<-psf
-        psf.plot<-convolve.psf(psf.plot,conv)
-      }
-      psf.plot<-psf.plot-min(psf.plot,na.rm=TRUE)
-      psf.plot<-psf.plot/max(psf.plot,na.rm=TRUE)
-      #}}} 
-      #Plot a sample of the PSF  {{{
-      if (plot.sample) { 
-        #Open the device {{{
-        PlotPNG(file.path(path.root,path.work,path.out,"PSF_residuals.png"),width=12*res,height=6*res,res=res)
-        layout(matrix(1:6,byrow=T,nrow=2))
-        #}}}
-        #Plots {{{
-        #Plot the input PSF 
-        magimage(psf,main='Input')
-        #Plot the measured PSF 
-        magimage(estpsf2,main='Estimated')
-        #Plot the Residual PSF 
-        magimage(psf.plot-estpsf.plot,main='Residual')
-        #Plot the profile of the input PSF 
-        magplot(estpsf.plot[which(estpsf.plot==max(estpsf.plot,na.rm=TRUE),arr.ind=T)[1],],type='s',col='grey',main='Input')
-        lines(estpsf.plot[,which(estpsf.plot==max(estpsf.plot,na.rm=TRUE),arr.ind=T)[2]],type='s',col='grey')
-        lines(psf.plot[which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[1],],type='s',col='red')
-        lines(psf.plot[,which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[2]],type='s',col='blue')
-        legend('topright',inset=0.1,bty='n',legend=c('x profile','y profile','estimated PSF'),col=c('red','blue','grey'),lty=1,pch=NA)
-        #Plot the profile of the PSF estimate 
-        magplot(psf.plot[which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[1],],type='s',col='grey',main='Estimated')
-        lines(psf.plot[,which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[2]],type='s',col='grey')
-        lines(estpsf.plot[which(estpsf.plot==max(estpsf.plot,na.rm=TRUE),arr.ind=T)[1],],type='s',col='red')
-        lines(estpsf.plot[,which(estpsf.plot==max(estpsf.plot,na.rm=TRUE),arr.ind=T)[2]],type='s',col='blue')
-        legend('topright',inset=0.1,bty='n',legend=c('x profile','y profile','input PSF'),col=c('red','blue','grey'),lty=1,pch=NA)
-        #Plot the residual profile of the PSFs 
-        magplot(psf.plot[which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[1],]-
-                estpsf.plot[which(estpsf.plot==max(estpsf.plot,na.rm=TRUE),arr.ind=T)[1],],type='s',col='red',main='Residual')
-        lines(psf.plot[,which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[2]]-
-              estpsf.plot[,which(estpsf.plot==max(estpsf.plot,na.rm=TRUE),arr.ind=T)[2]],type='s',col='blue')
-        legend('topright',inset=0.1,bty='n',legend=c('x profile','y profile'),lty=1,col=c('red','blue'),pch=NA)
-        #}}}
-        #Close the device {{{
-        dev.off()
-        #}}}
-      } #}}}
-      #Check the quality of the input PSF compared to the measured {{{ 
-      stats<-summary(as.numeric(psf.plot-estpsf.plot))
-      message("PSF Estimate Properties:")
-      message(paste('Peak PSF residual: ',round(stats[5], digits=4),' (NB: PSFs peak at 1.0)'))
-      message(paste('Median PSF residual: ',round(stats[3], digits=4)))
-      message(paste('25 & 75 % PSF residual: ',round(stats[2], digits=4),'-',round(stats[4], digits=4)))
-      estpsf.warnt<-""
-      estpsf.warn<-0 
-      if (stats[5] > 0.2) { 
-         estpsf.warn<-estpsf.warn+1
-         estpsf.warnt<-paste0(estpsf.warnt,"P")
-      }
-      if (stats[3] > 0.2) { 
-         estpsf.warn<-estpsf.warn+2
-         estpsf.warnt<-paste0(estpsf.warnt,"M")
-      }
-      #}}} 
+  estpsf.plot<-estpsf2<-estpsf<-estpsf.warn<-estpsf.warnt<-list(NULL)
+  sumepsf<-rep(NA,length(psf.est$WEIGHT))
+  warn<-FALSE
+  for (i in 1:length(psf.est$WEIGHT)) { 
+    if (!all(psf.est$WEIGHT[[i]]==0)) { 
+      #If the estimate succeeded {{{
+      #Normalise the estimate {{{
+      estpsf[[i]]<-psf.est$PSF[[i]]
+      estpsf[[i]]<-estpsf[[i]]-min(estpsf[[i]],na.rm=TRUE)
+      estpsf[[i]]<-estpsf[[i]]/max(estpsf[[i]],na.rm=TRUE)
       #}}}
-    } 
-    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
-    } else if (!quiet) { cat("   - Done\n") }
-    #}}}
-  } else { 
-    #PSF estimate failed; warn and continue {{{ 
+      #Truncate any upturn in the PSF {{{
+      if (plot.sample) { 
+        res=120
+        PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_truncation_",i,".png")),width=12*res,height=6*res,res=res)
+        layout(matrix(1:6,nrow=2,byrow=T))
+      }
+      estpsf2[[i]]<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+      estpsf2[[i]]<-estpsf2[[i]]-min(estpsf2[[i]],na.rm=TRUE)
+      estpsf2[[i]]<-estpsf2[[i]]/max(estpsf2[[i]],na.rm=TRUE)
+      sumepsf[i]<-sum(estpsf2[[i]])
+      if (plot.sample) { dev.off() } 
+      #}}}
+      #Recentre the PSF {{{
+      conv<-array(0,dim=dim(estpsf2[[i]]))
+      conv[dim(conv)[1]/2,dim(conv)[2]/2]<-1
+      estpsf.plot[[i]]<-convolve.psf(estpsf2[[i]],conv)
+      estpsf.plot[[i]]<-estpsf.plot[[i]]-min(estpsf.plot[[i]],na.rm=TRUE)
+      estpsf.plot[[i]]<-estpsf.plot[[i]]/max(estpsf.plot[[i]],na.rm=TRUE)
+      big<-matrix(0,ncol=max(stamplen),nrow=max(stamplen))
+      big[1:dim(estpsf.plot[[i]])[1],1:dim(estpsf.plot[[i]])[2]]<-estpsf.plot[[i]]
+      estpsf.plot[[i]]<-big
+      #}}}
+      if (!no.psf & length(psf)>=i) {  
+        #We have a PSF that we can compare to: {{{
+        #Centre the input PSF {{{
+        if (all(dim(psf[[i]]) > dim(estpsf.plot[[i]]))) { 
+          #PSF is larger than estpsf in all dims
+          cen<-which(psf[[i]]==max(psf[[i]]),arr.ind=T)
+          #Check that centre isnt less than dim(estpsf)/2
+          for (j in 1:2) { 
+            if (cen[j] < dim(estpsf.plot[[i]])[j]) { 
+              cen[j]<-dim(estpsf.plot[[i]])[j]/2+1
+            }
+          }
+          #Get psf indicies 
+          psf.ind.x<-(1:dim(estpsf.plot[[i]])[1])+cen[1]-dim(estpsf.plot[[i]])[1]/2
+          psf.ind.y<-(1:dim(estpsf.plot[[i]])[2])+cen[2]-dim(estpsf.plot[[i]])[2]/2
+          #Get PSF plot 
+          psf.plot<-convolve.psf(psf[[i]][psf.ind.x,psf.ind.y],conv)
+        } else if (any(dim(psf[[i]]) < dim(estpsf.plot[[i]]))) { 
+          #PSF is smaller than estpsf in one dim
+          psf.plot<-array(0,dim=dim(estpsf.plot[[i]]))
+          cen<-which(psf[[i]]==max(psf[[i]]),arr.ind=T)
+          j<-which(dim(psf[[i]]) > dim(estpsf.plot[[i]])) 
+          if (cen[j] < dim(estpsf.plot[[i]])[j]) { 
+            cen[j]<-dim(estpsf.plot[[i]])[j]/2+1
+          }
+          psf.ind<-seq(cen[j]-dim(estpsf.plot[[i]])[j]/2,cen[j]+dim(estpsf.plot[[i]])[j]/2)
+          if (j==1) { 
+            psf.plot[psf.ind,1:dim(psf)[2]]<-psf[[i]]
+          } else { 
+            psf.plot[1:dim(psf)[1],psf.ind]<-psf[[i]]
+          }
+          psf.plot<-convolve.psf(psf[[i]][psf.ind.x,psf.ind.y],conv)
+        } else { 
+          #PSF is smaller than or equal to estpsf in all dims
+          conv<-psf.plot<-array(0,dim=dim(estpsf.plot[[i]]))
+          conv[dim(conv)[1]/2,dim(conv)[2]/2]<-1
+          psf.plot[1:dim(psf[[i]])[1],1:dim(psf[[i]])[2]]<-psf[[i]]
+          psf.plot<-convolve.psf(psf.plot,conv)
+        }
+        psf.plot<-psf.plot-min(psf.plot,na.rm=TRUE)
+        psf.plot<-psf.plot/max(psf.plot,na.rm=TRUE)
+        #}}} 
+        #Plot a sample of the PSF  {{{
+        if (plot.sample) { 
+          #Open the device {{{
+          PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_residuals_",i,".png")),width=12*res,height=6*res,res=res)
+          layout(matrix(1:6,byrow=T,nrow=2))
+          #}}}
+          #Plots {{{
+          #Plot the input PSF 
+          magimage(psf[[i]],main='Input')
+          #Plot the measured PSF 
+          magimage(estpsf2[[i]],main='Estimated')
+          #Plot the Residual PSF 
+          magimage(psf.plot-estpsf.plot[[i]],main='Residual',lo=-0.3,hi=0.3,type='num')
+          #Plot the profile of the input PSF 
+          magplot(estpsf.plot[[i]][which(estpsf.plot[[i]]==max(estpsf.plot[[i]],na.rm=TRUE),arr.ind=T)[1],],type='s',col='grey',main='Input')
+          lines(estpsf.plot[[i]][,which(estpsf.plot[[i]]==max(estpsf.plot[[i]],na.rm=TRUE),arr.ind=T)[2]],type='s',col='grey')
+          lines(psf.plot[which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[1],],type='s',col='red')
+          lines(psf.plot[,which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[2]],type='s',col='blue')
+          legend('topright',inset=0.1,bty='n',legend=c('x profile','y profile','estimated PSF'),col=c('red','blue','grey'),lty=1,pch=NA)
+          #Plot the profile of the PSF estimate 
+          magplot(psf.plot[which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[1],],type='s',col='grey',main='Estimated')
+          lines(psf.plot[,which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[2]],type='s',col='grey')
+          lines(estpsf.plot[[i]][which(estpsf.plot[[i]]==max(estpsf.plot[[i]],na.rm=TRUE),arr.ind=T)[1],],type='s',col='red')
+          lines(estpsf.plot[[i]][,which(estpsf.plot[[i]]==max(estpsf.plot[[i]],na.rm=TRUE),arr.ind=T)[2]],type='s',col='blue')
+          legend('topright',inset=0.1,bty='n',legend=c('x profile','y profile','input PSF'),col=c('red','blue','grey'),lty=1,pch=NA)
+          #Plot the residual profile of the PSFs 
+          magplot(psf.plot[which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[1],]-
+                  estpsf.plot[[i]][which(estpsf.plot[[i]]==max(estpsf.plot[[i]],na.rm=TRUE),arr.ind=T)[1],],type='s',col='red',main='Residual',ylim=c(-0.2,0.2))
+          lines(psf.plot[,which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[2]]-
+                estpsf.plot[[i]][,which(estpsf.plot[[i]]==max(estpsf.plot[[i]],na.rm=TRUE),arr.ind=T)[2]],type='s',col='blue')
+          legend('topright',inset=0.1,bty='n',legend=c('x profile','y profile'),lty=1,col=c('red','blue'),pch=NA)
+          label('bottomleft',lab=paste0('abs(sum(resid))/abs(sum(psf)=',round(abs(sum(psf.plot-estpsf.plot[[i]]))/abs(sum(psf.plot)),digits=3)))
+          #}}}
+          #Close the device {{{
+          dev.off()
+          #}}}
+        } #}}}
+        #Check the quality of the input PSF compared to the measured {{{ 
+        stats<-summary(as.numeric(psf.plot-estpsf.plot[[i]]))
+        message("PSF Estimate Properties:")
+        message(paste('Peak PSF residual: ',round(stats[5], digits=4),' (NB: PSFs peak at 1.0)'))
+        message(paste('Median PSF residual: ',round(stats[3], digits=4)))
+        message(paste('25 & 75 % PSF residual: ',round(stats[2], digits=4),'-',round(stats[4], digits=4)))
+        estpsf.warnt[[i]]<-""
+        estpsf.warn[[i]]<-0 
+        if (stats[5] > 0.2) { 
+           estpsf.warn[[i]]<-estpsf.warn[[i]]+1
+           estpsf.warnt[[i]]<-paste0(estpsf.warnt[[i]],"P")
+        }
+        if (stats[3] > 0.2) { 
+           estpsf.warn[[i]]<-estpsf.warn[[i]]+2
+           estpsf.warnt[[i]]<-paste0(estpsf.warnt[[i]],"M")
+        }
+        #}}} 
+        #}}}
+      } 
+      #}}}
+    } else { 
+      #PSF estimate failed; warn and continue {{{ 
+      warn<-TRUE
+      if (!no.psf) { 
+        estpsf.plot[[i]]<-estpsf2[[i]]<-estpsf[[i]]<-psf[[min(c(i,length(psf)))]]
+      }
+      estpsf.warn[[i]]<-4
+      estpsf.warnt[[i]]<-"E"
+      #}}}
+    }
+  }
+  if (warn) { 
     if (showtime) { cat("   - WARNING: PSF estimate failed; no suitable point sources found! (",round(timer[3],digits=2),"sec )\n") 
     } else if (!quiet) { cat("   - WARNING: PSF estimate failed; no suitable point sources found!\n") }
-    estpsf.plot<-estpsf2<-estpsf<-psf
-    estpsf.warn<-4
-    estpsf.warnt<-"E"
-    #}}}
+  } else { 
+    if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n") 
+    } else if (!quiet) { cat("   - Done\n") }
   }
+  #Save the PSF as output {{{
+  psflist=list(recentred=estpsf.plot,final=estpsf2,normalised=estpsf,raw=psf.est)
+  save(file=file.path(path.root,path.work,path.out,"PSF_estimate.Rdata"),psflist)
+  #}}}
   # /*fend*/ }}}
   #If wanted, output the Deblended & Convolved Aperture Mask /*fold*/ {{{
   if (make.debelended.apertures.map) {
@@ -1613,11 +1773,11 @@ function(env=NULL) {
   if (verbose) { cat("      Integral of the aperture") }
   ssa<-foreach(sam=sa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sam) }
   if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Integral of the convolved aperture; ssfa /*fold*/ {{{
-  if (verbose) { cat("      Integral of the convolved aperture") }
-  ssfa<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam) }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+##-----
+#  #Integral of the convolved aperture; ssfa /*fold*/ {{{
+#  if (verbose) { cat("      Integral of the convolved aperture") }
+#  ssfa<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam) }
+#  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
 #-----
   #Integral of the [(unmodified convolved aperture)*(modified convolved aperture)]; ssfau /*fold*/ {{{
   if (verbose) { cat("      Integral of the [(unmodified convolved aperture)*(convolved aperture)]") }
@@ -1661,7 +1821,10 @@ function(env=NULL) {
   #Integral of the reinterpolated psf; spsf /*fold*/ {{{
   if (!no.psf) {
     if (verbose) { cat("      Integral of the reinterpolated psf") }
-    spsf<-rep(sum(psf),length(cat.id))
+    spsf<-rep(NA,length(cat.id))
+    for (i in 1:length(psf)) {
+      spsf[which(psf.id==i)]<-sumpsf[i]
+    }
     if (verbose) { cat(" - Done\n") }
   } else {
     spsf<-rep(NA, length(sfa))
@@ -1671,7 +1834,10 @@ function(env=NULL) {
   #Integral of the estimated psf; spsf /*fold*/ {{{
   if (estpsf.warn!=4) {
     if (verbose) { cat("      Integral of the estimated psf") }
-    sepsf<-rep(sum(estpsf.plot),length(cat.id))
+    sepsf<-rep(NA,length(cat.id))
+    for (i in 1:length(estpsf)) {
+      sepsf[which(epsf.id==i)]<-sumepsf[i]
+    }
     if (verbose) { cat(" - Done\n") }
   } else {
     sepsf<-rep(NA, length(sfa))
@@ -1681,7 +1847,10 @@ function(env=NULL) {
   #Integral of the reinterpolated psf^2; spsf2 /*fold*/ {{{
   if (!no.psf) {
     if (verbose) { cat("      Integral of the reinterpolated psf") }
-    spsf2<-rep(sum(psf^2),length(cat.id))
+    spsf2<-rep(NA, length(sfa))
+    for (i in 1:length(psf)) { 
+      spsf2[which(psf.id==i)]<-sum(psf[[i]]^2)
+    }
     if (verbose) { cat(" - Done\n") }
   } else {
     spsf2<-rep(NA, length(sfa))
@@ -1691,19 +1860,26 @@ function(env=NULL) {
   #Integral of the reinterpolated psf * estimated psf sepsfp /*fold*/ {{{
   if (!no.psf & estpsf.warn!=4) {
     if (verbose) { cat("      Integral of the reinterpolated psf * estimated psf") }
-    sepsfp<-rep(sum(psf.plot*estpsf.plot),length(cat.id))
+    sepsfp<-rep(NA, length(sfa))
+    for (i in 1:length(psf)) { 
+      for (j in 1:length(estpsf)) { 
+        if (length(which(psf.id==i&epsf.id==j))>0) {
+          sepsfp[which(psf.id==i&epsf.id==j)]<-sum(psf.plot[[i]]*estpsf.plot[[j]])
+        }
+      }
+    }
     if (verbose) { cat(" - Done\n") }
   } else {
     sepsfp<-rep(NA, length(sfa))
   }
   # /*fend*/ }}}
 #-----
-  #Integral of the (convolved aperture * psf); ssfap /*fold*/ {{{
+  #Reinterpolate the PSF; psfi /*fold*/ {{{
   if (!no.psf) {
-    if (verbose) { cat("      Integral of the (convolved aperture * psf)") }
-    ssfap<-foreach(sfam=sfa, slen=stamplen, xc=cat.x, yc=cat.y, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
+    if (verbose) { cat("      Reinterpolating the psf (per object)") }
+    psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
       #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-      centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+      centre<-as.numeric(which(psf[[pid]]==max(psf[[pid]]), arr.ind=TRUE))
       delta<-floor(slen/2)*c(-1,+1)
       lims<-rbind(centre[1]+delta,centre[2]+delta)
       dx<-lims[1,1]-1
@@ -1712,12 +1888,12 @@ function(env=NULL) {
       dy<-ifelse(dy>0,dy+1,dy)
       # /*fend*/ }}}
       #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-      lenxpsf<-length(psf[,1])
-      lenypsf<-length(psf[1,])
+      lenxpsf<-length(psf[[pid]][,1])
+      lenypsf<-length(psf[[pid]][1,])
       lenx<-length(1:slen)
       leny<-length(1:slen)
       #Make grid for psf at old pixel centres /*fold*/ {{{
-      psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+      psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[[pid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
       # /*fend*/ }}}
       #Make expanded grid of new pixel centres /*fold*/ {{{
       expanded<-expand.grid(seq(1,lenx),seq(1,leny))
@@ -1728,9 +1904,19 @@ function(env=NULL) {
       ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
       # /*fend*/ }}}
       # /*fend*/ }}}
-      sum(sfam*ap)
+      ap
     }
     #}
+    if (verbose) { cat(" - Done\n") }
+  } else {
+    psfi<-rep(NA, length(sfa))
+  }
+  # /*fend*/ }}}
+#-----
+  #Integral of the (convolved aperture * psf); ssfap /*fold*/ {{{
+  if (!no.psf) {
+    if (verbose) { cat("      Integral of the (convolved aperture * psf)") }
+    ssfap<-foreach(sfam=sfa, ap=psfi, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam*ap) }
     if (verbose) { cat(" - Done\n") }
   } else {
     ssfap<-rep(NA, length(sfa))
@@ -1741,63 +1927,11 @@ function(env=NULL) {
   if (!no.psf) {
     if (verbose) { cat("      Integral of the (psf * image)") }
     if (cutup) {
-      spsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export="psf") %dopar% {
-        #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        dx<-lims[1,1]-1
-        dy<-lims[2,1]-1
-        dx<-ifelse(dx>0,dx+1,dx)
-        dy<-ifelse(dy>0,dy+1,dy)
-        # /*fend*/ }}}
-        #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-        lenxpsf<-length(psf[,1])
-        lenypsf<-length(psf[1,])
-        lenx<-length(1:slen)
-        leny<-length(1:slen)
-        #Make grid for psf at old pixel centres /*fold*/ {{{
-        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
-        # /*fend*/ }}}
-        #Make expanded grid of new pixel centres /*fold*/ {{{
-        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
-        xnew<-expanded[,1]-xc%%1
-        ynew<-expanded[,2]-yc%%1
-        # /*fend*/ }}}
-        #Interpolate /*fold*/ {{{
-        ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
-        # /*fend*/ }}}
-        # /*fend*/ }}}
+      spsfd<-foreach(ap=psfi, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment())) %dopar% {
         sum(ap*im[xlo:xup,ylo:yup])
       }
     } else {
-      spsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("psf","im")) %dopar% {
-        #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        dx<-lims[1,1]-1
-        dy<-lims[2,1]-1
-        dx<-ifelse(dx>0,dx+1,dx)
-        dy<-ifelse(dy>0,dy+1,dy)
-        # /*fend*/ }}}
-        #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-        lenxpsf<-length(psf[,1])
-        lenypsf<-length(psf[1,])
-        lenx<-length(1:slen)
-        leny<-length(1:slen)
-        #Make grid for psf at old pixel centres /*fold*/ {{{
-        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
-        # /*fend*/ }}}
-        #Make expanded grid of new pixel centres /*fold*/ {{{
-        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
-        xnew<-expanded[,1]-xc%%1
-        ynew<-expanded[,2]-yc%%1
-        # /*fend*/ }}}
-        #Interpolate /*fold*/ {{{
-        ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
-        # /*fend*/ }}}
-        # /*fend*/ }}}
+      spsfd<-foreach(ap=psfi, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("im")) %dopar% {
         sum(ap*im[xlo:xup,ylo:yup])
       }
     }
@@ -1811,9 +1945,9 @@ function(env=NULL) {
   if (estpsf.warn!=4) {
     if (verbose) { cat("      Integral of the (estimated psf * image)") }
     if (cutup) {
-      sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export="estpsf.plot") %dopar% {
+      sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export="estpsf.plot") %dopar% {
         #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-as.numeric(which(estpsf.plot==max(estpsf.plot), arr.ind=TRUE))
+        centre<-as.numeric(which(estpsf.plot[[epid]]==max(estpsf.plot[[epid]]), arr.ind=TRUE))
         delta<-floor(slen/2)*c(-1,+1)
         lims<-rbind(centre[1]+delta,centre[2]+delta)
         dx<-lims[1,1]-1
@@ -1822,12 +1956,12 @@ function(env=NULL) {
         dy<-ifelse(dy>0,dy+1,dy)
         # /*fend*/ }}}
         #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-        lenxpsf<-length(estpsf.plot[,1])
-        lenypsf<-length(estpsf.plot[1,])
+        lenxpsf<-length(estpsf.plot[[epid]][,1])
+        lenypsf<-length(estpsf.plot[[epid]][1,])
         lenx<-length(1:slen)
         leny<-length(1:slen)
         #Make grid for psf at old pixel centres /*fold*/ {{{
-        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=estpsf.plot[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=estpsf.plot[[epid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
         # /*fend*/ }}}
         #Make expanded grid of new pixel centres /*fold*/ {{{
         expanded<-expand.grid(seq(1,lenx),seq(1,leny))
@@ -1841,9 +1975,9 @@ function(env=NULL) {
         sum(ap*im[xlo:xup,ylo:yup])
       }
     } else {
-      sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("estpsf.plot","im")) %dopar% {
+      sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("estpsf.plot","im")) %dopar% {
         #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-as.numeric(which(estpsf.plot==max(estpsf.plot), arr.ind=TRUE))
+        centre<-as.numeric(which(estpsf.plot[[epid]]==max(estpsf.plot[[epid]]), arr.ind=TRUE))
         delta<-floor(slen/2)*c(-1,+1)
         lims<-rbind(centre[1]+delta,centre[2]+delta)
         dx<-lims[1,1]-1
@@ -1852,12 +1986,12 @@ function(env=NULL) {
         dy<-ifelse(dy>0,dy+1,dy)
         # /*fend*/ }}}
         #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-        lenxpsf<-length(estpsf.plot[,1])
-        lenypsf<-length(estpsf.plot[1,])
+        lenxpsf<-length(estpsf.plot[[epid]][,1])
+        lenypsf<-length(estpsf.plot[[epid]][1,])
         lenx<-length(1:slen)
         leny<-length(1:slen)
         #Make grid for psf at old pixel centres /*fold*/ {{{
-        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=estpsf.plot[(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=estpsf.plot[[epid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
         # /*fend*/ }}}
         #Make expanded grid of new pixel centres /*fold*/ {{{
         expanded<-expand.grid(seq(1,lenx),seq(1,leny))
@@ -1877,11 +2011,11 @@ function(env=NULL) {
   }
     
   # /*fend*/ }}}
-#-----
-  #Integral of the deblended convolved aperture; sdfa /*fold*/ {{{
-  if (verbose) { cat("      Integral of the deblended convolved aperture") }
-  sdfa<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(dfam)  }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+##-----
+#  #Integral of the deblended convolved aperture; sdfa /*fold*/ {{{
+#  if (verbose) { cat("      Integral of the deblended convolved aperture") }
+#  sdfa<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(dfam)  }
+#  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
 #-----
   #Integral of the (deblended convolved aperture * image); sdfad /*fold*/ {{{
   if (verbose) { cat("      Integral of the (deblended convolved aperture * image)") }
@@ -2569,6 +2703,8 @@ function(env=NULL) {
       sdfae2<-sdfae2[which(contams==0)]
     }
     contams <-contams[which(contams==0)]
+    psf.id<-psf.id[which(contams==0)] 
+    epsf.id<-epsf.id[which(contams==0)] 
   }# /*fend*/ }}}
 
   #Create Photometry Warning Flags /*fold*/ {{{
@@ -2585,7 +2721,7 @@ function(env=NULL) {
   photWarnBitFlag<-photWarnBitFlag+ifelse(saturated,2^1,0)
   # /*fend*/ }}}
   #Bad Sky Estimate /*fold*/ {{{
-  if (do.sky.est|get.sky.rms) {
+  if ((do.sky.est|get.sky.rms) & !quick.sky) {
     temp<-skyNBinNear
     temp[which(!is.finite(temp))]<-0
     photWarnFlag<-paste0(photWarnFlag,ifelse(temp<=3,"S",""))
@@ -2599,17 +2735,19 @@ function(env=NULL) {
   }
   # /*fend*/ }}}
   #PSF estimate Warning /*fold*/ {{{
-  photWarnFlag<-paste0(photWarnFlag,estpsf.warnt) #Can be all/none of [PM] or [E]; Peak/Median residual is bad, or estimate is bad
-  if(estpsf.warn==4) { photWarnBitFlag<-photWarnBitFlag+2^4; estpsf.warn<-estpsf.warn - 4 }
-  if(estpsf.warn>=2) { photWarnBitFlag<-photWarnBitFlag+2^5; estpsf.warn<-estpsf.warn - 2 }
-  if(estpsf.warn>=1) { photWarnBitFlag<-photWarnBitFlag+2^6; estpsf.warn<-estpsf.warn - 1 }
+  for (i in 1:length(estpsf.warnt)) { 
+    photWarnFlag[which(epsf.id==i)]<-paste0(photWarnFlag[which(epsf.id==i)],estpsf.warnt[[i]]) #Can be all/none of [PM] or [E]; Peak/Median residual is bad, or estimate is bad
+    if(estpsf.warn[[i]]==4) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^4; estpsf.warn[[i]]<-estpsf.warn[[i]] - 4 }
+    if(estpsf.warn[[i]]>=2) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^5; estpsf.warn[[i]]<-estpsf.warn[[i]] - 2 }
+    if(estpsf.warn[[i]]>=1) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^6; estpsf.warn[[i]]<-estpsf.warn[[i]] - 1 }
+  }
   # /*fend*/ }}}
   # /*fend*/ }}}
 
   #If wanted, output the Results Table /*fold*/ {{{
   if (write.tab) {
     #Output the results table /*fold*/ {{{
-    if ((loop.total!=1)&&(length(param.env$tableout.name)!=loop.total || any(duplicated(file.path(param.env$path.root,param.env$path.work,param.env$path.out,param.env$tableout.name))))) {
+    if ((loop.total!=1)&&(any(duplicated(file.path(param.env$path.root,param.env$path.work,param.env$path.out,param.env$tableout.name))))) {
       if (!quiet) { cat(paste('Writing Results Table to ',file.path(path.root,path.work,path.out,paste(sep="",tableout.name,"_loop",f,".csv")),'   ')) }
       timer=system.time(write.flux.measurements.table(filename=file.path(path.root,path.work,path.out,paste(sep="",tableout.name,"_loop",f,".csv"))) )
     } else {

@@ -123,6 +123,9 @@ function(outenv=parent.env(environment()), env=NULL){
   ap.lims.data.stamp<-rbind(ap.lims.data.stamp[which(inside.mask),])
   if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
   if (filt.contam) { contams<-contams[which(inside.mask)] }
+  if (exists("groups")) { groups<-groups[which(inside.mask)] }
+  if (exists("psf.id")) { psf.id<-psf.id[which(inside.mask)] }
+  if (exists("skyest.sources")) { skyest.sources<-skyest.sources[which(inside.mask)] }
   inside.mask<-inside.mask[which(inside.mask)]
   npos<-length(inside.mask)
   #}}}
@@ -201,8 +204,12 @@ function(outenv=parent.env(environment()), env=NULL){
     #Get Mask Limits {{{
     #Get Pixel Locations in Mask {{{
     if (mask.map=="NONE") {
-      #If mask map is NONE, it has been created by the weight.map or error.map
-      if (weight.map=="NONE") {
+      #If mask map is NONE, it has been created by the weight.map, the error.map, or using the 
+      #Aperture exclusion zone
+      if (weight.map=="NONE" & error.map=="NONE") {
+        #Aperture Exclusion Zone
+        astr.struc.mask<-read.astrometry(file.path(path.root,path.work,data.map))
+      } else if (weight.map=="NONE") {
         #Error map
         astr.struc.mask<-read.astrometry(file.path(path.root,path.work,error.map))
       } else {
@@ -276,6 +283,9 @@ function(outenv=parent.env(environment()), env=NULL){
       mask.stamp.lims<-rbind(mask.stamp.lims[which(inside.mask),])
       if (length(flux.weight)!=1) { flux.weight<-flux.weight[which(inside.mask)] }
       if (filt.contam) { contams<-contams[which(inside.mask)] }
+      if (exists("groups")) { groups<-groups[which(inside.mask)] }
+      if (exists("psf.id")) { psf.id<-psf.id[which(inside.mask)] }
+      if (exists("skyest.sources")) { skyest.sources<-skyest.sources[which(inside.mask)] }
       inside.mask<-inside.mask[which(inside.mask)]
       npos<-length(inside.mask)
     }
@@ -284,6 +294,14 @@ function(outenv=parent.env(environment()), env=NULL){
     #Setup MPI Options {{{
     chunk.size=ceiling(npos/getDoParWorkers())
     mpi.opts<-list(chunkSize=chunk.size)
+    #}}}
+    
+    #Mask the area where apertures cannot be placed {{{
+    minlen<-ceiling(min(stamplen)/2)
+    image.env$imm[1:minlen,]<-0
+    image.env$imm[,1:minlen]<-0
+    image.env$imm[dim(image.env$imm)[1]-(1:minlen-1),]<-0
+    image.env$imm[,dim(image.env$imm)[2]-(1:minlen-1)]<-0
     #}}}
 
     #Create Mask Stamps {{{
@@ -300,13 +318,30 @@ function(outenv=parent.env(environment()), env=NULL){
       ap.lims.mask.stamp<-ap.lims.mask.map-(mask.stamp.lims[,c(1,1,3,3)]-1)
     }
   } else {
+    #Set the mask parameters to image parameters 
     mask.x.pix<-x.pix
     mask.y.pix<-y.pix
-    mask.stamp<-1
-    image.env$imm<-1
-    ap.lims.mask.map<-ap.lims.data.map
     ap.lims.mask.stamp<-ap.lims.data.stamp
+    ap.lims.mask.map<-ap.lims.data.map
     mask.stamp.lims<-data.stamp.lims
+    #Update mask for the invalid area around the image (where aps cannot be placed)
+    #Initialise mask as transparant everywhere
+    image.env$imm<-array(1,dim=dim(image.env$im))
+    #Mask the area where apertures cannot be placed 
+    minlen<-ceiling(min(stamplen)/2)
+    image.env$imm[1:minlen,]<-0
+    image.env$imm[,1:minlen]<-0
+    image.env$imm[dim(image.env$imm)[1]-(1:minlen-1),]<-0
+    image.env$imm[,dim(image.env$imm)[2]-(1:minlen-1)]<-0
+    #If needed, now cutup the mask
+    if (cutup) { 
+      mask.stamp<-list(NULL)
+      for (i in 1:npos) {
+        mask.stamp[[i]]<-image.env$imm[mask.stamp.lims[i,1]:mask.stamp.lims[i,2],mask.stamp.lims[i,3]:mask.stamp.lims[i,4]]
+      }
+    } else { 
+      mask.stamp<-1
+    } 
   }#}}}
   #}}}
 
@@ -708,7 +743,28 @@ function(outenv=parent.env(environment()), env=NULL){
       #}}}
     }
     #}}}
+    #Update the Masked the area for where apertures cannot be placed {{{
+    minlen<-ceiling(min(stamplen)/2)
+    min.x<-ap.lims.mask.map[which.min(ap.lims.mask.map[,1]),]+minlen
+    max.x<-ap.lims.mask.map[which.max(ap.lims.mask.map[,2]),]-minlen
+    min.y<-ap.lims.mask.map[which.min(ap.lims.mask.map[,3]),]+minlen
+    max.y<-ap.lims.mask.map[which.max(ap.lims.mask.map[,4]),]-minlen
+    image.env$imm[1:min.x,]<-0
+    image.env$imm[,1:min.y]<-0
+    image.env$imm[max.x:dim(image.env$imm)[1],]<-0
+    image.env$imm[,max.y:dim(image.env$imm)[2]]<-0
+    mask.xrange<-c(min(mask.stamp.lims[,1]),max(mask.stamp.lims[,2]))
+    mask.yrange<-c(min(mask.stamp.lims[,3]),max(mask.stamp.lims[,4]))
+    data.xrange<-c(min(data.stamp.lims[,1]),max(data.stamp.lims[,2]))
+    data.yrange<-c(min(data.stamp.lims[,3]),max(data.stamp.lims[,4]))
+    #Initilise array as opaque beyond the image limits
+    image.env$imm.dimim<-array(0,dim=dim(image.env$im))
+    image.env$imm.dimim[data.xrange[1]:data.xrange[2],data.yrange[1]:data.yrange[2]]<-image.env$imm[mask.xrange[1]:mask.xrange[2],mask.yrange[1]:mask.yrange[2]]
+    #}}}
+  } else { 
+    image.env$imm.dimim<-image.env$imm
   }
+
   #}}}
 
   #Parse Parameter Space {{{

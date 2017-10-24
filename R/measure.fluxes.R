@@ -670,8 +670,8 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
       #Use 90th Quantile of aperture semimajor axes /*fold*/ {{{
       aprad.quant<-quantile(cat.a,0.6)
       if (is.na(aprad.quant)|aprad.quant==0) {
-        #All apertures are point sources - make a default width @ 10 pix
-        aprad.quant<-10*arcsec.per.pix
+        #All apertures are point sources - make a default width @ 100 pix
+        aprad.quant<-100*arcsec.per.pix
       }
       #/*fend*/ }}}
       apsizeinbits<-(2*aprad.quant/arcsec.per.pix)^2*64

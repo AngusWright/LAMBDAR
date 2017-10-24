@@ -25,10 +25,7 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,flexib
         #Proj is present, correctly used, and the source is resolved (Axrat != 0/0)
         #if (length(proj)!=2) { stop("Projection parameters must be length 2: c(Axrat,PA)") }
         ang = atan2(xy[,1], xy[,2]) - proj[2] * pi/180
-        xy[,1]=r*sin(ang)
-        xy[,2]=r*cos(ang)
-        xy[,1]=xy[,1]/proj[1]
-        r=sqrt(xy[,1]^2+xy[,2]^2)
+        r=sqrt((r*sin(ang)/proj[1])^2+(r*cos(ang))^2)
       }
     }
     if (flexible) { 
@@ -50,7 +47,7 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,flexib
   zvec<-as.numeric(zdist)
   zbin<-zvec[tmp.order]
   if (na.rm) { 
-    good<-which(is.finite(zdist))
+    good<-which(is.finite(zbin))
   } else {
     good<-1:length(zbin)
   }

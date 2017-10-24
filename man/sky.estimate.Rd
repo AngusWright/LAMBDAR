@@ -134,6 +134,7 @@ write.fits(file="SampleImage.fits",SDSS.sample)
 astr<-read.astrometry("SampleImage.fits")
 #Determine the pixel-locations of the aperture catalogue objects
 xy<-ad.to.xy(ra=ApCat.sample$RAdeg,dec=ApCat.sample$DECdeg,astr.struc=astr)
+xy<-xy[which(xy[,1]>=1 & xy[,2]>=1 & xy[,1]<= astr$NAXIS[1] & xy[,2]<= astr$NAXIS[2]),]
 #Get the Main Object's ID
 main<-which.min(sqrt((xy[,1]-astr$NAXIS[1]/2)^2+(xy[,2]-astr$NAXIS[2]/2)^2))
 

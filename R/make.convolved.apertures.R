@@ -214,37 +214,74 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
     #Else if we are filtering apertures with the PSFs, perform the convolution and
     #multiply by the flux.weight simultaneously }}}
     message('--------------------------Convolution----------------------------------')
+    #Check that the PSF is a list of images, and for its length {{{
+    if (!is.list(psf)) { 
+      psf<-list(psf)
+      psf.id<-rep(1,length(cat.x))
+    } else if (!exists('psf.id') & length(psf)>1) {
+      stop("No PSF Id provided with multiple PSFs") 
+    } else if (!exists('psf.id')) {
+      psf.id<-rep(1,length(cat.x))
+    }
+    n.psf<-length(psf)
+    #}}}
     #In the event that we have point sources (they are not convolved), check that the PSF is correctly centred {{{
-    conv<-array(0,dim=dim(psf))
-    conv[which(psf==max(psf),arr.ind=T)]<-1
-    psf.cen<-convolve.psf(psf,conv)
-    psf.resid<-psf-psf.cen
-    if (plot.sample) { 
-      PlotPNG(file.path(path.root,path.work,path.out,"PointSourceCentre_test.png"),width=110*8,height=110*4,res=110)
-      layout(cbind(1,2,3))
-      magimage(psf)
-      magimage(psf.cen)
-      magimage(psf.resid)
-    }
-    if (max(abs(psf.resid),na.rm=T) > 0.001) { 
-      recent<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf==max(psf,na.rm=T),arr.ind=T)[1,]
-    } else { 
-      recent<-c(0,0)
-    }
-    if (any(abs(recent)>1)) { recent[which(abs(recent)>1)]<-0 }
-    recent<-recent/2
-    if(plot.sample) { 
-      label('top',lab=paste0('diagnosis: recentre fact = c(',recent[1],',',recent[2],')'),col='red')
-      dev.off()
+    psf.cen<-psf
+    recent<-cbind(rep(NA,n.psf),rep(NA,n.psf))
+    for (i in 1:n.psf) { 
+      conv<-array(0,dim=dim(psf[[i]]))
+      conv[which(psf[[i]]==max(psf[[i]]),arr.ind=T)]<-1
+      psf.cen[[i]]<-convolve.psf(psf[[i]],conv)
+      psf.resid<-psf[[i]]-psf.cen[[i]]
+      if (plot.sample) { 
+        PlotPNG(file.path(path.root,path.work,path.out,paste0("PointSourceCentre_test_bin",i,".png")),width=110*8,height=110*4,res=110)
+        layout(cbind(1,2,3,4))
+        magimage(psf[[i]])
+        magimage(psf.cen[[i]])
+        magimage(psf.resid)
+      }
+      if (max(abs(psf.resid),na.rm=T) > 0.001) { 
+        recent[i,]<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf[[i]]==max(psf[[i]],na.rm=T),arr.ind=T)[1,]
+      } else { 
+        recent[i,]<-c(0,0)
+      }
+      if (any(abs(recent[i,])>1)) { recent[i,which(abs(recent[i,])>1)]<-0 }
+      recent<-recent/2
+      #Make grid for psf at old pixel centres {{{
+      psf.obj<-list(x=seq(1,dim(psf[[i]])[1])+recent[i,1], y=seq(1,dim(psf[[i]])[2])+recent[i,2],z=psf[[i]])
+      #}}}
+      #Make expanded grid of new pixel centres {{{
+      expanded<-expand.grid(seq(1,dim(psf[[i]])[1]),seq(1,dim(psf[[i]])[2]))
+      xnew<-expanded[,1]
+      ynew<-expanded[,2]
+      #}}}
+      #Interpolate {{{
+      psf.new<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=dim(psf[[i]])[2],nrow=dim(psf[[i]])[1])
+      #}}}
+      #Check the new psf residuals {{{
+      psf.resid<-psf.new-psf.cen[[i]]
+      new.recent<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf[[i]]==max(psf[[i]],na.rm=T),arr.ind=T)[1,]
+      if (any(new.recent!=0)) { 
+        #The recentering didnt work, just use it as is
+        recent[i,]<-c(0,0)
+      }
+      #}}}
+      #}}}
+      if(plot.sample) { 
+        magimage(psf.resid)
+        label('top',lab=paste0('rerecentered: recentre fact = c(',new.recent[1],',',new.recent[2],')'),col='red')
+        label('bottom',lab=paste0('diagnosis: recentre fact = c(',recent[i,1],',',recent[i,2],')'),col='red')
+        dev.off()
+      }
     }
     #}}}
-    sfa_mask<-foreach(samask=sa_mask[subs], slen=stamplen[subs], fluxwgt=flux.weight, i=1:npos, xc=cat.x[subs], yc=cat.y[subs], .inorder=TRUE,
-    .export=c("psf", "diagnostic","recent"), .options.mpi=mpi.opts) %dopar% {
+    sfa_mask<-foreach(samask=sa_mask[subs], slen=stamplen[subs], pid=psf.id[subs], fluxwgt=flux.weight, i=1:npos, xc=cat.x[subs], yc=cat.y[subs], .inorder=TRUE,
+    .export=c("psf","diagnostic","recent"), .options.mpi=mpi.opts) %dopar% {
       #Use subset of psf conformable with current aperture stamp {{{
-      if (slen<length(psf[,1])){
+      if (slen<length(psf[[pid]][,1])){
         #Aperture Stamp is smaller than PSF stamp {{{
         #limits from PSF peak - 1/2 stampwidth {{{
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))
+        centre<-as.numeric(which(psf[[pid]]==max(psf[[pid]]), arr.ind=TRUE))
         delta<-floor(slen/2)*c(-1,+1)
         lims<-rbind(centre[1]+delta,centre[2]+delta)
         #}}}
@@ -255,22 +292,22 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         if (lims[2,1]<1) {
           lims[2,]<-lims[2,]+(1-lims[2,1])
         }
-        if (lims[1,2]>length(psf[,1])) {
-          lims[1,]<-lims[1,]+(length(psf[,1])-lims[1,2])
+        if (lims[1,2]>length(psf[[pid]][,1])) {
+          lims[1,]<-lims[1,]+(length(psf[[pid]][,1])-lims[1,2])
         }
-        if (lims[2,2]>length(psf[,1])) {
-          lims[2,]<-lims[2,]+(length(psf[,1])-lims[2,2])
+        if (lims[2,2]>length(psf[[pid]][,1])) {
+          lims[2,]<-lims[2,]+(length(psf[[pid]][,1])-lims[2,2])
         }
         #}}}
         #Check that arrays are conformable {{{
-        if (length(psf[lims[1]:lims[3],1])!=slen) {
-          stop(paste("PSF and Aperture Arrays are non-conformable. Lengths are:",length(psf[lims[1]:lims[3],1]),slen))
+        if (length(psf[[pid]][lims[1]:lims[3],1])!=slen) {
+          stop(paste("PSF and Aperture Arrays are non-conformable. Lengths are:",length(psf[[pid]][lims[1]:lims[3],1]),slen))
         }
         #}}}
         #}}}
-      } else if (slen==length(psf[,1])){
+      } else if (slen==length(psf[[pid]][,1])){
       #Aperture stamp is same size as PSF stamp {{{
-        lims<-matrix(data=rep(c(1,length(psf[,1])),2),nrow=2, byrow=TRUE)
+        lims<-matrix(data=rep(c(1,length(psf[[pid]][,1])),2),nrow=2, byrow=TRUE)
         #}}}
       } else {
         #Aperture stamp is *larger* than psf stamp - not allowed {{{
@@ -289,7 +326,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         if (diagnostic) { message(paste("Doing convolution of PSF with Aperture", i)) }
         #}}}
         #Convolve {{{
-        ap<-(convolve.psf(psf[lims[1]:lims[3],lims[2]:lims[4]],samask,normalise=TRUE))
+        ap<-(convolve.psf(psf[[pid]][lims[1]:lims[3],lims[2]:lims[4]],samask,normalise=TRUE))
         #}}}
         #Remove any Negatives produced by convolution {{{
         ap[which((-log10(abs(ap)))>=(-log10(abs(min(ap)))))]<-0
@@ -299,7 +336,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
           #If Negatives produced, Error  {{{
           sink(sink.file,type='output')
           print((summary(as.numeric(ap))))
-          print((summary(as.numeric(psf[lims[1]:lims[3],lims[2]:lims[4]]))))
+          print((summary(as.numeric(psf[[pid]][lims[1]:lims[3],lims[2]:lims[4]]))))
           sink(type='message')
           sink(type='output')
           stop("Unable to remove negatives produced in convolution")
@@ -318,7 +355,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         #Recalculate Limits to make sure PSF is centred correctly {{{
         #Aperture Stamp is smaller than PSF stamp {{{
         #limits from PSF peak - 1/2 stampwidth {{{
-        centre<-as.numeric(which(psf==max(psf), arr.ind=TRUE))-recent
+        centre<-as.numeric(which(psf[[pid]]==max(psf[[pid]]), arr.ind=TRUE))+recent
         delta<-floor(slen/2)*c(-1,+1)
         lims<-rbind(centre[1]+delta,centre[2]+delta)
         #}}}
@@ -332,18 +369,18 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
           aplims[2,1]<-aplims[2,1]+(1-lims[2,1])
           lims[2,1]<-1
         }
-        if (lims[1,2]>length(psf[,1])) {
-          aplims[1,2]<-(slen-(lims[1,2]-length(psf[1,])))
-          lims[1,2]<-length(psf[1,])
+        if (lims[1,2]>length(psf[[pid]][,1])) {
+          aplims[1,2]<-(slen-(lims[1,2]-length(psf[[pid]][1,])))
+          lims[1,2]<-length(psf[[pid]][1,])
         }
-        if (lims[2,2]>length(psf[,1])) {
-          aplims[2,2]<-(slen-(lims[2,2]-length(psf[,1])))
-          lims[2,2]<-length(psf[,1])
+        if (lims[2,2]>length(psf[[pid]][,1])) {
+          aplims[2,2]<-(slen-(lims[2,2]-length(psf[[pid]][,1])))
+          lims[2,2]<-length(psf[[pid]][,1])
         }
         #}}}
         #Check that arrays are conformable {{{
-        if (length(psf[lims[1]:lims[3],1])!=length(samask[aplims[1]:aplims[3],1])) {
-          stop(paste("PSF and Point Source Aperture Array are non-conformable. Lengths are:",length(psf[lims[1]:lims[3],1]),length(samask[aplims[1]:aplims[3],1])))
+        if (length(psf[[pid]][lims[1]:lims[3],1])!=length(samask[aplims[1]:aplims[3],1])) {
+          stop(paste("PSF and Point Source Aperture Array are non-conformable. Lengths are:",length(psf[[pid]][lims[1]:lims[3],1]),length(samask[aplims[1]:aplims[3],1])))
         }
         #}}}
         #}}}
@@ -352,7 +389,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         lenx<-length(lims[1]:lims[3])
         leny<-length(lims[2]:lims[4])
         #Make grid for psf at old pixel centres {{{
-        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[lims[1]:lims[3],lims[2]:lims[4]])
+        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[[pid]][lims[1]:lims[3],lims[2]:lims[4]])
         #}}}
         #Make expanded grid of new pixel centres {{{
         expanded<-expand.grid(seq(1,lenx),seq(1,leny))

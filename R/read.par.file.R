@@ -1610,7 +1610,9 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       do.sky.est<-0
     }
   }
-  do.sky.est<-(do.sky.est==1)
+  quick.sky<-(do.sky.est==1 | do.sky.est==2)
+  fit.sky<-(do.sky.est==2)
+  do.sky.est<-(do.sky.est>0)
   #}}}
 
   #Calculate the Sky RMS? {{{
@@ -1716,6 +1718,10 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     sky.default<-0
     sky.clip.prob<-0
     correl.noise<-1
+  }
+  if (correl.noise==0) {
+    warning("Noise Correlation coefficient is set to 0; All flux errors will end up as 0")
+    param.warnings<-c(param.warnings,"SIGNIFICANT: Noise Correlation coefficient is set to 0; All flux errors will end up as 0")
   }
   #}}}
 
@@ -2084,6 +2090,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("force.point.sources", force.point.sources, envir = env) #
   assign("force.safe", force.safe, envir = env) #
   assign("filt.contam"       , filt.contam       , envir = env) #
+  assign("fit.sky"           , fit.sky           , envir = env) #
   assign("flux.weight.lab"    , flux.weight.lab    , envir = env) #
   assign("gain.label"        , gain.label        , envir = env) #
   assign("gauss.fwhm.arcsec"    , gauss.fwhm.arcsec    , envir = env) # G
@@ -2128,6 +2135,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("psf.filt"          , psf.filt          , envir = env) #
   assign("psf.label"         , psf.label         , envir = env) #
   assign("psf.label.type"    , psf.label.type    , envir = env) #
+  assign("quick.sky"         , quick.sky         , envir = env) #
   assign("resample.aperture" , resample.aperture , envir = env) # QR
   assign("ra0"              , ra0              , envir = env) #
   assign("ra.lab"            , ra.lab            , envir = env) #

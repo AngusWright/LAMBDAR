@@ -5,7 +5,7 @@
 #
 #
 
-truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,flexible=TRUE,cutdown=FALSE,plot=FALSE) { 
+truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=2,flexible=TRUE,cutdown=FALSE,plot=FALSE) { 
 
   #if no centre specified, use the maxima
   if (missing(centre)) { 
@@ -29,8 +29,8 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,flexible=TRUE,
     cat("No upturn found!\n") 
   } else { 
     if (plot) { points(upturn,cog$avg$concav[upturn.i],col='red') }
-    upturn=density(upturn,weight=rep(1,length(upturn)),bw=diff(range(cog$avg$x))*tolerance/sqrt(12),kern='rect',from=0)
-    upturn.i=which(upturn$y>1)
+    upturn=density(upturn,weight=rep(1,length(upturn)),bw=diff(range(cog$avg$x))*tolerance/sqrt(12),kern='rect',from=0,n=1e3)
+    upturn.i=which(upturn$y>1 & upturn$x > min.rad)
     start=upturn$x[upturn.i[1]]
     end=upturn$x[upturn.i[which((seq(1:length(upturn.i))-1+upturn.i[1])!=upturn.i)[1]-1]]
     upturn=(start+end)/2
@@ -45,7 +45,12 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,flexible=TRUE,
     xy = expand.grid(x,y)
     r=sqrt((xy[,1]-centre[1])^2+(xy[,2]-centre[2])^2)
     xy<-xy[which(r>=upturn),]
-    if (plot) { magimage(psf) }
+    if (plot) { 
+      magimage(psf)
+      lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=upturn,e=0,pa=0),col='lightblue',lty=2,lwd=1.5)
+      lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=start,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
+      lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=end,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
+    }
     psf[cbind(xy[,1],xy[,2])]<-0
     if (plot) { 
       #Final plots 
