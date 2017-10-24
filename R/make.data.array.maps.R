@@ -745,10 +745,10 @@ function(outenv=parent.env(environment()), env=NULL){
     #}}}
     #Update the Masked the area for where apertures cannot be placed {{{
     minlen<-ceiling(min(stamplen)/2)
-    min.x<-ap.lims.mask.map[which.min(ap.lims.mask.map[,1]),]+minlen
-    max.x<-ap.lims.mask.map[which.max(ap.lims.mask.map[,2]),]-minlen
-    min.y<-ap.lims.mask.map[which.min(ap.lims.mask.map[,3]),]+minlen
-    max.y<-ap.lims.mask.map[which.max(ap.lims.mask.map[,4]),]-minlen
+    min.x<-ap.lims.mask.map[which.min(ap.lims.mask.map[,1]),1]+minlen
+    max.x<-ap.lims.mask.map[which.max(ap.lims.mask.map[,2]),2]-minlen
+    min.y<-ap.lims.mask.map[which.min(ap.lims.mask.map[,3]),3]+minlen
+    max.y<-ap.lims.mask.map[which.max(ap.lims.mask.map[,4]),4]-minlen
     image.env$imm[1:min.x,]<-0
     image.env$imm[,1:min.y]<-0
     image.env$imm[max.x:dim(image.env$imm)[1],]<-0

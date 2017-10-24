@@ -109,18 +109,23 @@ function(env=NULL) {
             estpsf[[i]]<-NA
             psf[[i]]<-NA
             if (i==min(psf.id)) { 
-              #If this is the lowest psf.id, give 
-              #these sources the id of the next psf up 
-              psf.id[which(psf.id==i)]<-min(psf.id)+1
+              if (i==length(psf)) { 
+                #All psfs have failed, leave the id as it is.
+              } else { 
+                #If this is the lowest psf.id, give 
+                #these sources the id of the next psf up 
+                psf.id[which(psf.id==i)]<-min(psf.id)+1
+              }
             } else { 
               #If this is not the lowest psf.id, give 
               #these sources the id of the last psf 
-              psf.id[which(psf.if==i)]<-max(psf.id[which(psf.id)<i])
+              psf.id[which(psf.id==i)]<-max(psf.id[which(psf.id<i)])
             }
           }
           #}}}
         }
       }
+      browser()
       if (all(psf.id==psf.id[1])&&is.na(psf[[psf.id[1]]])) {
         #All psf determinations failed
         if (showtime) { stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
