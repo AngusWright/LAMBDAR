@@ -385,9 +385,9 @@ function(env=NULL) {
   #}
   # /*fend*/ }}}
   #Create an array of stamps containing the apertures for all objects /*fold*/ {{{
-  if (aperture.type <= 1) { 
+  if (aperture.type <= 1) {
     timer=system.time(sa<-make.catalogue.apertures(outenv=environment()))
-  } else if (aperture.type == 2) { 
+  } else if (aperture.type == 2) {
     timer=system.time(sa<-make.gaussian.apertures(outenv=environment()))
   } else if (aperture.type == 3) { 
     timer=system.time(sa<-make.segmentation.apertures(outenv=environment()))
@@ -2791,9 +2791,9 @@ function(env=NULL) {
     on.exit(detach(env), add=TRUE)
   }
   if (!diagnostic) {
-    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr)
+    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr,MinApCorr=ApCorr,MaxApCorr=WtCorr)
   } else {
-    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr, SA_Stamps=sa, SFA_Stamps=sfa, WSFA_Stamps=wsfa, DFA_Stamps=dfa)
+    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr, SA_Stamps=sa, SFA_Stamps=sfa, WSFA_Stamps=wsfa, DFA_Stamps=dfa,MinApCorr=Apcorr,MaxApCorr=WtCorr)
   }
   # /*fend*/ }}}
   # /*fend*/ }}}
