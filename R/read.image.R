@@ -157,69 +157,72 @@ function(outenv=parent.env(environment()), quiet=FALSE, showtime=FALSE, env=NULL
   #}}}
 
   #Read error map {{{
-  if (error.map=='NONE') {
+  if (error.map=='NONE' & weight.map=="NONE") {
     #If no error map, generate the sigma-map using the provided gain and the image_map {{{
-    if (!quiet) { cat(paste("   Generating Error Map ")) }
-    if (weight.map=="NONE") {
-      #Try reading gain from header {{{
-      gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=data.extn)),silent=TRUE)
-      if ((class(gain)=="try-error")|is.na(gain)){
-        #No Gain; No Weightmap; SNR map is poisson-like {{{
-        message(paste0("No Gain supplied or able to be read from header; making Poisson Error Map"))
-        ime<-sqrt(abs(im))
-        #}}}
-      } else {
-        #Max Gain; No Weightmap; Sigma map is sqrt(abs(image/gain)) {{{
-        message(paste0("Using Gain level from header: ",gain))
-        ime<-sqrt(abs(im/(gain)))
-        #}}}
-      }
+    if (!quiet) { cat(paste("   Generating Error Map from Data")) }
+    #Try reading gain from header {{{
+    gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=data.extn)),silent=TRUE)
+    if ((class(gain)=="try-error")|is.na(gain)|gain==0){
+      #No Gain; No Weightmap; SNR map is poisson-like {{{
+      message(paste0("No Gain supplied or able to be read from header; making Poisson Error Map"))
+      ime<-sqrt(abs(im))
       #}}}
     } else {
-      #Use Weight Map in generating Error Map {{{
-      message(paste0("Generating Errormap from Weightmap"))
+      #Max Gain; No Weightmap; Sigma map is sqrt(abs(image/gain)) {{{
+      message(paste0("Using Gain level from header: ",gain))
+      ime<-sqrt(abs(im/(gain)))
+      #}}}
+    }
+    #}}}
+  } else if ((error.map=='NONE' | !is.na(suppressWarnings(as.numeric(error.map)))) & weight.map!="NONE") {
+    #Use Weight Map in generating Error Map {{{
+    if (!quiet) { cat(paste("   Generating Errormap from Weight Map")) }
+    if (!is.na(suppressWarnings(as.numeric(error.map)))) { 
+      gain<-as.numeric(error.map)
+    } else { 
       gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=data.extn)),silent=TRUE)
-      if ((class(gain)=="try-error")|is.na(gain)){
-        #No Max gain; Weightmap present; sigma map is 1/sqrt(weight.map) {{{
-        message(paste0("No Gain supplied or able to be read from header; Using Weight-map as absolute 1/Var(x) to generate the Error Map."))
-        #sigma map = 1/sqrt(weight.map)
-        ime<-1/sqrt(imwt)
-        #Determine Implied Gain: gain=abs(im)/(sigma)^2
-        gain<-abs(im)/ime^2
-        ind<-which(imwt!=wgt.zp)
-        message(paste0("Implied Median (Max) Equivalent Gain level from Weight Map: ",median(gain[ind],na.rm=TRUE), "(",max(gain[ind],na.rm=TRUE),")"))
-        gain<-max(gain[ind],na.rm=TRUE)
-        #}}}
-      } else {
-        #Max Gain; Weightmap present; sigma map is 1/sqrt(image/gain) {{{
-        message(paste0("Using Max Equiv. Gain from header to scale Weight Map when generating the Error Map."))
-        message(paste0("Max Equivalent Gain level from Header: ",gain))
-        #convert from wt ~ 1/var(x) to ~ sig(x)
-        imwt<-1/sqrt(imwt)
-        ind<-which(is.finite(imwt))
-        #use relative sigma to get absolute pixel varying gain
-        imwt<-imwt/max(imwt[ind],na.rm=TRUE)*gain
-        #Check that the arrays are conformable
-        if (any(dim(im)!=dim(imwt))) { 
-          ime<-array(Inf,dim(im))
-          #Match the arrays 
-          astr.im<-read.astrometry(paste(path.root,path.work,data.map,sep=""),hdu=data.extn)
-          astr.imwt<-read.astrometry(paste(path.root,path.work,weight.map,sep=""),hdu=data.extn)
-          indexs<-get.overlap.indicies(astr.im,astr.imwt)
-          ime[indexs$arr1$X,indexs$arr1$Y]<-sqrt(abs(im[indexs$arr1$X,indexs$arr1$Y]/imwt[indexs$arr2$X,indexs$arr2$Y]))
-        } else { 
-          #sigma map = sqrt(abs(im)/gain)
-          ime<-sqrt(abs(im/(imwt)))
-        }
-        #}}}
+    }
+    if ((class(gain)=="try-error")|is.na(gain)|gain==0){
+      #No Max gain; Weightmap present; sigma map is 1/sqrt(weight.map) {{{
+      message(paste0("No Gain supplied or able to be read from header; Using Weight-map as absolute 1/Var(x) to generate the Error Map."))
+      #sigma map = 1/sqrt(weight.map)
+      ime<-1/sqrt(imwt)
+      #Determine Implied Gain: gain=abs(im)/(sigma)^2
+      gain<-abs(im)/ime^2
+      ind<-which(imwt!=wgt.zp)
+      message(paste0("Implied Median (Max) Equivalent Gain level from Weight Map: ",median(gain[ind],na.rm=TRUE), "(",max(gain[ind],na.rm=TRUE),")"))
+      gain<-max(gain[ind],na.rm=TRUE)
+      #}}}
+    } else {
+      #Max Gain; Weightmap present; sigma map is 1/sqrt(image/gain) {{{
+      message(paste0("Using Supplied or Max Equiv. Gain from header to scale Weight Map when generating the Error Map."))
+      message(paste0("Supplied or Max Equivalent Gain level from Header: ",gain))
+      #convert from wt ~ 1/var(x) to ~ sig(x)
+      imwt<-1/sqrt(imwt)
+      ind<-which(is.finite(imwt))
+      #use relative sigma to get absolute pixel varying gain
+      imwt<-imwt/max(imwt[ind],na.rm=TRUE)*gain
+      #Check that the arrays are conformable
+      if (any(dim(im)!=dim(imwt))) { 
+        ime<-array(Inf,dim(im))
+        #Match the arrays 
+        astr.im<-read.astrometry(paste(path.root,path.work,data.map,sep=""),hdu=data.extn)
+        astr.imwt<-read.astrometry(paste(path.root,path.work,weight.map,sep=""),hdu=data.extn)
+        indexs<-get.overlap.indicies(astr.im,astr.imwt)
+        ime[indexs$arr1$X,indexs$arr1$Y]<-sqrt(abs(im[indexs$arr1$X,indexs$arr1$Y]/imwt[indexs$arr2$X,indexs$arr2$Y]))
+      } else { 
+        #sigma map = sqrt(abs(im)/gain)
+        ime<-sqrt(abs(im/(imwt)))
       }
       #}}}
     }
+    #}}}
     error.hdr<-data.hdr
     #}}}
   } else {
     #Check if Gain value or Error map File {{{
     if (!is.na(suppressWarnings(as.numeric(error.map)))) {
+      #if (!quiet) { cat(paste("   Generating Error Map from Data")) }
       #Gain Value {{{
       gain<-error.map
       if (!quiet) { cat(paste("   Using Supplied Single Gain value of",error.map," for errors   ")) }

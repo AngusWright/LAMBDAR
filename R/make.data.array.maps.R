@@ -350,9 +350,14 @@ function(outenv=parent.env(environment()), env=NULL){
   #For each catalogue entry, make a stamp of the error map at that position
   #If the error map is a single value everywhere (or is of length 1)
   #we don't need to use the ime mask at all; so skip}}}
-  if ((length(image.env$ime)!=1)&(any(image.env$ime!=image.env$ime[1]))&(file.exists(file.path(path.root,path.work,error.map)))) {
+  if ((length(image.env$ime)!=1)&(any(image.env$ime!=image.env$ime[1]))&
+     (file.exists(file.path(path.root,path.work,error.map))|file.exists(file.path(path.root,path.work,weight.map)))) {
     #Check Errormap Astrometry {{{
-    astr.struc.err<-read.astrometry(file.path(path.root,path.work,error.map))
+    if (file.exists(file.path(path.root,path.work,error.map))) { 
+      astr.struc.err<-read.astrometry(file.path(path.root,path.work,error.map))
+    } else if (file.exists(file.path(path.root,path.work,weight.map))) {
+      astr.struc.err<-read.astrometry(file.path(path.root,path.work,weight.map))
+    }
     if (!(all(astr.struc$CRVAL==astr.struc.err$CRVAL,na.rm=TRUE)&
           all(astr.struc$CRPIX==astr.struc.err$CRPIX,na.rm=TRUE)&
           all(astr.struc$CD   ==astr.struc.err$CD   ,na.rm=TRUE))){
@@ -375,12 +380,10 @@ function(outenv=parent.env(environment()), env=NULL){
     error.stamp.lims[which(error.stamp.lims[,2]>length(image.env$ime[,1])),2]<-length(image.env$ime[,1])
     ap.lims.error.map<-cbind(error.x.pix-floor(stamplen/2), error.x.pix+floor(stamplen/2), error.y.pix-floor(stamplen/2), error.y.pix+floor(stamplen/2))
     #}}}
-
     #Check that stamp limits are within image {{{
     cat.len<-length(cat.x)
     inside.mask<-!((ap.lims.error.map[,1]<1)|(ap.lims.error.map[,2]>length(image.env$ime[,1]))|(ap.lims.error.map[,3]<1)|(ap.lims.error.map[,4]>length(image.env$ime[1,])))
     #}}}
-
     #Remove any apertures whos stamps would cross the boundary {{{
     if (any(!inside.mask)) {
       message("Removing Stamps that lie outside the error image limits")
@@ -424,13 +427,10 @@ function(outenv=parent.env(environment()), env=NULL){
       npos<-length(inside.mask)
     }
     #}}}
-
     #Setup MPI Options {{{
     chunk.size=ceiling(npos/getDoParWorkers())
     mpi.opts<-list(chunkSize=chunk.size)
     #}}}
-
-
     #Create Error Stamps {{{
     message('Creating Error Stamps')
     error.stamp<-list(NULL)
@@ -444,7 +444,8 @@ function(outenv=parent.env(environment()), env=NULL){
       }
       ap.lims.error.stamp<-ap.lims.error.map-(error.stamp.lims[,c(1,1,3,3)]-1)
     }
-  } else if (error.map=="NONE") {
+    #}}}
+  } else if (error.map=="NONE"|!is.na(suppressWarnings(as.numeric(error.map)))) {
     #Use Image pixel locations {{{
     error.x.pix<-x.pix
     error.y.pix<-y.pix

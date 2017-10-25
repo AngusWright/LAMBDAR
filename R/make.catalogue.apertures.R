@@ -56,7 +56,7 @@ function(outenv=parent.env(environment()), env=NULL){
   #}}}
 
   #Check that apertures do not cross image mask boundary {{{
-  if ((cutup & length(mask.stamp)>1) | (!cutup & length(image.env$imm) > 1)) {
+  if ((cutup & length(mask.stamp)==length(s_mask)) | (!cutup & length(image.env$imm) > 1)) {
     #Check Mask stamps for Aperture Acceptance {{{
     message('Combining Aps with Mask Stamps')
     if (cutup) {
