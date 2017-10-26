@@ -16,7 +16,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
   # Identify the point sources we want to try and stack 
   if (exists('sdfa') & exists('ssfa')) { 
     blendfrac<-sdfa/ssfa
-    point.sources<-which(cat.a==0 & blendfrac > 0.2) 
+    point.sources<-which(cat.a==0 & blendfrac > blend.tolerance) 
   } else { 
     point.sources<-which(cat.a==0) 
   } 
@@ -29,7 +29,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
         skyest<-fast.sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,fit.gauss=fit.sky,
                     cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
                     clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=point.sources)
-        skyest.sources<-cat.id[point.sources]
+        skyest$sources<-cat.id[point.sources]
         if (fit.sky) { 
           skylocal<-rep(NA,length(cat.x)) 
           skylocal[point.sources]<-skyest[,'skyMu']
@@ -46,7 +46,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
         skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
                     cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
                     clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=point.sources)
-        skyest.sources<-cat.id[point.sources]
+        skyest$sources<-cat.id[point.sources]
         skylocal<-rep(NA,length(cat.x)) 
         skylocal[point.sources]<-skyest[,'sky']
         skyrms<-rep(NA,length(cat.x)) 
@@ -59,7 +59,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
                     cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                     data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
                     clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=point.sources)
-        skyest.sources<-cat.id[point.sources]
+        skyest$sources<-cat.id[point.sources]
         if (fit.sky) { 
           skylocal<-rep(NA,length(cat.x)) 
           skylocal[point.sources]<-skyest[,'skyMu']
@@ -77,7 +77,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
                     cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                     data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
                     clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=point.sources)
-        skyest.sources<-cat.id[point.sources]
+        skyest$sources<-cat.id[point.sources]
         skylocal<-rep(NA,length(cat.x)) 
         skylocal[point.sources]<-skyest[,'sky']
         skyrms<-rep(NA,length(cat.x)) 
@@ -161,7 +161,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
   if (exists('sdfa') & exists('ssfa')) { 
     if (length(point.sources) > 0) { 
       #Use pixel-space nearest neighbours 
-      match<-nn2(data.frame(cat.x,cat.y)[which(blendfrac>0.2),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=20,k=10)
+      match<-nn2(data.frame(cat.x,cat.y)[which(blendfrac>blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=20,k=10)
       #Order by the nearest non-self match (2nd nnd column)
       point.sources<-point.sources[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE)]
       nn.dist<-match$nn.dists[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE),2]
@@ -342,9 +342,6 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
   if (!is.null(env)) { detach(env) }
   if (exists('skyest')) { 
     assign("tmp.skyest" , skyest  , envir = outenv)
-  }
-  if (exists('skyest.sources')) { 
-    assign("tmp.skyest.sources" , skyest.sources  , envir = outenv)
   }
   assign("tmp.psf.id" , bin, envir = outenv)
   assign("tmp.psfest.val",pixval.all, envir = outenv)

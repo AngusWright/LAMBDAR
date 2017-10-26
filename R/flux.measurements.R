@@ -68,7 +68,6 @@ function(env=NULL) {
       psf.id<-tmp.psf.id
       psf.val<-tmp.psfest.val
       skyest<-tmp.skyest
-      skyest.sources<-tmp.skyest.sources
       if (plot.sample) { dev.off() } 
       estpsf<-psf<-list(NULL)
       sumpsf<-rep(NA,length(psf.est$WEIGHT))
@@ -231,11 +230,14 @@ function(env=NULL) {
   if (Jybm) {
     if (length(beamarea)>1) { 
       message("WARNING: Jybm to Jypx; Using Weighted Average beam area for conversion!")
-      beamarea<-sum(beamarea*psf.weight,na.rm=T)/sum(psf.weight)
+      beamtmp<-sum(beamarea*psf.weight,na.rm=T)/sum(psf.weight)
+    } else { 
+      beamtmp<-beamarea
     }
-    image.env$im<-image.env$im/beamarea
-    if (length(image.env$ime)>1) { image.env$ime<-image.env$ime/beamarea }
-    conf<-conf/beamarea
+    image.env$im<-image.env$im/beamtmp
+    if (length(image.env$ime)>1) { image.env$ime<-image.env$ime/beamtmp }
+    conf<-conf/beamtmp
+    rm(beamtmp)
   } # /*fend*/ }}}
 
   # /*fend*/ }}}
@@ -834,28 +836,28 @@ function(env=NULL) {
       if (!quiet) { message("Perfoming Fast Sky Estimation"); cat("Performing Fast Sky Estimation") }
       if (exists('skyest')) { 
         if (fit.sky) { 
-          skyest.sources<-skyest.sources[which(is.finite(skyest[,'skyMu']))]
           skyest<-skyest[which(is.finite(skyest[,'skyMu'])),]
-          subs<-which((cat.id%in%skyest.sources))
-          skylocal[subs]<-skyest[,'skyMu']
-          skyerr[subs]<-skyest[,'skyMuErr']*correl.noise
-          skyrms[subs]<-skyest[,'skySD']
+          subs<-which((cat.id%in%skyest[,'sources']))
+          subs2<-which((skyest[,'sources']%in%cat.id))
+          skylocal[subs]<-skyest[subs2,'skyMu']
+          skyerr[subs]<-skyest[subs2,'skyMuErr']*correl.noise
+          skyrms[subs]<-skyest[subs2,'skySD']
         } else {
-          skyest.sources<-skyest.sources[which(is.finite(skyest[,'skyMedian']))]
           skyest<-skyest[which(is.finite(skyest[,'skyMedian'])),]
-          subs<-which((cat.id%in%skyest.sources))
-          skylocal[subs]<-skyest[,'skyMedian']
-          skyerr[subs]<-skyest[,'skyMedianErr']*correl.noise
-          skyrms[subs]<-skyest[,'skyRMS']
+          subs<-which((cat.id%in%skyest[,'sources']))
+          subs2<-which((skyest[,'sources']%in%cat.id))
+          skylocal[subs]<-skyest[subs2,'skyMedian']
+          skyerr[subs]<-skyest[subs2,'skyMedianErr']*correl.noise
+          skyrms[subs]<-skyest[subs2,'skyRMS']
         }
-        skypval[subs]<-skyest[,'skyRMSpval']
-        skyNBinNear[subs]<-skyest[,'Nnearsky']
-        skylocal.mean[subs]<-skyest[,'skyMedian']
-        skyerr.mean[subs]<-skyest[,'skyMedianErr']*correl.noise
-        skyrms.mean[subs]<-skyest[,'skyRMS']
-        skypval.mean[subs]<-skyest[,'skyRMSpval']
-        skyNBinNear.mean[subs]<-skyest[,'Nnearsky']
-        subs<-which(!(cat.id%in%skyest.sources))
+        skypval[subs]<-skyest[subs2,'skyRMSpval']
+        skyNBinNear[subs]<-skyest[subs2,'Nnearsky']
+        skylocal.mean[subs]<-skyest[subs2,'skyMedian']
+        skyerr.mean[subs]<-skyest[subs2,'skyMedianErr']*correl.noise
+        skyrms.mean[subs]<-skyest[subs2,'skyRMS']
+        skypval.mean[subs]<-skyest[subs2,'skyRMSpval']
+        skyNBinNear.mean[subs]<-skyest[subs2,'Nnearsky']
+        subs<-which(!(cat.id%in%skyest[,'sources']))
         rm('skyest')
       } else { 
         subs<-1:length(cat.x)
@@ -892,20 +894,20 @@ function(env=NULL) {
       if (!quiet) { message("Perfoming Sky Estimation"); cat("Performing Sky Estimation") }
       #Check if we can cutdown on the workload {{{
       if (exists('skyest')) { 
-        skyest.sources<-skyest.sources[which(is.finite(skyest[,'sky']))]
         skyest<-skyest[which(is.finite(skyest[,'sky'])),]
-        subs<-which(cat.id%in%skyest.sources)
-        skylocal[subs]<-skyest[,'sky']
-        skylocal.mean[subs]<-skyest[,'sky.mean']
-        skyerr[subs]<-skyest[,'skyerr']*correl.noise
-        skyrms[subs]<-skyest[,'skyRMS']
-        skypval[subs]<-skyest[,'skyRMSpval']
-        skyNBinNear[subs]<-skyest[,'Nnearsky']
-        skyerr.mean[subs]<-skyest[,'skyerr.mean']*correl.noise
-        skyrms.mean[subs]<-skyest[,'skyRMS.mean']
-        skypval.mean[subs]<-skyest[,'skyRMSpval.mean']
-        skyNBinNear.mean[subs]<-skyest[,'Nnearsky.mean']
-        subs<-which(!(cat.id%in%skyest.sources))
+        subs<-which(cat.id%in%skyest[,'sources'])
+        subs2<-which(skyest[,'sources']%in%cat.id)
+        skylocal[subs]<-skyest[subs2,'sky']
+        skylocal.mean[subs]<-skyest[subs2,'sky.mean']
+        skyerr[subs]<-skyest[subs2,'skyerr']*correl.noise
+        skyrms[subs]<-skyest[subs2,'skyRMS']
+        skypval[subs]<-skyest[subs2,'skyRMSpval']
+        skyNBinNear[subs]<-skyest[subs2,'Nnearsky']
+        skyerr.mean[subs]<-skyest[subs2,'skyerr.mean']*correl.noise
+        skyrms.mean[subs]<-skyest[subs2,'skyRMS.mean']
+        skypval.mean[subs]<-skyest[subs2,'skyRMSpval.mean']
+        skyNBinNear.mean[subs]<-skyest[subs2,'Nnearsky.mean']
+        subs<-which(!(cat.id%in%skyest[,'sources']))
         rm('skyest')
       } else { 
         subs<-1:length(cat.x)
@@ -1836,7 +1838,7 @@ function(env=NULL) {
   # /*fend*/ }}}
 #-----
   #Integral of the estimated psf; spsf /*fold*/ {{{
-  if (estpsf.warn!=4) {
+  if (any(estpsf.warn!=4)) {
     if (verbose) { cat("      Integral of the estimated psf") }
     sepsf<-rep(NA,length(cat.id))
     for (i in 1:length(estpsf)) {
@@ -1862,7 +1864,7 @@ function(env=NULL) {
   # /*fend*/ }}}
 #-----
   #Integral of the reinterpolated psf * estimated psf sepsfp /*fold*/ {{{
-  if (!no.psf & estpsf.warn!=4) {
+  if (!no.psf & any(estpsf.warn!=4)) {
     if (verbose) { cat("      Integral of the reinterpolated psf * estimated psf") }
     sepsfp<-rep(NA, length(sfa))
     for (i in 1:length(psf)) { 
@@ -1946,7 +1948,7 @@ function(env=NULL) {
   # /*fend*/ }}}
 #-----
   #Integral of the (estimate psf * image); sepsfd /*fold*/ {{{
-  if (estpsf.warn!=4) {
+  if (any(estpsf.warn!=4)) {
     if (verbose) { cat("      Integral of the (estimated psf * image)") }
     if (cutup) {
       sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export="estpsf.plot") %dopar% {
@@ -2226,7 +2228,7 @@ function(env=NULL) {
   }
   # /*fend*/ }}}
   #Calculate Estimated PSF Correction /*fold*/ {{{
-  if (estpsf.warn!=4) {
+  if (any(estpsf.warn!=4)) {
     EstPSFCorr<-sepsf/sepsfp
   } else {
     EstPSFCorr<-1
@@ -2246,16 +2248,16 @@ function(env=NULL) {
   # /*fend*/ }}}
 
   #Point Source Flux error /*fold*/ {{{
-  psferr<-((conf*beamarea)^2.*sqrt(spsf)*PSCorr)^2
+  psferr<-((conf*beamarea[psf.id])^2.*sqrt(spsf)*PSCorr)^2
   # /*fend*/ }}}
 
   #Convolved aperture error /*fold*/ {{{
-  sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(ssfa)*ApCorr)^2
+  sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(ssfa)*ApCorr)^2
   if (blank.cor) { sfaerr<-sfaerr+(blanks$randMean.MAD*ApCorr)^2 }
   # /*fend*/ }}}
 
   #Deblended Convolved aperture error /*fold*/ {{{
-  dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)*ApCorr)^2
+  dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(sdfa)*ApCorr)^2
   if (blank.cor) { dfaerr<-dfaerr+(blanks$randMean.MAD*ApCorr)^2 }
   # /*fend*/ }}}
 
@@ -2608,7 +2610,13 @@ function(env=NULL) {
   }
   # /*fend*/ }}}
   #If map was input in Jy/bm we need to convert it back before output in SourceSubtraction /*fold*/ {{{
-  if (Jybm) { ba=beamarea } else { ba=1. }
+  if (Jybm & length(beamarea)==1) { 
+    ba=beamarea 
+  } else if (Jybm & length(beamarea)>1) { 
+    ba<-sum(beamarea*psf.weight,na.rm=T)/sum(psf.weight)
+  } else { 
+    ba=1. 
+  }
   # /*fend*/ }}}
   #If wanted, make the Residual Map /*fold*/ {{{
   if (make.resid.map) {
