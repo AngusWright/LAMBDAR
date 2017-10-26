@@ -125,7 +125,6 @@ function(env=NULL) {
           #}}}
         }
       }
-      browser()
       if (all(psf.id==psf.id[1])&&is.na(psf[[psf.id[1]]])) {
         #All psf determinations failed
         if (showtime) { stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
