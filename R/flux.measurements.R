@@ -740,7 +740,11 @@ function(env=NULL) {
     #Make Sourcemask /*fold*/ {{{
     if (!exists("transmission.map")) { transmission.map<-FALSE }
     if (!quiet) { cat(paste("Creating Sourcemask    ")) }
-    if (length(image.env$imm)>1) { sm<-image.env$imm } else { sm<-array(1, dim=dimim) }
+    if (length(image.env$imm)>1) { 
+      sm<-image.env$imm.orig<-image.env$imm 
+    } else { 
+      sm<-array(1, dim=dimim) 
+    }
     #Mask the region where apertures cannot be placed (around edges) 
     minlen<-ceiling(min(stamplen)/2)
     sm[1:minlen,]<-0
@@ -1478,7 +1482,7 @@ function(env=NULL) {
   ssfa<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam)  }
   if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
   #Estimate the PSF from the image, and compare to that given /*fold*/ {{{ 
-  if (!quiet) { cat(paste('Estimating the PSF from the image - ')) }
+  if (!quiet) { cat(paste('Estimating the PSF from the image')) }
   #Estimate the PSF {{{
   if (plot.sample) { pdf(height=10,width=10,file=file.path(path.root,path.work,path.out,'PSF_Samples.pdf')) } 
   timer=system.time(psf.est<-estimate.psf(outenv=environment(),plot=plot.sample,blend.tolerance=0.2))

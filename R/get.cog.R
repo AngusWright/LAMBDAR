@@ -46,19 +46,19 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,flexib
   #zvec<-as.numeric(zdist[lim[1]:lim[2],lim[3]:lim[4]])
   zvec<-as.numeric(zdist)
   zbin<-zvec[tmp.order]
+  r<-r[tmp.order]
   if (na.rm) { 
     good<-which(is.finite(zbin))
   } else {
     good<-1:length(zbin)
   }
-  cog<-data.frame(x=r[tmp.order[good]],y=cumsum(zbin[good]))
-  tab<-table(r)
+  cog<-data.frame(x=r[good],y=cumsum(zbin[good]))
+  tab=factor(r[good])
   if (any(as.numeric(tab)>1)) { 
-    avg.x<-as.numeric(names(tab))
+    avg.x<-as.numeric(levels(tab))
     avg.y<-rep(NA,length(avg.x))
-    cog.x.ch<-as.character(cog$x)
     for (val in 1:length(avg.x)) { 
-      avg.y[val]<-mean(cog$y[which(cog.x.ch==avg.x[val] & is.finite(cog$y))])
+      avg.y[val]<-mean(cog$y[which(cog$x==levels(tab)[val] & is.finite(cog$y))])
     }
     avg<-data.frame(x=avg.x,y=avg.y)
   } else { 
@@ -68,7 +68,13 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,flexib
 
   #Do various useful fits to the CoG {{{ 
   if (length(which(is.finite(avg$y)))>poly.degree) { 
-    fit<-lm(avg$y ~ poly(avg$x, degree=poly.degree, raw=TRUE))
+    r<-count<-0
+    while (r < 0.999 & count < 10) { 
+      fit<-lm(avg$y ~ poly(avg$x, degree=poly.degree+count, raw=TRUE))
+      r<-summary(fit)$r.squared
+      count<-count+1
+    }
+    
     avg$fitted <- fitted(fit) 
     #Calculate the derivative
     deriv_coef<-function(x) {

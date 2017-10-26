@@ -1,5 +1,5 @@
 estimate.psf <-
-function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3,bin.type='SNR.quan',lo=20,hi=200,type='num',blend.tolerance=0.5,env=NULL,plot=FALSE) {
+function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3,bin.type='SNR.quan',lo=20,hi=200,type='num',blend.tolerance=0.5,env=NULL,plot=FALSE) {
 
   message('--------------------------Estimate_PSF-------------------------------------')
   # Load Parameter Space {{{
@@ -141,7 +141,16 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
   }
   
   #Remove sources which have masked _datamaps_ (can create artefacts under convolution)
-  if (length(image.env$imm) > 1) { 
+  if (length(image.env$imm.orig) > 1) { 
+    maskfrac<-rep(NA,length=length(cat.x))
+    for (i in point.sources) {
+      maskfrac[i]<-sum(image.env$imm.orig[ap.lims.mask.map[i,1]:ap.lims.mask.map[i,2],ap.lims.mask.map[i,3]:ap.lims.mask.map[i,4]]==0)
+      maskfrac[i]<-maskfrac[i]/length(image.env$imm.orig[ap.lims.mask.map[i,1]:ap.lims.mask.map[i,2],ap.lims.mask.map[i,3]:ap.lims.mask.map[i,4]])
+      if (exists('dfa')) { 
+        maskfrac[i]<-maskfrac[i]-length(which(sfa[[i]]>=1-sourcemask.conf.lim))/length(sfa[[i]])
+      }
+    }
+  } else if (length(image.env$imm) > 1) {
     maskfrac<-rep(NA,length=length(cat.x))
     for (i in point.sources) {
       maskfrac[i]<-sum(image.env$imm[ap.lims.mask.map[i,1]:ap.lims.mask.map[i,2],ap.lims.mask.map[i,3]:ap.lims.mask.map[i,4]]==0)
@@ -208,27 +217,23 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=3e3
     sample<-NULL
   }
   #Loop through the sources remaining
+  im=image.env$im
+  if (length(image.env$imm.orig) > 1) { 
+    mask=image.env$imm.orig
+  } else { 
+    mask=image.env$imm
+  }
   for (i in point.sources) { 
     xc=cat.x[i]
     yc=cat.y[i]
-    if (cutup) {
-      im=data.stamp[[i]]
-      mask=mask.stamp[[i]]
-    } else {
-      im=image.env$im
-      mask=mask.stamp
-      if (length(mask.stamp)==1) { 
-        mask=image.env$imm
-      }
-    }
-    xlo=ap.lims.data.stamp[i,1]
-    xup=ap.lims.data.stamp[i,2]
-    ylo=ap.lims.data.stamp[i,3]
-    yup=ap.lims.data.stamp[i,4]
-    xmlo=ap.lims.mask.stamp[i,1]
-    xmup=ap.lims.mask.stamp[i,2]
-    ymlo=ap.lims.mask.stamp[i,3]
-    ymup=ap.lims.mask.stamp[i,4]
+    xlo=ap.lims.data.map[i,1]
+    xup=ap.lims.data.map[i,2]
+    ylo=ap.lims.data.map[i,3]
+    yup=ap.lims.data.map[i,4]
+    xmlo=ap.lims.mask.map[i,1]
+    xmup=ap.lims.mask.map[i,2]
+    ymlo=ap.lims.mask.map[i,3]
+    ymup=ap.lims.mask.map[i,4]
     if (do.sky.est) { 
       sky=skylocal[i]
       rms=skyrms[i]
