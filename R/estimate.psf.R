@@ -16,9 +16,9 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3
   # Identify the point sources we want to try and stack 
   if (exists('sdfa') & exists('ssfa')) { 
     blendfrac<-sdfa/ssfa
-    point.sources<-which(cat.a==0 & blendfrac > blend.tolerance) 
+    point.sources<-which(cat.a==min.ap.rad & blendfrac > blend.tolerance) 
   } else { 
-    point.sources<-which(cat.a==0) 
+    point.sources<-which(cat.a==min.ap.rad) 
   } 
   if (do.sky.est & exists('skylocal')) { 
     pixval.all<-pixval<-image.env$im[cbind(cat.x,cat.y)]-skylocal
