@@ -102,8 +102,32 @@ function(env=NULL) {
           warn<-TRUE
           #PSF estimate failed; warn if we can continue, or error if we cannot {{{ 
           if (length(psf.est$WEIGHT)==1) { 
-            if (showtime) { stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
-            } else if (!quiet) { stop("   - ERROR: PSF estimate failed; no suitable point sources found!\n") }
+            #All psf determinations failed {{{
+            if (loop.total>1) { 
+              if (showtime) { cat("   - BREAK (",round(timer[3],digits=2),"sec )\n")
+                message(paste('Flux Measurements - BREAK (',round(timer[3], digits=2),'sec )'))
+              } else if (!quiet) { cat("   - BREAK\n") }
+              warning("PSF estimate failed; no suitable point sources found!")
+              #Notify & Close Logfile /*fold*/ {{{
+              if (!is.null(env)) {
+                on.exit(detach(env), add=TRUE)
+              }
+              message(paste('\n-----------------------------------------------------\nDatamap Skipped - No PSF Estimate Possible (no point sources found/usable)\n'))
+              if (!quiet) {
+                cat(paste('\n-----------------------------------------------------\nDatamap Skipped - No PSF Estimate Possible (no point sources found/usable)'))
+              }
+              return(NULL)
+              #}}}
+            } else {
+              if (showtime) { 
+                cat("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
+                stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
+              } else if (!quiet) { 
+                cat("   - ERROR: PSF estimate failed; no suitable point sources found!\n") 
+                stop("   - ERROR: PSF estimate failed; no suitable point sources found!\n") 
+              }
+            }
+            #}}}
           } else { 
             estpsf[[i]]<-NA
             psf[[i]]<-NA
@@ -125,9 +149,32 @@ function(env=NULL) {
         }
       }
       if (all(psf.id==psf.id[1])&&is.na(psf[[psf.id[1]]])) {
-        #All psf determinations failed
-        if (showtime) { stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
-        } else if (!quiet) { stop("   - ERROR: PSF estimate failed; no suitable point sources found!\n") }
+        #All psf determinations failed {{{
+        if (loop.total>1) { 
+          if (showtime) { cat("   - BREAK (",round(timer[3],digits=2),"sec )\n")
+            message(paste('Flux Measurements - BREAK (',round(timer[3], digits=2),'sec )'))
+          } else if (!quiet) { cat("   - BREAK\n") }
+          warning("PSF estimate failed; no suitable point sources found!")
+          #Notify & Close Logfile /*fold*/ {{{
+          if (!is.null(env)) {
+            on.exit(detach(env), add=TRUE)
+          }
+          message(paste('\n-----------------------------------------------------\nDatamap Skipped - No PSF Estimate Possible (no point sources found/usable)\n'))
+          if (!quiet) {
+            cat(paste('\n-----------------------------------------------------\nDatamap Skipped - No PSF Estimate Possible (no point sources found/usable)'))
+          }
+          return(NULL)
+          #}}}
+        } else {
+          if (showtime) { 
+            cat("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
+            stop("   - ERROR: PSF estimate failed; no suitable point sources found! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
+          } else if (!quiet) { 
+            cat("   - ERROR: PSF estimate failed; no suitable point sources found!\n") 
+            stop("   - ERROR: PSF estimate failed; no suitable point sources found!\n") 
+          }
+        }
+        #}}}
       } else if (warn) {
         if (showtime) { cat("   - WARNING: PSF estimate failed in one or more bins; they inherit the PSF of another bin! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n") 
         } else if (!quiet) { cat("   - WARNING: PSF estimate failed in one or more bins; they inherit the PSF of another bin!\n") }
@@ -1096,15 +1143,17 @@ function(env=NULL) {
   if (!(no.psf)&(plot.sample)) {
     #PSF with Contours /*fold*/ {{{
     for (i in 1:length(psf)) { 
-      PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_",i,".png")))
-      psfvals<-rev(sort(psf[[i]][which(is.finite(psf[[i]]),arr.ind=TRUE)]))
-      tempsum<-cumsum(psfvals)
-      tempfunc<-approxfun(tempsum,psfvals)
-      psfLimit<-tempfunc(ap.limit*max(tempsum, na.rm=TRUE))
-      suppressWarnings(image(log10(psf[[i]]),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=ifelse(length(psf[[i]])>1E4,TRUE,FALSE)))
-      contour(psf[[i]], levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
-      if (psf.filt) { contour(psf[[i]], levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
-      dev.off()
+      if (any(psf.id==i)) { 
+        PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_",i,".png")))
+        psfvals<-rev(sort(psf[[i]][which(is.finite(psf[[i]]),arr.ind=TRUE)]))
+        tempsum<-cumsum(psfvals)
+        tempfunc<-approxfun(tempsum,psfvals)
+        psfLimit<-tempfunc(ap.limit*max(tempsum, na.rm=TRUE))
+        suppressWarnings(image(log10(psf[[i]]),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=ifelse(length(psf[[i]])>1E4,TRUE,FALSE)))
+        contour(psf[[i]], levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+        if (psf.filt) { contour(psf[[i]], levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
+        dev.off()
+      }
     }
     # /*fend*/ }}}
     #Plot Example of PS minimum aperture Correction; minimum source /*fold*/ {{{
@@ -1625,9 +1674,21 @@ function(env=NULL) {
     } else { 
       #PSF estimate failed; warn and continue {{{ 
       warn<-TRUE
-      if (!no.psf) { 
-        estpsf.plot[[i]]<-estpsf2[[i]]<-estpsf[[i]]<-psf[[min(c(i,length(psf)))]]
+      if (i==min(epsf.id)) { 
+        if (i==length(estpsf.plot)) { 
+          #All psfs have failed, leave the id as it is.
+        } else { 
+          #If this is the lowest psf.id, give 
+          #these sources the id of the next psf up 
+          epsf.id[which(epsf.id==i)]<-min(epsf.id)+1
+        }
+      } else { 
+        #If this is not the lowest psf.id, give 
+        #these sources the id of the last psf 
+        epsf.id[which(epsf.id==i)]<-max(epsf.id[which(epsf.id<i)])
       }
+      
+      estpsf.plot[[i]]<-estpsf2[[i]]<-estpsf[[i]]<-NA
       estpsf.warn[[i]]<-4
       estpsf.warnt[[i]]<-"E"
       #}}}

@@ -175,7 +175,9 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3
       point.sources<-point.sources[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE)]
       nn.dist<-match$nn.dists[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE),2]
       #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
-      point.sources<-point.sources[-which(nn.dist<9)]
+      if (any(nn.dist<9)) { 
+        point.sources<-point.sources[-which(nn.dist<9)]
+      }
     }
   } else { 
     if (length(point.sources) > 0) { 
@@ -185,7 +187,9 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3
       point.sources<-point.sources[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE)]
       nn.dist<-match$nn.dists[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE),2]
       #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
-      point.sources<-point.sources[-which(nn.dist<9)]
+      if (any(nn.dist<9)) { 
+        point.sources<-point.sources[-which(nn.dist<9)]
+      }
     }
   }
   # Initialise the arrays 

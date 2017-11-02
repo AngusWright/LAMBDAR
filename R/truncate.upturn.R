@@ -26,7 +26,7 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flex
   upturn.i=which(abs(cog$avg$concav) <= diff(range(cog$avg$concav))*tolerance)
   upturn=cog$avg$x[upturn.i]
   if (length(upturn)==0) { 
-    cat("No upturn found!\n") 
+    warning("No upturn found!\n") 
   } else { 
     if (plot) { points(upturn,cog$avg$concav[upturn.i],col='red') }
     upturn=density(upturn,weight=rep(1,length(upturn)),bw=diff(range(cog$avg$x))*tolerance/sqrt(12),kern='rect',from=0,n=1e3)

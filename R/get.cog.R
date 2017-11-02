@@ -1,5 +1,5 @@
 get.cog<-
-function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,flexible=TRUE,na.rm=TRUE){
+function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,n.per.bin=5,flexible=TRUE,na.rm=TRUE){
 #Details {{{
 #function returns the FHWM of the image from
 #*maxima*, in pixels.
@@ -53,8 +53,36 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,flexib
     good<-1:length(zbin)
   }
   cog<-data.frame(x=r[good],y=cumsum(zbin[good]))
-  tab=factor(r[good])
+  tab=factor(cog$x)
   lev<-levels(tab)
+  #Sample if wanted
+  if (!is.null(sample) && length(lev) > sample) { 
+    #If there are more radius bins than wanted samples
+    #Randomly sample n bins without duplication
+    lev<-sample(lev,sample)
+    ind<-which(cog$x %in% lev) 
+    cog<-cog[ind,]
+    tab=factor(cog$x)
+    lev<-levels(tab)
+  } 
+  if (!is.null(sample) && (length(lev) <= sample & length(cog$x)>n.per.bin*sample)) { 
+    #If there are fewer radius bins than wanted samples
+    #Randomly thin the whole sample so that there are at most n.per.bin samples per bin
+    shuffle<-order(runif(length(cog$x))) 
+    tx<-cog$x[shuffle]
+    for (i in 1:n.per.bin) { 
+      #select the unduplicated elements
+      ind<-which(!duplicated(tx))
+      #Remove them 
+      tx<-tx[-ind]
+      shuffle<-shuffle[-ind]
+    }
+    #shuffle now contains only things that were (randomly) 
+    #duplicated in each of the n.per.bin loops
+    cog<-cog[-shuffle,]
+    tab=factor(cog$x)
+    lev<-levels(tab)
+  }
   if (any(as.numeric(tab)>1)) { 
     avg.x<-as.numeric(lev)
     avg.y<-rep(NA,length(avg.x))

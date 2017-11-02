@@ -29,8 +29,18 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #}}}
   #Open Catalogue {{{
   if (csv | ascii) {
+    op<-options(warn=2)
     fitstable<-try(fread(paste(path.root,path.work,catalogue,sep=""),data.table=FALSE,stringsAsFactors=FALSE,showProgress=FALSE),silent=TRUE)
+    options(op)
     #Test Read of Catalogue for errors
+    if (class(fitstable)=="try-error") {
+      #Check for a fread warning
+      if (ascii) { 
+        fitstable<-try(read.table(paste(path.root,path.work,catalogue,sep=""),strip.white=TRUE, blank.lines.skip=TRUE,comment.char = "#",stringsAsFactors=FALSE),silent=TRUE)
+      } else if (csv) { 
+        fitstable<-try(read.csv(paste(path.root,path.work,catalogue,sep=""),strip.white=TRUE, blank.lines.skip=TRUE,comment.char = "#",stringsAsFactors=FALSE),silent=TRUE)
+      }
+    }
     if (class(fitstable)=="try-error") {
       #Stop on Error
       geterrmessage()
