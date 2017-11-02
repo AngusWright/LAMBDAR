@@ -2437,30 +2437,30 @@ function(env=NULL) {
       #Generate COGs /*fold*/ {{{
       #Raw Image /*fold*/ {{{
       if (psf.weighted) {
-        cog<-get.cog(sfa[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)$avg
+        cog<-get.cog(sfa[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
       } else {
-        cog<-get.cog(image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]],centre=c((diff(range(data.stamp.lims[i,1]:data.stamp.lims[i,2]))+1)/2, (diff(range(data.stamp.lims[i,3]:data.stamp.lims[i,4]))+1)/2),sample=1E3)$avg
+        cog<-get.cog(image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]],centre=c((diff(range(data.stamp.lims[i,1]:data.stamp.lims[i,2]))+1)/2, (diff(range(data.stamp.lims[i,3]:data.stamp.lims[i,4]))+1)/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
       }
       # /*fend*/ }}}
       #Sky Subtracted only /*fold*/ {{{
       if (psf.weighted) {
-        cog.nosky<-get.cog(sfa[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)$avg
+        cog.nosky<-get.cog(sfa[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
       } else {
-        cog.nosky<-get.cog(image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]]-skylocal[i],centre=c((diff(range(data.stamp.lims[i,1]:data.stamp.lims[i,2]))+1)/2, (diff(range(data.stamp.lims[i,3]:data.stamp.lims[i,4]))+1)/2),sample=1E3)$avg
+        cog.nosky<-get.cog(image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]]-skylocal[i],centre=c((diff(range(data.stamp.lims[i,1]:data.stamp.lims[i,2]))+1)/2, (diff(range(data.stamp.lims[i,3]:data.stamp.lims[i,4]))+1)/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
       }
       # /*fend*/ }}}
       #Deblended only /*fold*/ {{{
       if (psf.weighted) {
-        debl.cog<-get.cog(sfa[[i]]*dbw[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)$avg
+        debl.cog<-get.cog(sfa[[i]]*dbw[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
       } else {
-        debl.cog<-get.cog(dbw[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)$avg
+        debl.cog<-get.cog(dbw[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
       }
       # /*fend*/ }}}
       #Deblended and Sky Subtracted /*fold*/ {{{
       if (psf.weighted) {
-        debl.cog.nosky<-get.cog(sfa[[i]]*dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)$avg
+        debl.cog.nosky<-get.cog(sfa[[i]]*dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
       } else {
-        debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3)$avg
+        debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
       }
       # /*fend*/ }}}
       # /*fend*/ }}}
@@ -2504,12 +2504,12 @@ function(env=NULL) {
         # /*fend*/ }}}
         #Note Half Light Radius /*fold*/ {{{
         if (do.sky.est) {
-          deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]))$avg
+          deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]),poly.degree=Inf,flexible=FALSE)$avg
           hlr<-which(debl.cog.nosky$y>=max(debl.cog.nosky$y,na.rm=TRUE)/2)
           dhlr<-which(deproj.debl.cog.nosky$y>max(debl.cog.nosky$y,na.rm=TRUE)/2)
           label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog.nosky$x[dhlr]),digits=2)),cex=1.2)
         } else {
-          deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]))$avg
+          deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]),poly.degree=Inf,flexible=FALSE)$avg
           hlr<-which(debl.cog$y>=max(debl.cog$y,na.rm=TRUE)/2)
           dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
           label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog$x[dhlr]),digits=2)),cex=1.2)
@@ -2547,12 +2547,12 @@ function(env=NULL) {
                col=c('grey','black','grey','black','orange','green'),pch=-1, cex=1.2)
         #Note Half Light Radius /*fold*/ {{{
         if (do.sky.est) {
-          deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]))$avg
+          deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]),poly.degree=Inf,flexible=FALSE)$avg
           hlr<-which(debl.cog.nosky$y>=max(cog$y,na.rm=TRUE)/2)
           dhlr<-which(deproj.debl.cog.nosky$y>max(debl.cog$y,na.rm=TRUE)/2)
           label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog.nosky$x[dhlr]),digits=2)))
         } else {
-          deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]))$avg
+          deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]),poly.degree=Inf,flexible=FALSE)$avg
           hlr<-which(debl.cog$y>=max(cog$y,na.rm=TRUE)/2)
           dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
           label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog$x[dhlr]),digits=2)))

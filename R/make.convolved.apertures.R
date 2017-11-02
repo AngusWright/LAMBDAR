@@ -229,49 +229,53 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
     psf.cen<-psf
     recent<-cbind(rep(NA,n.psf),rep(NA,n.psf))
     for (i in 1:n.psf) { 
-      conv<-array(0,dim=dim(psf[[i]]))
-      conv[which(psf[[i]]==max(psf[[i]]),arr.ind=T)]<-1
-      psf.cen[[i]]<-convolve.psf(psf[[i]],conv)
-      psf.resid<-psf[[i]]-psf.cen[[i]]
-      if (plot.sample) { 
-        PlotPNG(file.path(path.root,path.work,path.out,paste0("PointSourceCentre_test_bin",i,".png")),width=110*8,height=110*4,res=110)
-        layout(cbind(1,2,3,4))
-        magimage(psf[[i]])
-        magimage(psf.cen[[i]])
-        magimage(psf.resid)
-      }
-      if (max(abs(psf.resid),na.rm=T) > 0.001) { 
-        recent[i,]<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf[[i]]==max(psf[[i]],na.rm=T),arr.ind=T)[1,]
+      if (any(psf.id==i)) { 
+        conv<-array(0,dim=dim(psf[[i]]))
+        conv[which(psf[[i]]==max(psf[[i]]),arr.ind=T)]<-1
+        psf.cen[[i]]<-convolve.psf(psf[[i]],conv)
+        psf.resid<-psf[[i]]-psf.cen[[i]]
+        if (plot.sample) { 
+          PlotPNG(file.path(path.root,path.work,path.out,paste0("PointSourceCentre_test_bin",i,".png")),width=110*12,height=110*4,res=110)
+          layout(cbind(1,2,3,4))
+          magimage(psf[[i]])
+          magimage(psf.cen[[i]])
+          magimage(psf.resid)
+        }
+        if (max(abs(psf.resid),na.rm=T) > 0.001) { 
+          recent[i,]<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf[[i]]==max(psf[[i]],na.rm=T),arr.ind=T)[1,]
+        } else { 
+          recent[i,]<-c(0,0)
+        }
+        if (any(abs(recent[i,])>1)) { recent[i,which(abs(recent[i,])>1)]<-0 }
+        recent<-recent/2
+        #Make grid for psf at old pixel centres {{{
+        psf.obj<-list(x=seq(1,dim(psf[[i]])[1])+recent[i,1], y=seq(1,dim(psf[[i]])[2])+recent[i,2],z=psf[[i]])
+        #}}}
+        #Make expanded grid of new pixel centres {{{
+        expanded<-expand.grid(seq(1,dim(psf[[i]])[1]),seq(1,dim(psf[[i]])[2]))
+        xnew<-expanded[,1]
+        ynew<-expanded[,2]
+        #}}}
+        #Interpolate {{{
+        psf.new<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=dim(psf[[i]])[2],nrow=dim(psf[[i]])[1])
+        #}}}
+        #Check the new psf residuals {{{
+        psf.resid<-psf.new-psf.cen[[i]]
+        new.recent<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf[[i]]==max(psf[[i]],na.rm=T),arr.ind=T)[1,]
+        if (any(new.recent!=0)) { 
+          #The recentering didnt work, just use it as is
+          recent[i,]<-c(0,0)
+        }
+        #}}}
+        #}}}
+        if(plot.sample) { 
+          magimage(psf.resid)
+          label('top',lab=paste0('rerecentered: recentre fact = c(',new.recent[1],',',new.recent[2],')'),col='red')
+          label('bottom',lab=paste0('diagnosis: recentre fact = c(',recent[i,1],',',recent[i,2],')'),col='red')
+          dev.off()
+        }
       } else { 
         recent[i,]<-c(0,0)
-      }
-      if (any(abs(recent[i,])>1)) { recent[i,which(abs(recent[i,])>1)]<-0 }
-      recent<-recent/2
-      #Make grid for psf at old pixel centres {{{
-      psf.obj<-list(x=seq(1,dim(psf[[i]])[1])+recent[i,1], y=seq(1,dim(psf[[i]])[2])+recent[i,2],z=psf[[i]])
-      #}}}
-      #Make expanded grid of new pixel centres {{{
-      expanded<-expand.grid(seq(1,dim(psf[[i]])[1]),seq(1,dim(psf[[i]])[2]))
-      xnew<-expanded[,1]
-      ynew<-expanded[,2]
-      #}}}
-      #Interpolate {{{
-      psf.new<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=dim(psf[[i]])[2],nrow=dim(psf[[i]])[1])
-      #}}}
-      #Check the new psf residuals {{{
-      psf.resid<-psf.new-psf.cen[[i]]
-      new.recent<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf[[i]]==max(psf[[i]],na.rm=T),arr.ind=T)[1,]
-      if (any(new.recent!=0)) { 
-        #The recentering didnt work, just use it as is
-        recent[i,]<-c(0,0)
-      }
-      #}}}
-      #}}}
-      if(plot.sample) { 
-        magimage(psf.resid)
-        label('top',lab=paste0('rerecentered: recentre fact = c(',new.recent[1],',',new.recent[2],')'),col='red')
-        label('bottom',lab=paste0('diagnosis: recentre fact = c(',recent[i,1],',',recent[i,2],')'),col='red')
-        dev.off()
       }
     }
     #}}}

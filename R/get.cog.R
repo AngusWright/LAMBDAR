@@ -54,11 +54,17 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,flexib
   }
   cog<-data.frame(x=r[good],y=cumsum(zbin[good]))
   tab=factor(r[good])
+  lev<-levels(tab)
   if (any(as.numeric(tab)>1)) { 
-    avg.x<-as.numeric(levels(tab))
+    avg.x<-as.numeric(lev)
     avg.y<-rep(NA,length(avg.x))
+    tx<-cog$x
+    ty<-cog$y
     for (val in 1:length(avg.x)) { 
-      avg.y[val]<-mean(cog$y[which(cog$x==levels(tab)[val] & is.finite(cog$y))])
+      ind=which(tx==lev[val])
+      avg.y[val]<-mean(ty[ind])
+      tx=tx[-ind]
+      ty=ty[-ind]
     }
     avg<-data.frame(x=avg.x,y=avg.y)
   } else { 
