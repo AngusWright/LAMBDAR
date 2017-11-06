@@ -2729,6 +2729,7 @@ function(env=NULL) {
     spsf   <-spsf[which(contams==0)]
     spsf2  <-spsf2[which(contams==0)]
     ssfap  <-ssfap[which(contams==0)]
+    spsfd  <-spsfd[which(contams==0)]
     sfaflux<-sfaflux[which(contams==0)]
     skyflux<-skyflux[which(contams==0)]
     skylocal<-skylocal[which(contams==0)]
@@ -2779,9 +2780,9 @@ function(env=NULL) {
       ssfae2<-ssfae2[which(contams==0)]
       sdfae2<-sdfae2[which(contams==0)]
     }
-    contams <-contams[which(contams==0)]
     psf.id<-psf.id[which(contams==0)] 
     epsf.id<-epsf.id[which(contams==0)] 
+    contams <-contams[which(contams==0)]
   }# /*fend*/ }}}
 
   #Create Photometry Warning Flags /*fold*/ {{{
