@@ -69,7 +69,7 @@ function(env=NULL) {
       psf.val<-tmp.psfest.val
       skyest<-tmp.skyest
       if (plot.sample) { dev.off() } 
-      estpsf<-psf<-list(NULL)
+      psf.cen<-estpsf<-psf<-list(NULL)
       sumpsf<-rep(NA,length(psf.est$WEIGHT))
       warn<-FALSE
       for (i in 1:length(psf.est$WEIGHT)) { 
@@ -86,7 +86,10 @@ function(env=NULL) {
             PlotPNG(file.path(path.root,path.work,path.out,paste0("PSFEst_truncation_",i,".png")),width=12*res,height=6*res,res=res)
             layout(matrix(1:6,nrow=2,byrow=T))
           }
-          psf[[i]]<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+          psf.cen[[i]]<-psf.est$centre
+          trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+          psf[[i]]<-trunc$Im
+          psf.cen[[i]]<-trunc$centre
           psf[[i]]<-psf[[i]]-min(psf[[i]],na.rm=TRUE)
           psf[[i]]<-psf[[i]]/max(psf[[i]],na.rm=TRUE)
           sumpsf[i]<-sum(psf[[i]])
@@ -226,7 +229,7 @@ function(env=NULL) {
     }
     # /*fend*/ }}}
     #Get radius of FWHM using FWHM confidence value = erf(2*sqrt(2*log(2))/sqrt(2)) /*fold*/ {{{
-    psffwhm<-sum(sapply(psf,get.fwhm)*psf.weight,na.rm=T)/sum(psf.weight)
+    psffwhm<-sum(unlist(mapply(get.fwhm,psf,centre=psf.cen))*psf.weight,na.rm=T)/sum(psf.weight)
     # /*fend*/ }}}
     #Normalise Beam Area /*fold*/ {{{
     beam.area.nn<-sumpsf
@@ -1163,7 +1166,7 @@ function(env=NULL) {
     if (is.na(ind)) { ind<-which.min(cat.a) }
     # /*fend*/ }}}
     #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-    centre<-as.numeric(which(psf[[psf.id[ind]]]==max(psf[[psf.id[ind]]]), arr.ind=TRUE))
+    centre<-psf.cen[[psf.id[ind]]]
     delta<-floor(stamplen[ind]/2)*c(-1,+1)
     lims<-rbind(centre[1]+delta,centre[2]+delta)
     dx<-lims[1,1]-1
@@ -1215,7 +1218,7 @@ function(env=NULL) {
     #Plot Example of PS minimum aperture Correction; median source /*fold*/ {{{
     ind<-(which.min(abs(cat.a-median(cat.a)))[1])
     #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-    centre<-as.numeric(which(psf[[psf.id[ind]]]==max(psf[[psf.id[ind]]]), arr.ind=TRUE))
+    centre<-psf.cen[[psf.id[ind]]]
     delta<-floor(stamplen[ind]/2)*c(-1,+1)
     lims<-rbind(centre[1]+delta,centre[2]+delta)
     dx<-lims[1,1]-1
@@ -1534,12 +1537,12 @@ function(env=NULL) {
   if (!quiet) { cat(paste('Estimating the PSF from the image')) }
   #Estimate the PSF {{{
   if (plot.sample) { pdf(height=10,width=10,file=file.path(path.root,path.work,path.out,'PSF_Samples.pdf')) } 
-  timer=system.time(psf.est<-estimate.psf(outenv=environment(),plot=plot.sample,blend.tolerance=0.2))
+  timer=system.time(psf.est<-estimate.psf(outenv=environment(),plot=plot.sample))
   epsf.id<-tmp.psf.id
   psfest.val<-tmp.psfest.val
   if (plot.sample) { dev.off() } 
   #}}}\
-  estpsf.plot<-estpsf2<-estpsf<-estpsf.warn<-estpsf.warnt<-list(NULL)
+  estpsf.cen<-estpsf.plot<-estpsf2<-estpsf<-estpsf.warn<-estpsf.warnt<-list(NULL)
   sumepsf<-rep(NA,length(psf.est$WEIGHT))
   warn<-FALSE
   for (i in 1:length(psf.est$WEIGHT)) { 
@@ -1556,7 +1559,9 @@ function(env=NULL) {
         PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_truncation_",i,".png")),width=12*res,height=6*res,res=res)
         layout(matrix(1:6,nrow=2,byrow=T))
       }
-      estpsf2[[i]]<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+      trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+      estpsf2[[i]]<-trunc$Im
+      estpsf.cen[[i]]<-trunc$centre
       estpsf2[[i]]<-estpsf2[[i]]-min(estpsf2[[i]],na.rm=TRUE)
       estpsf2[[i]]<-estpsf2[[i]]/max(estpsf2[[i]],na.rm=TRUE)
       sumepsf[i]<-sum(estpsf2[[i]])
@@ -1667,6 +1672,13 @@ function(env=NULL) {
            estpsf.warn[[i]]<-estpsf.warn[[i]]+2
            estpsf.warnt[[i]]<-paste0(estpsf.warnt[[i]],"M")
         }
+        if (any(which(psf[[i]]==max(psf[[i]]),arr.ind=T) != psf.cen[[i]])) { 
+           estpsf.warn[[i]]<-estpsf.warn[[i]]+4
+           estpsf.warnt[[i]]<-paste0(estpsf.warnt[[i]],"C")
+        } else if (any(which(estpsf[[i]]==max(estpsf[[i]]),arr.ind=T) != estpsf.cen[[i]])) { 
+           estpsf.warn[[i]]<-estpsf.warn[[i]]+4
+           estpsf.warnt[[i]]<-paste0(estpsf.warnt[[i]],"C")
+        }
         #}}} 
         #}}}
       } 
@@ -1689,7 +1701,7 @@ function(env=NULL) {
       }
       
       estpsf.plot[[i]]<-estpsf2[[i]]<-estpsf[[i]]<-NA
-      estpsf.warn[[i]]<-4
+      estpsf.warn[[i]]<-8
       estpsf.warnt[[i]]<-"E"
       #}}}
     }
@@ -1903,7 +1915,7 @@ function(env=NULL) {
   # /*fend*/ }}}
 #-----
   #Integral of the estimated psf; spsf /*fold*/ {{{
-  if (any(estpsf.warn!=4)) {
+  if (any(estpsf.warn!=8)) {
     if (verbose) { cat("      Integral of the estimated psf") }
     sepsf<-rep(NA,length(cat.id))
     for (i in 1:length(estpsf)) {
@@ -1929,7 +1941,7 @@ function(env=NULL) {
   # /*fend*/ }}}
 #-----
   #Integral of the reinterpolated psf * estimated psf sepsfp /*fold*/ {{{
-  if (!no.psf & any(estpsf.warn!=4)) {
+  if (!no.psf & any(estpsf.warn!=8)) {
     if (verbose) { cat("      Integral of the reinterpolated psf * estimated psf") }
     sepsfp<-rep(NA, length(sfa))
     for (i in 1:length(psf)) { 
@@ -1950,7 +1962,7 @@ function(env=NULL) {
     if (verbose) { cat("      Reinterpolating the psf (per object)") }
     psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
       #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-      centre<-as.numeric(which(psf[[pid]]==max(psf[[pid]]), arr.ind=TRUE))
+      centre<-psf.cen[[pid]]
       delta<-floor(slen/2)*c(-1,+1)
       lims<-rbind(centre[1]+delta,centre[2]+delta)
       dx<-lims[1,1]-1
@@ -2013,12 +2025,12 @@ function(env=NULL) {
   # /*fend*/ }}}
 #-----
   #Integral of the (estimate psf * image); sepsfd /*fold*/ {{{
-  if (any(estpsf.warn!=4)) {
+  if (any(estpsf.warn!=8)) {
     if (verbose) { cat("      Integral of the (estimated psf * image)") }
     if (cutup) {
       sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export="estpsf.plot") %dopar% {
         #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-as.numeric(which(estpsf.plot[[epid]]==max(estpsf.plot[[epid]]), arr.ind=TRUE))
+        centre<-estpsf.cen[[epid]]
         delta<-floor(slen/2)*c(-1,+1)
         lims<-rbind(centre[1]+delta,centre[2]+delta)
         dx<-lims[1,1]-1
@@ -2048,7 +2060,7 @@ function(env=NULL) {
     } else {
       sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("estpsf.plot","im")) %dopar% {
         #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-as.numeric(which(estpsf.plot[[epid]]==max(estpsf.plot[[epid]]), arr.ind=TRUE))
+        centre<-estpsf.cen[[epid]]
         delta<-floor(slen/2)*c(-1,+1)
         lims<-rbind(centre[1]+delta,centre[2]+delta)
         dx<-lims[1,1]-1
@@ -2293,7 +2305,7 @@ function(env=NULL) {
   }
   # /*fend*/ }}}
   #Calculate Estimated PSF Correction /*fold*/ {{{
-  if (any(estpsf.warn!=4)) {
+  if (any(estpsf.warn!=8)) {
     EstPSFCorr<-sepsf/sepsfp
   } else {
     EstPSFCorr<-1
@@ -2815,9 +2827,10 @@ function(env=NULL) {
   #PSF estimate Warning /*fold*/ {{{
   for (i in 1:length(estpsf.warnt)) { 
     photWarnFlag[which(epsf.id==i)]<-paste0(photWarnFlag[which(epsf.id==i)],estpsf.warnt[[i]]) #Can be all/none of [PM] or [E]; Peak/Median residual is bad, or estimate is bad
-    if(estpsf.warn[[i]]==4) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^4; estpsf.warn[[i]]<-estpsf.warn[[i]] - 4 }
-    if(estpsf.warn[[i]]>=2) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^5; estpsf.warn[[i]]<-estpsf.warn[[i]] - 2 }
-    if(estpsf.warn[[i]]>=1) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^6; estpsf.warn[[i]]<-estpsf.warn[[i]] - 1 }
+    if(estpsf.warn[[i]]==8) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^4; estpsf.warn[[i]]<-estpsf.warn[[i]] - 8 }
+    if(estpsf.warn[[i]]>=4) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^5; estpsf.warn[[i]]<-estpsf.warn[[i]] - 4 }
+    if(estpsf.warn[[i]]>=2) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^6; estpsf.warn[[i]]<-estpsf.warn[[i]] - 2 }
+    if(estpsf.warn[[i]]>=1) { photWarnBitFlag[which(epsf.id==i)]<-photWarnBitFlag[which(epsf.id==i)]+2^7; estpsf.warn[[i]]<-estpsf.warn[[i]] - 1 }
   }
   # /*fend*/ }}}
   # /*fend*/ }}}

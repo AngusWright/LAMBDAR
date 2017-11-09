@@ -1,5 +1,5 @@
 get.fwhm<-
-function(zdist){
+function(zdist,centre){
 #Details {{{
 #function returns the FHWM of the image from
 #*maxima*, in pixels.
@@ -7,7 +7,9 @@ function(zdist){
   
   if (!is.null(dim(zdist)) && !any(dim(zdist)==0)) {
     #Setup Radius-map {{{
-    centre<-as.numeric(which(zdist==max(zdist), arr.ind=TRUE))
+    if (missing(centre)||length(centre)!=2) { 
+      centre<-as.numeric(which(zdist==max(zdist), arr.ind=TRUE))
+    }
     im.rad.x<-min(centre[1],length(zdist[,1])-centre[1])-1
     im.rad.y<-min(centre[2],length(zdist[1,])-centre[2])-1
     lim<-c(centre[1]-im.rad.x, centre[1]+im.rad.x, centre[2]-im.rad.y, centre[2]+im.rad.y)

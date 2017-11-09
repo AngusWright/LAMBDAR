@@ -1,5 +1,5 @@
 estimate.psf <-
-function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3,bin.type='SNR.quan',lo=20,hi=200,type='num',blend.tolerance=0.5,env=NULL,plot=FALSE) {
+function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=9,env=NULL,plot=FALSE) {
 
   message('--------------------------Estimate_PSF-------------------------------------')
   # Load Parameter Space {{{
@@ -15,10 +15,19 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3
 
   # Identify the point sources we want to try and stack 
   if (exists('sdfa') & exists('ssfa')) { 
-    blendfrac<-sdfa/ssfa
-    point.sources<-which(cat.a==min.ap.rad & blendfrac > blend.tolerance) 
+    blendfrac<-1-sdfa/ssfa
+    if (onlyContams & filt.contam) { 
+      point.sources<-which(cat.a==min.ap.rad & blendfrac <= blend.tolerance & contams==1) 
+    } else { 
+      point.sources<-which(cat.a==min.ap.rad & blendfrac <= blend.tolerance) 
+    } 
   } else { 
-    point.sources<-which(cat.a==min.ap.rad) 
+    blendfrac<-rep(0,length(cat.a))
+    if (onlyContams & filt.contam) { 
+      point.sources<-which(cat.a==min.ap.rad & contams==1) 
+    } else { 
+      point.sources<-which(cat.a==min.ap.rad) 
+    }
   } 
   if (do.sky.est & exists('skylocal')) { 
     pixval.all<-pixval<-image.env$im[cbind(cat.x,cat.y)]-skylocal
@@ -146,49 +155,44 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3
     for (i in point.sources) {
       maskfrac[i]<-sum(image.env$imm.orig[ap.lims.mask.map[i,1]:ap.lims.mask.map[i,2],ap.lims.mask.map[i,3]:ap.lims.mask.map[i,4]]==0)
       maskfrac[i]<-maskfrac[i]/length(image.env$imm.orig[ap.lims.mask.map[i,1]:ap.lims.mask.map[i,2],ap.lims.mask.map[i,3]:ap.lims.mask.map[i,4]])
-      if (exists('dfa')) { 
-        maskfrac[i]<-maskfrac[i]-length(which(sfa[[i]]>=1-sourcemask.conf.lim))/length(sfa[[i]])
-      }
     }
   } else if (length(image.env$imm) > 1) {
     maskfrac<-rep(NA,length=length(cat.x))
     for (i in point.sources) {
       maskfrac[i]<-sum(image.env$imm[ap.lims.mask.map[i,1]:ap.lims.mask.map[i,2],ap.lims.mask.map[i,3]:ap.lims.mask.map[i,4]]==0)
       maskfrac[i]<-maskfrac[i]/length(image.env$imm[ap.lims.mask.map[i,1]:ap.lims.mask.map[i,2],ap.lims.mask.map[i,3]:ap.lims.mask.map[i,4]])
-      if (exists('dfa')) { 
-        maskfrac[i]<-maskfrac[i]-length(which(sfa[[i]]>=1-sourcemask.conf.lim))/length(sfa[[i]])
-      }
     }
   }
   if (exists('maskfrac')) { 
-    keep<-which(maskfrac[point.sources]<=0.2)
-    maskfrac<-maskfrac[point.sources[keep]]
+    keep<-which(maskfrac[point.sources]<=mask.tolerance)
     point.sources<-point.sources[keep]
-    point.sources<-point.sources[order(maskfrac)]
   } 
   #Calculate the blend fractions
   if (exists('sdfa') & exists('ssfa')) { 
     if (length(point.sources) > 0) { 
       #Use pixel-space nearest neighbours 
-      match<-nn2(data.frame(cat.x,cat.y)[which(blendfrac>blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=20,k=10)
+      match<-nn2(data.frame(cat.x,cat.y)[which(blendfrac[point.sources]<=blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',
+                 radius=20,k=min(10,length(which(blendfrac[point.sources]<=blend.tolerance))))
       #Order by the nearest non-self match (2nd nnd column)
-      point.sources<-point.sources[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE)]
-      nn.dist<-match$nn.dists[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE),2]
+      point.sources<-point.sources[order(match$nn.dists[,2],pixval[point.sources],decreasing=TRUE)]
+      nn.dist<-match$nn.dists[order(match$nn.dists[,2],pixval[point.sources],decreasing=TRUE),2]
       #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
-      if (any(nn.dist<9)) { 
-        point.sources<-point.sources[-which(nn.dist<9)]
+      if (any(nn.dist<radial.tolerance)) { 
+        point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
+        nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
       }
     }
   } else { 
     if (length(point.sources) > 0) { 
       #Use pixel-space nearest neighbours 
-      match<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=20,k=10)
+      match<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=20,k=min(length(cat.x),10))
       #Order by the nearest non-self match (2nd nnd column)
-      point.sources<-point.sources[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE)]
-      nn.dist<-match$nn.dists[order(pixval[point.sources],match$nn.dists[,2],decreasing=TRUE),2]
+      nn.dist<-match$nn.dists[order(match$nn.dists[,2],pixval[point.sources],decreasing=TRUE),2]
+      point.sources<-point.sources[order(match$nn.dists[,2],pixval[point.sources],decreasing=TRUE)]
       #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
-      if (any(nn.dist<9)) { 
-        point.sources<-point.sources[-which(nn.dist<9)]
+      if (any(nn.dist<radial.tolerance)) { 
+        point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
+        nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
       }
     }
   }
@@ -206,9 +210,29 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3
   #Remove sources above and beyond what is requested
   for (i in 1:n.bins) { 
     keep<-which(bin[point.sources]==i)
-    if (length(keep) > n.sources) { 
-      keep<-keep[(n.sources+1):length(keep)]
-      point.sources<-point.sources[-keep]
+    #Check if we should iteratively can clean the sample 
+    if (length(which(nn.dist[keep] > 20 & maskfrac[point.sources[keep]] == 0 & blendfrac[point.sources[keep]] == 0)) < n.sources) { 
+      while (length(keep) > n.sources) { 
+        #Grow the distance tolerance
+        radial.tolerance<-radial.tolerance+3
+        #Reduce the masking tolerance
+        mask.tolerance<-max(0,mask.tolerance-0.05)
+        #Reduce the blending tolerance
+        blend.tolerance<-max(0,blend.tolerance-0.05)
+        #Calculate the new sample size
+        keep<-which(bin[point.sources]==i & nn.dist>=radial.tolerance & maskfrac[point.sources]<=mask.tolerance & blendfrac[point.sources]<=blend.tolerance)
+      }
+      throw<-which(bin[point.sources]==i)
+      throw<-throw[which(!throw%in%keep)]
+      if (length(throw)!=0) { 
+        point.sources<-point.sources[-throw]
+      }
+    } else { 
+      #There are more pure PSF sources than the number requested; just pick the first N.sources of them...
+      if (n.sources+1 < length(keep)) { 
+        throw<-keep[(n.sources+1):length(keep)]
+        point.sources<-point.sources[-throw]
+      }
     }
   }
   if (plot & length(point.sources)>0) { 
@@ -248,6 +272,10 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=1e3
     
     #Skip the source if it's saturated 
     if (any(im[xlo:xup,ylo:yup]>=image.env$saturation)) { next } 
+    #Skip the source if there's a much brighter source that isn't this source 
+    if (max(im[xlo:xup,ylo:yup])-sky > 5*pixval[i]) { 
+      if (sum(abs(which(im[xlo:xup,ylo:yup]==max(im[xlo:xup,ylo:yup],na.rm=T))-cbind(xup-xlo,yup-ylo)/2))>=3) { next } 
+    }
     #Remove any sub-pixel centroiding 
     #Make grid for psf at old pixel centres /*fold*/ {{{
     im.obj<-list(x=xlo:xup, y=ylo:yup,z=im[xlo:xup,ylo:yup]-sky)

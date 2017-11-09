@@ -12,6 +12,7 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flex
     centre<-which(psf==max(psf,na.rm=TRUE),arr.ind=TRUE)
   }
   #Produce CoG 
+  orig.centre<-centre
   cog<-get.cog(psf,centre=centre,poly.degree=poly.degree,flexible=flexible)
   centre<-cog$cen
   if (plot) { 
@@ -47,6 +48,8 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flex
     xy<-xy[which(r>=upturn),]
     if (plot) { 
       magimage(psf)
+      points(orig.centre[1],orig.centre[2],pch=3,col='blue')
+      points(centre[1],centre[2],pch=4,col='red')
       lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=upturn,e=0,pa=0),col='lightblue',lty=2,lwd=1.5)
       lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=start,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
       lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=end,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
@@ -61,6 +64,8 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flex
       points(cog$all,pch='.') 
       lines(cog$avg$x,cog$avg$y,type='s') 
       magimage(psf)
+      points(orig.centre[1],orig.centre[2],pch=3,col='blue')
+      points(centre[1],centre[2],pch=4,col='red')
     } 
     if (cutdown) { 
       xy = expand.grid(x,y)
@@ -70,6 +75,6 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flex
       psf<-psf[xin[1]:xin[2],yin[1]:yin[2]]
     }
   }
-  return=psf
+  return=list(Im=psf,centre=centre)
 }
 
