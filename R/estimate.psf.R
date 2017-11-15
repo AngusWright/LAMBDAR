@@ -35,7 +35,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
     if (cutup) {
       if (quick.sky) { 
         message("Perfoming Fast Sky Estimation")
-        skyest<-fast.sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,fit.gauss=fit.sky,
+        skyest<-fast.sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,fit.gauss=fit.sky,saturate=image.env$saturation,
                     cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
                     clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=point.sources)
         skyest$sources<-cat.id[point.sources]
@@ -52,7 +52,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
         }
       } else { 
         message("Perfoming Sky Estimation")
-        skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
+        skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,saturate=image.env$saturation,
                     cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,data.stamp=data.stamp,mask.stamp=mask.stamp,
                     clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=point.sources)
         skyest$sources<-cat.id[point.sources]
@@ -64,7 +64,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
     } else {
       if (quick.sky) { 
         message("Perfoming Fast Sky Estimation") 
-        skyest<-fast.sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,fit.gauss=fit.sky,
+        skyest<-fast.sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,fit.gauss=fit.sky,saturate=image.env$saturation,
                     cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                     data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
                     clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=point.sources)
@@ -82,7 +82,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
         }
       } else { 
         message("Perfoming Sky Estimation") 
-        skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,
+        skyest<-sky.estimate(cat.x=cat.x,cat.y=cat.y,data.stamp.lims=data.stamp.lims,saturate=image.env$saturation,
                     cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                     data.stamp=image.env$im, mask.stamp=image.env$imm.dimim,
                     clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm, mpi.opts=mpi.opts,subset=point.sources)
@@ -274,7 +274,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
     if (any(im[xlo:xup,ylo:yup]>=image.env$saturation)) { next } 
     #Skip the source if there's a much brighter source that isn't this source 
     if (max(im[xlo:xup,ylo:yup])-sky > 5*pixval[i]) { 
-      if (sum(abs(which(im[xlo:xup,ylo:yup]==max(im[xlo:xup,ylo:yup],na.rm=T))-cbind(xup-xlo,yup-ylo)/2))>=3) { next } 
+      if (sum(abs(which(im[xlo:xup,ylo:yup]==max(im[xlo:xup,ylo:yup],na.rm=T),arr.ind=T)-cbind(xup-xlo,yup-ylo)/2))>=3) { next } 
     }
     #Remove any sub-pixel centroiding 
     #Make grid for psf at old pixel centres /*fold*/ {{{

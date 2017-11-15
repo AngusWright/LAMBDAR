@@ -1,7 +1,7 @@
 #
 #
 #
-sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=TRUE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,cat.x=NULL,cat.y=NULL,mpi.opts=NULL,subset,bins=10){
+sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=TRUE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,saturate=Inf,cat.x=NULL,cat.y=NULL,mpi.opts=NULL,subset,bins=10){
   #Check Data stamp Limits
   if (is.null(data.stamp.lims)){
     #Data stamps must be the same dimension as the image!
@@ -110,6 +110,11 @@ sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=TRUE,data.stamp.lims=
               temprad<-temprad[which(tempval<=vallims)]
               tempval<-tempval[which(tempval<=vallims)]
             }
+          }
+          #Remove saturated pixels 
+          if(length(tempval)!=0) { 
+            temprad<-temprad[which(tempval < saturate)]
+            tempval<-tempval[which(tempval < saturate)]
           }
           #Find the running medians(run1) or means(run2) for the data
           if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE,bins=bins) }
@@ -224,6 +229,11 @@ sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=TRUE,data.stamp.lims=
               temprad<-temprad[tempval<=vallims]
               tempval<-tempval[tempval<=vallims]
             }
+          }
+          #Remove saturated pixels 
+          if(length(tempval)!=0) { 
+            temprad<-temprad[which(tempval < saturate)]
+            tempval<-tempval[which(tempval < saturate)]
           }
           #Find the running medians(run1) or means(run2) for the data
           if (run==1) { tempmedian<-magrun(x=temprad,y=tempval,ranges=NULL,binaxis='x',Nscale=TRUE) }

@@ -1,7 +1,7 @@
 #
 #
 #
-fast.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=TRUE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,cat.x=NULL,cat.y=NULL,mpi.opts=NULL,subset,bins=10,fit.gauss=FALSE){
+fast.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=TRUE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,saturate=Inf,cat.x=NULL,cat.y=NULL,mpi.opts=NULL,subset,bins=10,fit.gauss=FALSE){
   #Check Data stamp Limits
   if (is.null(data.stamp.lims)){
     #Data stamps must be the same dimension as the image!
@@ -95,6 +95,10 @@ fast.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=TRUE,data.stamp.
         }else{
           tempval<-origim[tempref]
         }
+        #Remove saturated pixels 
+        if(length(tempval)!=0) { 
+          tempval<-tempval[which(tempval < saturate)]
+        }
         #Do iterative <probcut> pixel clipping
         if(length(tempval)!=0 & clipiters>0){
           for(j in 1:clipiters){
@@ -143,6 +147,10 @@ fast.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=TRUE,data.stamp.
           tempval<-data.stamp[tempref][which(mask.stamp[tempref]!=0)]
         }else{
           tempval<-data.stamp[tempref]
+        }
+        #Remove saturated pixels 
+        if(length(tempval)!=0) { 
+          tempval<-tempval[which(tempval < saturate)]
         }
         #Do iterative <probcut> pixel clipping
         if(length(tempval)!=0 & clipiters>0){
