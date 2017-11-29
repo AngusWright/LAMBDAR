@@ -1,5 +1,5 @@
 estimate.psf <-
-function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=9,env=NULL,plot=FALSE) {
+function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=9,env=NULL,plot=FALSE) {
 
   message('--------------------------Estimate_PSF-------------------------------------')
   # Load Parameter Space {{{
@@ -29,9 +29,75 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
       point.sources<-which(cat.a==min.ap.rad) 
     }
   } 
+
+  #Remove things that are blended 
+  if (exists('sdfa') & exists('ssfa')) { 
+    if (length(point.sources) > 0) { 
+      #Use pixel-space nearest neighbours 
+      match<-nn2(data.frame(cat.x,cat.y)[which(blendfrac[point.sources]<=blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',
+                 radius=20,k=min(10,length(which(blendfrac[point.sources]<=blend.tolerance))))
+      #Order by the nearest non-self match (2nd nnd column)
+      point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]
+      nn.dist<-match$nn.dists[order(match$nn.dists[,2],decreasing=TRUE),2]
+      #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
+      if (any(nn.dist<radial.tolerance)) { 
+        point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
+        nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
+      }
+    }
+  } else { 
+    if (length(point.sources) > 0) { 
+      #Use pixel-space nearest neighbours 
+      match<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=20,k=min(length(cat.x),10))
+      #Order by the nearest non-self match (2nd nnd column)
+      nn.dist<-match$nn.dists[order(match$nn.dists[,2],decreasing=TRUE),2]
+      point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]
+      #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
+      if (any(nn.dist<radial.tolerance)) { 
+        point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
+        nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
+      }
+    }
+  }
+
   if (do.sky.est & exists('skylocal')) { 
     pixval.all<-pixval<-image.env$im[cbind(cat.x,cat.y)]-skylocal
   } else if (do.sky.est) { 
+    if (check.one.sky) { 
+      #Remove things with pixel values far outside what is requested
+      onesky<-fit.gauss2low(image.env$im)
+      pixval<-image.env$im[cbind(cat.x[point.sources],cat.y[point.sources])] - onesky$mu
+      if (grepl("SNR",bin.type)) { 
+        pixval<-pixval/onesky$sd
+      }
+      if (grepl("quan",bin.type)) { 
+        if (type=='quan') { 
+          #quantile bin limits 
+          bin.lim<-quantile(pixval[is.finite(pixval)],c(max(c(0,lo-0.1)),min(c(hi+0.1,1))))
+        } else { 
+          #Absolute bins limits
+          bin.lim<-c(lo*0.9,hi*1.1)
+        }
+      } else { 
+        if (type=='quan') { 
+          #quantile bin limits 
+          quans<-quantile(pixval[is.finite(pixval)],c(max(c(0,lo-0.1)),min(c(hi+0.1,1))))
+          bin.lim<-c(quans[1],quans[2])
+        } else { 
+          #Absolute bins limits
+          bin.lim<-c(lo*0.9,hi*1.1)
+        }
+      } 
+      if (bloom.bin) { 
+        new.bin<-image.env$saturation
+        if (do.sky.est) { new.bin<-new.bin-onesky$mu }
+        if (grepl('SNR',bin.type)) { new.bin<-new.bin/onesky$sd }
+        bin.lim[2]<-new.bin 
+      }
+      keep<-which(pixval >= bin.lim[1] & pixval <= bin.lim[2])
+      point.sources<-point.sources[keep]
+      nn.dist<-nn.dist[keep]
+    }
     if (cutup) {
       if (quick.sky) { 
         message("Perfoming Fast Sky Estimation")
@@ -136,13 +202,14 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
   if (bloom.bin) { 
     new.bin<-image.env$saturation
     if (do.sky.est) { new.bin<-new.bin-median(skylocal,na.rm=TRUE) }
-    if (grepl('SNR',bin.type)) { new.bin<-new.bin/median(skyrms,na.rm=TRUE) }
+    if (grepl('SNR',bin.type) & (do.sky.est | get.sky.rms)) { new.bin<-new.bin/median(skyrms,na.rm=TRUE) }
     bin.lim<-c(bin.lim,new.bin) 
     n.bins<-n.bins+1
   }
   #If the pixval is outside the bins, skip it 
   keep <- which(pixval[point.sources] >= bin.zero & pixval[point.sources] <= max(bin.lim)) 
   point.sources<-point.sources[keep]
+  nn.dist<-nn.dist[keep]
   #Assign the bins
   bin<-rep(-1,length(pixval)) 
   for (i in 1:n.bins) { 
@@ -166,36 +233,8 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
   if (exists('maskfrac')) { 
     keep<-which(maskfrac[point.sources]<=mask.tolerance)
     point.sources<-point.sources[keep]
+    nn.dist<-nn.dist[keep]
   } 
-  #Calculate the blend fractions
-  if (exists('sdfa') & exists('ssfa')) { 
-    if (length(point.sources) > 0) { 
-      #Use pixel-space nearest neighbours 
-      match<-nn2(data.frame(cat.x,cat.y)[which(blendfrac[point.sources]<=blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',
-                 radius=20,k=min(10,length(which(blendfrac[point.sources]<=blend.tolerance))))
-      #Order by the nearest non-self match (2nd nnd column)
-      point.sources<-point.sources[order(match$nn.dists[,2],pixval[point.sources],decreasing=TRUE)]
-      nn.dist<-match$nn.dists[order(match$nn.dists[,2],pixval[point.sources],decreasing=TRUE),2]
-      #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
-      if (any(nn.dist<radial.tolerance)) { 
-        point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
-        nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
-      }
-    }
-  } else { 
-    if (length(point.sources) > 0) { 
-      #Use pixel-space nearest neighbours 
-      match<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=20,k=min(length(cat.x),10))
-      #Order by the nearest non-self match (2nd nnd column)
-      nn.dist<-match$nn.dists[order(match$nn.dists[,2],pixval[point.sources],decreasing=TRUE),2]
-      point.sources<-point.sources[order(match$nn.dists[,2],pixval[point.sources],decreasing=TRUE)]
-      #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
-      if (any(nn.dist<radial.tolerance)) { 
-        point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
-        nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
-      }
-    }
-  }
   # Initialise the arrays 
   im_psf.nomask<-im_psf<-weight<-nomask.n<-list()
   for (i in 1:n.bins) { 
@@ -226,12 +265,14 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
       throw<-throw[which(!throw%in%keep)]
       if (length(throw)!=0) { 
         point.sources<-point.sources[-throw]
+        nn.dist<-nn.dist[-throw]
       }
     } else { 
       #There are more pure PSF sources than the number requested; just pick the first N.sources of them...
       if (n.sources+1 < length(keep)) { 
         throw<-keep[(n.sources+1):length(keep)]
         point.sources<-point.sources[-throw]
+        nn.dist<-nn.dist[-throw]
       }
     }
   }

@@ -173,6 +173,7 @@ if (error.map=='NONE' & weight.map=="NONE") {
     ime<-sqrt(abs(im/(gain)))
     #}}}
   }
+  error.hdr<-data.hdr
   #}}}
   #}}}
 } else if ((error.map=='NONE' | !is.na(suppressWarnings(as.numeric(error.map)))) & weight.map!="NONE") {
