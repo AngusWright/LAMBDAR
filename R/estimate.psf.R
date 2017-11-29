@@ -249,17 +249,20 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
   #Remove sources above and beyond what is requested
   for (i in 1:n.bins) { 
     keep<-which(bin[point.sources]==i)
+    blend.tolerance.tmp<-blend.tolerance
+    mask.tolerance.tmp<-mask.tolerance
+    radial.tolerance.tmp<-radial.tolerance
     #Check if we should iteratively can clean the sample 
     if (length(which(nn.dist[keep] > 20 & maskfrac[point.sources[keep]] == 0 & blendfrac[point.sources[keep]] == 0)) < n.sources) { 
       while (length(keep) > n.sources) { 
         #Grow the distance tolerance
-        radial.tolerance<-radial.tolerance+3
+        radial.tolerance.tmp<-radial.tolerance.tmp+3
         #Reduce the masking tolerance
-        mask.tolerance<-max(0,mask.tolerance-0.05)
+        mask.tolerance.tmp<-max(c(0,mask.tolerance.tmp-0.05))
         #Reduce the blending tolerance
-        blend.tolerance<-max(0,blend.tolerance-0.05)
+        blend.tolerance.tmp<-max(c(0,blend.tolerance.tmp-0.05))
         #Calculate the new sample size
-        keep<-which(bin[point.sources]==i & nn.dist>=radial.tolerance & maskfrac[point.sources]<=mask.tolerance & blendfrac[point.sources]<=blend.tolerance)
+        keep<-which(bin[point.sources]==i & nn.dist>=radial.tolerance.tmp & maskfrac[point.sources]<=mask.tolerance.tmp & blendfrac[point.sources]<=blend.tolerance.tmp)
       }
       throw<-which(bin[point.sources]==i)
       throw<-throw[which(!throw%in%keep)]

@@ -168,6 +168,7 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
     message("PSF is being normalised to Unity")
     im_psf<-im_psf/max(im_psf)
   }
+  psf.cen<-list(which(im_psf==max(im_psf),arr.ind=TRUE))
   #}}}
   #Finally, Remove any Negative Values in the PSF, and calculate the sum {{{
   im_psf[which(im_psf<0)]<-0
@@ -175,6 +176,7 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
   #}}}
   #Parse Parameter Space & Return{{{
   if (!is.null(env)) { detach(env) }
+  assign("psf.cen"  , psf.cen   , envir = outenv)
   assign("psf.clip" , psf.clip  , envir = outenv)
   assign("psfwidth" , psfwidth  , envir = outenv)
   assign("sumpsf"   , sumpsf    , envir = outenv)

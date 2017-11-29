@@ -11,6 +11,11 @@ function(par.file=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies
   environment(read.images)<-environment()
   environment(read.par.file)<-environment()
   environment(create.sim.image)<-environment()
+  for (nam in ls.deb("package:LAMBDAR",simple=TRUE)) { 
+    if (nam%in%ls(envir=environment())) { 
+      debug(get(nam,envir=environment()))
+    }
+  }
   #}}}
 
   #Check for appropriate calling syntax {{{

@@ -8,6 +8,11 @@ function(ObsParm, noNoise=FALSE, convolveNoise=TRUE, padGals=TRUE, col.corr=0, o
   environment(make.exponential.apertures)<-environment()
   environment(make.aperture.map)<-environment()
   environment(read.psf)<-environment()
+  for (nam in ls.deb("package:LAMBDAR",simple=TRUE)) { 
+    if (nam%in%ls(envir=environment())) { 
+      debug(get(nam,envir=environment()))
+    }
+  }
   #}}}
 
   #Get PSF details {{{
