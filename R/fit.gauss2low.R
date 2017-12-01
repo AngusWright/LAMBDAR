@@ -14,10 +14,18 @@ fit.gauss2low<-function (x, bw = diff(quantile(x,pnorm(c(-2,2))))/1e4, from=medi
             magplot(dens)
             lines(dens$x, max(dens$y)/dnorm(fixat,fixat,mad(x))*dnorm(dens$x, fixat, mad(x)), col = "grey", lty = 2)
         }
-        fit <- nls(y ~ a1 * 1/(sqrt(2 * pi) * s1) * exp(-(x - 
+        fit <- try(nls(y ~ a1 * 1/(sqrt(2 * pi) * s1) * exp(-(x - 
             fixat)^2/(2 * s1^2)), start = list(a1 = max(dens$y)/dnorm(fixat,fixat,mad(x)), 
             s1 = mad(x)), data = list(x = dens$x[ind], y = dens$y[ind], 
-            fixat = fixat),control=list(warnOnly=warnOnly))
+            fixat = fixat),control=list(warnOnly=FALSE)))
+        if (class(fit)=='try-error') { 
+          #try again with more restrictive limits 
+          ind <- which(dens$x <= fixat & dens$x >= fixat-mad(x))
+          fit <- nls(y ~ a1 * 1/(sqrt(2 * pi) * s1) * exp(-(x - 
+              fixat)^2/(2 * s1^2)), start = list(a1 = max(dens$y)/dnorm(fixat,fixat,mad(x)), 
+              s1 = mad(x)), data = list(x = dens$x[ind], y = dens$y[ind], 
+              fixat = fixat),control=list(warnOnly=warnOnly))
+        } 
         if (plot) {
             lines(dens$x, coef(fit)[1] * 
                 dnorm(dens$x, fixat, coef(fit)[2]), col = "blue", lwd = 2)
@@ -44,10 +52,18 @@ fit.gauss2low<-function (x, bw = diff(quantile(x,pnorm(c(-2,2))))/1e4, from=medi
             magplot(dens)
             lines(dens$x, max(dens$y)/dnorm(mode,mode,mad(x))*dnorm(dens$x, mode, mad(x)), col = "grey", lty = 2)
         }
-        fit <- nls(y ~ a1 * 1/(sqrt(2 * pi) * s1) * exp(-(x - 
+        fit <- try(nls(y ~ a1 * 1/(sqrt(2 * pi) * s1) * exp(-(x - 
             m1)^2/(2 * s1^2)), start = list(a1 = max(dens$y)/dnorm(mode,mode,mad(x)), 
             m1 = mode, s1 = mad(x)), data = list(x = dens$x[ind], 
-            y = dens$y[ind]),control=list(warnOnly=warnOnly))
+            y = dens$y[ind]),control=list(warnOnly=FALSE)))
+        if (class(fit)=='try-error') { 
+          #try again with more restrictive limits 
+          ind <- which(dens$x <= mode + mad(x)/2 & dens$x >= mode -mad(x))
+          fit <- try(nls(y ~ a1 * 1/(sqrt(2 * pi) * s1) * exp(-(x - 
+              m1)^2/(2 * s1^2)), start = list(a1 = max(dens$y)/dnorm(mode,mode,mad(x)), 
+              m1 = mode, s1 = mad(x)), data = list(x = dens$x[ind], 
+              y = dens$y[ind]),control=list(warnOnly=warnOnly)))
+        }
         if (plot) {
             lines(dens$x, coef(fit)[1]*
                   dnorm(dens$x, coef(fit)[2], coef(fit)[3]), col = "blue", lwd = 2)
