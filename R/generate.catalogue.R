@@ -39,7 +39,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   }
   #}}}
   #Catalogue ID {{{
-  cat.id<-names(table(segmentation))[-1]
+  cat.id<-sort(unique(as.numeric(segmentation)))[-1]
   #}}}
   #Get catalogue size {{{
   num.rows<-length(cat.id)
@@ -50,8 +50,8 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #Object RA & DEC {{{
   seg.pix<-abs(seg.astr$CD[1,1])*3600
   cat.xy<-foreach(i=cat.id,.combine='rbind',.inorder=TRUE,
-                  .export=c("segmentation",'colMedians','colMaxs','colMins'))%dopar%{ 
-    inds=which(segmentation==i,arr.ind=TRUE) 
+                  .export=c("segmentation",'colMedians','colMaxs','colMins'))%dopar%{
+    inds=which(segmentation==i,arr.ind=TRUE)
     return=c(colMedians(inds),(colMaxs(inds)-colMins(inds))/2)
   }
   seg.x<-cat.xy[,1]
@@ -64,7 +64,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   cat.theta<-ifelse(cat.xy[,3]>cat.xy[,4],0,90)
   #}}}
   #If save.table, recreate the catalogue with the checked-parameters {{{
-  if (save.table) { 
+  if (save.table) {
     fitstable<-data.frame(cat.id,cat.ra,cat.dec,cat.a,cat.b,cat.theta,seg.x,seg.y)
     segx.lab<-"SegIm_X"
     segy.lab<-"SegIm_Y"
@@ -75,14 +75,14 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   contams<-rep(0,num.rows)
   message(paste("Apertures from Segmentation map, there are no contaminants!"))
   #If save.table, recreate the catalogue with the checked-parameters {{{
-  if (save.table) { 
+  if (save.table) {
     fitstable[,contam.lab]<-contams
   }
   #}}}
   #}}}
   #Initialise flux-weights column {{{
   flux.weight<-1
-  if (save.table) { 
+  if (save.table) {
     fitstable[,flux.weight.lab]<-flux.weight
   }
   #}}}
@@ -94,12 +94,12 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   groups<-rep(1,num.rows)
   #}}}
   #If save.table, recreate the catalogue with the checked-parameters {{{
-  if (save.table) { 
+  if (save.table) {
     fitstable[,group.lab]<-groups
   }
   #}}}
   #}}}
-  
+
   #Parse Parameter Space {{{
   assign("cat.id"      ,cat.id      ,envir=outenv)
   assign("cat.ra"      ,cat.ra      ,envir=outenv)
@@ -116,7 +116,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   assign("segmentation" ,segmentation    ,envir=outenv)
   assign("seg.astr" ,seg.astr    ,envir=outenv)
   assign("seg.pix" ,seg.pix    ,envir=outenv)
-  if (save.table) { 
+  if (save.table) {
     assign("saved.table"     ,fitstable     ,envir=outenv)
   }
   #}}}
