@@ -169,7 +169,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
           yind<-yind[yind>0][1:length(ap[1,])]
           ind<-expand.grid(xind,yind)[gdap,]
-          if (any(is.na(ind))) { browser() }
+          if (any(is.na(ind))) { next }
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
           #Sum shifted image and Aperture to return Flux
@@ -287,7 +287,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
           yind<-yind[yind>0][1:length(ap[1,])]
           ind<-expand.grid(xind,yind)[gdap,]
-          if (any(is.na(ind))) { browser() }
+          if (any(is.na(ind))) { next }
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-origim[as.matrix(ind)]*gdapv
           val<-which(!is.na(origim[as.matrix(ind)]))
@@ -466,7 +466,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
           yind<-yind[yind>0][1:length(ap[1,])]
           ind<-expand.grid(xind,yind)[gdap,]
-          if (any(is.na(ind))) { browser() }
+          if (any(is.na(ind))) { next }
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
           val<-which(!is.na(tempim[as.matrix(ind)]))
@@ -583,7 +583,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           yind<-((1:(nc+1)+dy[iter])%%(nc+1))
           yind<-yind[yind>0][1:length(ap[1,])]
           ind<-expand.grid(xind,yind)[gdap,]
-          if (any(is.na(ind))) { browser() }
+          if (any(is.na(ind))) { next }
           ranaps[as.matrix(ind)]<-ranaps[as.matrix(ind)]+gdapv*0.1
           tempvec[iter,]<-tempim[as.matrix(ind)]*gdapv
           #Sum shifted image and Aperture to return Flux
