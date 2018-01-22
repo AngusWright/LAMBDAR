@@ -29,6 +29,6 @@ PlotDev<-function(file='default.X11',height=6,width=6,units='in',res=120,...) {
       #Open CairoPNG
       opened=png(filename=file,height=height,width=width,units=units,res=res,...)
     }
-  #}
+  }
   return=opened
 }
