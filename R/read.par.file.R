@@ -1367,6 +1367,26 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #What device do you want to output the images to? {{{
+  ID="PlotDevice"
+  ind<-which(params[ID,]!="")
+  plot.device<-params[ID,ind]
+  if ((length(ind)==0)||is.na(plot.device)) {
+    param.warnings<-c(param.warnings,"PlotDevice Parameter not in Parameter File; Using 'png'")
+    plot.device<-"png"
+  } 
+  if (grepl('png',plot.device,ignore.case=TRUE,fixed=TRUE)) {
+    plot.device<-'png'
+  } else if (grepl('pdf',plot.device,ignore.case=TRUE,fixed=TRUE)) { 
+    plot.device<-'pdf'
+  } else if (grepl('x11',plot.device,ignore.case=TRUE,fixed=TRUE)) {
+    plot.device<-'X11'
+  } else { 
+    param.warnings<-c(param.warnings,"PlotDevice Parameter not a known value (png/pdf/x11)! Using 'png'")
+    plot.device<-'png'
+  } 
+  #}}}
+
   #Make magnitudes in Output? {{{
   ID="Magnitudes"
   ind<-which(params[ID,]!="")
@@ -2128,6 +2148,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("path.root"         , path.root         , envir = env) # P
   assign("path.work"         , path.work         , envir = env) #
   assign("path.out"          , path.out          , envir = env) #
+  assign("plot.device"       , plot.device       , envir = env) #
   assign("plot.sample"       , plot.sample       , envir = env) #
   assign("plot.all"          , plot.all          , envir = env) #
   assign("psf.map"           , psf.map           , envir = env) #

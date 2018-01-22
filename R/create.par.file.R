@@ -71,6 +71,7 @@ create.par.file <-
     UseMaskLim=0.2,
     Diagnostic=0,
     Verbose=0,
+    PlotDevice='png',
     PlotSample=0,
     PlotAll=0,
     Magnitudes=1,
@@ -200,6 +201,7 @@ nIterations            ",paste(nIterations       ,collapse=' '),"    #How many i
 #                #---------------Outputs--------------------#
 OutputDirectory        ",paste(OutputDirectory   ,collapse=' '),"    #Output directory Name and Path
 LogFile                ",paste(LogFile           ,collapse=' '),"    #Filename for Log
+PlotDevice             ",paste(PlotDevice        ,collapse=' '),"    #The device to use for plotting: can be one of: PNG, PDF, or X11 
 GetDeblFrac            ",paste(GetDeblFrac       ,collapse=' '),"    #Only Output Deblend Fractions for each aperture to file? (Overrules all other Flags)            [1/0]
 SourceMaskOnly         ",paste(SourceMaskOnly    ,collapse=' '),"    #Only Output Source Mask image to file? (Overrules all other Flags except the above)            [1/0]
 WriteTable             ",paste(WriteTable        ,collapse=' '),"    #Output Results Table?

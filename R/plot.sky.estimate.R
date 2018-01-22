@@ -1,7 +1,7 @@
 #
 #
 #
-plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,plot.all=FALSE,path=NULL,toFile=FALSE,cat.id=NULL,cat.x=NULL,cat.y=NULL,res=220,bin.lwd=1,est.lwd=1.5,all.est.lwd=1.5){
+plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,plot.all=FALSE,path=NULL,plot.device='X11',toFile=FALSE,cat.id=NULL,cat.x=NULL,cat.y=NULL,res=220,bin.lwd=1,est.lwd=1.5,all.est.lwd=1.5){
   #Check Data stamp Limits
   if (is.null(data.stamp.lims)){
     #Data stamps must be the same dimension as the image!
@@ -233,9 +233,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         next
       }
       #Plot
-      if (toFile) {
-        PlotPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=5*res,width=10*res,res=res,pointsize=14)
-      }
+      PlotDev(file=file.path(path,paste0(id,"_skyback.",plot.device)),height=5,width=10,units='in',pointsize=14)
       layout(cbind(1,2))
       par(mar=c(3.1,3.1,1.1,1.1))
       image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,matrix(magmap(tempim,stretch='asinh',lo=lo,hi=hi,type='num')$map,nrow=nrow(tempim),ncol=ncol(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="",asp=1,useRaster=TRUE,xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))
@@ -273,7 +271,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         abline(h=meanStat$sky,col='red')
         abline(h=medianStat$sky,col='red',lty=2)
       }
-      dev.off()
+      if (toFile) { dev.off() }
     }
   } else {
     for (r in rand) {
@@ -328,8 +326,8 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
             } else {
               vallims<-2*mean(tempval,na.rm=TRUE)-quantile(tempval,probcut, na.rm=TRUE)
             }
-            temprad<-temprad[tempval<=vallims]
-            tempval<-tempval[tempval<=vallims]
+            temprad<-temprad[which(tempval<=vallims)]
+            tempval<-tempval[which(tempval<=vallims)]
           }
         }
         #Find the running medians(run1) or means(run2) for the data
@@ -440,9 +438,7 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         next
       }
       #Plot
-      if (toFile) {
-        PlotPNG(file=file.path(path,paste(id,"_skyback.png",sep="")),height=5*res,width=10*res,res=res,pointsize=14)
-      }
+      PlotDev(file=file.path(path,paste0(id,"_skyback.",plot.device)),height=5,width=10,units='in',pointsize=14)
       layout(cbind(1,2))
       par(mar=c(3.1,3.1,1.1,1.1))
       image(x=1:length(data.stamp[,1])-pixlocx,y=1:length(data.stamp[1,])-pixlocy,matrix(magmap(tempim,stretch='asinh',lo=lo,hi=hi,type='num')$map,nrow=nrow(tempim),ncol=ncol(tempim)),col=hsv(seq(2/3,0,length=256)),axes=FALSE,ylab="",xlab="",main="",asp=1,useRaster=TRUE, xlim=c(-cuthi,cuthi),ylim=c(-cuthi,cuthi))

@@ -235,7 +235,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         psf.cen[[i]]<-convolve.psf(psf[[i]],conv)
         psf.resid<-psf[[i]]-psf.cen[[i]]
         if (plot.sample) { 
-          PlotPNG(file.path(path.root,path.work,path.out,paste0("PointSourceCentre_test_bin",i,".png")),width=110*12,height=110*4,res=110)
+          PlotDev(file.path(path.root,path.work,path.out,paste0("PointSourceCentre_test_bin",i,".",plot.device)),width=12,height=4,units='in')
           layout(cbind(1,2,3,4))
           magimage(psf[[i]])
           magimage(psf.cen[[i]])
@@ -272,7 +272,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
           magimage(psf.resid)
           label('top',lab=paste0('rerecentered: recentre fact = c(',new.recent[1],',',new.recent[2],')'),col='red')
           label('bottom',lab=paste0('diagnosis: recentre fact = c(',recent[i,1],',',recent[i,2],')'),col='red')
-          dev.off()
+          if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
         }
       } else { 
         recent[i,]<-c(0,0)

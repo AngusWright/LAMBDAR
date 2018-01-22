@@ -68,7 +68,7 @@ function(env=NULL) {
       psf.id<-tmp.psf.id
       psf.val<-tmp.psfest.val
       skyest<-tmp.skyest
-      if (plot.sample) { dev.off() } 
+      if (plot.sample & !grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
       psf.cen<-estpsf<-psf<-list(NULL)
       sumpsf<-rep(NA,length(psf.est$WEIGHT))
       warn<-FALSE
@@ -82,8 +82,7 @@ function(env=NULL) {
           #}}}
           #Truncate any upturn in the PSF {{{
           if (plot.sample) { 
-            res=120
-            PlotPNG(file.path(path.root,path.work,path.out,paste0("PSFEst_truncation_",i,".png")),width=12*res,height=6*res,res=res)
+            PlotDev(file.path(path.root,path.work,path.out,paste0("PSFEst_truncation_",i,".",plot.device)),width=12,height=6,units='in')
             layout(matrix(1:6,nrow=2,byrow=T))
           }
           psf.cen[[i]]<-psf.est$centre
@@ -93,9 +92,7 @@ function(env=NULL) {
           psf[[i]]<-psf[[i]]-min(psf[[i]],na.rm=TRUE)
           psf[[i]]<-psf[[i]]/max(psf[[i]],na.rm=TRUE)
           sumpsf[i]<-sum(psf[[i]])
-          if (plot.sample) { 
-            dev.off()
-          }
+          if (plot.sample & !grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
           big<-matrix(0,ncol=max(stamplen),nrow=max(stamplen))
           big[1:dim(psf[[i]])[1],1:dim(psf[[i]])[2]]<-psf[[i]]
           psf[[i]]<-big
@@ -743,9 +740,8 @@ function(env=NULL) {
   }# /*fend*/ }}}
   #Do we want to plot a sample of the apertures? /*fold*/ {{{
   if (plot.sample) {
-    res<-120
     #Set output name /*fold*/ {{{
-    PlotPNG(file.path(path.root,path.work,path.out,"Aperture_Samples.png"))
+    PlotDev(file.path(path.root,path.work,path.out,paste0("Aperture_Samples.",plot.device)))
     # /*fend*/ }}}
     #Set Layout /*fold*/ {{{
     par(mfrow=c(2,2))
@@ -766,7 +762,7 @@ function(env=NULL) {
       points(ceiling(stamplen[i]/2)/stamplen[i],ceiling(stamplen[i]/2)/stamplen[i],pch="+",lw=2.0, col="red")
     }# /*fend*/ }}}
     #Close the file /*fold*/ {{{
-    dev.off()
+    if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
     # /*fend*/ }}}
   }
   # /*fend*/ }}}
@@ -1147,7 +1143,7 @@ function(env=NULL) {
     #PSF with Contours /*fold*/ {{{
     for (i in 1:length(psf)) { 
       if (any(psf.id==i)) { 
-        PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_",i,".png")))
+        PlotDev(file.path(path.root,path.work,path.out,paste0("PSF_",i,".",plot.device)))
         psfvals<-rev(sort(psf[[i]][which(is.finite(psf[[i]]),arr.ind=TRUE)]))
         tempsum<-cumsum(psfvals)
         tempfunc<-approxfun(tempsum,psfvals)
@@ -1155,7 +1151,7 @@ function(env=NULL) {
         suppressWarnings(image(log10(psf[[i]]),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=ifelse(length(psf[[i]])>1E4,TRUE,FALSE)))
         contour(psf[[i]], levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
         if (psf.filt) { contour(psf[[i]], levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
-        dev.off()
+        if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
       }
     }
     # /*fend*/ }}}
@@ -1192,7 +1188,7 @@ function(env=NULL) {
     ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
     # /*fend*/ }}}
     #Aperture Correction Plot /*fold*/ {{{
-    PlotPNG(file.path(path.root,path.work,path.out,"ApertureCorrection.png"))
+    PlotDev(file.path(path.root,path.work,path.out,paste0("ApertureCorrection.",plot.device)))
     Rast<-ifelse(length(ap)>1E4,TRUE,FALSE)
     if (!psf.weighted) {
       #Binary Aperture /*fold*/ {{{
@@ -1265,7 +1261,7 @@ function(env=NULL) {
       label("topright",lab=paste("SumPSF=",round(spsf,digits=2),"\nSum(PSF*Ap)=",round(ssfap,digits=2),"\nApCorr=",round(spsf/ssfap,digits=2),sep=""))
       # /*fend*/ }}}
     }
-    dev.off()
+    if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
     # /*fend*/ }}}
   }
   # /*fend*/ }}}
@@ -1540,7 +1536,8 @@ function(env=NULL) {
   timer=system.time(psf.est<-estimate.psf(outenv=environment(),plot=plot.sample))
   epsf.id<-tmp.psf.id
   psfest.val<-tmp.psfest.val
-  if (plot.sample) { dev.off() } 
+  if (plot.sample & !grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
+ 
   #}}}\
   estpsf.cen<-estpsf.plot<-estpsf2<-estpsf<-estpsf.warn<-estpsf.warnt<-list(NULL)
   sumepsf<-rep(NA,length(psf.est$WEIGHT))
@@ -1555,8 +1552,7 @@ function(env=NULL) {
       #}}}
       #Truncate any upturn in the PSF {{{
       if (plot.sample) { 
-        res=120
-        PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_truncation_",i,".png")),width=12*res,height=6*res,res=res)
+        PlotDev(file.path(path.root,path.work,path.out,paste0("PSF_truncation_",i,".",plot.device)),width=12,height=6,units="in")
         layout(matrix(1:6,nrow=2,byrow=T))
       }
       trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
@@ -1565,7 +1561,7 @@ function(env=NULL) {
       estpsf2[[i]]<-estpsf2[[i]]-min(estpsf2[[i]],na.rm=TRUE)
       estpsf2[[i]]<-estpsf2[[i]]/max(estpsf2[[i]],na.rm=TRUE)
       sumepsf[i]<-sum(estpsf2[[i]])
-      if (plot.sample) { dev.off() } 
+      if (plot.sample & !grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
       #}}}
       #Recentre the PSF {{{
       conv<-array(0,dim=dim(estpsf2[[i]]))
@@ -1622,7 +1618,7 @@ function(env=NULL) {
         #Plot a sample of the PSF  {{{
         if (plot.sample) { 
           #Open the device {{{
-          PlotPNG(file.path(path.root,path.work,path.out,paste0("PSF_residuals_",i,".png")),width=12*res,height=6*res,res=res)
+          PlotDev(file.path(path.root,path.work,path.out,paste0("PSF_residuals_",i,".",plot.device)),width=12,height=6,units="in")
           layout(matrix(1:6,byrow=T,nrow=2))
           #}}}
           #Plots {{{
@@ -1653,7 +1649,7 @@ function(env=NULL) {
           label('bottomleft',lab=paste0('sum(abs(resid))/sum(abs(psf)=',round(sum(abs(psf.plot-estpsf.plot[[i]]))/sum(abs(psf.plot)),digits=3)))
           #}}}
           #Close the device {{{
-          dev.off()
+          if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
           #}}}
         } #}}}
         #Check the quality of the input PSF compared to the measured {{{ 
@@ -2464,7 +2460,7 @@ function(env=NULL) {
     # /*fend*/ }}}
     for (i in ind) {
       #Open Device /*fold*/ {{{
-      PlotPNG(file.path(path.root,path.work,path.out,paste("COGs/",cat.id[i],".png",sep="")),width=8*res,height=8*res,res=res)
+      PlotDev(file.path(path.root,path.work,path.out,paste0("COGs/",cat.id[i],".",plot.device)),width=8,height=8,units='in')
       #pdf(file.path(path.root,path.work,path.out,paste("COGs/",cat.id[i],".pdf",sep="")),width=14,height=3.5)
       # /*fend*/ }}}
       #Set Layout /*fold*/ {{{
@@ -2684,7 +2680,7 @@ function(env=NULL) {
       label("topleft",lab="(d)",cex=2.5,inset=c(0.1,0.23))
       # /*fend*/ }}}
       #Close the file /*fold*/ {{{
-      dev.off()
+      if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
       # /*fend*/ }}}
     }
     #Remove unneeded Arrays /*fold*/ {{{

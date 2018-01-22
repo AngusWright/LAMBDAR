@@ -1,4 +1,4 @@
-plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99){
+plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,plot.device='X11',toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99){
   if(is.matrix(ap.stamp)) {
     #We have 1 object
     ap.stamp<-list(ap.stamp)
@@ -64,6 +64,10 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         stop("data.stamp and mask.stamp are not of the same form (both matrix or both list)")
       }
     }
+  }
+  if (grepl('x11',plot.device,ignore.case=TRUE) & toFile) { 
+    message("toFile cannot be TRUE when plot.device is X11!")
+    toFile<-FALSE
   }
   if (toFile) {
     if (is.null(cat.id)) { stop("Output to file requires cat.id to be specified (used for filenames)") }
@@ -200,7 +204,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { PlotPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
+        PlotDev(file.path(path,paste0(cat.id[i],"_blankscor.",plot.device)),height=6,width=10,units='in')
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -241,7 +245,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         #Convert Labels to Pretty style
         labs<-floor(log10(abs(axespoints)))
         pref<-ifelse(axespoints<0,"-","")
-        labs<-paste(pref,ifelse(labs>0,"1e+","1e"),labs,"",sep="")
+        labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
         labs[which(labs=="1e+Inf")]<-"0"
         labs[which(labs=="1e-Inf")]<-"0"
         check = grep("1e+", labs, fixed = TRUE)
@@ -273,7 +277,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         }
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
+        label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
         boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         if (toFile) { dev.off() }
@@ -317,7 +321,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { PlotPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
+        PlotDev(file.path(path,paste0(cat.id[i],"_rancor.",plot.device)),height=6,width=10,units='in')
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -358,7 +362,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         #Convert Labels to Pretty style
         labs<-floor(log10(abs(axespoints)))
         pref<-ifelse(axespoints<0,"-","")
-        labs<-paste(pref,ifelse(labs>0,"1e+","1e"),labs,"",sep="")
+        labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
         labs[which(labs=="1e+Inf")]<-"0"
         labs[which(labs=="1e-Inf")]<-"0"
         check = grep("1e+", labs, fixed = TRUE)
@@ -390,7 +394,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         }
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
+        label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
         boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
         if (toFile) { dev.off() }
@@ -496,7 +500,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(data.stamp,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { PlotPNG(file=file.path(path,paste(cat.id[i],"_blankscor.png",sep="")),height=6*res,width=10*res,res=res) }
+        PlotDev(file.path(path,paste0(cat.id[i],"_blankscor.",plot.device)),height=6,width=10,units='in') 
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -537,7 +541,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         #Convert Labels to Pretty style
         labs<-floor(log10(abs(axespoints)))
         pref<-ifelse(axespoints<0,"-","")
-        labs<-paste(pref,ifelse(labs>0,"1e+","1e"),labs,"",sep="")
+        labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
         labs[which(labs=="1e+Inf")]<-"0"
         labs[which(labs=="1e-Inf")]<-"0"
         check = grep("1e+", labs, fixed = TRUE)
@@ -569,7 +573,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         }
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
+        label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
         boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         if (toFile) { dev.off() }
@@ -614,7 +618,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
         lim<-(ceiling(log10(max(abs(quantile(tempim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
-        if (toFile) { PlotPNG(file=file.path(path,paste(cat.id[i],"_rancor.png",sep="")),height=6*res,width=10*res,res=res) }
+        PlotDev(file.path(path,paste0(cat.id[i],"_rancor.",plot.device)),height=6,width=10,units='in')
         layout(cbind(1,2))
         mar<-par("mar")
         par(mar=mar*c(1,0.8,1,0.2))
@@ -655,7 +659,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         #Convert Labels to Pretty style
         labs<-floor(log10(abs(axespoints)))
         pref<-ifelse(axespoints<0,"-","")
-        labs<-paste(pref,ifelse(labs>0,"1e+","1e"),labs,"",sep="")
+        labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
         labs[which(labs=="1e+Inf")]<-"0"
         labs[which(labs=="1e-Inf")]<-"0"
         check = grep("1e+", labs, fixed = TRUE)
@@ -687,7 +691,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         }
         abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
         legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-        label('topleft',lab=paste("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)",sep=""),cex=0.6)
+        label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
         boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
         boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
         if (toFile) { dev.off() }
