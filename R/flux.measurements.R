@@ -1577,7 +1577,7 @@ function(env=NULL) {
       big[1:dim(estpsf.plot[[i]])[1],1:dim(estpsf.plot[[i]])[2]]<-estpsf.plot[[i]]
       estpsf.plot[[i]]<-big
       #}}}
-      if (!no.psf & length(psf)>=i) {  
+      if (!no.psf & any(psf.id>=i)) {  
         #We have a PSF that we can compare to: {{{
         #Centre the input PSF {{{
         if (all(dim(psf[[i]]) > dim(estpsf.plot[[i]]))) { 
@@ -1650,7 +1650,7 @@ function(env=NULL) {
           lines(psf.plot[,which(psf.plot==max(psf.plot,na.rm=TRUE),arr.ind=T)[2]]-
                 estpsf.plot[[i]][,which(estpsf.plot[[i]]==max(estpsf.plot[[i]],na.rm=TRUE),arr.ind=T)[2]],type='s',col='blue')
           legend('topright',inset=0.1,bty='n',legend=c('x profile','y profile'),lty=1,col=c('red','blue'),pch=NA)
-          label('bottomleft',lab=paste0('abs(sum(resid))/abs(sum(psf)=',round(abs(sum(psf.plot-estpsf.plot[[i]]))/abs(sum(psf.plot)),digits=3)))
+          label('bottomleft',lab=paste0('sum(abs(resid))/sum(abs(psf)=',round(sum(abs(psf.plot-estpsf.plot[[i]]))/sum(abs(psf.plot)),digits=3)))
           #}}}
           #Close the device {{{
           dev.off()
@@ -2325,16 +2325,28 @@ function(env=NULL) {
   # /*fend*/ }}}
 
   #Point Source Flux error /*fold*/ {{{
-  psferr<-((conf*beamarea[psf.id])^2.*sqrt(spsf)*PSCorr)^2
+  if (!no.psf) { 
+    psferr<-((conf*beamarea[psf.id])^2.*sqrt(spsf)*PSCorr)^2
+  } else { 
+    psferr<-rep(NA,length(spsfd))
+  }
   # /*fend*/ }}}
 
   #Convolved aperture error /*fold*/ {{{
-  sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(ssfa)*ApCorr)^2
+  if (!no.psf) { 
+    sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(ssfa)*ApCorr)^2
+  } else { 
+    sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(ssfa)*ApCorr)^2
+  } 
   if (blank.cor) { sfaerr<-sfaerr+(blanks$randMean.MAD*ApCorr)^2 }
   # /*fend*/ }}}
 
   #Deblended Convolved aperture error /*fold*/ {{{
-  dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(sdfa)*ApCorr)^2
+  if (!no.psf) { 
+    dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(sdfa)*ApCorr)^2
+  } else { 
+    dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)*ApCorr)^2
+  } 
   if (blank.cor) { dfaerr<-dfaerr+(blanks$randMean.MAD*ApCorr)^2 }
   # /*fend*/ }}}
 
@@ -2792,7 +2804,7 @@ function(env=NULL) {
       ssfae2<-ssfae2[which(contams==0)]
       sdfae2<-sdfae2[which(contams==0)]
     }
-    psf.id<-psf.id[which(contams==0)] 
+    if (exists("psf.id")) { psf.id<-psf.id[which(contams==0)] }
     epsf.id<-epsf.id[which(contams==0)] 
     contams <-contams[which(contams==0)]
   }# /*fend*/ }}}
