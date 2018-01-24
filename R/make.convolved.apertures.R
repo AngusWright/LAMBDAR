@@ -235,7 +235,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         psf.cen[[i]]<-convolve.psf(psf[[i]],conv)
         psf.resid<-psf[[i]]-psf.cen[[i]]
         if (plot.sample) { 
-          PlotDev(file.path(path.root,path.work,path.out,paste0("PointSourceCentre_test_bin",i,".",plot.device)),width=12,height=4,units='in')
+          PlotDev(file=file.path(path.root,path.work,path.out,paste0("PointSourceCentre_test_bin",i,".",plot.device)),width=12,height=4,units='in')
           layout(cbind(1,2,3,4))
           magimage(psf[[i]])
           magimage(psf.cen[[i]])

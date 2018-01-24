@@ -82,7 +82,7 @@ function(env=NULL) {
           #}}}
           #Truncate any upturn in the PSF {{{
           if (plot.sample) { 
-            PlotDev(file.path(path.root,path.work,path.out,paste0("PSFEst_truncation_",i,".",plot.device)),width=12,height=6,units='in')
+            PlotDev(file=file.path(path.root,path.work,path.out,paste0("PSFEst_truncation_",i,".",plot.device)),width=12,height=6,units='in')
             layout(matrix(1:6,nrow=2,byrow=T))
           }
           psf.cen[[i]]<-psf.est$centre
@@ -741,7 +741,7 @@ function(env=NULL) {
   #Do we want to plot a sample of the apertures? /*fold*/ {{{
   if (plot.sample) {
     #Set output name /*fold*/ {{{
-    PlotDev(file.path(path.root,path.work,path.out,paste0("Aperture_Samples.",plot.device)))
+    PlotDev(file=file.path(path.root,path.work,path.out,paste0("Aperture_Samples.",plot.device)))
     # /*fend*/ }}}
     #Set Layout /*fold*/ {{{
     par(mfrow=c(2,2))
@@ -1143,7 +1143,7 @@ function(env=NULL) {
     #PSF with Contours /*fold*/ {{{
     for (i in 1:length(psf)) { 
       if (any(psf.id==i)) { 
-        PlotDev(file.path(path.root,path.work,path.out,paste0("PSF_",i,".",plot.device)))
+        PlotDev(file=file.path(path.root,path.work,path.out,paste0("PSF_",i,".",plot.device)))
         psfvals<-rev(sort(psf[[i]][which(is.finite(psf[[i]]),arr.ind=TRUE)]))
         tempsum<-cumsum(psfvals)
         tempfunc<-approxfun(tempsum,psfvals)
@@ -1188,7 +1188,7 @@ function(env=NULL) {
     ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
     # /*fend*/ }}}
     #Aperture Correction Plot /*fold*/ {{{
-    PlotDev(file.path(path.root,path.work,path.out,paste0("ApertureCorrection.",plot.device)))
+    PlotDev(file=file.path(path.root,path.work,path.out,paste0("ApertureCorrection.",plot.device)))
     Rast<-ifelse(length(ap)>1E4,TRUE,FALSE)
     if (!psf.weighted) {
       #Binary Aperture /*fold*/ {{{
@@ -1552,7 +1552,7 @@ function(env=NULL) {
       #}}}
       #Truncate any upturn in the PSF {{{
       if (plot.sample) { 
-        PlotDev(file.path(path.root,path.work,path.out,paste0("PSF_truncation_",i,".",plot.device)),width=12,height=6,units="in")
+        PlotDev(file=file.path(path.root,path.work,path.out,paste0("PSF_truncation_",i,".",plot.device)),width=12,height=6,units="in")
         layout(matrix(1:6,nrow=2,byrow=T))
       }
       trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
@@ -1618,7 +1618,7 @@ function(env=NULL) {
         #Plot a sample of the PSF  {{{
         if (plot.sample) { 
           #Open the device {{{
-          PlotDev(file.path(path.root,path.work,path.out,paste0("PSF_residuals_",i,".",plot.device)),width=12,height=6,units="in")
+          PlotDev(file=file.path(path.root,path.work,path.out,paste0("PSF_residuals_",i,".",plot.device)),width=12,height=6,units="in")
           layout(matrix(1:6,byrow=T,nrow=2))
           #}}}
           #Plots {{{
@@ -1755,10 +1755,10 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Randoms Correction"); cat("Plotting Randoms Correction") }
       if (cutup) {
-        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
+        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
       } else {
         timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],rand.x=cat.x,rand.y=cat.y,
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
       }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Randoms Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1784,10 +1784,10 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Blanks Correction"); cat("Plotting Blanks Correction") }
     if (cutup) {
-      timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
+      timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
     } else {
       timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
     }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -2460,7 +2460,7 @@ function(env=NULL) {
     # /*fend*/ }}}
     for (i in ind) {
       #Open Device /*fold*/ {{{
-      PlotDev(file.path(path.root,path.work,path.out,paste0("COGs/",cat.id[i],".",plot.device)),width=8,height=8,units='in')
+      PlotDev(file=file.path(path.root,path.work,path.out,paste0("COGs/",cat.id[i],".",plot.device)),width=8,height=8,units='in')
       #pdf(file.path(path.root,path.work,path.out,paste("COGs/",cat.id[i],".pdf",sep="")),width=14,height=3.5)
       # /*fend*/ }}}
       #Set Layout /*fold*/ {{{
