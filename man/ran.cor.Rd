@@ -142,7 +142,7 @@ gauss<-array(rnorm(length(SDSS.sample$dat[[1]])),dim=dim(SDSS.sample$dat[[1]]))
 randoms.gauss<-ran.cor(data.stamp=gauss,ap.stamp=aper,
 cat.x=xy[main,1],cat.y=xy[main,2])
 #Show randoms estimate
-print(randoms[,c('randMean.mean','randMean.SD','randMean.MAD')])
+print(randoms.gauss[,c('randMean.mean','randMean.SD','randMean.MAD')])
 
 #Plot the randoms estimate
 randoms<-plot.ran.cor(data.stamp=gauss,ap.stamp=aper,
