@@ -2887,7 +2887,7 @@ function(env=NULL) {
   if (!diagnostic) {
     return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr,MinApCorr=ApCorr,MaxApCorr=WtCorr)
   } else {
-    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr, SA_Stamps=sa, SFA_Stamps=sfa, WSFA_Stamps=wsfa, DFA_Stamps=dfa,MinApCorr=Apcorr,MaxApCorr=WtCorr)
+    return=list(SFAflux=sfaflux,SFAerror=sfaerr, DFAflux=dfaflux,DFAerror=dfaerr, SA_Stamps=sa, SFA_Stamps=sfa, WSFA_Stamps=wsfa, DFA_Stamps=dfa,MinApCorr=ApCorr,MaxApCorr=WtCorr)
   }
   # /*fend*/ }}}
   # /*fend*/ }}}
