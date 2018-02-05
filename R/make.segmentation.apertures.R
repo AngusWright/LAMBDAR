@@ -107,8 +107,9 @@ function(outenv=parent.env(environment()), env=NULL){
     if (cutup) {
       sa_mask<-foreach(slen=stamplen, smask=s_mask,mmask=mask.stamp,mxl=ap.lims.mask.stamp[,1],mxh=ap.lims.mask.stamp[,2],myl=ap.lims.mask.stamp[,3],myh=ap.lims.mask.stamp[,4],.export=c("use.mask.lim","psf.filt"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
         #Check masking to determine if Aperture is acceptable {{{
-        check<-sum(mmask[mxl:mxh,myl:myh]*smask)/sum(smask)
-        if (check<use.mask.lim) {
+        sumap<-sum(smask)
+        check<-sum(mmask[mxl:mxh,myl:myh]*smask)/sumap
+        if (sumap==0 || check<use.mask.lim) {
           #Too much. Skip {{{
           array(0, dim=c(slen,slen))
           #}}}
