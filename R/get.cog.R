@@ -1,5 +1,5 @@
 get.cog<-
-function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,n.per.bin=5,flexible=TRUE,na.rm=TRUE){
+function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,weight.power=NA,n.per.bin=5,flexible=TRUE,na.rm=TRUE){
 #Details {{{
 #function returns the FHWM of the image from
 #*maxima*, in pixels.
@@ -59,7 +59,13 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,n.per.
   if (!is.null(sample) && length(lev) > sample) { 
     #If there are more radius bins than wanted samples
     #Randomly sample n bins without duplication
-    lev<-sample(lev,sample)
+    if (is.finite(weight.power)) { 
+      weights=as.numeric(lev)^weight.power
+      weights=weights/sum(weights)
+      lev<-sample(lev,sample,probs=weights)
+    } else { 
+      lev<-sample(lev,sample)
+    }
     ind<-which(cog$x %in% lev) 
     cog<-cog[ind,]
     tab=factor(cog$x)
@@ -102,9 +108,14 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,n.per.
 
   #Do various useful fits to the CoG {{{ 
   if (length(which(is.finite(avg$y)))>poly.degree) { 
+    if (is.finite(weight.power)) { 
+      weights<-avg$x^weight.power
+    } else { 
+      weights<-rep(1,length(avg$x))
+    }
     r<-count<-0
     while (r < 0.999 & count < 10) { 
-      fit<-lm(avg$y ~ poly(avg$x, degree=poly.degree+count, raw=TRUE))
+      fit<-lm(avg$y ~ poly(avg$x, degree=poly.degree+count, raw=TRUE),weights=weights)
       r<-summary(fit)$r.squared
       count<-count+1
     }

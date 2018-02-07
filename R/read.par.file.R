@@ -1962,7 +1962,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   #}}}
 
   #Do we want to flux.weight Using Pixel Fluxes? {{{
-  ID="PixelFluxWgt"
+  ID="UsePixelFluxWgts"
   ind<-which(params[ID,]!="")
   use.pixel.fluxweight<-as.numeric(params[ID,ind])
   if ((length(ind)==0)||is.na(use.pixel.fluxweight)) {
@@ -1970,17 +1970,17 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       use.pixel.fluxweight<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
       if (class(use.pixel.fluxweight)=="try-error") {
         #Warn on Error
-        param.warnings<-c(param.warnings,"PixelFluxWgt Parameter table read failed; Using 0 (FALSE)")
+        param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter table read failed; Using 0 (FALSE)")
         use.pixel.fluxweight<-0
       }
       if (is.na(use.pixel.fluxweight)) {
         #Warn on Error
-        param.warnings<-c(param.warnings,"PixelFluxWgt Parameter not in Parameter File; Using 0 (FALSE)")
+        param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter not in Parameter File; Using 0 (FALSE)")
         use.pixel.fluxweight<-0
       }
     } else {
       #Warn on Error
-      param.warnings<-c(param.warnings,"PixelFluxWgt Parameter not in Parameter File; Using 0 (FALSE)")
+      param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter not in Parameter File; Using 0 (FALSE)")
       use.pixel.fluxweight<-0
     }
   }

@@ -86,8 +86,8 @@ function(outenv=parent.env(environment()), env=NULL){
     }
   }
   #Deal with Point Sources {{{
-  if      (all(stamplen==5)) { stamplen[which(stamplen==5)]<-5 }
-  else if (any(stamplen==5)) { stamplen[which(stamplen==5)]<-floor(min(cat.a[which(cat.a>0)],na.rm=TRUE))*2+5 }
+  if      (all(stamplen==5)) { stamplen[which(stamplen==5)]<-15 }
+  else if (any(stamplen==5)) { stamplen[which(stamplen==5)]<-floor(min(cat.a[which(cat.a>0)],na.rm=TRUE))*2+15 }
   #}}}
   #Calculate Stamp limits in image-pixel space {{{
   ap.lims.data.stamp<-cbind(x.pix-floor(stamplen/2), x.pix+floor(stamplen/2), y.pix-floor(stamplen/2), y.pix+floor(stamplen/2))

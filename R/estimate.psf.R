@@ -168,7 +168,11 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
   
   if (grepl('SNR',bin.type)) {
     if (!(do.sky.est|get.sky.rms)) { 
-      message("WARNING: cannot SNR bin without RMS estimate!") 
+      message("WARNING: cannot SNR bin without RMS estimate! 
+              Using MAD of all pixels without a source centred on them (i.e. im[-(cat.x,cat.y)]) ") 
+      tmprms<-mad(image.env$im[-(floor(cat.x)+nrow(image.env$im)*(floor(cat.y)-1))],na.rm=T)
+      pixval<-pixval/tmprms
+      pixval.all<-pixval.all/tmprms
     } else { 
       pixval<-pixval/skyrms
       pixval.all<-pixval.all/median(skyrms,na.rm=TRUE)
@@ -202,7 +206,11 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
   if (bloom.bin) { 
     new.bin<-image.env$saturation
     if (do.sky.est) { new.bin<-new.bin-median(skylocal,na.rm=TRUE) }
-    if (grepl('SNR',bin.type) & (do.sky.est | get.sky.rms)) { new.bin<-new.bin/median(skyrms,na.rm=TRUE) }
+    if (grepl('SNR',bin.type) & (do.sky.est | get.sky.rms)) { 
+      new.bin<-new.bin/median(skyrms,na.rm=TRUE) 
+    } else if (grepl('SNR',bin.type) & !(do.sky.est | get.sky.rms)) { 
+      new.bin<-new.bin/tmprms 
+    } 
     bin.lim<-c(bin.lim,new.bin) 
     n.bins<-n.bins+1
   }

@@ -28,6 +28,9 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flex
   upturn=cog$avg$x[upturn.i]
   if (length(upturn)==0) { 
     warning("No upturn found!\n") 
+    plot(1,type='n',axes=FALSE,xlab='',ylab='')
+    plot(1,type='n',axes=FALSE,xlab='',ylab='')
+    text(1,1,labels='No Upturn Found')
   } else { 
     if (plot) { points(upturn,cog$avg$concav[upturn.i],col='red') }
     upturn=density(upturn,weight=rep(1,length(upturn)),bw=diff(range(cog$avg$x))*tolerance/sqrt(12),kern='rect',from=0,n=1e3)
@@ -50,9 +53,9 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flex
       magimage(psf)
       points(orig.centre[1],orig.centre[2],pch=3,col='blue')
       points(centre[1],centre[2],pch=4,col='red')
-      lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=upturn,e=0,pa=0),col='lightblue',lty=2,lwd=1.5)
-      lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=start,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
-      lines(ellipse(xcen=centre[1]-0.5,ycen=centre[2]-0.5,a=end,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
+      lines(ellipse(xcen=centre[1],ycen=centre[2],a=upturn,e=0,pa=0),col='lightblue',lty=2,lwd=1.5)
+      lines(ellipse(xcen=centre[1],ycen=centre[2],a=start,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
+      lines(ellipse(xcen=centre[1],ycen=centre[2],a=end,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
     }
     psf[cbind(xy[,1],xy[,2])]<-0
     if (plot) { 

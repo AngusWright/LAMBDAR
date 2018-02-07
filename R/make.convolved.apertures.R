@@ -237,9 +237,12 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         if (plot.sample) { 
           PlotDev(file=file.path(path.root,path.work,path.out,paste0("PointSourceCentre_test_bin",i,".",plot.device)),width=12,height=4,units='in')
           layout(cbind(1,2,3,4))
-          magimage(psf[[i]])
-          magimage(psf.cen[[i]])
-          magimage(psf.resid)
+          cen<-which(psf[[i]] == max(psf[[i]]), arr.ind = T)
+          x.range<-range(which(psf[[i]][cen[1],]!=0))
+          y.range<-range(which(psf[[i]][,cen[2]]!=0))
+          capture<-magimage(psf[[i]][x.range[1]:x.range[2],y.range[1]:y.range[2]])
+          capture<-magimage(psf.cen[[i]][x.range[1]:x.range[2],y.range[1]:y.range[2]])
+          capture<-magimage(psf.resid[x.range[1]:x.range[2],y.range[1]:y.range[2]])
         }
         if (max(abs(psf.resid),na.rm=T) > 0.001) { 
           recent[i,]<-which(psf.resid==max(psf.resid,na.rm=T),arr.ind=T)[1,]-which(psf[[i]]==max(psf[[i]],na.rm=T),arr.ind=T)[1,]
@@ -269,7 +272,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         #}}}
         #}}}
         if(plot.sample) { 
-          magimage(psf.resid)
+          capture<-magimage(psf.resid[x.range[1]:x.range[2],y.range[1]:y.range[2]])
           label('top',lab=paste0('rerecentered: recentre fact = c(',new.recent[1],',',new.recent[2],')'),col='red')
           label('bottom',lab=paste0('diagnosis: recentre fact = c(',recent[i,1],',',recent[i,2],')'),col='red')
           if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
