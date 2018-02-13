@@ -44,6 +44,8 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
         point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
         nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
       }
+    } else { 
+      nn.dist<-NULL
     }
   } else { 
     if (length(point.sources) > 0) { 
@@ -57,6 +59,8 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
         point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
         nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
       }
+    } else { 
+      nn.dist<-NULL
     }
   }
 
