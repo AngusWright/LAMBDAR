@@ -2543,7 +2543,7 @@ function(env=NULL) {
     ssa    <-ssa[which(contams==0)]
     ssfa   <-ssfa[which(contams==0)]
     ssfad  <-ssfad[which(contams==0)]
-    qssfad <-qssfad[which(contams==0),]
+    qssfad <-rbind(qssfad[which(contams==0),])
     spsf   <-spsf[which(contams==0)]
     spsf2  <-spsf2[which(contams==0)]
     ssfap  <-ssfap[which(contams==0)]
@@ -2568,11 +2568,11 @@ function(env=NULL) {
     sfaerr <-sfaerr[which(contams==0)]
     sdfa   <-sdfa[which(contams==0)]
     sdfad  <-sdfad[which(contams==0)]
-    qsdfad <-qsdfad[which(contams==0),]
+    qsdfad <-rbind(qsdfad[which(contams==0),])
     if (iterate.fluxes) {
-      fluxiters<-fluxiters[which(contams==0),]
-      erriters<-erriters[which(contams==0),]
-      sdfaiters<-sdfaiters[which(contams==0),]
+      fluxiters<-rbind(fluxiters[which(contams==0),])
+      erriters<-rbind(erriters[which(contams==0),])
+      sdfaiters<-rbind(sdfaiters[which(contams==0),])
       iterateLost<-iterateLost[which(contams==0)]
     }
     psfflux<-psfflux[which(contams==0)]
@@ -2588,8 +2588,8 @@ function(env=NULL) {
     stamplen<-stamplen[which(contams==0)]
     mags   <-mags[which(contams==0)]
     if (length(flux.weight!=1)) { flux.weight<-flux.weight[which(contams==0)] }
-    if (ran.cor) { randoms<-randoms[which(contams==0),] }
-    if (blank.cor) { blanks<-blanks[which(contams==0),] }
+    if (ran.cor) { randoms<-rbind(randoms[which(contams==0),]) }
+    if (blank.cor) { blanks<-rbind(blanks[which(contams==0),]) }
     if (diagnostic) {
       ssfa2 <-ssfa2[which(contams==0)]
       sdfa2 <-sdfa2[which(contams==0)]
