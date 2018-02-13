@@ -95,6 +95,11 @@ function(env=NULL,filename) {
       newtable[["SumSFAxErrorsq"]] = ssfae2; cat(paste0("SumSFAxErrorsq"," #Integral of the Post-Convolution Aperture times the Error Image squared\n"))
       newtable[["SumDFAxErrorsq"]] = sdfae2; cat(paste0("SumDFAxErrorsq"," #Integral of the Deblended Post-Convolution Aperture times the Error Image squared\n"))
     }
+    if (magnitudes) { 
+      newtable[["ApproxShot_Jy"]] = quick.shot*janskyConv; cat(paste0("ApproxShot"," #Approximate shot noise uncertainty sqrt(DFAFlux)/gain, in Jansky\n"))
+    } else { 
+      newtable[["ApproxShot"]] = quick.shot; cat(paste0("ApproxShot"," #Approximate shot noise uncertainty sqrt(DFAFlux)/gain\n"))
+    }
     newtable[["SumSFAsqxErrorsq"]] = ssfa2e2; cat(paste0("SumSFAsqxErrorsq"," #Integral of the Post-Convolution Aperture squared times the Error Image squared\n"))
     newtable[["SumDFAsqxErrorsq"]] = sdfa2e2; cat(paste0("SumDFAsqxErrorsq"," #Integral of the Deblended Post-Convolution Aperture squared times the Error Image squared\n"))
     if (do.sky.est | get.sky.rms) {

@@ -2339,6 +2339,10 @@ function(env=NULL) {
   dfaflux<-sdfad
   # /*fend*/ }}}
 
+  #Get an estimate of the shot noise from the final flux /*fold*/ {{{
+  quick.shot<-sqrt(dfaflux)/image.env$gain
+  # /*fend*/ }}}
+
   #Point Source Flux error /*fold*/ {{{
   if (!no.psf) { 
     psferr<-((conf*beamarea[psf.id])^2.*sqrt(spsf)*PSCorr)^2
@@ -2563,6 +2567,7 @@ function(env=NULL) {
     skyrms.mean   <- skyrms.mean[which(contams==0)]
     ssfa2e2<-ssfa2e2[which(contams==0)]
     sdfa2e2<-sdfa2e2[which(contams==0)]
+    quick.shot<-quick.shot[which(contams==0)]
     detecthres<-detecthres[which(contams==0)]
     detecthres.mag<-detecthres.mag[which(contams==0)]
     sfaerr <-sfaerr[which(contams==0)]
