@@ -1,7 +1,15 @@
-plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,plot.device='X11',toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99){
+plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,plot.device='X11',toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.sci=FALSE,contams=NULL,plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99){
   if(is.matrix(ap.stamp)) {
     #We have 1 object
     ap.stamp<-list(ap.stamp)
+  }
+  #Check input arguments plot.all, plot.sci, and contams
+  if (plot.sci && is.null(contams)) { 
+    warning("contams argument must be supplied with the plot.sci argument")
+    plot.sci=FALSE
+  }
+  if (plot.sci & plot.all) { 
+    warning("plot.sci argument trumps the plot.all argument. Only science targets will be plotted")
   }
   #Check Ap Stamp limits
   if (is.null(ap.stamp.lims)){
@@ -97,7 +105,9 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
     y.pix<-floor(cat.y)
   }
 
-  if(plot.all) {
+  if(plot.sci) {
+    rand<-which(contams==0)
+  } else if(plot.all) {
     rand<-1:length(x.pix)
   } else {
     rand<-sample(length(x.pix),min(10,length(x.pix)))

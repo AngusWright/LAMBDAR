@@ -1360,10 +1360,19 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(plot.all)) {
     param.warnings<-c(param.warnings,"PlotAll Parameter not in Parameter File; Using 0 (FALSE)")
     plot.all<-FALSE
-  } else { plot.all<-(plot.all==1) }
-  if (plot.all & !plot.sample) {
+    plot.sci<-FALSE
+  } else { 
+    plot.sci<-(plot.all>=2) 
+    plot.all<-(plot.all==1) 
+  }
+  if ((plot.all | plot.sci) & !plot.sample) {
     param.warnings<-c(param.warnings,"PlotAll Parameter TRUE but PlotSample Parameter FALSE; Forcing PlotSample Parameter to TRUE")
     plot.sample<-TRUE
+  }
+  if (plot.sci & !filt.contam) {
+    param.warnings<-c(param.warnings,"PlotAll Parameter >=2 (meaning plot only science targets) but RemoveContam Parameter FALSE; Cannot only plot Science targets because we don't know what they are!")
+    plot.sci<-FALSE 
+    plot.all<-TRUE 
   }
   #}}}
 
@@ -2151,6 +2160,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("plot.device"       , plot.device       , envir = env) #
   assign("plot.sample"       , plot.sample       , envir = env) #
   assign("plot.all"          , plot.all          , envir = env) #
+  assign("plot.sci"          , plot.sci          , envir = env) #
   assign("psf.map"           , psf.map           , envir = env) #
   assign("psf.weighted"      , psf.weighted      , envir = env) #
   assign("psf.filt"          , psf.filt          , envir = env) #

@@ -1,7 +1,15 @@
 #
 #
 #
-plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,plot.all=FALSE,path=NULL,plot.device='X11',toFile=FALSE,cat.id=NULL,cat.x=NULL,cat.y=NULL,res=220,bin.lwd=1,est.lwd=1.5,all.est.lwd=1.5){
+plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp.lims=NULL,cutlo=0,cuthi=100,radweight=1,clipiters=5,PSFFWHMinPIX=0,hardlo=3,hardhi=10,sigma.cut=3,plot.sci=FALSE,contams=NULL,plot.all=FALSE,path=NULL,plot.device='X11',toFile=FALSE,cat.id=NULL,cat.x=NULL,cat.y=NULL,res=220,bin.lwd=1,est.lwd=1.5,all.est.lwd=1.5){
+  #Check input arguments plot.all, plot.sci, and contams
+  if (plot.sci && is.null(contams)) { 
+    warning("contams argument must be supplied with the plot.sci argument")
+    plot.sci=FALSE
+  }
+  if (plot.sci & plot.all) { 
+    warning("plot.sci argument trumps the plot.all argument. Only science targets will be plotted")
+  }
   #Check Data stamp Limits
   if (is.null(data.stamp.lims)){
     #Data stamps must be the same dimension as the image!
@@ -58,7 +66,9 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
   cuthivec<-round(cuthi)
   probcut<-1-pnorm(sigma.cut)
 
-  if(plot.all) {
+  if(plot.sci) {
+    rand<-which(contams==0)
+  } else if(plot.all) {
     rand<-1:length(x.pix)
   } else {
     rand<-sample(length(x.pix),min(10,length(x.pix)))

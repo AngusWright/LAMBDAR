@@ -19,9 +19,9 @@ mpi.opts = "")
 plot.sky.estimate(data.stamp, mask.stamp = NULL, rem.mask = FALSE,
 data.stamp.lims = NULL, cutlo = 0, cuthi = 100,
 radweight = 1, clipiters = 5, PSFFWHMinPIX = 0,
-hardlo = 3, hardhi = 10, sigma.cut = 3, plot.all =
-FALSE, path = NULL, toFile = FALSE, cat.id = NULL,
-cat.x = NULL, cat.y = NULL, res = 220, bin.lwd = 1,
+hardlo = 3, hardhi = 10, sigma.cut = 3, plot.sci =
+FALSE, contams = NULL, plot.all = FALSE, path = NULL, toFile = FALSE, 
+cat.id = NULL, cat.x = NULL, cat.y = NULL, res = 220, bin.lwd = 1,
 est.lwd = 1.5, all.est.lwd = 1.5)
 }
 %- maybe also `usage' for other objects documented here.
@@ -41,11 +41,11 @@ logical; should the maskim be used to remove known sources.
 numeric (i,4) array; The limits of the data stamps in the data image space.
 }
   \item{cutlo}{
-numeric (i) array; Vector of low radius values (in pixels) where the code will start to calculate the sky annuli around the object.
+numeric (i) vector; Vector of low radius values (in pixels) where the code will start to calculate the sky annuli around the object.
 Should be large enough to avoid significant object flux, i.e. a few times the flux 90 radius.
 }
   \item{cuthi}{
-numeric (i) array; Vector of low radius values (in pixels) where the code will stop calculating sky annuli around the object.
+numeric (i) vector; Vector of low radius values (in pixels) where the code will stop calculating sky annuli around the object.
 Should be large enough to avoid significant object flux, i.e. a few times the flux 90 radius.
 }
   \item{radweight}{
@@ -68,13 +68,19 @@ numeric; The lower limit for the outer sky annuli, where the limit used is hardh
 numeric; sigma-level used for iterative clipping of sky-pixels in estimation.
 }
   \item{cat.x}{
-numeric (i) array; Vector of x-pixel values for the sky locations of interest (typically these will be the positions of objects).
+numeric (i) vector; Vector of x-pixel values for the sky locations of interest (typically these will be the positions of objects).
 }
   \item{cat.y}{
-numeric (i) array; Vector of y-pixel values for the sky locations of interest (typically these will be the positions of objects).
+numeric (i) vector; Vector of y-pixel values for the sky locations of interest (typically these will be the positions of objects).
 }
   \item{mpi.opts}{
 list; options to be passed to the MPI foreach backend, if it is being used.
+}
+  \item{plot.sci}{
+logical; should all science targets be plotted?
+}
+  \item{contams}{
+logical (i) vector; are these sources contaminants (TRUE) or science targets (FALSE). Used by plot.sci. 
 }
   \item{plot.all}{
 logical; should all objects be plotted?

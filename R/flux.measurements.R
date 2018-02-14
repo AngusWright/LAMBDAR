@@ -1027,14 +1027,14 @@ function(env=NULL) {
                           data.stamp.lims=data.stamp.lims,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                           data.stamp=data.stamp,mask.stamp=mask.stamp,
-                          clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,
+                          clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.sci=plot.sci,contams=contams,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         } else {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
                           data.stamp.lims=data.stamp.lims,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                           data.stamp=image.env$im,mask.stamp=image.env$imm.dimim,
-                          clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.all=plot.all,
+                          clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.sci=plot.sci,contams=contams,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         }
       #Notify /*fold*/ {{{
@@ -1774,10 +1774,10 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Randoms Correction"); cat("Plotting Randoms Correction") }
       if (cutup) {
-        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
+        timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.sci=plot.sci,contams=contams,plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
       } else {
         timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],rand.x=cat.x,rand.y=cat.y,
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.randoms,rem.mask=FALSE,path=file.path(path.root,path.work,path.out),plot.sci=plot.sci,contams=contams,plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
       }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Randoms Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -1803,10 +1803,10 @@ function(env=NULL) {
     if (plot.sample) {
       if (!quiet) { message("Plotting Blanks Correction"); cat("Plotting Blanks Correction") }
     if (cutup) {
-      timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
+      timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=data.stamp,mask.stamp=mask.stamp,ap.stamp=sfa,ap.stamp.lims=ap.lims.data.stamp,data.stamp.lims=data.stamp.lims,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.sci=plot.sci,contams=contams,plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
     } else {
       timer<-system.time(plot.ran.cor(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,data.stamp=image.env$im[data.stamp.lims[1,1]:data.stamp.lims[1,2],data.stamp.lims[1,3]:data.stamp.lims[1,4]],
-                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
+                      mask.stamp=image.env$imm[mask.stamp.lims[1,1]:mask.stamp.lims[1,2],mask.stamp.lims[1,3]:mask.stamp.lims[1,4]],ap.stamp=sfa,ap.stamp.lims=ap.lims.data.map,data.stamp.lims=data.stamp.lims,mask.stamp.lims=ap.lims.mask.map,numIters=num.blanks,rem.mask=TRUE,path=file.path(path.root,path.work,path.out),plot.sci=plot.sci,contams=contams,plot.all=plot.all,toFile=TRUE,plot.device=plot.device))
     }
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
         message(paste('Plotting Blanks Correction - Done (',round(timer[3], digits=2),'sec )'))
@@ -2339,9 +2339,6 @@ function(env=NULL) {
   dfaflux<-sdfad
   # /*fend*/ }}}
 
-  #Get an estimate of the shot noise from the final flux /*fold*/ {{{
-  quick.shot<-sqrt(dfaflux)/image.env$gain
-  # /*fend*/ }}}
 
   #Point Source Flux error /*fold*/ {{{
   if (!no.psf) { 
@@ -2433,6 +2430,9 @@ function(env=NULL) {
   } else {
     mags<-array(NA, dim=c(length(dfaflux)))
   } # /*fend*/ }}}
+  #Get an estimate of the shot noise from the final flux /*fold*/ {{{
+  quick.shot<-sqrt(dfaflux)/image.env$gain
+  # /*fend*/ }}}
   #-----Diagnostic-----# /*fold*/ {{{
   if (diagnostic) {
     message(paste("After assignment",round(length(which(is.na(ssa    )))/length(ssa    )*100,digits=2),"% of the ssa matrix are NA"))
@@ -2463,7 +2463,18 @@ function(env=NULL) {
     # /*fend*/ }}}
     #Determine Sample to Plot /*fold*/ {{{
     if (!exists("plot.all")) { plot.all<-FALSE }
-    if (!plot.all) {
+    if (!exists("plot.sci")) { plot.sci<-FALSE }
+    if (plot.sci) {
+      #All Science targets /*fold*/ {{{
+      if (!quiet) { message("Writing All Science COGs to File"); cat("Writing All Science COGs to File") }
+      ind=which(contams==0)
+      # /*fend*/ }}}
+    } else if (plot.all) { 
+      #All /*fold*/ {{{
+      if (!quiet) { message("Writing All COGs to File"); cat("Writing All COGs to File") }
+      ind=c(which(cat.a>0),which(cat.a==0))
+      # /*fend*/ }}}
+    } else {
       if (!quiet) { message("Writing Sample of COGs to File"); cat("Writing Sample of COGs to File") }
       #Output a random 15 apertures to file /*fold*/ {{{
       ind1=which(cat.a>0 & sdfa!=0)
@@ -2473,11 +2484,6 @@ function(env=NULL) {
       rm(ind1)
       rm(ind2)
       ind<-ind[which(!is.na(ind))]
-      # /*fend*/ }}}
-    } else {
-      #All /*fold*/ {{{
-      if (!quiet) { message("Writing All COGs to File"); cat("Writing All COGs to File") }
-      ind=c(which(cat.a>0),which(cat.a==0))
       # /*fend*/ }}}
     }
     # /*fend*/ }}}

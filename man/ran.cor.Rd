@@ -17,9 +17,9 @@ sigclip=3,nclip=0,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,
 ran.main.mask.lim=0.99)
 plot.ran.cor(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,
 data.stamp.lims=NULL,mask.stamp.lims=NULL,toFile=FALSE,rem.mask=FALSE,
-numIters=1E2,path="./",plot.all=FALSE,sigclip=3,nclip=3,res=120,
-cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,
-ran.main.mask.lim=0.99)
+numIters=1E2,path="./",plot.sci=FALSE,contams=NULL,plot.all=FALSE,
+sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,
+rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99)
 }
 %- maybe also `usage' for other objects documented here.
 \arguments{
@@ -65,6 +65,12 @@ logical; output images as PNG?
 }
   \item{path}{
 character; path to use for output, if images are being written to file.
+}
+  \item{plot.sci}{
+logical; should all of the science objects be plotted?
+}
+  \item{contams}{
+logical [m] vector; the flag for sources that are contaminants (TRUE) or science targets (FALSE); used when plot.sci == TRUE?
 }
   \item{plot.all}{
 logical; should all objects be plotted?

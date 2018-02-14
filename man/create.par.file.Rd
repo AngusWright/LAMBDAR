@@ -113,7 +113,7 @@ the routine with no parameters specified.
  \item{Verbose}{ boolean 0/1; Verbose Output? [1/0] }
  \item{ShowTime}{ boolean 0/1; Display execution times & total elapsed time during run? [1/0] }
  \item{PlotSample}{ boolean 0/1; Plot a random sample of the Apertures to file, during various procedures, for Inspection? [1/0] }
- \item{PlotAll}{ boolean 0/1; Plot all of the Apertures to file, during various procedures, for Inspection? [1/0] }
+ \item{PlotAll}{ integer 0/1/2; Plot all of the Apertures to file, during various procedures, for Inspection? [1] Or if removing contaminants (RemoveContam parameter), just plot the non-contaminant sources? [2] }
  \item{Diagnostic}{ boolean 0/1; Diagnostic Output of Variable Values During Computation - Helpful in Understanding Code & debugging [1/0] }
  \item{Interactive}{ boolean 0/1; Interactive Mode - Allows user access to entire parameter-space after final calculations [1/0] }
  \item{Magnitudes}{ boolean 0/1; Output Flux magnitudes? [1/0] }
