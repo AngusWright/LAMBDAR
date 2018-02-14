@@ -41,17 +41,31 @@ function(outenv=parent.env(environment()), env=NULL){
 
   #Create Aperture Masks {{{
   message("Creating Aperture Masks")
-  s_mask<-foreach(slen=stamplen,axa=theta.offset,axr=axrat,maj=cat.a.pix,xdelt=(cat.x%%1),ydelt=(cat.y%%1), .export=c("resample.iterations","resample.upres"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
-      #Setup Grid for use in aperture generation {{{
-      grid<-expand.grid(seq((1.5),(slen+0.5), by=1),seq((1.5),(slen+0.5), by=1))
-      if (any(is.na(grid))){ stop(paste("NAs produced in Expand Grid. Stamplen=",slen)) }
-      #}}}
-      #For each stamp, place down the relevant aperture {{{
-      expanded<-generate.aperture(x=grid[,1],y=grid[,2],xstep=1,ystep=1,xcen=ceiling(slen/2)+0.5+xdelt,ycen=ceiling(slen/2)+0.5+ydelt,axang=axa,
-                          axrat=axr,majax=maj,resample.upres=resample.upres,resample.iterations=ifelse(maj==0,0,resample.iterations), peakscale=TRUE)
-      matrix(expanded[,3],ncol=slen,byrow=FALSE)
-      #}}}
-  }
+  if (!careful) { 
+    s_mask<-foreach(slen=stamplen,axa=theta.offset,axr=axrat,maj=cat.a.pix,stamplim.x=ap.lims.data.map[,1],stamplim.y=ap.lims.data.map[,3],cat.x=cat.x,cat.y=cat.y, .export=c("resample.iterations","resample.upres"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
+        #Setup Grid for use in aperture generation {{{
+        grid<-expand.grid(seq((1.5),(slen+0.5), by=1),seq((1.5),(slen+0.5), by=1))
+        if (any(is.na(grid))){ stop(paste("NAs produced in Expand Grid. Stamplen=",slen)) }
+        #}}}
+        #For each stamp, place down the relevant aperture {{{
+        expanded<-generate.aperture(x=grid[,1],y=grid[,2],xstep=1,ystep=1,xcen=cat.x-stamplim.x,ycen=cat.y-stamplim.y,axang=axa,
+                            axrat=axr,majax=maj,resample.upres=resample.upres,resample.iterations=ifelse(maj==0,0,resample.iterations), peakscale=TRUE)
+        matrix(expanded[,3],ncol=slen,byrow=FALSE)
+        #}}}
+    }
+  } else {
+    s_mask<-foreach(slen=stamplen,axa=theta.offset,axr=axrat,maj=cat.a.pix,xdelt=(cat.x%%1),ydelt=(cat.y%%1), .export=c("resample.iterations","resample.upres"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
+        #Setup Grid for use in aperture generation {{{
+        grid<-expand.grid(seq((1.5),(slen+0.5), by=1),seq((1.5),(slen+0.5), by=1))
+        if (any(is.na(grid))){ stop(paste("NAs produced in Expand Grid. Stamplen=",slen)) }
+        #}}}
+        #For each stamp, place down the relevant aperture {{{
+        expanded<-generate.aperture(x=grid[,1],y=grid[,2],xstep=1,ystep=1,xcen=ceiling(slen/2)+0.5+xdelt,ycen=ceiling(slen/2)+0.5+ydelt,axang=axa,
+                            axrat=axr,majax=maj,resample.upres=resample.upres,resample.iterations=ifelse(maj==0,0,resample.iterations), peakscale=TRUE)
+        matrix(expanded[,3],ncol=slen,byrow=FALSE)
+        #}}}
+    }
+  } 
   message("Aperture Creation Complete")
   #}}}
 

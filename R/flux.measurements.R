@@ -1974,38 +1974,65 @@ function(env=NULL) {
 #-----
   #Reinterpolate the PSF; psfi /*fold*/ {{{
   if (!no.psf) {
+    if (!careful) { 
+      if (verbose) { cat("      Reinterpolating the psf (per object)") }
+      psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, llim.x=ap.lims.data.map[,1],
+                    ulim.x=ap.lims.data.map[,2],llim.y=ap.lims.data.map[,3],ulim.y=ap.lims.data.map[,4],
+                    pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
+        #limits of stamp in segmentation image space 
+        x<-psf.cen[[pid]][1]
+        y<-psf.cen[[pid]][2]
+        lims<-zfloor(c(x,x,y,y)+c(-1,1,-1,1)*(c(xc-llim.x,ulim.x-xc,yc-llim.y,ulim.y-yc)))
+        lims[1]<-max(c(lims[1],1))
+        lims[3]<-max(c(lims[3],1))
+        lims[2]<-min(c(lims[2],length(psf[[pid]][,1])))
+        lims[4]<-min(c(lims[4],length(psf[[pid]][1,])))
+        psf.tmp<-psf[[pid]][lims[1]:lims[2],lims[3]:lims[4]]
+        #reinterpolate the PSF onto the new grid {{{
+        #Make grid for aperture at old centroid {{{
+        psf.obj<-list(x=(seq(lims[1],lims[2])-x),y=(seq(lims[3],lims[4])-y),z=psf.tmp)
+        #}}}
+        #Make expanded grid of new pixel centres {{{
+        expanded<-expand.grid(seq(llim.x,ulim.x)-xc,seq(llim.y,ulim.y)-yc)
+        #}}}
+        #Interpolate {{{
+        psf.sing=matrix(interp.2d(expanded[,1], expanded[,2], psf.obj)[,3], ncol=length(seq(llim.x,ulim.x)),nrow=length(seq(llim.y,ulim.y)))
+        psf.sing
+      }
+      if (verbose) { cat(" - Done\n") }
+    } else { 
     if (verbose) { cat("      Reinterpolating the psf (per object)") }
-    psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
-      #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-      centre<-psf.cen[[pid]]
-      delta<-floor(slen/2)*c(-1,+1)
-      lims<-rbind(centre[1]+delta,centre[2]+delta)
-      dx<-lims[1,1]-1
-      dy<-lims[2,1]-1
-      dx<-ifelse(dx>0,dx+1,dx)
-      dy<-ifelse(dy>0,dy+1,dy)
-      # /*fend*/ }}}
-      #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-      lenxpsf<-length(psf[[pid]][,1])
-      lenypsf<-length(psf[[pid]][1,])
-      lenx<-length(1:slen)
-      leny<-length(1:slen)
-      #Make grid for psf at old pixel centres /*fold*/ {{{
-      psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[[pid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
-      # /*fend*/ }}}
-      #Make expanded grid of new pixel centres /*fold*/ {{{
-      expanded<-expand.grid(seq(1,lenx),seq(1,leny))
-      xnew<-expanded[,1]-xc%%1
-      ynew<-expanded[,2]-yc%%1
-      # /*fend*/ }}}
-      #Interpolate /*fold*/ {{{
-      ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
-      # /*fend*/ }}}
-      # /*fend*/ }}}
-      ap
-    }
-    #}
-    if (verbose) { cat(" - Done\n") }
+      psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
+        #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
+        centre<-psf.cen[[pid]]
+        delta<-floor(slen/2)*c(-1,+1)
+        lims<-rbind(centre[1]+delta,centre[2]+delta)
+        dx<-lims[1,1]-1
+        dy<-lims[2,1]-1
+        dx<-ifelse(dx>0,dx+1,dx)
+        dy<-ifelse(dy>0,dy+1,dy)
+        # /*fend*/ }}}
+        #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
+        lenxpsf<-length(psf[[pid]][,1])
+        lenypsf<-length(psf[[pid]][1,])
+        lenx<-length(1:slen)
+        leny<-length(1:slen)
+        #Make grid for psf at old pixel centres /*fold*/ {{{
+        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[[pid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+        # /*fend*/ }}}
+        #Make expanded grid of new pixel centres /*fold*/ {{{
+        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
+        xnew<-expanded[,1]-xc%%1
+        ynew<-expanded[,2]-yc%%1
+        # /*fend*/ }}}
+        #Interpolate /*fold*/ {{{
+        ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
+        # /*fend*/ }}}
+        # /*fend*/ }}}
+        ap
+      }
+      if (verbose) { cat(" - Done\n") }
+    } 
   } else {
     psfi<-rep(NA, length(sfa))
   }

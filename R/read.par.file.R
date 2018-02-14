@@ -912,6 +912,29 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #Do we want to be careful with the sources near the image edges? {{{
+  ID="CarefulWithEdges"
+  ind<-which(params[ID,]!="")
+  careful<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(careful))) {
+    if ((length(ind)==1)) {
+      careful<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(careful)=='try-error') {
+        param.warnings<-c(param.warnings,"CarefulWithEdges table read failed; Using TRUE")
+        careful<-1
+      }
+      if (is.na(careful)) {
+        param.warnings<-c(param.warnings,"CarefulWithEdges not in Parameter File; Using TRUE")
+        careful<-1
+      }
+    } else {
+      param.warnings<-c(param.warnings,"CarefulWithEdges not in Parameter File; Using TRUE")
+      careful<-1
+    }
+  }
+  careful<-careful==1
+  #}}}
+
   #Angular Offset {{{
   #Is there an offset between the Input Catalogue angles and
   #N0E90 Angular Coordinates?
@@ -2092,6 +2115,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("aperture.type"     , aperture.type     , envir = env) #
   assign("beam.area.input.as"  , beam.area.input.as  , envir = env) # B
   assign("blank.cor"         , blank.cor         , envir = env) # B
+  assign("careful"          , careful          , envir = env) # C
   assign("conf"             , conf             , envir = env) # C
   assign("check.contam"      , check.contam      , envir = env) #
   assign("confidence"       , confidence       , envir = env) #

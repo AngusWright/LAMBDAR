@@ -68,33 +68,65 @@ function(outenv=parent.env(environment()), env=NULL){
             bad behaviour for sources with widths at the ~pixel scale. For the Affine
             Transform, make sure that the EBImage package has been installed (from Bioconductor; 
             see the INSTALL document in the package git).")
-    s_mask<-foreach(slen=floor(stamplen/2),seglen=ceiling(stamplen/pixrat/2),x=seg.x,y=seg.y,
-                    id=cat.id,xc=cat.x,yc=cat.y, 
-                    .export=c("segmentation","pixrat"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
-       #For each stamp, place down the relevant aperture {{{
-       lims<-c(x+c(-seglen,seglen),y+c(-seglen,seglen))
-       if (any(lims[1:2]>seg.astr$NAXIS[1]) | any(lims[3:4]>seg.astr$NAXIS[2]) | any(lims<1)) { 
-         return(matrix(0,ncol=slen*2+1,nrow=slen*2+1))
-       } else { 
+    if (careful) {
+      s_mask<-foreach(slen=zfloor(stamplen/2),seglen=ceiling(stamplen/pixrat/2),x=seg.x,y=seg.y,
+                      id=cat.id,xc=cat.x,yc=cat.y, 
+                      .export=c("segmentation","pixrat"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
+         #For each stamp, place down the relevant aperture {{{
+         lims<-c(x+c(-seglen,seglen),y+c(-seglen,seglen))
+         if (any(lims[1:2]>seg.astr$NAXIS[1]) | any(lims[3:4]>seg.astr$NAXIS[2]) | any(lims<1)) { 
+           return(matrix(0,ncol=slen*2+1,nrow=slen*2+1))
+         } else { 
+           seg.all<-segmentation[lims[1]:lims[2],lims[3]:lims[4]]
+           seg.all[which(seg.all!=id)]<-0
+           seg.all[which(seg.all==id)]<-1
+           #place the aperture down on the new grid {{{
+           #Make grid for aperture at old segmetation scale {{{
+           seg.obj<-list(x=xc+seq(-seglen,seglen)*pixrat,y=yc+seq(-seglen,seglen)*pixrat,z=seg.all)
+           #}}}
+           #Make expanded grid of new pixel centres {{{
+           expanded<-expand.grid(xc+seq(-slen,slen),yc+seq(-slen,slen))
+           #}}}
+           #Interpolate {{{
+           seg.sing=matrix(interp.2d(expanded[,1], expanded[,2], seg.obj)[,3], ncol=slen*2+1,nrow=slen*2+1)
+           seg.sing[slen+1,slen+1]<-1
+           return(seg.sing)
+           #}}}
+           #}}}
+         }
+         #}}}
+      }
+    } else { 
+      message(paste(seg.astr$NAXIS,collapse=' '))
+      s_mask<-foreach(llim.x=ap.lims.data.map[,1],ulim.x=ap.lims.data.map[,2],llim.y=ap.lims.data.map[,3],ulim.y=ap.lims.data.map[,4],x=seg.x,y=seg.y,
+                      id=cat.id,xc=cat.x,yc=cat.y, 
+                      .export=c("segmentation","pixrat"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
+         #For each stamp, place down the relevant aperture {{{
+         #limits of stamp in segmentation image space 
+         lims<-zfloor(c(x,x,y,y)+c(-1,1,-1,1)*(c(xc-llim.x,ulim.x-xc,yc-llim.y,ulim.y-yc)/pixrat))
+         lims[1]<-max(c(lims[1],1))
+         lims[3]<-max(c(lims[3],1))
+         lims[2]<-min(c(lims[2],length(segmentation[,1])))
+         lims[4]<-min(c(lims[4],length(segmentation[1,])))
          seg.all<-segmentation[lims[1]:lims[2],lims[3]:lims[4]]
          seg.all[which(seg.all!=id)]<-0
          seg.all[which(seg.all==id)]<-1
          #place the aperture down on the new grid {{{
          #Make grid for aperture at old segmetation scale {{{
-         seg.obj<-list(x=xc+seq(-seglen,seglen)*pixrat,y=yc+seq(-seglen,seglen)*pixrat,z=seg.all)
+         seg.obj<-list(x=(seq(lims[1],lims[2])-x)*pixrat,y=(seq(lims[3],lims[4])-y)*pixrat,z=seg.all)
          #}}}
          #Make expanded grid of new pixel centres {{{
-         expanded<-expand.grid(xc+seq(-slen,slen),yc+seq(-slen,slen))
+         expanded<-expand.grid(seq(llim.x,ulim.x)-xc,seq(llim.y,ulim.y)-yc)
          #}}}
          #Interpolate {{{
-         seg.sing=matrix(interp.2d(expanded[,1], expanded[,2], seg.obj)[,3], ncol=slen*2+1,nrow=slen*2+1)
-         seg.sing[slen+1,slen+1]<-1
+         seg.sing=matrix(interp.2d(expanded[,1], expanded[,2], seg.obj)[,3], ncol=length(seq(llim.x,ulim.x)),nrow=length(seq(llim.y,ulim.y)))
+         seg.sing[zfloor(xc-llim.x),zfloor(yc-llim.y)]<-1
          return(seg.sing)
          #}}}
          #}}}
-       }
-       #}}}
-    }
+         #}}}
+      }
+    } 
     #}}}
   #}
   message("Aperture Creation Complete")

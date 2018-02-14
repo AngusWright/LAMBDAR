@@ -47,6 +47,7 @@ create.par.file <-
     CropImRad=0.5,
     Confusion_units=0,
     nProcessors=1,
+    CarefulWithEdges=1,
     AngularOffset=0,
     MapUnitsPerBeam=0,
     ResampleAper=0,
@@ -222,6 +223,7 @@ NoContamImageFile      ",paste(NoContamImageFile          ,collapse=' '),"    #F
 #                #-------Computational Management-----------#
 MemorySafe             ",paste(as.numeric(MemorySafe)     ,collapse=' '),"    #Do we want to perform checks to ensure the program does not use more memory than is available? [1/0]
 nProcessors            ",paste(nProcessors                ,collapse=' '),"    #Number of Processors Available for Use in Computations
+CarefulWithEdges      ",paste(as.numeric(CarefulWithEdges),collapse=' '),"    #Do we want to be careful with sources at the edge of the image? Things too close to image edges are removed
 ApStampWidth           ",paste(ApStampWidth               ,collapse=' '),"    #Width of the Aperture stamps in multiples of aperture major axis; Can be changed with caution if memory issues arise.
 PSFConfidence          ",paste(PSFConfidence              ,collapse=' '),"    #PSF Confidence Value used in buffering the Aperture Stamp Widths; PSF integrated out to this width, and that radii is added."))
 #}}}

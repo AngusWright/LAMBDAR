@@ -32,9 +32,9 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
 
   #Remove things that are blended 
   if (exists('sdfa') & exists('ssfa')) { 
-    if (length(point.sources) > 0) { 
+    if (length(point.sources) > 1) { 
       #Use pixel-space nearest neighbours 
-      match<-nn2(data.frame(cat.x,cat.y)[which(blendfrac[point.sources]<=blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',
+      match<-nn2(data.frame(cat.x,cat.y)[point.sources,][which(blendfrac[point.sources]<=blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',
                  radius=20,k=min(10,length(which(blendfrac[point.sources]<=blend.tolerance))))
       #Order by the nearest non-self match (2nd nnd column)
       point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]

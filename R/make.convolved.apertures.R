@@ -338,6 +338,32 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
         #Remove any Negatives produced by convolution {{{
         ap[which((-log10(abs(ap)))>=(-log10(abs(min(ap)))))]<-0
         #}}}
+        #If not being careful with the edges, then we need to remove any looped pixels {{{
+        if (!careful) { 
+          #Get the original maxima 
+          max<-colMeans(rbind(which(samask==max(samask),arr.ind=TRUE)))
+          #Define the caution zone as within 5 FWHM of the stamp edge
+          #Or one 5th of the stamp size
+          caution.length<-min(psffwhm[[pid]]*5,dim(ap)[1]/5)
+          #Get the +ve pixels
+          pos.pix<-which(ap!=0,arr.ind=TRUE)
+          #Where is the max?
+          if (max[1] < caution.length) { 
+            #Left: Remove any +ve pixels on the right extreme
+            ap[pos.pix[which(pos.pix[,1] >= dim(ap)[1]-caution.length),]]<-0
+          } else if (max[1] > dim(ap)[1]-caution.length) { 
+            #Right: Remove any +ve pixels on the left extreme
+            ap[pos.pix[which(pos.pix[,1] <= caution.length),]]<-0
+          }
+          if (max[2] < caution.length) { 
+            #Bottom: Remove any +ve pixels on the upper extreme
+            ap[pos.pix[which(pos.pix[,2] >= dim(ap)[2]-caution.length),]]<-0
+          } else if (max[2] > dim(ap)[2]-caution.length) { 
+            #Upper: Remove any +ve pixels on the bottom extreme
+            ap[pos.pix[which(pos.pix[,2] <= caution.length),]]<-0
+          }
+        }
+        #}}}
         #Check for Errors {{{
         if (length(which(ap <0))>0) {
           #If Negatives produced, Error  {{{

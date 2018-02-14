@@ -100,6 +100,67 @@ function(outenv=parent.env(environment()), env=NULL){
   inside.mask<-!((ap.lims.data.stamp[,1]<1)|(ap.lims.data.stamp[,2]>length(image.env$im[,1]))|(ap.lims.data.stamp[,3]<1)|(ap.lims.data.stamp[,4]>length(image.env$im[1,])))
   #}}}
 
+  #If not being careful {{{
+  if (!exists("careful")) { careful<-TRUE }
+  if (any(!inside.mask)& !careful) { 
+    message(paste("There are originally ",length(which(!inside.mask)),"sources to remove because we would have been careful"))
+    #Trim down the offending aperture stamps
+    ap.lims.data.stamp[,1]<-rowMaxs(cbind(ap.lims.data.stamp[,1],rep(1,cat.len)))
+    ap.lims.data.stamp[,3]<-rowMaxs(cbind(ap.lims.data.stamp[,3],rep(1,cat.len)))
+    ap.lims.data.stamp[,2]<-rowMins(cbind(ap.lims.data.stamp[,2],rep(length(image.env$im[,1]),cat.len)))
+    ap.lims.data.stamp[,4]<-rowMins(cbind(ap.lims.data.stamp[,4],rep(length(image.env$im[1,]),cat.len)))
+    #Update the stamp lengths
+    stamplen[which(!inside.mask)]<-(ap.lims.data.stamp[which(!inside.mask),2]-ap.lims.data.stamp[which(!inside.mask),1])+1
+    check.stamplen<-(ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])+1
+    #Check that the stamps are square 
+    if (any(stamplen != check.stamplen)) { 
+      for (i in which(stamplen != check.stamplen)) { 
+        if (stamplen[i]<check.stamplen[i]) {
+          #push out the x-axis length
+          if (ap.lims.data.stamp[i,1]==1) { 
+            ap.lims.data.stamp[i,2]<-ap.lims.data.stamp[i,1]+check.stamplen[i]-1
+          } else if (ap.lims.data.stamp[i,2]==length(image.env$im[,1])) { 
+            ap.lims.data.stamp[i,1]<-ap.lims.data.stamp[i,2]-check.stamplen[i]+1
+          }
+        } else {
+          #push out the y-axis length
+          if (ap.lims.data.stamp[i,3]==1) { 
+            ap.lims.data.stamp[i,4]<-ap.lims.data.stamp[i,3]+stamplen[i]-1
+          } else if (ap.lims.data.stamp[i,4]==length(image.env$im[1,])) { 
+            ap.lims.data.stamp[i,3]<-ap.lims.data.stamp[i,4]-stamplen[i]+1
+          } 
+        }
+      }
+    } 
+    #Update the stamp lengths
+    stamplen[which(!inside.mask)]<-(ap.lims.data.stamp[which(!inside.mask),2]-ap.lims.data.stamp[which(!inside.mask),1])+1
+    check.stamplen<-(ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])+1
+    #Check that the stamps are odd  
+    if (any(stamplen%%2 == 0)) { 
+      for (i in which(stamplen%%2 == 0)) { 
+        #push out the x-axis length
+        if (ap.lims.data.stamp[i,1]==1) { 
+          ap.lims.data.stamp[i,2]<-ap.lims.data.stamp[i,2]+1
+        } else if (ap.lims.data.stamp[i,2]==length(image.env$im[,1])) { 
+          ap.lims.data.stamp[i,1]<-ap.lims.data.stamp[i,1]-1
+        }
+        #push out the y-axis length
+        if (ap.lims.data.stamp[i,3]==1) { 
+          ap.lims.data.stamp[i,4]<-ap.lims.data.stamp[i,4]+1
+        } else if (ap.lims.data.stamp[i,4]==length(image.env$im[1,])) { 
+          ap.lims.data.stamp[i,3]<-ap.lims.data.stamp[i,3]-1
+        } 
+      }
+    } 
+    stamplen[which(!inside.mask)]<-floor((ap.lims.data.stamp[which(!inside.mask),2]-ap.lims.data.stamp[which(!inside.mask),1])/2)*2+1
+    check.stamplen<-floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2)*2+1
+    #recalculate the inside.mask values
+    inside.mask<-!((ap.lims.data.stamp[,1]<1)|(ap.lims.data.stamp[,2]>length(image.env$im[,1]))|(ap.lims.data.stamp[,3]<1)|(ap.lims.data.stamp[,4]>length(image.env$im[1,])))
+    message(paste("There are now ",length(which(!inside.mask)),"sources to remove after not being careful"))
+
+  } 
+  #}}}
+
   #Remove any apertures whos stamps would cross the boundary {{{
   if (length(which(inside.mask==TRUE))==0) { 
     #sink(type="message") ; stop("No Single Aperture Stamps are entirely inside the image.") }
@@ -296,13 +357,15 @@ function(outenv=parent.env(environment()), env=NULL){
     mpi.opts<-list(chunkSize=chunk.size)
     #}}}
     
-    #Mask the area where apertures cannot be placed {{{
-    minlen<-ceiling(min(stamplen)/2)
-    image.env$imm[1:minlen,]<-0
-    image.env$imm[,1:minlen]<-0
-    image.env$imm[dim(image.env$imm)[1]-(1:minlen-1),]<-0
-    image.env$imm[,dim(image.env$imm)[2]-(1:minlen-1)]<-0
-    #}}}
+    if (careful) { 
+      #Mask the area where apertures cannot be placed {{{
+      minlen<-ceiling(min(stamplen)/2)
+      image.env$imm[1:minlen,]<-0
+      image.env$imm[,1:minlen]<-0
+      image.env$imm[dim(image.env$imm)[1]-(1:minlen-1),]<-0
+      image.env$imm[,dim(image.env$imm)[2]-(1:minlen-1)]<-0
+      #}}}
+    }
 
     #Create Mask Stamps {{{
     message('Creating Mask Stamps')
@@ -327,12 +390,15 @@ function(outenv=parent.env(environment()), env=NULL){
     #Update mask for the invalid area around the image (where aps cannot be placed)
     #Initialise mask as transparant everywhere
     image.env$imm<-array(1,dim=dim(image.env$im))
-    #Mask the area where apertures cannot be placed 
-    minlen<-ceiling(min(stamplen)/2)
-    image.env$imm[1:minlen,]<-0
-    image.env$imm[,1:minlen]<-0
-    image.env$imm[dim(image.env$imm)[1]-(1:minlen-1),]<-0
-    image.env$imm[,dim(image.env$imm)[2]-(1:minlen-1)]<-0
+    if (careful) { 
+      #Mask the area where apertures cannot be placed {{{
+      minlen<-ceiling(min(stamplen)/2)
+      image.env$imm[1:minlen,]<-0
+      image.env$imm[,1:minlen]<-0
+      image.env$imm[dim(image.env$imm)[1]-(1:minlen-1),]<-0
+      image.env$imm[,dim(image.env$imm)[2]-(1:minlen-1)]<-0
+      #}}}
+    }
     #If needed, now cutup the mask
     if (cutup) { 
       mask.stamp<-list(NULL)
