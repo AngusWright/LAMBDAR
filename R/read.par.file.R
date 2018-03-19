@@ -108,6 +108,29 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #Do we want to check the accuracy of the input PSF {{{
+  ID="PSFCheck"
+  ind<-which(params[ID,]!="")
+  psf.check<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(psf.check))) {
+    if ((length(ind)==1)) {
+      psf.check<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+      if (class(psf.check)=="try-error") {
+        param.warnings<-c(param.warnings,"PSFCheck Parameter table read failed; Using 0 (FALSE)")
+        psf.check<-0
+      }
+      if (is.na(psf.check)) {
+        param.warnings<-c(param.warnings,"PSFCheck Parameter not in Parameter File; Using 0 (FALSE)")
+        psf.check<-0
+      }
+    } else {
+      param.warnings<-c(param.warnings,"PSFCheck Parameter not in Parameter File; Using 0 (FALSE)")
+      psf.check<-0
+    }
+  }
+  psf.check<-psf.check==1
+  #}}}
+
   #Do we want to Convolve the apertures with a PSF {{{
   ID="PSFConvolve"
   ind<-which(params[ID,]!="")
@@ -205,7 +228,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if (length(gauss.fwhm.arcsec)!=length(psf.map) & length(psf.map) != 1) {
       gauss.fwhm.arcsec<-rep(gauss.fwhm.arcsec[1], length(psf.map))
     } else if (length(gauss.fwhm.arcsec)!=length(psf.map) & length(psf.map) != 1) {
-      psf.map<-rep(psf.map,length(gauss.fwhm.arcsec)) 
+      psf.map<-rep(psf.map,length(gauss.fwhm.arcsec))
     }#}}}
 
     #Make sure files with PSF maps have Gauss FWHM vals set to 0 {{{
@@ -384,7 +407,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #Determine if provided catalogue is a file or filelist {{{
   if ((length(catalogue)==1)&(!grepl(".csv",catalogue,ignore.case=TRUE))&(!grepl(".Rdata",catalogue,ignore.case=TRUE))&(!grepl(".fits", catalogue,ignore.case=TRUE))) {
-    if (!grepl(".dat",catalogue,ignore.case=TRUE)) { 
+    if (!grepl(".dat",catalogue,ignore.case=TRUE)) {
       #One file provided without relevant extension - must be filelist
       catalogue<-try(c(t(read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
       if (class(catalogue)=="try-error") {
@@ -394,7 +417,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       if (is.na(catalogue)) {
         stop("Catalogue Filelist read failed")
       }
-    } else { 
+    } else {
       #One file provided with ambiguous extension - check if it is a filelist
       tmp.catalogue<-try(((read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
       if (class(tmp.catalogue)=="try-error") {
@@ -404,8 +427,8 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       if (is.na(tmp.catalogue)) {
         stop("Catalogue Filelist read failed")
       }
-      if (length(tmp.catalogue)==1) { 
-        #The file has only one column, so must be a filelist 
+      if (length(tmp.catalogue)==1) {
+        #The file has only one column, so must be a filelist
         catalogue<-c(t(tmp.catalogue))
       }
     }
@@ -1384,9 +1407,9 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     param.warnings<-c(param.warnings,"PlotAll Parameter not in Parameter File; Using 0 (FALSE)")
     plot.all<-FALSE
     plot.sci<-FALSE
-  } else { 
-    plot.sci<-(plot.all>=2) 
-    plot.all<-(plot.all==1) 
+  } else {
+    plot.sci<-(plot.all>=2)
+    plot.all<-(plot.all==1)
   }
   if ((plot.all | plot.sci) & !plot.sample) {
     param.warnings<-c(param.warnings,"PlotAll Parameter TRUE but PlotSample Parameter FALSE; Forcing PlotSample Parameter to TRUE")
@@ -1394,8 +1417,8 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   if (plot.sci & !filt.contam) {
     param.warnings<-c(param.warnings,"PlotAll Parameter >=2 (meaning plot only science targets) but RemoveContam Parameter FALSE; Cannot only plot Science targets because we don't know what they are!")
-    plot.sci<-FALSE 
-    plot.all<-TRUE 
+    plot.sci<-FALSE
+    plot.all<-TRUE
   }
   #}}}
 
@@ -1406,17 +1429,17 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(plot.device)) {
     param.warnings<-c(param.warnings,"PlotDevice Parameter not in Parameter File; Using 'png'")
     plot.device<-"png"
-  } 
+  }
   if (grepl('png',plot.device,ignore.case=TRUE,fixed=TRUE)) {
     plot.device<-'png'
-  } else if (grepl('pdf',plot.device,ignore.case=TRUE,fixed=TRUE)) { 
+  } else if (grepl('pdf',plot.device,ignore.case=TRUE,fixed=TRUE)) {
     plot.device<-'pdf'
   } else if (grepl('x11',plot.device,ignore.case=TRUE,fixed=TRUE)) {
     plot.device<-'X11'
-  } else { 
+  } else {
     param.warnings<-c(param.warnings,"PlotDevice Parameter not a known value (png/pdf/x11)! Using 'png'")
     plot.device<-'png'
-  } 
+  }
   #}}}
 
   #Make magnitudes in Output? {{{
@@ -2185,6 +2208,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("plot.sample"       , plot.sample       , envir = env) #
   assign("plot.all"          , plot.all          , envir = env) #
   assign("plot.sci"          , plot.sci          , envir = env) #
+  assign("psf.check"         , psf.check         , envir = env) #
   assign("psf.map"           , psf.map           , envir = env) #
   assign("psf.weighted"      , psf.weighted      , envir = env) #
   assign("psf.filt"          , psf.filt          , envir = env) #
