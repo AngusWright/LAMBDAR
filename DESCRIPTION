@@ -1,7 +1,7 @@
 Package: LAMBDAR
 Type: Package
 Title: Measure galaxy fluxes from an arbitrary FITS image using input aperture locations and dimensions
-Version: 0.20.0
+Version: 0.20.1
 Date: 2017-10-24
 Author: Angus H. Wright
 Maintainer: Angus H. Wright <awright@astro.uni-bonn.de>
