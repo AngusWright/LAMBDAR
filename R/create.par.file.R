@@ -8,6 +8,7 @@ create.par.file <-
     DataMap="image.fits",
     BeamArea_SqAS=0,
     PSFConvolve=0,
+    PSFCheck=0,
     PSFWeighted=1,
     PSFMap='NONE',
     Gauss_FWHM_AS=0,
