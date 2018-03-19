@@ -2458,7 +2458,11 @@ function(env=NULL) {
     mags<-array(NA, dim=c(length(dfaflux)))
   } # /*fend*/ }}}
   #Get an estimate of the shot noise from the final flux /*fold*/ {{{
-  quick.shot<-sqrt(dfaflux)/image.env$gain
+  if (!is.null(image.env$gain) && !is.na(as.numeric(image.env$gain))) { 
+    quick.shot<-sqrt(dfaflux)/as.numeric(image.env$gain)
+  } else { 
+    quick.shot<-rep(NA,length(dfaflux))
+  } 
   # /*fend*/ }}}
   #-----Diagnostic-----# /*fold*/ {{{
   if (diagnostic) {
