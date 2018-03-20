@@ -2648,6 +2648,7 @@ function(env=NULL) {
       ssfae2<-ssfae2[which(contams==0)]
       sdfae2<-sdfae2[which(contams==0)]
     }
+    if (exists("groups")) { groups<-groups[which(contams==0)] }
     if (exists("psf.id")) { psf.id<-psf.id[which(contams==0)] }
     if (exists("epsf.id")) { epsf.id<-epsf.id[which(contams==0)] }
     contams <-contams[which(contams==0)]
