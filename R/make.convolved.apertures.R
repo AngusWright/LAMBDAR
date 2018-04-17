@@ -81,7 +81,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       #Bad values. Things with bad flux.weights will be removed in calcs{{{
       warning("Supplied Fluxweight has values that are not finite (NA/NaN/Inf). These objects will not be fit")
       ind<-which(!is.finite(flux.weight))
-      flux.weight[ind]<-NA
+      flux.weight[ind]<-0
       #}}}
     }#}}}
     #Check Minima {{{
@@ -89,7 +89,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       #Bad minima. Things less than 0 will be removed in calcs{{{
       warning("Supplied Fluxweight has values less than or equal to 0. These objects will not be fit")
       ind<-which(flux.weight<=0)
-      flux.weight[ind]<-NA
+      flux.weight[ind]<-0
       #}}}
     }#}}}
     #Adjust Fluxweights by aperture integral
@@ -105,7 +105,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       flux.weight<-rep(0,length(subs))
     } else if (length(which(flux.weight>0))<2) {
       message("WARNING: only one flux.weight is > 0! Flux weighting has removed all other objects from the image.")
-      flux.weight[which(flux.weight<=0)]<-NA
+      flux.weight[which(flux.weight<=0)]<-0
       flux.weight<-magmap(flux.weight,lo=0,hi=max(flux.weight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
     } else {
       #Map Fluxweights onto [0,1] {{{
@@ -123,7 +123,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       #Bad values. Things with bad flux.weights will be removed in calcs{{{
       warning("Supplied Fluxweight has values that are not finite (NA/NaN/Inf). These objects will not be fit")
       ind<-which(!is.finite(flux.weight))
-      flux.weight[ind]<-NA
+      flux.weight[ind]<-0
       #}}}
     }#}}}
     #Check Minima {{{
@@ -131,7 +131,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       #Bad minima. Things less than 0 will be removed in calcs{{{
       warning("Supplied Fluxweight has values less than or equal to 0. These objects will not be fit")
       ind<-which(flux.weight<=0)
-      flux.weight[ind]<-NA
+      flux.weight[ind]<-0
       #}}}
     }#}}}
     #Adjust Fluxweights by aperture integral
@@ -147,7 +147,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
       flux.weight<-rep(0,length(subs))
     } else if (length(which(flux.weight>0))<2) {
       message("WARNING: only one flux.weight is > 0! Flux weighting has removed all other objects from the image.")
-      flux.weight[which(flux.weight<=0)]<-NA
+      flux.weight[which(flux.weight<=0)]<-0
       flux.weight<-magmap(flux.weight,lo=0,hi=max(flux.weight,na.rm=TRUE),bad=0,range=c(0,1),stretch='lin',stretchscale=1, type="num")$map
     } else {
       #Map Fluxweights onto [0,1] {{{
@@ -201,7 +201,7 @@ function(outenv=parent.env(environment()), sa_mask,flux.weightin=NULL, immask=NU
   #}}}
 
   #Perform calculations {{{
-  if ((length(which(flux.weight != 1)) != 0)&(!psf.filt)) {
+  if ((length(which(flux.weight != 1)) != 0)&(!psf.filt) | (length(flux.weight)==1 & (!psf.filt))) {
     #No Convolution, need Fluxweighting {{{
     #Details {{{
     #If we are not filtering apertures with PSFs, and the flux.weights
