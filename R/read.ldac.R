@@ -3,7 +3,7 @@
 #
 
 read.ldac<-function(file,ldactoasc=system('which ldactoasc',intern=T),table='OBJECTS',
-                    options='-s',outfile=paste0(file,'_ldac.csv'),
+                    options='',outfile=paste0(file,'_ldac.csv'),
                     headcat=paste0(file,'_head.csv'),bodycat=paste0(file,'_body.csv'),
                     force=TRUE,clean=TRUE,diagnostic=FALSE,...) { 
   require(data.table)
@@ -16,23 +16,29 @@ read.ldac<-function(file,ldactoasc=system('which ldactoasc',intern=T),table='OBJ
     if (diagnostic) { cat(paste(ldactoasc,'-i',file,' -t',table,options,'>',outfile,ifelse(diagnostic,"",'2> /dev/null'),'\n\n')) }
     system(paste(ldactoasc,'-i',file,' -t',table,options,'>',outfile,ifelse(diagnostic,"",'2> /dev/null')))
   }
-  #Convert to CSV 
-  ##Read the data
-  if (!file.exists(bodycat) | force) {
-    if (diagnostic) { cat("Getting main body of data:\n") }
-    system(paste0("grep -v \"^#\" ",outfile," | sed 's/^ //g' | sed 's/^ //g' | sed 's/ /,/g' > ",bodycat))
+  if (!file.exists(headcat) | force) {
+    if (diagnostic) { cat("Reading the header:\n") }
+    system(paste("grep \"^#\"",outfile,"| awk '{print $2,$3}' > ",headcat))
   }
-  cat<-try(fread(bodycat,header=FALSE,sep=',',...))
+  ##Read the data
+  #If the catalogue contains strings, use csv. Otherwise, use ascii
+  if (grepl("-s",options)) { 
+    if (!file.exists(bodycat) | force) {
+      if (diagnostic) { cat("Getting main body of data:\n") }
+      #Convert to CSV 
+      system(paste0("grep -v \"^#\" ",outfile," | sed 's/ /,/g' > ",bodycat))
+    }
+    cat<-try(fread(bodycat,header=FALSE,sep=',',...))
+  } else { 
+    system(paste0("grep -v \"^#\" ",outfile," > ",bodycat))
+    cat<-try(fread(bodycat,header=FALSE,...))
+  }
   if (class(cat)=='try-error') { 
     system(paste0("grep -v \"^#\" ",outfile," > ",bodycat))
     cat<-fread(bodycat,header=FALSE,...)
   }
   if (diagnostic) { cat(paste("Data has dimensions: ",paste(collapse=':',dim(cat)),"\n")) }
   ##Read the header 
-  if (!file.exists(headcat) | force) {
-    if (diagnostic) { cat("Reading the header:\n") }
-    system(paste("grep \"^#\"",outfile,"| awk '{print $2,$3}' > ",headcat))
-  }
   head<-fread(headcat,header=FALSE,...)
   if (diagnostic) { cat(paste("Header has length: ",length(head$V2),"\n")) }
   if (length(head$V2)!=length(cat)) {
