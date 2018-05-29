@@ -20,12 +20,14 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   csv=FALSE
   ascii=FALSE
   fits=FALSE
+  ldac=FALSE
   rdat=FALSE
   if (grepl(".csv", catalogue,ignore.case=TRUE)) { csv=TRUE }
   else if (grepl(".dat", catalogue,ignore.case=TRUE)) { ascii=TRUE }
   else if (grepl(".fits", catalogue,ignore.case=TRUE)) { fits=TRUE }
+  else if (grepl(".cat", catalogue,ignore.case=TRUE)) { ldac=TRUE }
   else if (grepl(".Rdata", catalogue,ignore.case=TRUE)) { rdat=TRUE }
-  else { stop("Catalogue does not have a recognised extension (.csv/.dat/.fits/.Rdata)") }
+  else { stop("Catalogue does not have a recognised extension (.csv/.dat/.fits/.cat/.Rdata)") }
   #}}}
   #Open Catalogue {{{
   if (csv | ascii) {
@@ -49,6 +51,14 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
     }
   } else if (fits) {
     fitstable<-try(read.fits.cat(paste(path.root,path.work,catalogue,sep=""),data.table=FALSE,stringsAsFactors=FALSE),silent=TRUE)
+    if (class(fitstable)=="try-error") {
+      #Stop on Error
+      geterrmessage()
+      sink(type="message")
+      stop("Catalogue File read failed")
+    }
+  } else if (ldac) {
+    fitstable<-try(read.ldac(paste(path.root,path.work,catalogue,sep=""),data.table=FALSE,stringsAsFactors=FALSE),silent=TRUE)
     if (class(fitstable)=="try-error") {
       #Stop on Error
       geterrmessage()

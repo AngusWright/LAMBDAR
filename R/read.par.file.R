@@ -406,7 +406,8 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     stop("Catalogue Parameter not in Parameter File")
   }
   #Determine if provided catalogue is a file or filelist {{{
-  if ((length(catalogue)==1)&(!grepl(".csv",catalogue,ignore.case=TRUE))&(!grepl(".Rdata",catalogue,ignore.case=TRUE))&(!grepl(".fits", catalogue,ignore.case=TRUE))) {
+  if ((length(catalogue)==1)&(!grepl(".csv",catalogue,ignore.case=TRUE))&(!grepl(".Rdata",catalogue,ignore.case=TRUE))&
+      (!grepl(".fits", catalogue,ignore.case=TRUE)&(!grepl(".cat", catalogue,ignore.case=TRUE)))) {
     if (!grepl(".dat",catalogue,ignore.case=TRUE)) {
       #One file provided without relevant extension - must be filelist
       catalogue<-try(c(t(read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
