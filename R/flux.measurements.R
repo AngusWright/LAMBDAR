@@ -1357,6 +1357,7 @@ function(env=NULL) {
       #Check we have something to do! /*fold*/ {{{
       if (length(xind)==0) {
         if (verbose) { cat(" - Breaking out; no objects remaining overlap, so no point iterating!\n") }
+        message("Breaking out of Iteration; no objects remaining overlap, so no point iterating!\n")
         break
       }
       #/*fend*/ }}}
