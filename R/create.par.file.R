@@ -101,6 +101,7 @@ create.par.file <-
     nIterations=2,
     FluxWgtType='scale',
     UsePixelFluxWgts=0,
+    LDACBinary='ldactoasc',
     LogFile='LAMBDAR_Log.txt') {
 
 #Sink Output to File {{{
@@ -227,7 +228,8 @@ MemorySafe             ",paste(as.numeric(MemorySafe)     ,collapse=' '),"    #D
 nProcessors            ",paste(nProcessors                ,collapse=' '),"    #Number of Processors Available for Use in Computations
 CarefulWithEdges      ",paste(as.numeric(CarefulWithEdges),collapse=' '),"    #Do we want to be careful with sources at the edge of the image? Things too close to image edges are removed
 ApStampWidth           ",paste(ApStampWidth               ,collapse=' '),"    #Width of the Aperture stamps in multiples of aperture major axis; Can be changed with caution if memory issues arise.
-PSFConfidence          ",paste(PSFConfidence              ,collapse=' '),"    #PSF Confidence Value used in buffering the Aperture Stamp Widths; PSF integrated out to this width, and that radii is added."))
+PSFConfidence          ",paste(PSFConfidence              ,collapse=' '),"    #PSF Confidence Value used in buffering the Aperture Stamp Widths; PSF integrated out to this width, and that radii is added.
+LDACBinary             ",paste(LDACBinary                 ,collapse=' '),"    #If using LDAC catalogue format, specify here the absolute path to the LDAC-to-ASCII conversion binary."))
 #}}}
 #Close Sink and return NULL {{{
 sink()

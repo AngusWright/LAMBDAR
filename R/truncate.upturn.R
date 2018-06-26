@@ -24,7 +24,7 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flex
     magplot(cog$avg$x,cog$avg$concav,type='s',xlab='radius (pix)',ylab='Second Derivative') 
   } 
   #Calculate upturn point
-  upturn.i=which(abs(cog$avg$concav) <= diff(range(cog$avg$concav))*tolerance)
+  upturn.i=which(abs(cog$avg$concav) <= diff(range(cog$avg$concav))*tolerance & cog$avg$concav < c(cog$avg$concav[-1],0))
   upturn=cog$avg$x[upturn.i]
   if (length(upturn)==0) { 
     warning("No upturn found!\n") 

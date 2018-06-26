@@ -537,15 +537,16 @@ function(env=NULL) {
   if (use.pixel.fluxweight) {
     #Image Flux at central pixel /*fold*/ {{{
     cat("Determine Image Flux at central pixel ")
-    if (cutup) {
-      pixflux<-foreach(xp=x.pix-(data.stamp.lims[,1]-1),yp=y.pix-(data.stamp.lims[,3]-1), im=data.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-            im[xp,yp]
-      }
-    } else {
-      pixflux<-foreach(xp=x.pix,yp=y.pix, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export=c('image.env')) %dopar% {
-            image.env$im[xp,yp]
-      }
-    }
+    #if (cutup) {
+    #  pixflux<-foreach(xp=x.pix-(data.stamp.lims[,1]-1),yp=y.pix-(data.stamp.lims[,3]-1), im=data.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+    #        im[xp,yp]
+    #  }
+    #} else {
+    #  pixflux<-foreach(xp=x.pix,yp=y.pix, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export=c('image.env')) %dopar% {
+    #        image.env$im[xp,yp]
+    #  }
+    #}
+    pixflux<-image.env$im[cbind(x.pix,y.pix)]
     if (verbose) { cat(" - Done\n") }
     # /*fend*/ }}}
     #Determine Noise Characteristics /*fold*/ {{{

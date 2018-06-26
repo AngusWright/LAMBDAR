@@ -2111,6 +2111,14 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #What is the title of the Catalogue's RA Column? {{{
+  ID="LDACBinary"
+  ldac.exec<-params[ID,1]
+  if (is.na(ldac.exec)) {
+    param.warnings<-c(param.warnings,"LDACBinary Parameter not in Parameter File. Needed for LDAC catalogue reading; Using 'ldactoasc'")
+    ldac.exec<-"ldactoasc"
+  }#}}}
+
   #Name of Logfile to be output {{{
   ID="LogFile"
   logfile<-params[ID,1]
@@ -2184,7 +2192,8 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("error.fits.output.filename"   , error.fits.output.filename   , envir = env) #
   assign("data.fits.output.filename"    , data.fits.output.filename    , envir = env) #
   assign("Jybm"             , Jybm             , envir = env) # J
-  assign("logfile"          , logfile          , envir = env) # KL
+  assign("ldac.exec"        , ldac.exec        , envir = env) # KL
+  assign("logfile"          , logfile          , envir = env) # 
   assign("make.resid.map"     , make.resid.map     , envir = env) # M
   assign("make.debelended.apertures.map"      , make.debelended.apertures.map      , envir = env) #
   assign("magnitudes"       , magnitudes       , envir = env) #
