@@ -91,6 +91,7 @@ if ((weight.map!="NONE")&(mask.map=="NONE"|error.map=="NONE")) {
   #Read Weightmap {{{
   hdr=imwt_fits$hdr[[1]][which(imwt_fits$hdr[[1]][,"key"]!="COMMENT"),]
   imwt<-imwt_fits$dat[[1]]
+  imwt[which(!is.finite(imwt))]<-wgt.zp
   if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
   timer<-proc.time()
   } else if (!quiet) { cat(" - Done\n") }
@@ -103,9 +104,16 @@ if (mask.map=='NONE') {
   if (weight.map=='NONE') {
     #No Weight map for mask generation; Generate transparent mask {{{
     if (!quiet) { cat(paste("   Generating Mask Map ")) }
-    #If no mask, set mask to 1: transparent will be used everywhere
-    imm<-1
-    mask.hdr<-NULL
+    if (any(!is.finite(im))) { 
+      #If no mask and no bad pixels, set mask to 1: transparent will be used everywhere
+      imm<-1
+      mask.hdr<-NULL
+    } else { 
+      #If no mask and some bad pixels, set mask to 1 where there is good data
+      imm<-array(1, dim=dim(im))
+      imm[which(!is.finite(im))]<-0
+      mask.hdr<-data.hdr
+    } 
     #}}}
   } else {
     #Generate Mask {{{
