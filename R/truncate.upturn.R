@@ -5,11 +5,15 @@
 #
 #
 
-truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=3,flexible=TRUE,cutdown=FALSE,plot=FALSE) { 
+truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=1.5*get.fwhm(psf),flexible=TRUE,cutdown=FALSE,plot=FALSE) { 
 
   #if no centre specified, use the maxima
   if (missing(centre)) { 
     centre<-which(psf==max(psf,na.rm=TRUE),arr.ind=TRUE)
+  }
+  if (is.na(min.rad)) { 
+    warning('minimum radius for truncation is NA; setting to 9 pixels instead')
+    min.rad=9
   }
   #Produce CoG 
   orig.centre<-centre
