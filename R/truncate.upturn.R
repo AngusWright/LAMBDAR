@@ -5,7 +5,7 @@
 #
 #
 
-truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=1.5*get.fwhm(psf),flexible=TRUE,cutdown=FALSE,plot=FALSE) { 
+truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=10,flexible=TRUE,cutdown=FALSE,plot=FALSE) { 
 
   #if no centre specified, use the maxima
   if (missing(centre)) { 
