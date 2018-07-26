@@ -1384,7 +1384,7 @@ function(env=NULL) {
              if (length(ind)<length(dbwm)*0.1) {
                sum((im[xlo:xup,ylo:yup]*dfam))
              } else {
-               sum((im[xlo:xup,ylo:yup][ind]))
+               sum(((im[xlo:xup,ylo:yup]*dfam)[ind]))
              }
           }
         } else {
@@ -1393,7 +1393,7 @@ function(env=NULL) {
              if (length(ind)<length(dbwm)*0.1) {
                sum((im[xlo:xup,ylo:yup]*dfam))
              } else {
-               sum((im[xlo:xup,ylo:yup][ind]))
+               sum(((im[xlo:xup,ylo:yup]*dfam)[ind]))
              }
           }
         }
