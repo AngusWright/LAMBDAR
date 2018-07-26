@@ -1376,29 +1376,29 @@ function(env=NULL) {
       if (!quiet) { cat("  Calculating Flux (#",iter,")") }
       # /*fend*/ }}}
       timer<-proc.time()
-      if (iter==1) {
-        #if the first iteration, try to use 'quasi-segmented flux' for 0th step /*fold*/ {{{
-        if (cutup) {
-          sdfad[xind]<-foreach(dfam=dfa[xind],dbwm=dbw[xind],im=data.stamp[xind], xlo=ap.lims.data.stamp[xind,1],xup=ap.lims.data.stamp[xind,2], ylo=ap.lims.data.stamp[xind,3],yup=ap.lims.data.stamp[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-             ind<-which(dbwm >= 0.5,arr.ind=T)
-             if (length(ind)<length(dbwm)*0.1) {
-               sum((im[xlo:xup,ylo:yup]*dfam))
-             } else {
-               sum(((im[xlo:xup,ylo:yup]*dfam)[ind]))
-             }
-          }
-        } else {
-          sdfad[xind]<-foreach(dfam=dfa[xind],dbwm=dbw[xind],xlo=ap.lims.data.map[xind,1],xup=ap.lims.data.map[xind,2], ylo=ap.lims.data.map[xind,3],yup=ap.lims.data.map[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()),.export='im') %dopar% {
-             ind<-which(dbwm >= 0.5,arr.ind=T)
-             if (length(ind)<length(dbwm)*0.1) {
-               sum((im[xlo:xup,ylo:yup]*dfam))
-             } else {
-               sum(((im[xlo:xup,ylo:yup]*dfam)[ind]))
-             }
-          }
-        }
-        # /*fend*/ }}}
-      } else {
+      #if (iter==1) {
+      #  #if the first iteration, try to use 'quasi-segmented flux' for 0th step /*fold*/ {{{
+      #  if (cutup) {
+      #    sdfad[xind]<-foreach(dfam=dfa[xind],dbwm=dbw[xind],im=data.stamp[xind], xlo=ap.lims.data.stamp[xind,1],xup=ap.lims.data.stamp[xind,2], ylo=ap.lims.data.stamp[xind,3],yup=ap.lims.data.stamp[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+      #       ind<-which(dbwm >= 0.5,arr.ind=T)
+      #       if (length(ind)<length(dbwm)*0.1) {
+      #         sum((im[xlo:xup,ylo:yup]*dfam))
+      #       } else {
+      #         sum(((im[xlo:xup,ylo:yup]*dfam)[ind]))
+      #       }
+      #    }
+      #  } else {
+      #    sdfad[xind]<-foreach(dfam=dfa[xind],dbwm=dbw[xind],xlo=ap.lims.data.map[xind,1],xup=ap.lims.data.map[xind,2], ylo=ap.lims.data.map[xind,3],yup=ap.lims.data.map[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()),.export='im') %dopar% {
+      #       ind<-which(dbwm >= 0.5,arr.ind=T)
+      #       if (length(ind)<length(dbwm)*0.1) {
+      #         sum((im[xlo:xup,ylo:yup]*dfam))
+      #       } else {
+      #         sum(((im[xlo:xup,ylo:yup]*dfam)[ind]))
+      #       }
+      #    }
+      #  }
+      #  # /*fend*/ }}}
+      #} else {
         #if not the first iteration, use weighted deblended flux /*fold*/ {{{
         if (cutup) {
           sdfad[xind]<-foreach(dfam=dfa[xind],im=data.stamp[xind], xlo=ap.lims.data.stamp[xind,1],xup=ap.lims.data.stamp[xind,2], ylo=ap.lims.data.stamp[xind,3],yup=ap.lims.data.stamp[xind,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
@@ -1409,7 +1409,7 @@ function(env=NULL) {
              sum(dfam*(im[xlo:xup,ylo:yup]))
           }
         }
-      }
+      #}
       #Notify /*fold*/ {{{
       if (showtime) { cat(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
       } else if (!quiet) { cat(" - Done\n") }
