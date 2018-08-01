@@ -22,13 +22,13 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
       if (grepl('sig',psf.label.type,ignore.case=TRUE)) {
         #Add factor to convert pixel to arcsec, if needed
         if (grepl('pix',psf.label.type,ignore.case=TRUE)) { fact=arcsec.per.pix } else { fact=1 }
-        gauss.sigma.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))*fact
+        gauss.sigma.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=ifelse(data.extn<=1,1,data.extn)))*fact
         gauss.fwhm.arcsec<-gauss.sigma.arcsec*(2*sqrt(2*log(2)))
         message(paste0("PSF width in header is as SIGMA: value = ",gauss.sigma.arcsec," arcsec (factor was: ",fact,")"))
       } else {
         #Add factor to convert pixel to arcsec, if needed
         if (grepl('pix',psf.label.type,ignore.case=TRUE)) { fact=arcsec.per.pix } else { fact=1 }
-        gauss.fwhm.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=data.extn))*fact
+        gauss.fwhm.arcsec<-as.numeric(read.fitskey(file=paste(path.root,path.work,data.map,sep=""),key=psf.label,hdu=ifelse(data.extn<=1,1,data.extn)))*fact
         message(paste0("PSF width in header is as FWHM: value = ",gauss.fwhm.arcsec," arcsec (factor was: ",fact,")")) 
       }
       if (is.na(gauss.fwhm.arcsec)) { sink(type="message") ; stop("Read of PSF FWHM from datamap failed. Cannot continue") }

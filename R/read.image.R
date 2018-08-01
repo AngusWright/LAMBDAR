@@ -62,7 +62,7 @@ im<-im_fits$dat[[1]]
 
 #Read Saturation Level {{{
 if (!is.finite(saturation)) {
-  saturation<-try(as.numeric(read.fitskey(satur.label,paste(path.root,path.work,data.map,sep=""),hdu=data.extn)),silent=TRUE)
+  saturation<-try(as.numeric(read.fitskey(satur.label,paste(path.root,path.work,data.map,sep=""),hdu=ifelse(data.extn<=1,1,data.extn))),silent=TRUE)
   if (class(saturation)=='try-error' | is.na(saturation)) {
     saturation<-Inf
   }
@@ -175,7 +175,7 @@ if (error.map=='NONE' & weight.map=="NONE") {
   #If no error map, generate the sigma-map using the provided gain and the image_map {{{
   if (!quiet) { cat(paste("   Generating Error Map from Data")) }
   #Try reading gain from header {{{
-  gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=data.extn)),silent=TRUE)
+  gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=ifelse(data.extn<=1,1,data.extn))),silent=TRUE)
   if ((class(gain)=="try-error")|is.na(gain)|gain==0){
     #No Gain; No Weightmap; SNR map is poisson-like {{{
     message(paste0("No Gain supplied or able to be read from header; making Poisson Error Map"))
@@ -196,7 +196,7 @@ if (error.map=='NONE' & weight.map=="NONE") {
   if (!is.na(suppressWarnings(as.numeric(error.map)))) { 
     gain<-as.numeric(error.map)
   } else { 
-    gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=data.extn)),silent=TRUE)
+    gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=ifelse(data.extn<=1,1,data.extn))),silent=TRUE)
   }
   if ((class(gain)=="try-error")|is.na(gain)|gain==0){
     #No Max gain; Weightmap present; sigma map is 1/sqrt(weight.map) {{{
