@@ -6,6 +6,10 @@ function(fitsname, hdu=1){
   #Initialise List {{{
   astr.struc<-NULL
   #}}}
+  if (hdu==0) { 
+    warning("header hdu in read.astrometry should be specificly >= 1") 
+    hdu<-1
+  }
   oldwarn<-options(warn=-1)
   #Check for Typical Keywords of known Lengths {{{
   astr.struc<-c(astr.struc, list(BITPIX  =read.fitskey("BITPIX",fitsname,hdu=hdu)))
