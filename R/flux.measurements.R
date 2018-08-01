@@ -58,6 +58,7 @@ function(env=NULL) {
       #Make the first pass data stamps {{{
       timer=system.time(data.stamp<-make.data.array.maps(outenv=environment()))
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+        message(paste('Make data array maps  - Done (',round(timer[3], digits=2),'sec )'))
       } else if (!quiet) { cat("   - Done\n") }
       #}}}
       #Estimate the PSF from the data {{{
@@ -179,10 +180,14 @@ function(env=NULL) {
         }
         #}}}
       } else if (warn) {
-        if (showtime) { cat("   - WARNING: PSF estimate failed in one or more bins; they inherit the PSF of another bin! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+        if (showtime) { 
+          cat("   - WARNING: PSF estimate failed in one or more bins; they inherit the PSF of another bin! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+          message("  WARNING: PSF estimate failed in one or more bins; they inherit the PSF of another bin! (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
         } else if (!quiet) { cat("   - WARNING: PSF estimate failed in one or more bins; they inherit the PSF of another bin!\n") }
       } else {
-        if (showtime) { cat("   - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+        if (showtime) { 
+          cat("   - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+          message("   - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
         } else if (!quiet) { cat("   - Done\n") }
       }
       #Save the PSF as output {{{
@@ -1412,6 +1417,7 @@ function(env=NULL) {
       #}
       #Notify /*fold*/ {{{
       if (showtime) { cat(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+                  message(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
       } else if (!quiet) { cat(" - Done\n") }
       # /*fend*/ }}}
       # /*fend*/ }}}
@@ -1444,6 +1450,7 @@ function(env=NULL) {
       }
       #Notify /*fold*/ {{{
       if (showtime) { cat(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+                  message(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
       } else if (!quiet) { cat(" - Done\n") }
       # /*fend*/ }}}
       # /*fend*/ }}}
@@ -1487,6 +1494,7 @@ function(env=NULL) {
       quiet<-quietbak
       #Notify /*fold*/ {{{
       if (showtime) { cat(" - Done (",round(timer[3]+timer2[3],digits=2),"sec )\n")
+                  message(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
       } else if (!quiet) { cat(" - Done\n") }
       # /*fend*/ }}}
       # /*fend*/ }}}
@@ -1502,6 +1510,7 @@ function(env=NULL) {
       dfa[xind]<-foreach(dbwm=dbw[xind], sfam=sfa[xind], .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { dbwm*sfam }
       #Notify /*fold*/ {{{
       if (showtime) { cat("   - Done (",round(proc.time()[3]-timer[3]+timer2[3],digits=2),"sec )\n")
+                  message(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
       } else if (!quiet) { cat("   - Done\n") }
       # /*fend*/ }}}
       # /*fend*/ }}}
@@ -1726,9 +1735,11 @@ function(env=NULL) {
     }
     if (warn) {
       if (showtime) { cat("   - WARNING: PSF estimate failed; no suitable point sources found! (",round(timer[3],digits=2),"sec )\n")
+                  message("   - WARNING: PSF estimate failed; no suitable point sources found! (",round(timer[3],digits=2),"sec )\n")
       } else if (!quiet) { cat("   - WARNING: PSF estimate failed; no suitable point sources found!\n") }
     } else {
       if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
+                  message("   - Done (",round(timer[3],digits=2),"sec )\n")
       } else if (!quiet) { cat("   - Done\n") }
     }
     #Save the PSF as output {{{

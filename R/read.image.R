@@ -71,8 +71,10 @@ message(paste0("Using Saturation level: ",saturation))
 #}}}
 
 #Finished Setting Astrometry {{{
-if (showtime) { cat(paste(" - Done (Image Read took",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
-timer<-proc.time()
+if (showtime) { 
+  cat(paste(" - Done (Image Read took",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+  message(paste(" - Done (Image Read took",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+  timer<-proc.time()
 } else if (!quiet) { cat(" - Done\n") }
 #}}}
 
@@ -92,8 +94,10 @@ if ((weight.map!="NONE")&(mask.map=="NONE"|error.map=="NONE")) {
   hdr=imwt_fits$hdr[[1]][which(imwt_fits$hdr[[1]][,"key"]!="COMMENT"),]
   imwt<-imwt_fits$dat[[1]]
   imwt[which(!is.finite(imwt))]<-wgt.zp
-  if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
-  timer<-proc.time()
+  if (showtime) { 
+    cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+    message(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+    timer<-proc.time()
   } else if (!quiet) { cat(" - Done\n") }
   #}}}
 }#}}}
@@ -160,7 +164,9 @@ if (mask.map=='NONE') {
   #}}}
   #}}}
 }
-if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+if (showtime) { 
+  cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+  message(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
 } else if (!quiet) { cat(" - Done\n") }
 #}}}
 
@@ -264,8 +270,10 @@ if (error.map=='NONE' & weight.map=="NONE") {
     #}}}
     #If no mask, generate one using Errormap {{{
     if (length(imm)==1) {
-      if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
-      timer<-proc.time()
+      if (showtime) {  
+        cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+        message(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+        timer<-proc.time()
       } else if (!quiet) { cat(" - Done\n") }
       if (!quiet) { cat(paste("   Generating Mask Map from Weight Map ")) }
       # Use Errormap Footprint
@@ -281,8 +289,10 @@ if (error.map=='NONE' & weight.map=="NONE") {
 #Scale error map by error.factor {{{
 ime=ime*error.factor
 #}}}
-if (showtime) { cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
-timer<-proc.time()
+if (showtime) { 
+  cat(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+  message(paste(" - Done (",round(proc.time()[3]-timer[3], digits=3),"sec )\n"))
+  timer<-proc.time()
 } else if (!quiet) { cat(" - Done\n") }
 #}}}
 #}}}

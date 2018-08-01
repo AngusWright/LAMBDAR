@@ -735,7 +735,8 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
       cat("   } - Done\n")
       cat('} Initialisation Complete ')
     }
-    if (showtime) { cat(paste(' (  Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'  )\n')) }
+    if (showtime) { cat(paste(' (  Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'  )\n'))
+                message(paste(' (  Loop Time Elapsed (s): ',round(proc.time()[3]-loop.start.time, digits=3),'  )\n')) }
     #/*fend*/ }}}
 
     #-----Diagnostic-----# /*fold*/ {{{
