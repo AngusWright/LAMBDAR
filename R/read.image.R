@@ -45,7 +45,7 @@ if (all(grepl("TAN", astr.struc$CTYPE[c(1:2)]))) {
 #}}}
 
 #Test Read of Data Image for errors {{{
-im_fits<-try(read.fits.im(paste(path.root,path.work,data.map,sep=""),hdu=data.extn, comments=FALSE),silent=TRUE)
+im_fits<-try(read.fits.im(paste(path.root,path.work,data.map,sep=""),hdu=data.extn, comments=FALSE,pyfits=use.pyfits),silent=TRUE)
 if (class(im_fits)=="try-error") {
   #Stop on Error
   sink(type='message')
@@ -80,7 +80,7 @@ timer<-proc.time()
 if ((weight.map!="NONE")&(mask.map=="NONE"|error.map=="NONE")) {
   if (!quiet) { cat(paste("   Reading Data from Weight Map",weight.map,"   ")) }
   #Try read weight map {{{
-  imwt_fits<-try(read.fits.im(paste(path.root,path.work,weight.map,sep=""),hdu=data.weight.extn,comments=FALSE),silent=TRUE)
+  imwt_fits<-try(read.fits.im(paste(path.root,path.work,weight.map,sep=""),hdu=data.weight.extn,comments=FALSE,pyfits=use.pyfits),silent=TRUE)
   if (class(imwt_fits)=="try-error") {
     #Stop on Error
     sink(type='message')
@@ -131,7 +131,7 @@ if (mask.map=='NONE') {
   #Mask Present, Read {{{
   if (!quiet) { cat(paste("   Reading Data from MaskMap",mask.map,"   ")) }
   #Test Read of Mask Map for errors {{{
-  imm_fits<-try(read.fits.im(paste(path.root,path.work,mask.map,sep=""),hdu=data.mask.extn, comments=FALSE),silent=TRUE)
+  imm_fits<-try(read.fits.im(paste(path.root,path.work,mask.map,sep=""),hdu=data.mask.extn, comments=FALSE,pyfits=use.pyfits),silent=TRUE)
   if (class(imm_fits)=="try-error") {
     #Stop on Error
     sink(type='message')
@@ -246,7 +246,7 @@ if (error.map=='NONE' & weight.map=="NONE") {
     if (!quiet) { cat(paste("   Reading Data from ErrorMap",error.map,"   ")) }
     gain<-NA
     #Test Read of Error Map for errors {{{
-    ime_fits<-try(read.fits.im(paste(path.root,path.work,error.map,sep=""),hdu=data.error.extn, comments=FALSE),silent=TRUE)
+    ime_fits<-try(read.fits.im(paste(path.root,path.work,error.map,sep=""),hdu=data.error.extn, comments=FALSE,pyfits=use.pyfits),silent=TRUE)
     if (class(ime_fits)=="try-error") {
       #Stop on Error
       sink(type='message')

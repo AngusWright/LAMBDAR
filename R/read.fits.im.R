@@ -2,10 +2,23 @@
 # Wrapper to readFITS for reading a fits image (and outputting it like read.fits)
 #
 
-read.fits.im<-function(...,comments=TRUE,strip='') { 
-  dat<-readFITS(...) 
-  im<-list(hdr=list(NULL),dat=list(dat$imDat))
-  im$hdr[[1]]<-.parsehdr(paste0(dat$header,collapse=''),comments=comments,strip=strip)
+read.fits.im<-function(file,hdu=0,...,comments=TRUE,strip='',pyfits=FALSE) { 
+  if (pyfits) { 
+    require(reticulate)
+    if (!py_available()) { 
+      if (!py_available(TRUE)) { 
+        stop("Python is not installed! Cannot use in read.fits.im!")
+      }
+    }
+    fits<-import('astropy.io.fits')
+    pyim<-fits$open(file)
+    im<-list(hdr=list(NULL),dat=list(pyim[hdu]$data))
+    im$hdr[[1]]<-.parsehdr(paste0(pyim[hdu]$header,collapse=''),comments=comments,strip=strip)
+  } else { 
+    dat<-readFITS(file=file,...) 
+    im<-list(hdr=list(NULL),dat=list(dat$imDat))
+    im$hdr[[1]]<-.parsehdr(paste0(dat$header,collapse=''),comments=comments,strip=strip)
+  }
   return=im
 }
 

@@ -2111,13 +2111,23 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
-  #What is the title of the Catalogue's RA Column? {{{
+  #What is the name of the ldattoasc binary? {{{
   ID="LDACBinary"
   ldac.exec<-params[ID,1]
   if (is.na(ldac.exec)) {
     param.warnings<-c(param.warnings,"LDACBinary Parameter not in Parameter File. Needed for LDAC catalogue reading; Using 'ldactoasc'")
     ldac.exec<-"ldactoasc"
   }#}}}
+
+  #Do you want to read images with PyFits instead of R? {{{
+  ID="PyFITSRead"
+  use.pyfits<-params[ID,1]
+  if (is.na(use.pyfits)) {
+    param.warnings<-c(param.warnings,"PyFITSRead Parameter not in Parameter File. Using 0 [FALSE]'")
+    PyFITSRead<-FALSE
+  }
+  use.pyfits<-use.pyfits==1
+  #}}}
 
   #Name of Logfile to be output {{{
   ID="LogFile"
@@ -2250,6 +2260,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("resample.upres"            , resample.upres            , envir = env) # U
   assign("use.mask.lim"       , use.mask.lim       , envir = env)
   assign("use.pixel.fluxweight", use.pixel.fluxweight , envir = env)
+  assign("use.pyfits"       , use.pyfits       , envir = env) # 
   assign("use.segmentation"   , use.segmentation   , envir = env)
   assign("verbose"          , verbose          , envir = env) # V
   assign("verbose.out"       , verbose.out       , envir = env) #

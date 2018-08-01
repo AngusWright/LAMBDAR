@@ -38,6 +38,8 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
     if (is.null(cat.id)) { stop("Output to file requires cat.id to be specified (used for filenames)") }
     dir.create(file.path(path,"SkyBackIms"),showWarnings=FALSE)
     path=file.path(path,"SkyBackIms")
+  } else { 
+    path=''
   }
 
   if (is.null(cat.x)) {
