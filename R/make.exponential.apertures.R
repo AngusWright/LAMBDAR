@@ -1,5 +1,5 @@
 make.exponential.apertures <-
-function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,confuse=FALSE){
+function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,confuse=FALSE,subs=NULL){
 #Procedure creates exponential galaxy profiles, using input parameters
 #from the catalogue, and places them (in order) onto stamps
 #Procedure is parallelised to allow scaleability
@@ -9,6 +9,9 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   if (!quiet) { cat('Make_ESA_Mask   ') }
   message('--------------------------Make_ESA_Mask---------------------------------')
 
+  if (!is.null(subs)) { 
+    subs<-1:length(cat.id)
+  } 
   # Load Parameter Space
   if(!is.null(env)) {
     attach(env, warn.conflicts=FALSE)
@@ -37,20 +40,20 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #
 
   #Remove Galaxies with non-finite input magnitudes
-  index<-which(is.finite(inputmags))
-  inputmags<-inputmags[index]
-  cat.a<-cat.a[index]
-  cat.b<-cat.b[index]
-  cat.ra<-cat.ra[index]
-  cat.dec<-cat.dec[index]
-  cat.x<-cat.x[index]
-  cat.y<-cat.y[index]
-  cat.theta<-cat.theta[index]
-  Reff_pix<-Reff_pix[index]
-  flux.weight<-flux.weight[index]
-  axrat<-axrat[index]
-  cat.id<-cat.id[index]
-  contams<-contams[index]
+  subs<-subs[which(is.finite(inputmags[subs]))]
+  #inputmags<-inputmags[index]
+  #cat.a<-cat.a[index]
+  #cat.b<-cat.b[index]
+  #cat.ra<-cat.ra[index]
+  #cat.dec<-cat.dec[index]
+  #cat.x<-cat.x[index]
+  #cat.y<-cat.y[index]
+  #cat.theta<-cat.theta[index]
+  #Reff_pix<-Reff_pix[index]
+  #flux.weight<-flux.weight[index]
+  #axrat<-axrat[index]
+  #cat.id<-cat.id[index]
+  #contams<-contams[index]
   #
 
   if (padGals) {
@@ -143,29 +146,29 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   if (astr.struc$CD[1,1]*astr.struc$CD[2,2]<0){ theta.offset<-theta.offset*-1 }
 
 
-  #Reorder for faster parallelisation
-  nchild<-num.cores
-  ind<-order(inputmags)
-  matdim<-c(ceiling(length(inputmags)/nchild),nchild)
-  ind<-c(ind,rep(NA,matdim[1]*matdim[2]-length(ind)))
-  ind<-matrix(ind,ncol=matdim[2],nrow=matdim[1],byrow=TRUE)
-  ind<-as.numeric(ind)
-  ind<-ind[which(!is.na(ind))]
+  ##Reorder for faster parallelisation
+  #nchild<-num.cores
+  #ind<-order(inputmags)
+  #matdim<-c(ceiling(length(inputmags)/nchild),nchild)
+  #ind<-c(ind,rep(NA,matdim[1]*matdim[2]-length(ind)))
+  #ind<-matrix(ind,ncol=matdim[2],nrow=matdim[1],byrow=TRUE)
+  #ind<-as.numeric(ind)
+  #ind<-ind[which(!is.na(ind))]
 
-  Reff_pix<-Reff_pix[ind]
-  theta.offset<-theta.offset[ind]
-  inputmags<-inputmags[ind]
-  axrat<-axrat[ind]
-  contams<-contams[ind]
-  cat.ra<-cat.ra[ind]
-  cat.dec<-cat.dec[ind]
-  cat.x<-cat.x[ind]
-  cat.y<-cat.y[ind]
-  cat.id<-cat.id[ind]
-  cat.a<-cat.a[ind]
-  cat.b<-cat.b[ind]
-  cat.theta<-cat.theta[ind]
-  flux.weight<-flux.weight[ind]
+  #Reff_pix<-Reff_pix[ind]
+  #theta.offset<-theta.offset[ind]
+  #inputmags<-inputmags[ind]
+  #axrat<-axrat[ind]
+  #contams<-contams[ind]
+  #cat.ra<-cat.ra[ind]
+  #cat.dec<-cat.dec[ind]
+  #cat.x<-cat.x[ind]
+  #cat.y<-cat.y[ind]
+  #cat.id<-cat.id[ind]
+  #cat.a<-cat.a[ind]
+  #cat.b<-cat.b[ind]
+  #cat.theta<-cat.theta[ind]
+  #flux.weight<-flux.weight[ind]
 
   #Create Aperture Masks
   message("Creating Aperture Masks")
@@ -177,9 +180,9 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   nsig<-sqrt(qchisq(confidence,df=2)) #Determine nsigma for desired confidence using chisq distribution
   psf.clip<-ceiling(nsig*psfsigma.pix)
   psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
-  es_mask<-NULL
+  es_mask<-rep(list(NULL),length(inputmags))
   pb<-txtProgressBar(min=1,max=length(inputmags),style=3)
-  for (i in 1:length(inputmags)) {
+  for (i in subs) {
       setTxtProgressBar(pb,i)
       mag=inputmags[i]
       theta=theta.offset[i]
@@ -230,7 +233,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
             im<-im/sum(im)*10^((8.9-mag)/2.5)
           }
         }
-        es_mask<-c(es_mask, list(im))
+        es_mask[[i]]<-im
       #}}}
       } else if (N > 0) {
         #Generate Profile with Shot noise & Convolution
@@ -266,7 +269,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
 
         #Convert from ADU to Jy
         im<-im/sum(im)*10^((8.9-mag)/2.5)
-        es_mask<-c(es_mask, list(im))
+        es_mask[[i]]<-im
       } 
   }
   close(pb)
@@ -350,6 +353,8 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
 
   #Parse Parameter Space
   if (!is.null(env)) { detach(env) }
+  if (!is.null(subs)) { 
+  } 
   assign("cat.id",cat.id,envir=outenv)
   assign("cat.ra",cat.ra,envir=outenv)
   assign("cat.dec",cat.dec,envir=outenv)
@@ -364,7 +369,6 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   assign("inputmags",inputmags,envir=outenv)
   assign("flux.weight",flux.weight,envir=outenv)
   assign("ap.lims.data.map",ap.lims.data.map,envir=outenv)
-  #
 
   message('===========END============Make_ESA_MASK=============END=================\n')
 

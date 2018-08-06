@@ -37,7 +37,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE) {
     invisible(Vectorize(function(x,y,a,b,pa,col) {
                           lines(ellipse(x,y,a,b,pa=pa),col=col,lty=2)
                           points(x,y,pch=3,cex=0.5,col=col)
-                        })(cat.ra,cat.dec,cat.a/3600,cat.b/3600,theta.offset,ifelse(contams,'red','green3')))
+                        })(cat.ra,cat.dec,cat.a/3600,cat.b/3600,theta.offset-90,ifelse(contams,'red','green3')))
     #Plot Zoomed Sections of the Image:
     #-> Input & Aperture Ellipses
     magplot(cat.ra,cat.dec,pch=3,cex=0.5,col=ifelse(contams,'red','green3'),
@@ -46,7 +46,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE) {
     invisible(Vectorize(function(x,y,a,b,pa,col) {
                           lines(ellipse(x,y,a,b,pa=pa),col=col,lty=2)
                           points(x,y,pch=3,cex=0.5,col=col)
-                        })(cat.ra,cat.dec,cat.a/3600,cat.b/3600,theta.offset,ifelse(contams,'red','green3')))
+                        })(cat.ra,cat.dec,cat.a/3600,cat.b/3600,theta.offset-90,ifelse(contams,'red','green3')))
   } else { 
     #Get Object Positions
     xy<-ad.to.xy(cat.ra,cat.dec,image.env$astr.struc)
@@ -59,7 +59,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE) {
     invisible(Vectorize(function(x,y,a,b,pa,col) {
                           lines(ellipse(x,y,a,b,pa=pa),col=col,lty=2)
                           points(x,y,pch=3,cex=0.5,col=col)
-                        })(xy[,1]-1.5,xy[,2]-1.5,cat.a/aspp,cat.b/aspp,theta.offset,ifelse(contams,'red','green3')))
+                        })(xy[,1]-1.5,xy[,2]-1.5,cat.a/aspp,cat.b/aspp,theta.offset-90,ifelse(contams,'red','green3')))
     #points(xy[,1],xy[,2],pch=3,cex=0.5,col=ifelse(contams,'red','green3'))
     #Plot Zoomed Sections of the Image:
     #-> Input & Aperture Ellipses
@@ -72,7 +72,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE) {
     invisible(Vectorize(function(x,y,a,b,pa,col) {
                           lines(ellipse(x,y,a,b,pa=pa),col=col,lty=2)
                           points(x,y,pch=3,cex=0.5,col=col)
-                        })(xy[,1]-1.5,xy[,2]-1.5,cat.a/aspp,cat.b/aspp,theta.offset,ifelse(contams,'red','green3')))
+                        })(xy[,1]-1.5,xy[,2]-1.5,cat.a/aspp,cat.b/aspp,theta.offset-90,ifelse(contams,'red','green3')))
     #points(xy[,1],xy[,2],pch=3,cex=0.5,col=ifelse(contams,'red','green3'))
   } 
 

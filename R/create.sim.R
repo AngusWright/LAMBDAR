@@ -1,5 +1,5 @@
 create.sim <-
-function(par.file=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=TRUE, colourCorr=0.0, quiet=FALSE, confuse=FALSE){
+function(par.file=NA, ObsParm=NA, injection=FALSE, n.inject=100, noNoise=FALSE, convolveNoise=TRUE, padGalaxies=TRUE, colourCorr=0.0, quiet=FALSE, confuse=FALSE){
 #Proceedure measures object fluxes from an arbitrary fits image
 
   #For Setup, warnings are handled internally - print nothing {{{
@@ -11,6 +11,7 @@ function(par.file=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies
   environment(read.images)<-environment()
   environment(read.par.file)<-environment()
   environment(create.sim.image)<-environment()
+  environment(create.injection.image)<-environment()
   for (nam in ls.deb("package:LAMBDAR",simple=TRUE)) { 
     if (nam%in%ls(envir=environment())) { 
       debug(get(nam,envir=environment()))
@@ -332,7 +333,11 @@ function(par.file=NA, ObsParm=NA, noNoise=FALSE, convolveNoise=TRUE, padGalaxies
     #/*fend*/ }}}
 
     #Create Simulated Image from Catalogue {{{
-    simcat<-create.sim.image(ObsParm=ObsParm,noNoise=noNoise,convolveNoise=convolveNoise,padGals=padGalaxies,col.corr=colourCorr,confuse=confuse)
+    if (injection) { 
+      simcat<-create.injection.image(ObsParm=ObsParm,col.corr=colourCorr)
+    } else { 
+      simcat<-create.sim.image(ObsParm=ObsParm,noNoise=noNoise,convolveNoise=convolveNoise,padGals=padGalaxies,col.corr=colourCorr,confuse=confuse)
+    } 
     #}}}
 
     #Notify & Close Logfile {{{
