@@ -82,12 +82,12 @@ function(n.inject=100, ObsParm, col.corr=0, outenv=parent.env(environment()), en
   cat("stdev:", stdev,'\n')
   cat("med flux:", median(runif(n.inject,min=5,max=100)*stdev*10*pi*(cat.a*cat.b)[which(!contams)]),'\n')
   sim.fluxes<-runif(n.inject,min=5,max=100)*stdev*10*pi*(cat.a*cat.b)[which(!contams)]
-  flux.weight<-c(flux.weight,-2.5*log10(sim.fluxes)-mag.zp)
+  flux.weight<-c(rep(-2.5*log10(min(flux.weight,na.rm=T))+mag.zp+10,length(flux.weight)),-2.5*log10(sim.fluxes)+mag.zp)
   #}}}
 
   #Create Simulated Profiles & Image {{{
   if (!quiet) { cat(paste('Creating Injection Image  ')) }
-  timer=system.time(esa<-make.exponential.apertures(outenv=environment(),ObsParm=ObsParm,padGals=FALSE,col.corr=col.corr,confuse=FALSE,subs=which(!contams)))
+  timer=system.time(esa<-make.exponential.apertures(outenv=environment(),ObsParm=ObsParm,padGals=FALSE,col.corr=col.corr,confuse=FALSE))
   simFlux<-flux.weight
   simFlux[which(!contams)]<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(esam) }
   npix<-rep(NA,length(cat.id))

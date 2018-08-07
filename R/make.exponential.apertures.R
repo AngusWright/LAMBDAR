@@ -145,6 +145,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   #Correct for any reversal of fits image
   if (astr.struc$CD[1,1]*astr.struc$CD[2,2]<0){ theta.offset<-theta.offset*-1 }
 
+  print(length(inputmags))
 
   ##Reorder for faster parallelisation
   #nchild<-num.cores
