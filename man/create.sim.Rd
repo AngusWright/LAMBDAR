@@ -119,7 +119,7 @@ measure.fluxes("Lambdar_Sample.par")
 create.par.file(file="Lambdar_Simulation.par",DataMap="SampleImage.fits",
 Catalogue="LAMBDAR_Results.csv",Gauss_FWHM_AS=2,SimGauss_AS=1.1,
 FluxWgtColumnLabel="DFAFlux_Jy",OutputDirectory="Simulation/",PSFConvolve=1,
-GainLabel='WTGAIN',SaturationLabel='SWPSATUR')
+GainLabel='WTGAIN',SaturationLabel='SWPSATUR',FluxWgtType='flux')
 
 #Create Simulation from Catalogued objects only
 create.sim('Lambdar_Simulation.par',ObsParm=data.frame(exp=53.9,area=4.91,

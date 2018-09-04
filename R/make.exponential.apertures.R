@@ -9,7 +9,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   if (!quiet) { cat('Make_ESA_Mask   ') }
   message('--------------------------Make_ESA_Mask---------------------------------')
 
-  if (!is.null(subs)) { 
+  if (is.null(subs)) { 
     subs<-1:length(cat.id)
   } 
   # Load Parameter Space
@@ -36,7 +36,11 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   if (is.na(mag.zp)) {
     stop("No Magnitude Zero Point supplied or read. magnitudes are required for Sim")
   }
-  inputmags<- -2.5*log10(flux.weight)+mag.zp
+  if (weight.type=="flux") {
+    inputmags<- -2.5*log10(flux.weight)+mag.zp
+  } else { 
+    inputmags<- flux.weight
+  }
   #
 
   #Remove Galaxies with non-finite input magnitudes
@@ -120,6 +124,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
     Reff.padgals<-(cat.a.padgals)*(1/(2.5*kronrad(1)))/(arcsec.per.pix)
     theta.padgals<-runif(length(mag.padgals),min=min(cat.theta),max=max(cat.theta))
     #Add padding galaxies to the catalogue
+    subs<-c(subs,length(cat.id)+1:length(mag.padgals))
     cat.id<-c(cat.id,9999000+1:length(mag.padgals))
     cat.ra<-c(cat.ra,ra.padgals)
     cat.dec<-c(cat.dec,dec.padgals)
@@ -183,6 +188,12 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
   es_mask<-rep(list(NULL),length(inputmags))
   pb<-txtProgressBar(min=1,max=length(inputmags),style=3)
+  #Formula for number of photons given magnitude, exposure time (s),
+  #telescope area (m^2), and filter Effective Width and Wavelength
+  #
+  photCount<-function(abmag,exp,area,Weff,lamEff) { return=10^((8.9-abmag)/2.5+7)*(1/1.51)*exp*area*(Weff/lamEff) }
+  #Calculate N Photons given magnitude and SDSS r-band stats
+  bn=1.678
   for (i in subs) {
       setTxtProgressBar(pb,i)
       mag=inputmags[i]
@@ -193,12 +204,6 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
       ydelt=(cat.y[i]%%1)
 
       #Calculate Required number of Photons
-      #Formula for number of photons given magnitude, exposure time (s),
-      #telescope area (m^2), and filter Effective Width and Wavelength
-      photCount<-function(abmag,exp,area,Weff,lamEff) { return=10^((8.9-abmag)/2.5+7)*(1/1.51)*exp*area*(Weff/lamEff) }
-      #
-      #Calculate N Photons given magnitude and SDSS r-band stats
-      bn=1.678
       #Get N photons
       N=floor(photCount(mag,ObsParm$exp,ObsParm$area,ObsParm$Weff,ObsParm$lamEff))
       if (N>1E4) {
@@ -263,8 +268,8 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
         }
         #Centroid correctly
         stamplen<-(floor((ceiling(Reff*9)+ceiling(psf.clip))/2)*2+5)
-        tempx<-(tempxy[,1]+xdelt+stamplen/2)+0.5
-        tempy<-(tempxy[,2]+ydelt+stamplen/2)+0.5
+        tempx<-(tempxy[,1]-xdelt+stamplen/2)+0.5
+        tempy<-(tempxy[,2]-ydelt+stamplen/2)+0.5
         k<-kde2d(tempx,tempy,lims=c(1,stamplen,1,stamplen),n=stamplen)
         im<-matrix(k$z,stamplen,stamplen)
 

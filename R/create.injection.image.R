@@ -82,19 +82,20 @@ function(n.inject=100, ObsParm, col.corr=0, outenv=parent.env(environment()), en
   cat("stdev:", stdev,'\n')
   cat("med flux:", median(runif(n.inject,min=5,max=100)*stdev*10*pi*(cat.a*cat.b)[which(!contams)]),'\n')
   sim.fluxes<-runif(n.inject,min=5,max=100)*stdev*10*pi*(cat.a*cat.b)[which(!contams)]
-  flux.weight<-c(rep(-2.5*log10(min(flux.weight,na.rm=T))+mag.zp+10,length(flux.weight)),-2.5*log10(sim.fluxes)+mag.zp)
+  flux.true<-c(flux.weight,sim.fluxes)
+  flux.weight<-c(rep(min(flux.weight,na.rm=T)/1000,length(flux.weight)),sim.fluxes)
+  flux.weight<-flux.true
+  contams<-rep(FALSE,length(contams))
   #}}}
 
   #Create Simulated Profiles & Image {{{
   if (!quiet) { cat(paste('Creating Injection Image  ')) }
   timer=system.time(esa<-make.exponential.apertures(outenv=environment(),ObsParm=ObsParm,padGals=FALSE,col.corr=col.corr,confuse=FALSE))
-  simFlux<-flux.weight
-  simFlux[which(!contams)]<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(esam) }
-  npix<-rep(NA,length(cat.id))
-  npix[which(!contams)]<-foreach(esam=esa, .combine='c', .inorder=TRUE, .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { length(esam) }
-  simFlux<-array(unlist(simFlux),dim=c(dim(simFlux[[1]]),length(simFlux)))
+  simFlux<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c', .noexport=ls(envir=environment())) %dopar% { sum(esam) }
+  simFlux[which(contams)]<-flux.true[which(contams)]
+  npix<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c', .noexport=ls(envir=environment())) %dopar% { length(esam) }
   cat.out<-data.frame(CATAID=cat.id,RA=cat.ra,DEC=cat.dec,X.im=cat.x,Y.im=cat.y,REff=Reff_pix*arcsec.per.pix,SEMIMAJ.arcsec=cat.a,
-           SEMIMIN.arcsec=cat.b,THETA=cat.theta,inputFlux=flux.weight,StampFlux=simFlux,nPix=npix,CONTAM=contams)
+           SEMIMIN.arcsec=cat.b,THETA=cat.theta,inputFlux=flux.weight,StampFlux=simFlux,nPix=npix,CONTAM=ifelse(contams,1,0))
   colnames(cat.out)<-c(cata.lab,ra.lab,dec.lab,"X.im","Y.im","R.Eff",semimaj.lab,semimin.lab,theta.lab,"Input.Flux.Jy","Sim.Flux.Jy","n.pix",contam.lab)
   write.csv(file=file.path(path.root,path.work,path.out,"SimFlux.csv"), cat.out, row.names=FALSE,quote=FALSE)
   timer1=system.time(image.env$ea<-make.aperture.map(outenv=environment(), esa, dim(image.env$im),subs=which(!contams)))
@@ -110,7 +111,7 @@ function(n.inject=100, ObsParm, col.corr=0, outenv=parent.env(environment()), en
   message("Noise Properties in input Image (Jy): mode=",x.mode,"; sd=",stdev)
   if (!quiet) { cat("   - Done\n") }
   if (!quiet) { cat(paste('Outputting Simulate Image to',"sim_image.fits","   ")) }
-  timer=system.time(write.fits.image.file(file.path(path.root,path.work,path.out,"sim_image.fits"),(image.env$ea+image.env$im*10^((8.9-mag.zp)/2.5)),image.env$data.hdr,nochange=TRUE) )
+  timer=system.time(write.fits.image.file(file.path(path.root,path.work,path.out,"sim_image.fits"),(image.env$ea+0*image.env$im*10^((8.9-mag.zp)/2.5)),image.env$data.hdr,nochange=TRUE) )
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
     message(paste('Output Sim Image - Done (',round(timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }
