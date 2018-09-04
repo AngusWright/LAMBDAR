@@ -90,7 +90,7 @@ function(env=NULL) {
             layout(matrix(1:6,nrow=2,byrow=T))
           }
           psf.cen[[i]]<-psf.est$centre
-          trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+          trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre,min.rad=psf.minrad)
           psf[[i]]<-trunc$Im
           psf.cen[[i]]<-trunc$centre
           psf[[i]]<-psf[[i]]-min(psf[[i]],na.rm=TRUE)
@@ -1570,7 +1570,7 @@ function(env=NULL) {
           PlotDev(file=file.path(path.root,path.work,path.out,paste0("PSFEst_truncation_",i,".",plot.device)),width=12,height=6,units="in")
           layout(matrix(1:6,nrow=2,byrow=T))
         }
-        trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+        trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre,min.rad=psf.minrad)
         estpsf2[[i]]<-trunc$Im
         estpsf.cen[[i]]<-trunc$centre
         estpsf2[[i]]<-estpsf2[[i]]-min(estpsf2[[i]],na.rm=TRUE)
