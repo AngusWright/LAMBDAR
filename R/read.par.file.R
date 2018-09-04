@@ -2124,9 +2124,18 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   use.pyfits<-params[ID,1]
   if (is.na(use.pyfits)) {
     param.warnings<-c(param.warnings,"PyFITSRead Parameter not in Parameter File. Using 0 [FALSE]'")
-    PyFITSRead<-FALSE
+    use.pyfits<-FALSE
   }
   use.pyfits<-use.pyfits==1
+  #}}}
+
+  #When estimating the PSF from the image, what is the expected minimum radius of the 90th perdentile contours (in pix) {{{
+  ID="PSFMinRadius"
+  psf.minrad<-as.numeric(params[ID,1])
+  if (is.na(psf.minrad)) {
+    param.warnings<-c(param.warnings,"PSFMinRadius Parameter not in Parameter File. Using 10 (pixels)'")
+    psf.minrad<-10
+  }
   #}}}
 
   #Name of Logfile to be output {{{
@@ -2230,6 +2239,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("plot.sci"          , plot.sci          , envir = env) #
   assign("psf.check"         , psf.check         , envir = env) #
   assign("psf.map"           , psf.map           , envir = env) #
+  assign("psf.minrad"        , psf.minrad        , envir = env) #
   assign("psf.weighted"      , psf.weighted      , envir = env) #
   assign("psf.filt"          , psf.filt          , envir = env) #
   assign("psf.label"         , psf.label         , envir = env) #

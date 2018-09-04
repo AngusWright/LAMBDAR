@@ -103,6 +103,7 @@ create.par.file <-
     UsePixelFluxWgts=0,
     LDACBinary='ldactoasc',
     PyFITSRead=0, 
+    PSFMinRadius=10, 
     LogFile='LAMBDAR_Log.txt') {
 
 #Sink Output to File {{{
@@ -231,7 +232,8 @@ CarefulWithEdges      ",paste(as.numeric(CarefulWithEdges),collapse=' '),"    #D
 ApStampWidth           ",paste(ApStampWidth               ,collapse=' '),"    #Width of the Aperture stamps in multiples of aperture major axis; Can be changed with caution if memory issues arise.
 PSFConfidence          ",paste(PSFConfidence              ,collapse=' '),"    #PSF Confidence Value used in buffering the Aperture Stamp Widths; PSF integrated out to this width, and that radii is added.
 LDACBinary             ",paste(LDACBinary                 ,collapse=' '),"    #If using LDAC catalogue format, specify here the absolute path to the LDAC-to-ASCII conversion binary.
-PyFITSRead             ",paste(PyFITSRead                 ,collapse=' '),"    #Do you want to read images via PyFITS instead of via the FITSio package (with large images can be ~2x faster."))
+PyFITSRead             ",paste(PyFITSRead                 ,collapse=' '),"    #Do you want to read images via PyFITS instead of via the FITSio package (with large images can be ~2x faster.
+PSFMinRadius           ",paste(PSFMinRadius               ,collapse=' '),"    #The expected minimum radius, in pixels, for the PSF 90th percentile contour (used when 'ESTIMATE' is set for the PSF)."))
 #}}}
 #Close Sink and return NULL {{{
 sink()
