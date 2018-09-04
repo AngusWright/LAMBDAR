@@ -1158,7 +1158,7 @@ function(env=NULL) {
         tempfunc<-approxfun(tempsum,psfvals)
         psfLimit<-tempfunc(ap.limit*max(tempsum, na.rm=TRUE))
         suppressWarnings(image(log10(psf[[i]]),main="PSF & Binary Contour Levels", asp=1,col=heat.colors(256),useRaster=ifelse(length(psf[[i]])>1E4,TRUE,FALSE)))
-        contour(psf[[i]], levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+        try(contour(psf[[i]], levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE))
         if (psf.filt) { contour(psf[[i]], levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
         if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
       }
@@ -1202,7 +1202,7 @@ function(env=NULL) {
     if (!psf.weighted) {
       #Binary Aperture /*fold*/ {{{
       suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (smallest source)", asp=1,col=heat.colors(256),useRaster=Rast))
-      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      try(contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE))
       contour(ap, levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE)
       suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
@@ -1212,7 +1212,7 @@ function(env=NULL) {
     } else {
       #PSF Weighted Aperture /*fold*/ {{{
       suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (smallest source)", asp=1,col=heat.colors(256),useRaster=Rast))
-      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      try(contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE))
       suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
       ssfap<-sum(sfa[[ind]]*ap)
@@ -1254,7 +1254,7 @@ function(env=NULL) {
     if (!psf.weighted) {
       #Binary Aperture /*fold*/ {{{
       suppressWarnings(image(log10(ap),main="Example: Minimum Aperture Correction (median source)", asp=1,col=heat.colors(256),useRaster=Rast))
-      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      try(contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE))
       if (psf.filt) { contour(ap, levels=c(psfLimit), labels=c(ap.limit), col='green', add=TRUE) }
       suppressWarnings(image(log10(sfa[[ind]]),col=col2alpha('blue',0.3),add=TRUE,useRaster=Rast))
       spsf<-sum(ap)
@@ -1264,7 +1264,7 @@ function(env=NULL) {
     } else {
       #PSF Weighted Aperture /*fold*/ {{{
       suppressWarnings(image(log10(ap)-log10(sfa[[ind]]),main="Example: Minimum Aperture Correction (median source; shown as residual)", asp=1,col=heat.colors(256),useRaster=Rast))
-      contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE)
+      try(contour(ap, levels=(tempfunc(c(0.5,0.9,0.95,0.99,0.999,0.9999)*max(tempsum,na.rm=TRUE))), labels=c(0.5,0.9,0.95,0.99,0.999,0.9999), col='blue', add=TRUE))
       spsf<-sum(ap)
       ssfap<-sum(sfa[[ind]]*ap)
       label("topright",lab=paste("SumPSF=",round(spsf,digits=2),"\nSum(PSF*Ap)=",round(ssfap,digits=2),"\nApCorr=",round(spsf/ssfap,digits=2),sep=""))
