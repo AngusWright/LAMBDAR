@@ -35,7 +35,7 @@ function(n.inject=100, ObsParm, col.corr=0, outenv=parent.env(environment()), en
   }
   #}}}
   #Get radius of FWHM using FWHM confidence value = erf(2*sqrt(2*log(2))/sqrt(2)) {{{
-  psffwhm.pix<-get.fwhm(psf)
+  psffwhm.pix<-max(c(get.fwhm(psf),1),na.rm=TRUE)
   #}}}
   #}}}
   #Notify {{{
@@ -60,7 +60,9 @@ function(n.inject=100, ObsParm, col.corr=0, outenv=parent.env(environment()), en
     stdev=sd(noise)
     message("Noise Profile: Mean = ", x.mode, " ; Stdv = ",abs(stdev)," ;\n")
   } else {
-    stop("Badness in Image Noise characteristic determination")
+    warning("Badness in Image Noise characteristic determination: using flux limit")
+    stdev<-quantile(flux.weight,0.1,na.rm=T)/5
+    x.mode<--Inf
   }#}}}
   #Notify {{{
   if (showtime) { cat(paste(' - Done (',round(proc.time()[3]-timer[3], digits=2),'sec )\n'))
@@ -69,28 +71,36 @@ function(n.inject=100, ObsParm, col.corr=0, outenv=parent.env(environment()), en
 
   #Create the injection sources {{{
   contams<-c(rep(TRUE,length(cat.x)),rep(FALSE,n.inject))
+  if (length(flux.weight)==1) { flux.weight<-rep(0,length(cat.id)) }
   cat.id<-c(cat.id,paste0("Injected_",1:n.inject))
-  samp.x<-sample(1:length(cat.x),n.inject)
-  samp.y<-sample(1:length(cat.y),n.inject)
-  cat.x<-c(cat.x,cat.x[samp.x])
-  cat.y<-c(cat.y,cat.y[samp.y])
-  cat.ra<-c(cat.ra,cat.ra[samp.x])
-  cat.dec<-c(cat.dec,cat.dec[samp.y])
+  #samp.x<-sample(1:length(cat.x),n.inject,replace=TRUE)
+  #samp.y<-sample(1:length(cat.y),n.inject,replace=TRUE)
+  #dx<-rnorm(n.inject,mean=0,sd=median(diff(sort(cat.x)),na.rm=T))
+  #dy<-rnorm(n.inject,mean=0,sd=median(diff(sort(cat.y)),na.rm=T))
+  #cat.x<-c(cat.x,cat.x[samp.x]+dx)
+  #cat.y<-c(cat.y,cat.y[samp.y]+dy)
+  #pos<-xy.to.ad(cat.x[samp.x]+dx,cat.y[samp.y]+dy,astr.struc)
+  new.x<-runif(n.inject,min=min(cat.x,na.rm=T),max=max(cat.x,na.rm=T))
+  new.y<-runif(n.inject,min=min(cat.y,na.rm=T),max=max(cat.y,na.rm=T))
+  cat.x<-c(cat.x,new.x)
+  cat.y<-c(cat.y,new.y)
+  pos<-xy.to.ad(new.x,new.y,astr.struc)
+  cat.ra<-c(cat.ra,pos[,1])
+  cat.dec<-c(cat.dec,pos[,2])
   cat.theta<-c(cat.theta,runif(n.inject,min=-90,max=90))
   cat.a<-c(cat.a,runif(n.inject,min=0,max=quantile(cat.a,0.9,na.rm=T)))
   cat.b<-c(cat.b,runif(n.inject,min=0.2,1)*cat.a[which(!contams)])
   cat("stdev:", stdev,'\n')
-  cat("med flux:", median(runif(n.inject,min=5,max=100)*stdev*10*pi*(cat.a*cat.b)[which(!contams)]),'\n')
-  sim.fluxes<-runif(n.inject,min=5,max=100)*stdev*10*pi*(cat.a*cat.b)[which(!contams)]
+  cat("med flux:", median(runif(n.inject,min=5,max=100)*stdev*10*pi*(sqrt((cat.a*cat.b)^2+psffwhm.pix^2))[which(!contams)]),'\n')
+  sim.fluxes<-runif(n.inject,min=5,max=100)*stdev*10*pi*(sqrt((cat.a*cat.b)^2+psffwhm.pix^2))[which(!contams)]
   flux.true<-c(flux.weight,sim.fluxes)
-  flux.weight<-c(rep(min(flux.weight,na.rm=T)/1000,length(flux.weight)),sim.fluxes)
   flux.weight<-flux.true
-  contams<-rep(FALSE,length(contams))
+  weight.type<-'flux'
   #}}}
 
   #Create Simulated Profiles & Image {{{
   if (!quiet) { cat(paste('Creating Injection Image  ')) }
-  timer=system.time(esa<-make.exponential.apertures(outenv=environment(),ObsParm=ObsParm,padGals=FALSE,col.corr=col.corr,confuse=FALSE))
+  timer=system.time(esa<-make.exponential.apertures(outenv=environment(),ObsParm=ObsParm,padGals=FALSE,col.corr=col.corr,confuse=FALSE,subs=which(!contams)))
   simFlux<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c', .noexport=ls(envir=environment())) %dopar% { sum(esam) }
   simFlux[which(contams)]<-flux.true[which(contams)]
   npix<-foreach(esam=esa, .inorder=TRUE, .options.mpi=mpi.opts, .combine='c', .noexport=ls(envir=environment())) %dopar% { length(esam) }
@@ -111,7 +121,7 @@ function(n.inject=100, ObsParm, col.corr=0, outenv=parent.env(environment()), en
   message("Noise Properties in input Image (Jy): mode=",x.mode,"; sd=",stdev)
   if (!quiet) { cat("   - Done\n") }
   if (!quiet) { cat(paste('Outputting Simulate Image to',"sim_image.fits","   ")) }
-  timer=system.time(write.fits.image.file(file.path(path.root,path.work,path.out,"sim_image.fits"),(image.env$ea+0*image.env$im*10^((8.9-mag.zp)/2.5)),image.env$data.hdr,nochange=TRUE) )
+  timer=system.time(write.fits.image.file(file.path(path.root,path.work,path.out,"sim_image.fits"),(image.env$ea+image.env$im*10^((8.9-mag.zp)/2.5)),image.env$data.hdr,nochange=TRUE) )
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
     message(paste('Output Sim Image - Done (',round(timer[3], digits=2),'sec )'))
   } else if (!quiet) { cat("   - Done\n") }

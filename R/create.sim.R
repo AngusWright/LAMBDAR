@@ -334,7 +334,7 @@ function(par.file=NA, ObsParm=NA, injection=FALSE, n.inject=100, noNoise=FALSE, 
 
     #Create Simulated Image from Catalogue {{{
     if (injection) { 
-      simcat<-create.injection.image(ObsParm=ObsParm,col.corr=colourCorr)
+      simcat<-create.injection.image(ObsParm=ObsParm,col.corr=colourCorr,n.inject=n.inject)
     } else { 
       simcat<-create.sim.image(ObsParm=ObsParm,noNoise=noNoise,convolveNoise=convolveNoise,padGals=padGalaxies,col.corr=colourCorr,confuse=confuse)
     } 

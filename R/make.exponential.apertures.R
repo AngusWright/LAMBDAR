@@ -185,7 +185,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   }
   nsig<-sqrt(qchisq(confidence,df=2)) #Determine nsigma for desired confidence using chisq distribution
   psf.clip<-ceiling(nsig*psfsigma.pix)
-  psf.clip<-psf.clip*2+1 # convert psf.clip from radius to diameter (and make sure it's odd)
+  psf.clip<-psf.clip*2+11 # convert psf.clip from radius to diameter (and make sure it's odd)
   es_mask<-rep(list(NULL),length(inputmags))
   pb<-txtProgressBar(min=1,max=length(inputmags),style=3)
   #Formula for number of photons given magnitude, exposure time (s),
@@ -211,24 +211,30 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
         stamplen<-(floor((ceiling(Reff*9)+ceiling(psf.clip))/2)*2+5)
         xy<-expand.grid(1:(stamplen*2),1:(stamplen*2))
         tempxy<-xy
-        xy[,1]<-xy[,1]-stamplen-0.5
-        xy[,2]<-xy[,2]-stamplen-0.5
-        tempxy[,1]<-tempxy[,1]-stamplen-0.5-xdelt
-        tempxy[,2]<-tempxy[,2]-stamplen-0.5-ydelt
+        tempxy[,1]<-tempxy[,1]-stamplen-xdelt
+        tempxy[,2]<-tempxy[,2]-stamplen-ydelt
         if (Reff!=0) {
           #Galaxy
           tempxy<-rotate.data.2d(tempxy[,1],tempxy[,2],90-theta)
           tempxy[,1]<-tempxy[,1]/axr
-          I<-exp(-bn*(sqrt((xy[,1])^2+(xy[,2])^2)/Reff-1))
+          I<-exp(-bn*(sqrt((tempxy[,1])^2+(tempxy[,2])^2)/Reff-1))
           I[which(I<max(I)*1E-5)]<-0
-          im<-zapsmall(matrix(interp.2d(tempxy[,1],tempxy[,2], list(x=1:(stamplen*2)-stamplen-0.0,y=1:(stamplen*2)-stamplen-0.0,z=matrix(zapsmall(I),stamplen*2,stamplen*2)))[,3], ncol=stamplen*2,nrow=stamplen*2,byrow=FALSE))
+          #im<-zapsmall(matrix(interp.2d(tempxy[,1],tempxy[,2], list(x=1:(stamplen*2)-stamplen-0.0,y=1:(stamplen*2)-stamplen-0.0,z=matrix(zapsmall(I),stamplen*2,stamplen*2)))[,3], ncol=stamplen*2,nrow=stamplen*2,byrow=FALSE))
+          im<-matrix(0,stamplen*2,stamplen*2)
+          index<-expand.grid(1:(stamplen*2),1:(stamplen*2))
+          im[cbind(index[,1],index[,2])]<-zapsmall(I)
           im<-im[(ceiling(stamplen*0.5)):(floor(stamplen*1.5)),(ceiling(stamplen*0.5)):(floor(stamplen*1.5))]
           #Convert to Jy
           im<-im/sum(im)*10^((8.9-mag)/2.5)
         }
         if (psf.filt || Reff==0) {
         #Point Source
-          ps<-matrix(dnorm(sqrt((xy[,1])^2+(xy[,2])^2),mean=0,sd=psfsigma.pix),stamplen*2,stamplen*2)
+          #ps<-matrix(dnorm(sqrt((xy[,1])^2+(xy[,2])^2),mean=0,sd=psfsigma.pix),stamplen*2,stamplen*2)
+          xi<-matrix(1:(stamplen*2), nrow=stamplen*2, ncol=stamplen*2)
+          yi<-t(xi)
+          x0<-stamplen+xdelt
+          y0<-stamplen+ydelt
+          ps<-exp(-(((xi-x0)^2/(2*psfsigma.pix^2))+((yi-y0)^2/(2*psfsigma.pix^2))))
           ps<-ps[(ceiling(stamplen*0.5)):(floor(stamplen*1.5)),(ceiling(stamplen*0.5)):(floor(stamplen*1.5))]
           if (Reff==0) {
             #Convert to Jy
@@ -239,9 +245,13 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
             im<-im/sum(im)*10^((8.9-mag)/2.5)
           }
         }
+        #layout(cbind(1,2))
+        #magimage(x=seq(1,stamplen+1),y=seq(1,stamplen+1),im)
+        #points(tempxy[,1],tempxy[,2],pch='.',col=hsv(1,alpha=1))
         es_mask[[i]]<-im
       #}}}
       } else if (N > 0) {
+      #if (N > 0) {
         #Generate Profile with Shot noise & Convolution
         if (Reff!=0) {
           #Galaxy
@@ -253,7 +263,7 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
           tempxy<-sph.to.car(long=tempang, lat=0, radius=tempr, deg=FALSE)
 
           #Stretch y-axis by ellipticity of profile
-          tempxy[,2]<-(tempxy[,2])*axr
+          tempxy[,1]<-(tempxy[,1])/axr
 
           #Rotate to desired theta
           tempxy<-rotate.data.2d(tempxy[,1],tempxy[,2],theta)
@@ -268,11 +278,25 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
         }
         #Centroid correctly
         stamplen<-(floor((ceiling(Reff*9)+ceiling(psf.clip))/2)*2+5)
-        tempx<-(tempxy[,1]-xdelt+stamplen/2)+0.5
-        tempy<-(tempxy[,2]-ydelt+stamplen/2)+0.5
-        k<-kde2d(tempx,tempy,lims=c(1,stamplen,1,stamplen),n=stamplen)
-        im<-matrix(k$z,stamplen,stamplen)
-
+        #tempx<-(tempxy[,1]-xdelt+stamplen/2)+0.5
+        #tempy<-(tempxy[,2]-ydelt+stamplen/2)+0.5
+        #k<-kde2d(tempx,tempy,lims=c(1,stamplen,1,stamplen),n=stamplen)
+        #im<-matrix(k$z,stamplen,stamplen)
+        tempx<-(tempxy[,1]+xdelt+stamplen/2)+1.0
+        tempy<-(tempxy[,2]+ydelt+stamplen/2)+1.0
+        index<-which(tempx>=1 & tempx<=stamplen & tempy>=1 & tempy<=stamplen)
+        freq <-  as.data.frame(table(findInterval(tempx[index], 0:stamplen),findInterval(tempy[index], 0:stamplen)))
+        freq[,1] <- as.numeric(as.character(freq[,1]))
+        freq[,2] <- as.numeric(as.character(freq[,2]))
+        freq2D <- diag(stamplen+1)*0
+        freq2D[cbind(freq[,1], freq[,2])] <- freq[,3]
+        im<-freq2D
+        
+        #layout(cbind(1,2))
+        #magplot(x=freq[,1],y=freq[,2],pch='.',cex=ifelse(freq[,3]>10,10,freq[,3]),xlim=c(0,stamplen),ylim=c(0,stamplen))
+        #points(tempx,tempy,pch='.',col=hsv(1,alpha=1))
+        #magimage(x=seq(1,stamplen+1),y=seq(1,stamplen+1),im)
+        #points(tempx,tempy,pch='.',col=hsv(1,alpha=1))
         #Convert from ADU to Jy
         im<-im/sum(im)*10^((8.9-mag)/2.5)
         es_mask[[i]]<-im

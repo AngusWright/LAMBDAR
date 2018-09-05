@@ -46,7 +46,7 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   suppressWarnings(image(x=(seq(1,(diff(range(data.stamp.lims[i,1]:data.stamp.lims[i,2]))+1))-(x.pix[i]-data.stamp.lims[i,1]))*arcsec.per.pix,y=(seq(1,(diff(range(data.stamp.lims[i,3]:data.stamp.lims[i,4]))+1))-(y.pix[i]-data.stamp.lims[i,3]))*arcsec.per.pix, z=log10(image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]]), main="", asp=1, col=grey.colors(1000), useRaster=Rast, xlab="", ylab="",xlim=xlims, ylim=ylims,axes=FALSE))
   # /*fend*/ }}}
   #Plot Aperture in Blue /*fold*/ {{{
-  suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=(sfa[[i]]), main="Image & Aperture", asp=1, col=hsv(2/3,seq(0,1,length=256)), useRaster=Rast, axes=FALSE, xlab="", ylab="", add=TRUE))
+  suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix, z=(sfa[[i]]), main="Image & Aperture", asp=1, col=hsv(2/3,seq(0,1,length=256)), useRaster=Rast, axes=FALSE, xlab="", ylab="", add=TRUE))
   # /*fend*/ }}}
   #Plot Image in greyscale /*fold*/ {{{
   suppressWarnings(image(x=(seq(1,(diff(range(data.stamp.lims[i,1]:data.stamp.lims[i,2]))+1))-(x.pix[i]-data.stamp.lims[i,1]))*arcsec.per.pix,y=(seq(1,(diff(range(data.stamp.lims[i,3]:data.stamp.lims[i,4]))+1))-(y.pix[i]-data.stamp.lims[i,3]))*arcsec.per.pix, z=log10(image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]]), main="", asp=1, col=grey.colors(1000), useRaster=Rast,add=TRUE, xlab="", ylab=""))
@@ -55,10 +55,10 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   suppressWarnings(image(x=(seq(1,(diff(range(data.stamp.lims[i,1]:data.stamp.lims[i,2]))+1))-(x.pix[i]-data.stamp.lims[i,1]))*arcsec.per.pix,y=(seq(1,(diff(range(data.stamp.lims[i,3]:data.stamp.lims[i,4]))+1))-(y.pix[i]-data.stamp.lims[i,3]))*arcsec.per.pix, z=log10(smB*image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]]), main="", asp=1, useRaster=Rast,add=TRUE, xlab="", ylab="",col=cm.colors(256)))
   # /*fend*/ }}}
   #Plot +ve flux in aperture in Heat Colours /*fold*/ {{{
-  suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=log10(apT*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]), main="", asp=1, col=heat.colors(256), useRaster=Rast,add=TRUE, xlab="", ylab=""))
+  suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix, z=log10(apT*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]), main="", asp=1, col=heat.colors(256), useRaster=Rast,add=TRUE, xlab="", ylab=""))
   # /*fend*/ }}}
   #Plot Sources /*fold*/ {{{
-  points(x=(x.pix-x.pix[i]+1)*arcsec.per.pix,y=(y.pix-y.pix[i]+1)*arcsec.per.pix, pch=3)
+  points(x=(cat.x-x.pix[i]+1)*arcsec.per.pix,y=(cat.y-y.pix[i]+1)*arcsec.per.pix, pch=3)
   # /*fend*/ }}}
   #Label with ID /*fold*/ {{{
   label("topleft",lab=cat.id[i],cex=1.5, col='red')
@@ -208,10 +208,10 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   if (any(is.finite(z))) { 
     suppressWarnings(z<-matrix(magmap(z,stretch='asinh')$map,ncol=nc,nrow=nr))
   }
-  image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apB, main="Image x Weight Matrix", asp=1, col=grey.colors(256), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims)
+  image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix, z=z*apB, main="Image x Weight Matrix", asp=1, col=grey.colors(256), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims)
   # /*fend*/ }}}
   #Overlay the Aperture /*fold*/ {{{
-  suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apT, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims,add=TRUE))
+  suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix, z=z*apT, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims,add=TRUE))
   # /*fend*/ }}}
   #Draw the projected half-light ellipse {{{
   lines(ellipse(a=min(debl.cog$x[dhlr]),e=1-cat.b[i]/cat.a[i],pa=90-theta.offset[i],xcen=cat.x[i]%%1,ycen=cat.y[i]%%1),col='black',lty=3,lwd=2)
@@ -225,10 +225,10 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   # /*fend*/ }}}
   #Plot the Deblend Matrix /*fold*/ {{{
   z=dbw[[i]]
-  image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apB, main="Weight Matrix", asp=1, col=grey.colors(256), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims)
+  image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix, z=z*apB, main="Weight Matrix", asp=1, col=grey.colors(256), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims)
   # /*fend*/ }}}
   #Overlay the Aperture /*fold*/ {{{
-  suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apT, main="Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims,add=TRUE))
+  suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2+0.5)*arcsec.per.pix, z=z*apT, main="Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims,add=TRUE))
   # /*fend*/ }}}
   #Draw the Axes and scalebar /*fold*/ {{{
   magaxis(frame.plot=TRUE,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)",cex.axis=1.2)
