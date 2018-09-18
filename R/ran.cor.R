@@ -1,4 +1,4 @@
-ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,rem.mask=FALSE,numIters=1E2,mpi.opts="",sigclip=3,nclip=0,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99){
+ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,rem.mask=FALSE,numIters=1E2,mpi.opts="",sigclip=3,nclip=3,cat.x=NULL,cat.y=NULL,cat.id=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99,diagnostic=FALSE){
   if(is.matrix(ap.stamp)) {
     #We have 1 object
     ap.stamp<-list(ap.stamp)
@@ -65,11 +65,20 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
     }
     y.pix<-floor(cat.y)
   }
+  if (is.null(cat.id)) {
+    cat.id<-1:length(data.stamp.lims[,1])
+  } else if (length(cat.id) != length(data.stamp.lims[,1])) {
+    stop("Supplied cat.id is not of the same length as the ap.stamp")
+  }
+
+  if (diagnostic) { 
+    dir.create("RanCorDiagnostic")
+  }
 
   if (cutup) {
     output<-foreach(origim=data.stamp, maskim=mask.stamp, ap=ap.stamp,
                     sxl=ap.stamp.lims[,1],sxh=ap.stamp.lims[,2],syl=ap.stamp.lims[,3],syh=ap.stamp.lims[,4],
-                    catx=x.pix,caty=y.pix,.export=c('rand.x','rand.y'),.options.mpi=mpi.opts, .combine='rbind') %dopar% {
+                    catx=x.pix,caty=y.pix,id=cat.id,.export=c('rand.x','rand.y'),.options.mpi=mpi.opts, .combine='rbind') %dopar% {
       #Get number of cols & rows in image stamp
       nc<-ncol(origim)
       nr<-nrow(origim)
@@ -92,7 +101,7 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
         }
         dy<-caty-floor(rand.y)
       }
-      ind.use<-which(abs(dx) <= ceiling(nc/2) & abs(dy) <= ceiling(nr/2))
+      ind.use<-which(abs(dx) <= ceiling(nr/2) & abs(dy) <= ceiling(nc/2))
       if (length(ind.use) != numIters) {
         warning("There are supplied Randoms positions that are beyond the limits of the image\nThese are discarded.")
         dx<-dx[ind.use]
@@ -139,6 +148,8 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
           flux<-flux[s]
           sumap<-sumap[s]
         }
+        fullap<-sum(ap)
+        flux<-flux*fullap/sumap
         wflux<-sum(flux*sumap)/sum(sumap)
         wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
         wmad<-weightedMad(flux,sumap)
@@ -149,6 +160,10 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
             wsd<-sqrt(sum(sumap[ind] * (flux[ind] - wflux)^2) * (sum(sumap[ind])/(sum(sumap[ind])^2 - sum(sumap[ind]))))
             wmad<-weightedMad(flux[ind],sumap[ind])
           }
+        }
+        if (diagnostic) { 
+          output<-list(main=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE)),indiv=list(flux,sumap),im=tempim,origim=origim,maskim=maskim,ap=ap)
+        save(file=paste0('RanCorDiagnostic/',id,'.Rdata'),output)
         }
         return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
       }else{
@@ -173,6 +188,8 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
           flux<-flux[s]
           sumap<-sumap[s]
         }
+        fullap<-sum(ap)
+        flux<-flux*fullap/sumap
         wflux<-sum(flux*sumap)/sum(sumap)
         wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
         wmad<-weightedMad(flux,sumap)
@@ -183,6 +200,10 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
             wsd<-sqrt(sum(sumap[ind] * (flux[ind] - wflux)^2) * (sum(sumap[ind])/(sum(sumap[ind])^2 - sum(sumap[ind]))))
             wmad<-weightedMad(flux[ind],sumap[ind])
           }
+        }
+        if (diagnostic) { 
+          output<-list(main=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE)),indiv=list(flux,sumap),im=origim,origim=origim,maskim=NULL,ap=ap)
+        save(file=paste0('RanCorDiagnostic/',id,'.Rdata'),output)
         }
         return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux) & sumap>0)),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
       }
@@ -199,7 +220,7 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
       tempim<-data.stamp
     }
     output<-foreach(ap=ap.stamp, .noexport=ls(envir=environment()), .export=c('rand.x','rand.y','tempim','numIters','rem.mask','sigclip','nclip'),
-                    sxl=ap.stamp.lims[,1],sxh=ap.stamp.lims[,2],syl=ap.stamp.lims[,3],syh=ap.stamp.lims[,4],catx=x.pix,caty=y.pix,
+                    sxl=ap.stamp.lims[,1],sxh=ap.stamp.lims[,2],syl=ap.stamp.lims[,3],syh=ap.stamp.lims[,4],catx=x.pix,caty=y.pix,id=cat.id,
                     .options.mpi=mpi.opts, .combine='rbind') %dopar% {
       #Get number of cols & rows in image stamp
       nc<-ncol(tempim)
@@ -254,6 +275,8 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
         flux<-flux[s]
         sumap<-sumap[s]
       }
+      fullap<-sum(ap)
+      flux<-flux*fullap/sumap
       wflux<-sum(flux*sumap)/sum(sumap)
       wsd<-sqrt(sum(sumap * (flux - wflux)^2) * (sum(sumap)/(sum(sumap)^2 - sum(sumap))))
       wmad<-weightedMad(flux,sumap)
@@ -264,6 +287,10 @@ ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.st
           wsd<-sqrt(sum(sumap[ind] * (flux[ind] - wflux)^2) * (sum(sumap[ind])/(sum(sumap[ind])^2 - sum(sumap[ind]))))
           wmad<-weightedMad(flux[ind],sumap[ind])
         }
+      }
+      if (diagnostic) { 
+        output<-list(main=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE)),indiv=list(flux,sumap),im=tempim,origim=origim,maskim=maskim,ap=ap)
+        save(file=paste0('RanCorDiagnostic/',id,'.Rdata'),output)
       }
       return=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
     }
