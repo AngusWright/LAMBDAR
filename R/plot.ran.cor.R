@@ -1,4 +1,4 @@
-plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,plot.device='X11',toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.sci=FALSE,contams=NULL,plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99){
+plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,data.stamp.lims=NULL,mask.stamp.lims=NULL,plot.device='X11',toFile=FALSE,rem.mask=FALSE,numIters=1E2,path="./",plot.sci=FALSE,contams=NULL,plot.all=FALSE,sigclip=3,nclip=3,res=120,cat.id=NULL,cat.x=NULL,cat.y=NULL,rand.x=NULL,rand.y=NULL,ran.main.mask.lim=0.99,asinh=TRUE){
   if(is.matrix(ap.stamp)) {
     #We have 1 object
     ap.stamp<-list(ap.stamp)
@@ -150,7 +150,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         }
         dy<-rand.y-caty
       }
-      ind.use<-which(abs(dx) <= ceiling(nc/2) & abs(dy) <= ceiling(nr/2))
+      ind.use<-which(abs(dx) <= ceiling(nr/2) & abs(dy) <= ceiling(nc/2))
       if (length(ind.use) != numIters) {
         warning("There are supplied Randoms positions that are beyond the limits of the image\nThese are discarded.")
         dx<-dx[ind.use]
@@ -227,90 +227,117 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
         points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
-        #Convert pix values onto asinh scale
-        #X-Axis Limits; focus on 0 with ± limits around there
-        #Stretch data to a useful scale
-        stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
-        #Apply transformation
-        if (any(!is.na(tempvec))) { 
-          tempvecstretch<-magmap(tempvec,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-        } else { 
-          tempvecstretch<-tempvec
-        }
-        #Calculate Axes Major Tick Mark Labels
-        axespoints<-c(-10^(lim:(lim-2)),0,10^((lim-2):lim))
-        #Calculate Axes Major Tick Mark Lenghts
-        asinhtcls<-c(rep(0.5,length(axespoints)),rep(0.2,(length(axespoints)-1)*4))
-        #Add Minor tick marks
-        axespoints<-c(axespoints,c(-10^(lim:(lim-2)),10^((lim-2):lim))/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*2/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*3/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*4/5)
-        #Calculate Tick locations on transformed axes
-        if (any(!is.na(axespoints))) { 
-          asinhticks=magmap(axespoints,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',stretchscale=stretchscale)$map
-        } else { 
-          asinhticks=axespoints
-        }
-        #Remove overlapping Tick Marks
-        if (any(duplicated(asinhticks))) {
-          while(length(which(duplicated(asinhticks)))>0) {
-            kk<-which(duplicated(asinhticks))[1]
-            indall<-which(asinhticks==asinhticks[kk])
-            ind2<-indall[which.min(abs(axespoints[indall]))]
-            axespoints<-c(axespoints[ind2],axespoints[-1*indall])
-            asinhticks<-c(asinhticks[ind2],asinhticks[-1*indall])
-            asinhtcls<-c(asinhtcls[ind2],asinhtcls[-1*indall])
+        if (asinh) { 
+          #Convert pix values onto asinh scale
+          #X-Axis Limits; focus on 0 with ± limits around there
+          #Stretch data to a useful scale
+          stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
+          #Apply transformation
+          if (any(!is.na(tempvec))) { 
+            tempvecstretch<-magmap(tempvec,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+          } else { 
+            tempvecstretch<-tempvec
           }
-        }
-        #Get pixel histogram on transformed axes
-        pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
-        #Plot Histogram and Count axis
-        if (any(!is.na(tempvecstretch))) { 
-          magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
+          #Calculate Axes Major Tick Mark Labels
+          axespoints<-c(-10^(lim:(lim-2)),0,10^((lim-2):lim))
+          #Calculate Axes Major Tick Mark Lenghts
+          asinhtcls<-c(rep(0.5,length(axespoints)),rep(0.2,(length(axespoints)-1)*4))
+          #Add Minor tick marks
+          axespoints<-c(axespoints,c(-10^(lim:(lim-2)),10^((lim-2):lim))/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*2/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*3/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*4/5)
+          #Calculate Tick locations on transformed axes
+          if (any(!is.na(axespoints))) { 
+            asinhticks=magmap(axespoints,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',stretchscale=stretchscale)$map
+          } else { 
+            asinhticks=axespoints
+          }
+          #Remove overlapping Tick Marks
+          if (any(duplicated(asinhticks))) {
+            while(length(which(duplicated(asinhticks)))>0) {
+              kk<-which(duplicated(asinhticks))[1]
+              indall<-which(asinhticks==asinhticks[kk])
+              ind2<-indall[which.min(abs(axespoints[indall]))]
+              axespoints<-c(axespoints[ind2],axespoints[-1*indall])
+              asinhticks<-c(asinhticks[ind2],asinhticks[-1*indall])
+              asinhtcls<-c(asinhtcls[ind2],asinhtcls[-1*indall])
+            }
+          }
+          #Get pixel histogram on transformed axes
+          pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
+          #Plot Histogram and Count axis
+          if (any(!is.na(tempvecstretch))) { 
+            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
+            #Convert Labels to Pretty style
+            labs<-floor(log10(abs(axespoints)))
+            pref<-ifelse(axespoints<0,"-","")
+            labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
+            labs[which(labs=="1e+Inf")]<-"0"
+            labs[which(labs=="1e-Inf")]<-"0"
+            check = grep("1e+", labs, fixed = TRUE)
+            labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("1e-", labs, fixed = TRUE)
+            labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("e+", labs, fixed = TRUE)
+            labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("e-", labs, fixed = TRUE)
+            labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
+            axespoints<-parse(text=labs)
+            #Draw X major and minor ticks
+            axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
+            axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
+            mtext('Blanks Pixel Values (pix)', 1, line = 2)
+            #Draw major tick labels
+            ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
+            axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
+            #Draw histograms for each bin.
+            for(iter in 1:numIters) {
+              if (any(!is.na(tempvec[iter,]))) {
+                tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+                tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+                lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+              }
+            }
+            if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
+              abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+            }
+            abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
+            legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
+            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
+            if (any(!is.na(flux/sumap))) { 
+              boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+            } else { 
+              boxx<-flux/sumap
+            }
+            boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
+          } else { 
+            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
+            label('top',lab="There are no numeric data!")
+          } 
+        } else { 
+          #X-Axis Limits; focus on 0 with ± limits around there
+          #Get pixel histogram 
+          cdf<-ecdf(tempvec)
+          pix<-hist(as.numeric(tempvec)[which(cdf(tempvec)>0.02 & cdf(tempvec)<0.98)],plot=FALSE,breaks=seq(quantile(tempvec,0.01,na.rm=T),quantile(tempvec,0.99,na.rm=T),length=100))
+          #Plot Histogram and Count axis
+          magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=quantile(tempvec,c(0.01,0.99),na.rm=T),
+                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
           #Convert Labels to Pretty style
-          labs<-floor(log10(abs(axespoints)))
-          pref<-ifelse(axespoints<0,"-","")
-          labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
-          labs[which(labs=="1e+Inf")]<-"0"
-          labs[which(labs=="1e-Inf")]<-"0"
-          check = grep("1e+", labs, fixed = TRUE)
-          labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("1e-", labs, fixed = TRUE)
-          labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("e+", labs, fixed = TRUE)
-          labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("e-", labs, fixed = TRUE)
-          labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
-          axespoints<-parse(text=labs)
-          #Draw X major and minor ticks
-          axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
-          axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
-          mtext('Blanks Pixel Values (pix)', 1, line = 2)
-          #Draw major tick labels
-          ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
-          axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
           #Draw histograms for each bin.
           for(iter in 1:numIters) {
             if (any(!is.na(tempvec[iter,]))) {
-              tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-              tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
-              lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+              tempvec2<-tempvec[iter,which(cdf(tempvec[iter,])>0.02&cdf(tempvec[iter,])<0.98)]
+              tmp<-hist(tempvec2,plot=FALSE,breaks=pix$breaks)
+              lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
             }
           }
           if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
-            abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+            abline(v=dat$randMean.mean/(max(sumap,na.rm=T)),col=hsv(0,0,0,alpha=0.7),lty=1)
           }
-          abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-          legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
-          if (any(!is.na(flux/sumap))) { 
-            boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-          } else { 
-            boxx<-flux/sumap
-          }
-          boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
-        } else { 
-          magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
-          label('top',lab="There are no numeric data!")
-        } 
+          abline(v=0,col='darkgreen')
+          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
+          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.6)
+          boxx<-flux/sumap
+          boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
+        }
         if (toFile) { dev.off() }
       }else{
         ranaps<-origim*0
@@ -365,90 +392,117 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
         points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
-        #Convert pix values onto asinh scale
-        #X-Axis Limits; focus on 0 with ± limits around there
-        #Stretch data to a useful scale
-        stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
-        #Apply transformation
-        if (any(!is.na(tempvec))) { 
-           tempvecstretch<-magmap(tempvec,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-        } else {
-           tempvecstretch<-tempvec
-        } 
-        #Calculate Axes Major Tick Mark Labels
-        axespoints<-c(-10^(lim:(lim-2)),0,10^((lim-2):lim))
-        #Calculate Axes Major Tick Mark Lenghts
-        asinhtcls<-c(rep(0.5,length(axespoints)),rep(0.2,(length(axespoints)-1)*4))
-        #Add Minor tick marks
-        axespoints<-c(axespoints,c(-10^(lim:(lim-2)),10^((lim-2):lim))/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*2/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*3/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*4/5)
-        #Calculate Tick locations on transformed axes
-        if (any(!is.na(axespoints))) { 
-           asinhticks=magmap(axespoints,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',stretchscale=stretchscale)$map
-        } else { 
-           asinhticks=axespoints
-        } 
-        #Remove overlapping Tick Marks
-        if (any(duplicated(asinhticks))) {
-          while(length(which(duplicated(asinhticks)))>0) {
-            kk<-which(duplicated(asinhticks))[1]
-            indall<-which(asinhticks==asinhticks[kk])
-            ind2<-indall[which.min(abs(axespoints[indall]))]
-            axespoints<-c(axespoints[ind2],axespoints[-1*indall])
-            asinhticks<-c(asinhticks[ind2],asinhticks[-1*indall])
-            asinhtcls<-c(asinhtcls[ind2],asinhtcls[-1*indall])
+        if (asinh) { 
+          #Convert pix values onto asinh scale
+          #X-Axis Limits; focus on 0 with ± limits around there
+          #Stretch data to a useful scale
+          stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
+          #Apply transformation
+          if (any(!is.na(tempvec))) { 
+             tempvecstretch<-magmap(tempvec,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+          } else {
+             tempvecstretch<-tempvec
+          } 
+          #Calculate Axes Major Tick Mark Labels
+          axespoints<-c(-10^(lim:(lim-2)),0,10^((lim-2):lim))
+          #Calculate Axes Major Tick Mark Lenghts
+          asinhtcls<-c(rep(0.5,length(axespoints)),rep(0.2,(length(axespoints)-1)*4))
+          #Add Minor tick marks
+          axespoints<-c(axespoints,c(-10^(lim:(lim-2)),10^((lim-2):lim))/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*2/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*3/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*4/5)
+          #Calculate Tick locations on transformed axes
+          if (any(!is.na(axespoints))) { 
+             asinhticks=magmap(axespoints,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',stretchscale=stretchscale)$map
+          } else { 
+             asinhticks=axespoints
+          } 
+          #Remove overlapping Tick Marks
+          if (any(duplicated(asinhticks))) {
+            while(length(which(duplicated(asinhticks)))>0) {
+              kk<-which(duplicated(asinhticks))[1]
+              indall<-which(asinhticks==asinhticks[kk])
+              ind2<-indall[which.min(abs(axespoints[indall]))]
+              axespoints<-c(axespoints[ind2],axespoints[-1*indall])
+              asinhticks<-c(asinhticks[ind2],asinhticks[-1*indall])
+              asinhtcls<-c(asinhtcls[ind2],asinhtcls[-1*indall])
+            }
           }
-        }
-        #Get pixel histogram on transformed axes
-        pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
-        if (any(!is.na(tempvecstretch))) { 
+          #Get pixel histogram on transformed axes
+          pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
+          if (any(!is.na(tempvecstretch))) { 
+            #Plot Histogram and Count axis
+            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
+            #Convert Labels to Pretty style
+            labs<-floor(log10(abs(axespoints)))
+            pref<-ifelse(axespoints<0,"-","")
+            labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
+            labs[which(labs=="1e+Inf")]<-"0"
+            labs[which(labs=="1e-Inf")]<-"0"
+            check = grep("1e+", labs, fixed = TRUE)
+            labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("1e-", labs, fixed = TRUE)
+            labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("e+", labs, fixed = TRUE)
+            labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("e-", labs, fixed = TRUE)
+            labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
+            axespoints<-parse(text=labs)
+            #Draw X major and minor ticks
+            axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
+            axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
+            mtext('Randoms Pixel Values (pix)', 1, line = 2)
+            #Draw major tick labels
+            ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
+            axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
+            #Draw histograms for each bin.
+            for(iter in 1:numIters) {
+              if (any(!is.na(tempvec[iter,]))) {
+                tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+                tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+                lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+              }
+            }
+            if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
+              abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+            }
+            abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
+            legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
+            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
+            if (any(!is.na(flux/sumap))) { 
+               boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+            } else {
+               boxx<-flux/sumap
+            } 
+            boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
+          } else { 
+            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
+            label('top',lab="There are no numeric data!")
+          } 
+        } else { 
+          #X-Axis Limits; focus on 0 with ± limits around there
+          #Get pixel histogram 
+          cdf<-ecdf(tempvec)
+          pix<-hist(as.numeric(tempvec)[which(cdf(tempvec)>0.02 & cdf(tempvec)<0.98)],plot=FALSE,breaks=seq(quantile(tempvec,0.01,na.rm=T),quantile(tempvec,0.99,na.rm=T),length=100))
           #Plot Histogram and Count axis
-          magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
+          magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=quantile(tempvec,c(0.01,0.99),na.rm=T),
+                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
           #Convert Labels to Pretty style
-          labs<-floor(log10(abs(axespoints)))
-          pref<-ifelse(axespoints<0,"-","")
-          labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
-          labs[which(labs=="1e+Inf")]<-"0"
-          labs[which(labs=="1e-Inf")]<-"0"
-          check = grep("1e+", labs, fixed = TRUE)
-          labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("1e-", labs, fixed = TRUE)
-          labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("e+", labs, fixed = TRUE)
-          labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("e-", labs, fixed = TRUE)
-          labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
-          axespoints<-parse(text=labs)
-          #Draw X major and minor ticks
-          axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
-          axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
-          mtext('Randoms Pixel Values (pix)', 1, line = 2)
-          #Draw major tick labels
-          ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
-          axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
           #Draw histograms for each bin.
           for(iter in 1:numIters) {
             if (any(!is.na(tempvec[iter,]))) {
-              tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-              tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+              tempvec2<-tempvec[iter,which(cdf(tempvec[iter,])>0.02&cdf(tempvec[iter,])<0.98)]
+              tmp<-hist(tempvec2,plot=FALSE,breaks=pix$breaks)
               lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
             }
           }
           if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
-            abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+            abline(v=dat$randMean.mean/(max(sumap,na.rm=T)),col=hsv(0,0,0,alpha=0.7),lty=1)
           }
-          abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
+          abline(v=0,col='darkgreen')
           legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
-          if (any(!is.na(flux/sumap))) { 
-             boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-          } else {
-             boxx<-flux/sumap
-          } 
+          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.6)
+          boxx<-flux/sumap
           boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
-        } else { 
-          magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
-          label('top',lab="There are no numeric data!")
-        } 
+        }
         if (toFile) { dev.off() }
       }
     }
@@ -565,90 +619,117 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
         points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
-        #Convert pix values onto asinh scale
-        #X-Axis Limits; focus on 0 with ± limits around there
-        #Stretch data to a useful scale
-        stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
-        #Apply transformation
-        if (any(!is.na(tempvec))) { 
-          tempvecstretch<-magmap(tempvec,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-        } else {
-          tempvecstretch<-tempvec
-        }
-        #Calculate Axes Major Tick Mark Labels
-        axespoints<-c(-10^(lim:(lim-2)),0,10^((lim-2):lim))
-        #Calculate Axes Major Tick Mark Lenghts
-        asinhtcls<-c(rep(0.5,length(axespoints)),rep(0.2,(length(axespoints)-1)*4))
-        #Add Minor tick marks
-        axespoints<-c(axespoints,c(-10^(lim:(lim-2)),10^((lim-2):lim))/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*2/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*3/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*4/5)
-        #Calculate Tick locations on transformed axes
-        if (any(!is.na(axespoints))) { 
-          asinhticks=magmap(axespoints,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',stretchscale=stretchscale)$map
-        } else { 
-          asinhticks=axespoints
-        }
-        #Remove overlapping Tick Marks
-        if (any(duplicated(asinhticks))) {
-          while(length(which(duplicated(asinhticks)))>0) {
-            kk<-which(duplicated(asinhticks))[1]
-            indall<-which(asinhticks==asinhticks[kk])
-            ind2<-indall[which.min(abs(axespoints[indall]))]
-            axespoints<-c(axespoints[ind2],axespoints[-1*indall])
-            asinhticks<-c(asinhticks[ind2],asinhticks[-1*indall])
-            asinhtcls<-c(asinhtcls[ind2],asinhtcls[-1*indall])
+        if (asinh) { 
+          #Convert pix values onto asinh scale
+          #X-Axis Limits; focus on 0 with ± limits around there
+          #Stretch data to a useful scale
+          stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
+          #Apply transformation
+          if (any(!is.na(tempvec))) { 
+            tempvecstretch<-magmap(tempvec,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+          } else {
+            tempvecstretch<-tempvec
           }
-        }
-        #Get pixel histogram on transformed axes
-        pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
-        if (any(!is.na(tempvecstretch))) { 
+          #Calculate Axes Major Tick Mark Labels
+          axespoints<-c(-10^(lim:(lim-2)),0,10^((lim-2):lim))
+          #Calculate Axes Major Tick Mark Lenghts
+          asinhtcls<-c(rep(0.5,length(axespoints)),rep(0.2,(length(axespoints)-1)*4))
+          #Add Minor tick marks
+          axespoints<-c(axespoints,c(-10^(lim:(lim-2)),10^((lim-2):lim))/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*2/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*3/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*4/5)
+          #Calculate Tick locations on transformed axes
+          if (any(!is.na(axespoints))) { 
+            asinhticks=magmap(axespoints,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',stretchscale=stretchscale)$map
+          } else { 
+            asinhticks=axespoints
+          }
+          #Remove overlapping Tick Marks
+          if (any(duplicated(asinhticks))) {
+            while(length(which(duplicated(asinhticks)))>0) {
+              kk<-which(duplicated(asinhticks))[1]
+              indall<-which(asinhticks==asinhticks[kk])
+              ind2<-indall[which.min(abs(axespoints[indall]))]
+              axespoints<-c(axespoints[ind2],axespoints[-1*indall])
+              asinhticks<-c(asinhticks[ind2],asinhticks[-1*indall])
+              asinhtcls<-c(asinhtcls[ind2],asinhtcls[-1*indall])
+            }
+          }
+          #Get pixel histogram on transformed axes
+          pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
+          if (any(!is.na(tempvecstretch))) { 
+            #Plot Histogram and Count axis
+            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),ylim=c(1,10^(log10(max(pix$counts))+1)),main="Pixel Histogram",log='y')
+            #Convert Labels to Pretty style
+            labs<-floor(log10(abs(axespoints)))
+            pref<-ifelse(axespoints<0,"-","")
+            labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
+            labs[which(labs=="1e+Inf")]<-"0"
+            labs[which(labs=="1e-Inf")]<-"0"
+            check = grep("1e+", labs, fixed = TRUE)
+            labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("1e-", labs, fixed = TRUE)
+            labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("e+", labs, fixed = TRUE)
+            labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("e-", labs, fixed = TRUE)
+            labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
+            axespoints<-parse(text=labs)
+            #Draw X major and minor ticks
+            axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
+            axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
+            mtext('Blanks Pixel Values (pix)', 1, line = 2)
+            #Draw major tick labels
+            ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
+            axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
+            #Draw histograms for each bin.
+            for(iter in 1:numIters) {
+              if (any(!is.na(tempvec[iter,]))) {
+                tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+                tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+                lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+              }
+            }
+            if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) {
+              abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+            }
+            abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
+            legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
+            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
+            if (any(!is.na(flux/sumap))) { 
+              boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+            } else { 
+              boxx<-flux/sumap
+            }
+            boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
+          } else { 
+            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
+            label('top',lab="There are no numeric data!")
+          } 
+        } else { 
+          #X-Axis Limits; focus on 0 with ± limits around there
+          #Get pixel histogram 
+          cdf<-ecdf(tempvec)
+          pix<-hist(as.numeric(tempvec)[which(cdf(tempvec)>0.02 & cdf(tempvec)<0.98)],plot=FALSE,breaks=seq(quantile(tempvec,0.01,na.rm=T),quantile(tempvec,0.99,na.rm=T),length=100))
           #Plot Histogram and Count axis
-          magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),ylim=c(1,10^(log10(max(pix$counts))+1)),main="Pixel Histogram",log='y')
+          magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=quantile(tempvec,c(0.01,0.99),na.rm=T),
+                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
           #Convert Labels to Pretty style
-          labs<-floor(log10(abs(axespoints)))
-          pref<-ifelse(axespoints<0,"-","")
-          labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
-          labs[which(labs=="1e+Inf")]<-"0"
-          labs[which(labs=="1e-Inf")]<-"0"
-          check = grep("1e+", labs, fixed = TRUE)
-          labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("1e-", labs, fixed = TRUE)
-          labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("e+", labs, fixed = TRUE)
-          labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("e-", labs, fixed = TRUE)
-          labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
-          axespoints<-parse(text=labs)
-          #Draw X major and minor ticks
-          axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
-          axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
-          mtext('Blanks Pixel Values (pix)', 1, line = 2)
-          #Draw major tick labels
-          ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
-          axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
           #Draw histograms for each bin.
           for(iter in 1:numIters) {
             if (any(!is.na(tempvec[iter,]))) {
-              tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-              tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
-              lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+              tempvec2<-tempvec[iter,which(cdf(tempvec[iter,])>0.02&cdf(tempvec[iter,])<0.98)]
+              tmp<-hist(tempvec2,plot=FALSE,breaks=pix$breaks)
+              lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
             }
           }
-          if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) {
-            abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+          if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
+            abline(v=dat$randMean.mean/(max(sumap,na.rm=T)),col=hsv(0,0,0,alpha=0.7),lty=1)
           }
-          abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-          legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
-          if (any(!is.na(flux/sumap))) { 
-            boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-          } else { 
-            boxx<-flux/sumap
-          }
-          boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
-        } else { 
-          magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
-          label('top',lab="There are no numeric data!")
-        } 
+          abline(v=0,col='darkgreen')
+          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
+          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.6)
+          boxx<-flux/sumap
+          boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
+        }
         if (toFile) { dev.off() }
       }else{
         ranaps<-tempim*0
@@ -704,90 +785,117 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         magaxis(side=1:4,labels=FALSE)
         magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
         points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
-        #Convert pix values onto asinh scale
-        #X-Axis Limits; focus on 0 with ± limits around there
-        #Stretch data to a useful scale
-        stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
-        #Apply transformation
-        if (any(!is.na(tempvec))) { 
-          tempvecstretch<-magmap(tempvec,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-        } else {
-          tempvecstretch<-tempvec
-        } 
-        #Calculate Axes Major Tick Mark Labels
-        axespoints<-c(-10^(lim:(lim-2)),0,10^((lim-2):lim))
-        #Calculate Axes Major Tick Mark Lenghts
-        asinhtcls<-c(rep(0.5,length(axespoints)),rep(0.2,(length(axespoints)-1)*4))
-        #Add Minor tick marks
-        axespoints<-c(axespoints,c(-10^(lim:(lim-2)),10^((lim-2):lim))/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*2/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*3/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*4/5)
-        #Calculate Tick locations on transformed axes
-        if (any(!is.na(axespoints))) { 
-          asinhticks=magmap(axespoints,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',stretchscale=stretchscale)$map
-        } else { 
-          asinhticks=axespoints
-        } 
-        #Remove overlapping Tick Marks
-        if (any(duplicated(asinhticks))) {
-          while(length(which(duplicated(asinhticks)))>0) {
-            kk<-which(duplicated(asinhticks))[1]
-            indall<-which(asinhticks==asinhticks[kk])
-            ind2<-indall[which.min(abs(axespoints[indall]))]
-            axespoints<-c(axespoints[ind2],axespoints[-1*indall])
-            asinhticks<-c(asinhticks[ind2],asinhticks[-1*indall])
-            asinhtcls<-c(asinhtcls[ind2],asinhtcls[-1*indall])
+        if (asinh) { 
+          #Convert pix values onto asinh scale
+          #X-Axis Limits; focus on 0 with ± limits around there
+          #Stretch data to a useful scale
+          stretchscale=ifelse(lim<0,1.5*10^(abs(lim)+1),1.5*10^(-1*(lim-1)))
+          #Apply transformation
+          if (any(!is.na(tempvec))) { 
+            tempvecstretch<-magmap(tempvec,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+          } else {
+            tempvecstretch<-tempvec
+          } 
+          #Calculate Axes Major Tick Mark Labels
+          axespoints<-c(-10^(lim:(lim-2)),0,10^((lim-2):lim))
+          #Calculate Axes Major Tick Mark Lenghts
+          asinhtcls<-c(rep(0.5,length(axespoints)),rep(0.2,(length(axespoints)-1)*4))
+          #Add Minor tick marks
+          axespoints<-c(axespoints,c(-10^(lim:(lim-2)),10^((lim-2):lim))/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*2/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*3/5,c(-10^(lim:(lim-2)),10^((lim-2):lim))*4/5)
+          #Calculate Tick locations on transformed axes
+          if (any(!is.na(axespoints))) { 
+            asinhticks=magmap(axespoints,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',stretchscale=stretchscale)$map
+          } else { 
+            asinhticks=axespoints
+          } 
+          #Remove overlapping Tick Marks
+          if (any(duplicated(asinhticks))) {
+            while(length(which(duplicated(asinhticks)))>0) {
+              kk<-which(duplicated(asinhticks))[1]
+              indall<-which(asinhticks==asinhticks[kk])
+              ind2<-indall[which.min(abs(axespoints[indall]))]
+              axespoints<-c(axespoints[ind2],axespoints[-1*indall])
+              asinhticks<-c(asinhticks[ind2],asinhticks[-1*indall])
+              asinhtcls<-c(asinhtcls[ind2],asinhtcls[-1*indall])
+            }
           }
-        }
-        #Get pixel histogram on transformed axes
-        pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
-        if (any(!is.na(tempvecstretch))) { 
+          #Get pixel histogram on transformed axes
+          pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
+          if (any(!is.na(tempvecstretch))) { 
+            #Plot Histogram and Count axis
+            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
+            #Convert Labels to Pretty style
+            labs<-floor(log10(abs(axespoints)))
+            pref<-ifelse(axespoints<0,"-","")
+            labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
+            labs[which(labs=="1e+Inf")]<-"0"
+            labs[which(labs=="1e-Inf")]<-"0"
+            check = grep("1e+", labs, fixed = TRUE)
+            labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("1e-", labs, fixed = TRUE)
+            labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("e+", labs, fixed = TRUE)
+            labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
+            check = grep("e-", labs, fixed = TRUE)
+            labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
+            axespoints<-parse(text=labs)
+            #Draw X major and minor ticks
+            axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
+            axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
+            mtext('Randoms Pixel Values (pix)', 1, line = 2)
+            #Draw major tick labels
+            ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
+            axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
+            #Draw histograms for each bin.
+            for(iter in 1:numIters) {
+              if (any(!is.na(tempvec[iter,]))) {
+                tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+                tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
+                lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+              }
+            }
+            if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
+              abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+            }
+            abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
+            legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
+            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
+            if (any(!is.na(flux/sumap))) { 
+              boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
+            } else { 
+              boxx<-flux/sumap
+            } 
+            boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
+          } else { 
+            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
+            label('top',lab="There are no numeric data!")
+          } 
+        } else { 
+          #X-Axis Limits; focus on 0 with ± limits around there
+          #Get pixel histogram 
+          cdf<-ecdf(tempvec)
+          pix<-hist(as.numeric(tempvec)[which(cdf(tempvec)>0.02 & cdf(tempvec)<0.98)],plot=FALSE,breaks=seq(quantile(tempvec,0.01,na.rm=T),quantile(tempvec,0.99,na.rm=T),length=100))
           #Plot Histogram and Count axis
-          magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
+          magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=quantile(tempvec,c(0.01,0.99),na.rm=T),
+                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
           #Convert Labels to Pretty style
-          labs<-floor(log10(abs(axespoints)))
-          pref<-ifelse(axespoints<0,"-","")
-          labs<-paste0(pref,ifelse(labs>0,"1e+","1e"),labs,"")
-          labs[which(labs=="1e+Inf")]<-"0"
-          labs[which(labs=="1e-Inf")]<-"0"
-          check = grep("1e+", labs, fixed = TRUE)
-          labs[check] = paste(sub("1e+", "10^{", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("1e-", labs, fixed = TRUE)
-          labs[check] = paste(sub("1e-", "10^{-", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("e+", labs, fixed = TRUE)
-          labs[check] = paste(sub("e+", "*x*10^{", labs[check], fixed = TRUE), "}", sep = "")
-          check = grep("e-", labs, fixed = TRUE)
-          labs[check] = paste(sub("e-", "*x*10^{-", labs[check], fixed = TRUE), "}", sep = "")
-          axespoints<-parse(text=labs)
-          #Draw X major and minor ticks
-          axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
-          axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
-          mtext('Randoms Pixel Values (pix)', 1, line = 2)
-          #Draw major tick labels
-          ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
-          axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
           #Draw histograms for each bin.
           for(iter in 1:numIters) {
             if (any(!is.na(tempvec[iter,]))) {
-              tempvecstretch<-magmap(tempvec[iter,],lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-              tmp<-hist(tempvecstretch,plot=FALSE,breaks=pix$breaks)
-              lines(x=rev(rev(pix$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
+              tempvec2<-tempvec[iter,which(cdf(tempvec[iter,])>0.02&cdf(tempvec[iter,])<0.98)]
+              tmp<-hist(tempvec2,plot=FALSE,breaks=pix$breaks)
+              lines(x=rev(rev(tmp$breaks)[-1]),y=tmp$counts,type='s',col=hsv(seq(2/3,0,length=numIters))[iter])
             }
           }
           if (is.finite(dat$randMean.mean/(max(sumap,na.rm=T)))) { 
-            abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
+            abline(v=dat$randMean.mean/(max(sumap,na.rm=T)),col=hsv(0,0,0,alpha=0.7),lty=1)
           }
-          abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
+          abline(v=0,col='darkgreen')
           legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/sqrt(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
-          if (any(!is.na(flux/sumap))) { 
-            boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
-          } else { 
-            boxx<-flux/sumap
-          } 
-          boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
-        } else { 
-          magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
-          label('top',lab="There are no numeric data!")
-        } 
+          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.6)
+          boxx<-flux/sumap
+          boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
+        }
         if (toFile) { dev.off() }
       }
     }
