@@ -1,5 +1,5 @@
 estimate.psf <-
-function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=9,env=NULL,plot=FALSE) {
+function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=9,all.limit=0.05,env=NULL,plot=FALSE) {
 
   message('--------------------------Estimate_PSF-------------------------------------')
   # Load Parameter Space {{{
@@ -40,7 +40,11 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
       point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]
       nn.dist<-match$nn.dists[order(match$nn.dists[,2],decreasing=TRUE),2]
       #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
-      if (any(nn.dist<radial.tolerance)) { 
+      if (length(which(nn.dist<1e4))/length(nn.dist)<all.limit) { 
+        #Just remove all the blends
+        point.sources<-point.sources[-which(nn.dist<1e4)]
+        nn.dist<-nn.dist[-which(nn.dist<1e4)]
+      } else if (any(nn.dist<radial.tolerance)) { 
         point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
         nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
       }
@@ -55,7 +59,11 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
       nn.dist<-match$nn.dists[order(match$nn.dists[,2],decreasing=TRUE),2]
       point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]
       #Reject sources that are, assuming at-least Nyquist sampling, within 3sigma overlap of the point source
-      if (any(nn.dist<radial.tolerance)) { 
+      if (length(which(nn.dist<1e4))/length(nn.dist)<all.limit) { 
+        #Just remove all the blends
+        point.sources<-point.sources[-which(nn.dist<1e4)]
+        nn.dist<-nn.dist[-which(nn.dist<1e4)]
+      } else if (any(nn.dist<radial.tolerance)) { 
         point.sources<-point.sources[-which(nn.dist<radial.tolerance)]
         nn.dist<-nn.dist[-which(nn.dist<radial.tolerance)]
       }
@@ -69,7 +77,19 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=TRUE,n.sources=5e2
   } else if (do.sky.est) { 
     if (check.one.sky) { 
       #Remove things with pixel values far outside what is requested
-      onesky<-fit.gauss2low(image.env$im)
+      if (length(image.env$imm)>1) { 
+        skypix<-image.env$im
+        skypix[which(image.env$imm==0)]<-NA
+        skypix<-skypix[-(cat.x + nrow(image.env$im) * (cat.y - 1))]
+        skypix<-skypix[which(is.finite(skypix))]
+      } else { 
+        skypix<-image.env$im[-(cat.x + nrow(image.env$im) * (cat.y - 1))]
+      }
+      skypix<-skypix[which(abs(skypix-median(skypix,na.rm=T))<10*mad(skypix,na.rm=T))]
+      onesky<-try(fit.gauss2low(skypix))
+      if (class(onesky)=='try-error') { 
+        onesky<-data.frame(mu=median(skypix,na.rm=TRUE),sd=mad(skypix,na.rm=T))
+      }
       pixval<-image.env$im[cbind(cat.x[point.sources],cat.y[point.sources])] - onesky$mu
       if (grepl("SNR",bin.type)) { 
         pixval<-pixval/onesky$sd

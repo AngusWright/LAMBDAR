@@ -21,6 +21,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if (!quiet) { calls<-sys.status()$sys.calls
                 cat(paste('------------------------------------------------------\n'))
                 cat(paste('   LAMBDAR : version ',packageVersion("LAMBDAR"),': ',strsplit(paste(calls[[length(calls)-2]]),"(",fixed=TRUE)[[1]][1],'\n'))
+                cat(paste('   ',Sys.time(),': User ',system("whoami",intern=TRUE),'(',Sys.info()["nodename"],')\n'))
                 cat(paste('------------------------------------------------------\n'))
                 cat('Initialising Workspace {\n')
                 cat('   Reading Parameter File ') }
