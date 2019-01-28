@@ -1,5 +1,5 @@
 estimate.psf <-
-function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=9,all.limit=0.05,env=NULL,plot=FALSE) {
+function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=25,all.limit=0.15,env=NULL,plot=FALSE) {
 
   message('--------------------------Estimate_PSF-------------------------------------')
   # Load Parameter Space {{{
@@ -35,7 +35,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
     if (length(point.sources) > 1) { 
       #Use pixel-space nearest neighbours 
       match<-nn2(data.frame(cat.x,cat.y)[point.sources,][which(blendfrac[point.sources]<=blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',
-                 radius=20,k=min(10,length(which(blendfrac[point.sources]<=blend.tolerance))))
+                 radius=radial.tolerance*1.2,k=min(10,length(which(blendfrac[point.sources]<=blend.tolerance))))
       #Order by the nearest non-self match (2nd nnd column)
       point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]
       nn.dist<-match$nn.dists[order(match$nn.dists[,2],decreasing=TRUE),2]
