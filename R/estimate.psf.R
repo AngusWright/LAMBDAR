@@ -54,7 +54,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
   } else { 
     if (length(point.sources) > 0) { 
       #Use pixel-space nearest neighbours 
-      match<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=20,k=min(length(cat.x),10))
+      match<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=radial.tolerance*1.2,k=min(length(cat.x),10))
       #Order by the nearest non-self match (2nd nnd column)
       nn.dist<-match$nn.dists[order(match$nn.dists[,2],decreasing=TRUE),2]
       point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]
@@ -285,7 +285,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
     mask.tolerance.tmp<-mask.tolerance
     radial.tolerance.tmp<-radial.tolerance
     #Check if we should iteratively can clean the sample 
-    if (length(which(nn.dist[keep] > 20 & maskfrac[point.sources[keep]] == 0 & blendfrac[point.sources[keep]] == 0)) < n.sources) { 
+    if (length(which(nn.dist[keep] > radial.tolerance & maskfrac[point.sources[keep]] == 0 & blendfrac[point.sources[keep]] == 0)) < n.sources) { 
       while (length(keep) > n.sources) { 
         #Grow the distance tolerance
         radial.tolerance.tmp<-radial.tolerance.tmp+3
@@ -304,18 +304,30 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
       }
     } else { 
       #There are more pure PSF sources than the number requested; just pick the first N.sources of them...
+      keep<-which(bin[point.sources]==i & nn.dist > radial.tolerance & maskfrac[point.sources] == 0 & blendfrac[point.sources] == 0) 
       if (n.sources+1 < length(keep)) { 
         throw<-keep[(n.sources+1):length(keep)]
         point.sources<-point.sources[-throw]
         nn.dist<-nn.dist[-throw]
+      } else { 
+        point.sources<-point.sources[keep]
+        nn.dist<-nn.dist[keep]
       }
     }
   }
   if (plot & length(point.sources)>0) { 
-    #show a sample of the PSFs used in the stack
-    nsamp<-min(24,length(point.sources))
-    sample=sample(point.sources,nsamp)
-    layout(matrix(c(1:(ifelse(nsamp>12,12,nsamp)*3),rep(0,36-ifelse(nsamp>12,12,nsamp)*3)),ncol=6,byrow=T))
+    diagnostic<-TRUE
+    if (diagnostic) { 
+      #show all of the PSFs used in the stack
+      nsamp<-length(point.sources)
+      sample<-point.sources
+    } else { 
+      #show a sample of the PSFs used in the stack
+      nsamp<-min(24,length(point.sources))
+      sample=sample(point.sources,nsamp)
+    }
+    laymat<-(matrix(c(1:(ifelse(nsamp>12,12,nsamp)*4),rep(0,12*4-ifelse(nsamp>12,12,nsamp)*4)),ncol=8,byrow=T))
+    layout(laymat)
     par(mar=c(0,0,0,0),oma=c(2,2,2,2))
   } else { 
     sample<-NULL
@@ -394,6 +406,8 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
         label('topleft',paste0(i,': (2) recentred (no mask)'),col='red',lwd=2)
         capture=magimage(im.cen-im[xlo:xup,ylo:yup],axes=FALSE)
         label('topleft',paste0(i,': Raw-centred (no mask)'),col='red',lwd=2)
+        capture=magimage(im_psf[[bin[i]]]/weight[[bin[i]]],axes=FALSE)
+        label('topleft',paste0(i,': PSF-stack (no mask)'),col='red',lwd=2)
       } else { 
         capture=magimage(im[xlo:xup,ylo:yup]*mask[xmlo:xmup,ymlo:ymup],axes=FALSE)
         label('topleft',paste0(i,': (1) raw (masked)'),col='red',lwd=2)
@@ -401,6 +415,8 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
         label('topleft',paste0(i,': (2) recentred (masked)'),col='red',lwd=2)
         capture=magimage((im.cen-im[xlo:xup,ylo:yup])*mask[xmlo:xmup,ymlo:ymup],axes=FALSE)
         label('topleft',paste0(i,': Raw-centred (masked)'),col='red',lwd=2)
+        capture=magimage(im_psf[[bin[i]]]/weight[[bin[i]]],axes=FALSE)
+        label('topleft',paste0(i,': PSF-stack (masked)'),col='red',lwd=2)
       }
     }
   }
