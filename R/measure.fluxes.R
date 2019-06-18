@@ -211,7 +211,7 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
     #Print Header in logfile /*fold*/ {{{
     message(paste('------------------------------------------------------\n'))
     message(paste('   LAMBDAR     version ',packageVersion("LAMBDAR"),': Log File\n'))
-    message(paste('   created on ',Sys.time(),' by ',system("whoami",intern=TRUE)))
+    message(paste('   created on ',Sys.time(),' by ',system("whoami",intern=TRUE),'(',Sys.info()["nodename"],')'))
     message(paste('------------------------------------------------------\n'))
     #/*fend*/ }}}
     #Print any warnings /*fold*/ {{{

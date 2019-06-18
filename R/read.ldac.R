@@ -3,8 +3,9 @@
 #
 
 read.ldac<-function(file,ldactoasc=system('which ldactoasc',intern=T),table='OBJECTS',
-                    options='',outfile=paste0(file,'_ldac.csv'),
-                    headcat=paste0(file,'_head.csv'),bodycat=paste0(file,'_body.csv'),
+                    options='',outfile=paste0(rev(strsplit(file,'/')[[1]])[1],'_ldac.csv'),
+                    headcat=paste0(rev(strsplit(file,'/')[[1]])[1],'_head.csv'),
+                    bodycat=paste0(rev(strsplit(file,'/')[[1]])[1],'_body.csv'),
                     force=TRUE,clean=TRUE,diagnostic=FALSE,...) { 
   require(data.table)
   if (ldactoasc == "") { 

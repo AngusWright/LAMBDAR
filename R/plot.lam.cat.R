@@ -1,4 +1,4 @@
-plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE) { 
+plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE,smooth.bw) { 
 
   environment(open.catalogue)<-environment()
   environment(read.images)<-environment()
@@ -52,7 +52,11 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE) {
     xy<-ad.to.xy(cat.ra,cat.dec,image.env$astr.struc)
     aspp<-abs(image.env$astr.struc$CD[1,1])*3600
     #Plot Input & Aperture Ellipses
-    magimage(image.env$im)
+    if (!missing(smooth.bw)){
+      magimage(smooth.im(image.env$im,smooth.bw))
+    } else { 
+      magimage(image.env$im)
+    } 
     #image(x=1:length(image.env$im[,1]),y=1:length(image.env$im[1,]),
     #      image.env$im,col=grey.colors(1E3),zlim=quantile(image.env$im,c(0,0.999)),
     #      asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
@@ -63,8 +67,13 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE) {
     #points(xy[,1],xy[,2],pch=3,cex=0.5,col=ifelse(contams,'red','green3'))
     #Plot Zoomed Sections of the Image:
     #-> Input & Aperture Ellipses
-    magimage(image.env$im,xlim=xy[which(!contams)[1],1]+c(-100,+100),
-                ylim=xy[which(!contams)[1],2]+c(-100,+100))
+    if (!missing(smooth.bw)){
+      magimage(smooth.im(image.env$im,smooth.bw),xlim=xy[which(!contams)[1],1]+c(-100,+100),
+                  ylim=xy[which(!contams)[1],2]+c(-100,+100))
+    } else { 
+      magimage(image.env$im,xlim=xy[which(!contams)[1],1]+c(-100,+100),
+                  ylim=xy[which(!contams)[1],2]+c(-100,+100))
+    } 
     #image(x=1:length(image.env$im[,1]),y=1:length(image.env$im[1,]),
     #      image.env$im,col=grey.colors(1E3),zlim=quantile(image.env$im,c(0,0.999)),
     #      asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",
