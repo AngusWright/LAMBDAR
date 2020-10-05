@@ -1,6 +1,5 @@
 exportPattern("^[[:alpha:]]+")
 
-import("astro")
 import("nortest")
 import("seqinr")
 import("plotrix")
