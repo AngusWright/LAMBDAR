@@ -2122,10 +2122,10 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
 
   #Do you want to read images with PyFits instead of R? {{{
   ID="PyFITSRead"
-  use.pyfits<-params[ID,1]
+  use.pyfits<-as.numeric(params[ID,1])
   if (is.na(use.pyfits)) {
     param.warnings<-c(param.warnings,"PyFITSRead Parameter not in Parameter File. Using 0 [FALSE]'")
-    PyFITSRead<-FALSE
+    use.pyfits<-FALSE
   }
   use.pyfits<-use.pyfits==1
   #}}}

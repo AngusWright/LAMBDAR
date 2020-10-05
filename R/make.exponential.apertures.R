@@ -33,7 +33,11 @@ function(outenv=parent.env(environment()), env=NULL,ObsParm,padGals,col.corr=0,c
   if (is.na(mag.zp)) {
     stop("No Magnitude Zero Point supplied or read. magnitudes are required for Sim")
   }
-  inputmags<- -2.5*log10(flux.weight)+mag.zp
+  if (weight.type=="flux") {
+    inputmags<- -2.5*log10(flux.weight)+mag.zp
+  } else { 
+    inputmags<- flux.weight
+  }
   #
 
   #Remove Galaxies with non-finite input magnitudes
