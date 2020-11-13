@@ -66,7 +66,7 @@ function(env=NULL) {
       if (!quiet) { cat('Generating the PSF from the data') }
       message('Generating the PSF from the data')
       if (plot.sample) { pdf(height=10,width=10,file=file.path(path.root,path.work,path.out,'PSFGen_Samples.pdf')) }
-      psf.est<-estimate.psf(outenv=environment(),plot=plot.sample)
+      psf.est<-estimate.psf(outenv=environment(),plot=plot.sample,radial.tolerance=radial.tolerance)
       psf.id<-tmp.psf.id
       psf.val<-tmp.psfest.val
       if (exists('tmp.skyest')) {
@@ -196,7 +196,7 @@ function(env=NULL) {
         psf.weight[i]<-length(which(psf.id==i))
       }
       psflist=list(final=psf,normalised=estpsf,raw=psf.est,psf.weight=psf.weight)
-      save(file=file.path(path.root,path.work,path.out,"PSFGen_estimate.Rdata"),psflist)
+      save(file=file.path(path.root,path.work,path.out,paste0(tableout.name,"_PSFGen_estimate.Rdata")),psflist)
       #}}}
       #}}}
     } else {
@@ -1548,7 +1548,7 @@ function(env=NULL) {
     if (!quiet) { cat(paste('Estimating the PSF from the image')) }
     #Estimate the PSF {{{
     if (plot.sample) { pdf(height=10,width=10,file=file.path(path.root,path.work,path.out,'PSFEst_Samples.pdf')) }
-    timer=system.time(psf.est<-estimate.psf(outenv=environment(),plot=plot.sample))
+    timer=system.time(psf.est<-estimate.psf(outenv=environment(),plot=plot.sample,radial.tolerance=radial.tolerance))
     epsf.id<-tmp.psf.id
     psfest.val<-tmp.psfest.val
     if (plot.sample & !grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }

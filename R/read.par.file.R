@@ -109,6 +109,16 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #Radial Tolerance in PSF estimation {{{
+  ID="RadialTolerance"
+  ind<-which(params[ID,]!="")
+  radial.tolerance<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(radial.tolerance))) {
+    param.warnings<-c(param.warnings,"RadialTolerance Parameter not present in Parameter File; Using 25")
+    radial.tolerance<-25
+  }
+  #}}}
+
   #Do we want to check the accuracy of the input PSF {{{
   ID="PSFCheck"
   ind<-which(params[ID,]!="")
@@ -2236,7 +2246,8 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("psf.label"         , psf.label         , envir = env) #
   assign("psf.label.type"    , psf.label.type    , envir = env) #
   assign("quick.sky"         , quick.sky         , envir = env) #
-  assign("resample.aperture" , resample.aperture , envir = env) # QR
+  assign("radial.tolerance"  , radial.tolerance  , envir = env) # QR
+  assign("resample.aperture" , resample.aperture , envir = env) # 
   assign("ra0"              , ra0              , envir = env) #
   assign("ra.lab"            , ra.lab            , envir = env) #
   assign("ran.cor"           , ran.cor           , envir = env) #
