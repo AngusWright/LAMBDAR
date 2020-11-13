@@ -9,6 +9,7 @@ create.par.file <-
     BeamArea_SqAS=0,
     PSFConvolve=0,
     RadialTolerance=25,
+    MaxNumPSF=500,
     PSFCheck=0,
     PSFWeighted=1,
     PSFMap='NONE',
@@ -170,6 +171,7 @@ RemoveContam           ",paste(as.numeric(RemoveContam)   ,collapse=' '),"    #R
 CheckContam            ",paste(as.numeric(CheckContam)    ,collapse=' '),"    #Check Contaminants for ones that are irrelevant (do not overlap with main galaxies)?  [1/0]
 nNearestCheck          ",paste(nNearestCheck              ,collapse=' '),"    #Number of Nearest Neighbours to check when looking for Contaminant-Galaxy Overlaps
 RadialTolerance        ",paste(as.numeric(RadialTolerance),collapse=' '),"    #Radial tolerance (in pixels) for accepting sources in PSF estimation (default: 25pix)
+MaxNPSF                ",paste(as.numeric(MaxNPSF)        ,collapse=' '),"    #Maximum Number of Point Sources used in PSF estimation. Lower numbers allow iterative cleaning of sources 
 PSFCheck               ",paste(as.numeric(PSFCheck)       ,collapse=' '),"    #Check PSF by comparing to a stacked PSF made from the image?                   [1/0]
 PSFConvolve            ",paste(as.numeric(PSFConvolve)    ,collapse=' '),"    #Convolve the Aperture with a PSF?                                              [1/0]
 ApertureConfLimit      ",paste(ApertureConfLimit          ,collapse=' '),"    #Confidence limit used when converting PSF convolved apertures to binary apertures

@@ -109,6 +109,16 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #Maximum Number of sources to use in PSF estimate {{{
+  ID="MaxNumPSF"
+  ind<-which(params[ID,]!="")
+  n.sources<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(n.sources))) {
+    param.warnings<-c(param.warnings,"MaxNumPSF Parameter not present in Parameter File; Using 500")
+    n.sources<-500
+  }
+  #}}}
+
   #Radial Tolerance in PSF estimation {{{
   ID="RadialTolerance"
   ind<-which(params[ID,]!="")
@@ -2228,6 +2238,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("no.psf"            , no.psf            , envir = env) # N
   assign("num.nearest.neighbours"             , num.nearest.neighbours             , envir = env) #
   assign("no.contam.map"      , no.contam.map      , envir = env) #
+  assign("n.sources"           , n.sources           , envir = env) #
   assign("num.cores"           , num.cores           , envir = env) #
   assign("num.blanks"          , num.blanks          , envir = env) #
   assign("num.randoms"         , num.randoms         , envir = env) #

@@ -35,7 +35,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
     if (length(point.sources) > 1) { 
       #Use pixel-space nearest neighbours 
       match<-nn2(data.frame(cat.x,cat.y)[point.sources,][which(blendfrac[point.sources]<=blend.tolerance),],data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',
-                 radius=radial.tolerance*1.2,k=min(10,length(which(blendfrac[point.sources]<=blend.tolerance))))
+                 radius=radial.tolerance*2.0,k=min(10,length(which(blendfrac[point.sources]<=blend.tolerance))))
       #Order by the nearest non-self match (2nd nnd column)
       point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]
       nn.dist<-match$nn.dists[order(match$nn.dists[,2],decreasing=TRUE),2]
@@ -54,7 +54,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
   } else { 
     if (length(point.sources) > 0) { 
       #Use pixel-space nearest neighbours 
-      match<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=radial.tolerance*1.2,k=min(length(cat.x),10))
+      match<-nn2(data.frame(cat.x,cat.y),data.frame(cat.x,cat.y)[point.sources,],searchtype='radius',radius=radial.tolerance*2.0,k=min(length(cat.x),10))
       #Order by the nearest non-self match (2nd nnd column)
       nn.dist<-match$nn.dists[order(match$nn.dists[,2],decreasing=TRUE),2]
       point.sources<-point.sources[order(match$nn.dists[,2],decreasing=TRUE)]
@@ -285,17 +285,23 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
     mask.tolerance.tmp<-mask.tolerance
     radial.tolerance.tmp<-radial.tolerance
     #Check if we should iteratively can clean the sample 
-    if (length(which(nn.dist[keep] > radial.tolerance & maskfrac[point.sources[keep]] == 0 & blendfrac[point.sources[keep]] == 0)) < n.sources) { 
+    if (length(which(nn.dist[keep] > radial.tolerance*2.0 & maskfrac[point.sources[keep]] == 0 & blendfrac[point.sources[keep]] == 0)) < n.sources) { 
       while (length(keep) > n.sources) { 
         #Grow the distance tolerance
-        radial.tolerance.tmp<-radial.tolerance.tmp+3
+        radial.tolerance.use<-radial.tolerance.tmp
+        radial.tolerance.tmp<-radial.tolerance.tmp+0.5
         #Reduce the masking tolerance
+        mask.tolerance.use<-mask.tolerance.tmp
         mask.tolerance.tmp<-max(c(0,mask.tolerance.tmp-0.05))
         #Reduce the blending tolerance
+        blend.tolerance.use<-blend.tolerance.tmp
         blend.tolerance.tmp<-max(c(0,blend.tolerance.tmp-0.05))
         #Calculate the new sample size
-        keep<-which(bin[point.sources]==i & nn.dist>=radial.tolerance.tmp & maskfrac[point.sources]<=mask.tolerance.tmp & blendfrac[point.sources]<=blend.tolerance.tmp)
+        keep<-which(bin[point.sources]==i & nn.dist>=radial.tolerance.tmp & maskfrac[point.sources]<=mask.tolerance.tmp & 
+                    blendfrac[point.sources]<=blend.tolerance.tmp)
       }
+      keep<-which(bin[point.sources]==i & nn.dist>=radial.tolerance.use & maskfrac[point.sources]<=mask.tolerance.use & 
+                  blendfrac[point.sources]<=blend.tolerance.use)
       throw<-which(bin[point.sources]==i)
       throw<-throw[which(!throw%in%keep)]
       if (length(throw)!=0) { 
@@ -304,9 +310,10 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
       }
     } else { 
       #There are more pure PSF sources than the number requested; just pick the first N.sources of them...
-      keep<-which(bin[point.sources]==i & nn.dist > radial.tolerance & maskfrac[point.sources] == 0 & blendfrac[point.sources] == 0) 
+      keep<-which(bin[point.sources]==i & nn.dist > radial.tolerance*2.0 & maskfrac[point.sources] == 0 & blendfrac[point.sources] == 0) 
       if (n.sources+1 < length(keep)) { 
-        throw<-keep[(n.sources+1):length(keep)]
+        throw<-sample(keep,n=length(keep)-n.sources,replace=FALSE)
+        #throw<-keep[(n.sources+1):length(keep)]
         point.sources<-point.sources[-throw]
         nn.dist<-nn.dist[-throw]
       } else { 
