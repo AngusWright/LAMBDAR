@@ -312,7 +312,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
       #There are more pure PSF sources than the number requested; just pick the first N.sources of them...
       keep<-which(bin[point.sources]==i & nn.dist > radial.tolerance*2.0 & maskfrac[point.sources] == 0 & blendfrac[point.sources] == 0) 
       if (n.sources+1 < length(keep)) { 
-        throw<-sample(keep,n=length(keep)-n.sources,replace=FALSE)
+        throw<-sample(keep,size=length(keep)-n.sources,replace=FALSE)
         #throw<-keep[(n.sources+1):length(keep)]
         point.sources<-point.sources[-throw]
         nn.dist<-nn.dist[-throw]
