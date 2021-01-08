@@ -286,6 +286,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
     radial.tolerance.tmp<-radial.tolerance
     #Check if we should iteratively can clean the sample 
     if (length(which(nn.dist[keep] > radial.tolerance*2.0 & maskfrac[point.sources[keep]] == 0 & blendfrac[point.sources[keep]] == 0)) < n.sources) { 
+      radial.tolerance.use<-radial.tolerance
       while (length(keep) > n.sources) { 
         #Grow the distance tolerance
         radial.tolerance.use<-radial.tolerance.tmp
