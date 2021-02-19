@@ -372,7 +372,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
     if (any(im[xlo:xup,ylo:yup]>=image.env$saturation)) { next } 
     #Skip the source if there's a much brighter source that isn't this source 
     if (max(im[xlo:xup,ylo:yup])-sky > 5*pixval[i]) { 
-      if (sum(abs(which(im[xlo:xup,ylo:yup]==max(im[xlo:xup,ylo:yup],na.rm=T),arr.ind=T)-cbind(xup-xlo,yup-ylo)/2))>=3) { next } 
+      if (sqrt(sum(abs(which(im[xlo:xup,ylo:yup]==max(im[xlo:xup,ylo:yup],na.rm=T),arr.ind=T)-cbind(xc-xlo,yc-ylo))^2))>=3) { next } 
     }
     #Remove any sub-pixel centroiding 
     #Make grid for psf at old pixel centres /*fold*/ {{{
