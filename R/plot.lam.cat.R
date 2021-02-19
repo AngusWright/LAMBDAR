@@ -35,7 +35,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE,smooth.bw) {
     magplot(cat.ra,cat.dec,pch=3,cex=0.5,col=ifelse(contams,'red','green3'),
             xlab='RA (deg)',ylab="DEC (deg)")
     invisible(Vectorize(function(x,y,a,b,pa,col) {
-                          lines(ellipse(x,y,a,b,pa=pa),col=col,lty=2)
+                          lines(ellipse(x0=x,y0=y,a,b,pa=pa),col=col,lty=2)
                           points(x,y,pch=3,cex=0.5,col=col)
                         })(cat.ra,cat.dec,cat.a/3600,cat.b/3600,theta.offset,ifelse(contams,'red','green3')))
     #Plot Zoomed Sections of the Image:
@@ -44,7 +44,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE,smooth.bw) {
             xlab='RA (deg)',ylab="DEC (deg)",xlim=median(cat.ra)+c(-50,+50)/3600,
             ylim=median(cat.dec)+c(-50,+50)/3600)
     invisible(Vectorize(function(x,y,a,b,pa,col) {
-                          lines(ellipse(x,y,a,b,pa=pa),col=col,lty=2)
+                          lines(ellipse(x0=x,y0=y,a,b,pa=pa),col=col,lty=2)
                           points(x,y,pch=3,cex=0.5,col=col)
                         })(cat.ra,cat.dec,cat.a/3600,cat.b/3600,theta.offset,ifelse(contams,'red','green3')))
   } else { 
@@ -61,7 +61,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE,smooth.bw) {
     #      image.env$im,col=grey.colors(1E3),zlim=quantile(image.env$im,c(0,0.999)),
     #      asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
     invisible(Vectorize(function(x,y,a,b,pa,col) {
-                          lines(ellipse(x,y,a,b,pa=pa),col=col,lty=2)
+                          lines(ellipse(x0=x,y0=y,a,b,pa=pa),col=col,lty=2)
                           points(x,y,pch=3,cex=0.5,col=col)
                         })(xy[,1]-1.5,xy[,2]-1.5,cat.a/aspp,cat.b/aspp,theta.offset,ifelse(contams,'red','green3')))
     #points(xy[,1],xy[,2],pch=3,cex=0.5,col=ifelse(contams,'red','green3'))
@@ -79,7 +79,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE,smooth.bw) {
     #      asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)",
     #      xlim=image.env$astr.struc$NAXIS[1]/2+c(-50,+50),ylim=image.env$astr.struc$NAXIS[2]/2+c(-50,+50))
     invisible(Vectorize(function(x,y,a,b,pa,col) {
-                          lines(ellipse(x,y,a,b,pa=pa),col=col,lty=2)
+                          lines(ellipse(x0=x,y0=y,a,b,pa=pa),col=col,lty=2)
                           points(x,y,pch=3,cex=0.5,col=col)
                         })(xy[,1]-1.5,xy[,2]-1.5,cat.a/aspp,cat.b/aspp,theta.offset,ifelse(contams,'red','green3')))
     #points(xy[,1],xy[,2],pch=3,cex=0.5,col=ifelse(contams,'red','green3'))

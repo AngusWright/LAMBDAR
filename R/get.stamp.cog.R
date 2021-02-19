@@ -214,7 +214,7 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apT, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims,add=TRUE))
   # /*fend*/ }}}
   #Draw the projected half-light ellipse {{{
-  lines(ellipse(a=min(debl.cog$x[dhlr]),e=1-cat.b[i]/cat.a[i],pa=90-theta.offset[i],xcen=cat.x[i]%%1,ycen=cat.y[i]%%1),col='black',lty=3,lwd=2)
+  lines(ellipse(a=min(debl.cog$x[dhlr]),e=1-cat.b[i]/cat.a[i],pa=90-theta.offset[i],x0=cat.x[i]%%1,y0=cat.y[i]%%1),col='black',lty=3,lwd=2)
   #}}}
   #Draw the Axes and scalebar /*fold*/ {{{
   magaxis(frame.plot=TRUE,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)",cex.axis=1.2)

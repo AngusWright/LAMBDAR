@@ -252,10 +252,10 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
       #image(x=1:length(origim[,1])-pixlocx,y=1:length(origim[1,])-pixlocy,log10(1-maskim),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
       points(x=(x.pix-pixloc[1]+1),y=(y.pix-pixloc[2]+1), pch=3)
       if (length(tempxbak)!=0 & !any(is.na(templtybak))) {
-        for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col=grey(0.5),lty=templtybak[bin],lwd=bin.lwd) }
+        for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],x0=0,y0=0),col=grey(0.5),lty=templtybak[bin],lwd=bin.lwd) }
       }
       if (length(tempx)!=0 & !any(is.na(templty))) {
-        for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=bin.lwd) }
+        for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],x0=0,y0=0),col='purple',lty=templty[bin],lwd=bin.lwd) }
       }
       magaxis(side=3:4,labels=FALSE)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
@@ -459,10 +459,10 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
       #  image(x=1:length(data.stamp[,1])-pixlocx,y=1:length(data.stamp[1,])-pixlocy,log10(1-mask.stamp),col=hsv(0,0,0,alpha=1),add=TRUE,useRaster=TRUE)
       #}
       if (length(tempxbak)!=0 & !any(is.na(templtybak))) {
-        for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],xcen=0,ycen=0),col=grey(0.5),lty=templtybak[bin],lwd=bin.lwd) }
+        for (bin in 1:length(tempxbak)) { lines(ellipse(a=tempxbak[bin],b=tempxbak[bin],x0=0,y0=0),col=grey(0.5),lty=templtybak[bin],lwd=bin.lwd) }
       }
       if (length(tempx)!=0 & !any(is.na(templty))) {
-        for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],xcen=0,ycen=0),col='purple',lty=templty[bin],lwd=bin.lwd) }
+        for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],x0=0,y0=0),col='purple',lty=templty[bin],lwd=bin.lwd) }
       }
       magaxis(side=3:4,labels=FALSE)
       magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")

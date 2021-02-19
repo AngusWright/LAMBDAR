@@ -57,9 +57,9 @@ truncate.upturn<-function(psf,centre,poly.degree=8,tolerance=0.01,min.rad=10,fle
       magimage(psf)
       points(orig.centre[1],orig.centre[2],pch=3,col='blue')
       points(centre[1],centre[2],pch=4,col='red')
-      lines(ellipse(xcen=centre[1],ycen=centre[2],a=upturn,e=0,pa=0),col='lightblue',lty=2,lwd=1.5)
-      lines(ellipse(xcen=centre[1],ycen=centre[2],a=start,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
-      lines(ellipse(xcen=centre[1],ycen=centre[2],a=end,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
+      lines(ellipse(x0=centre[1],y0=centre[2],a=upturn,e=0,pa=0),col='lightblue',lty=2,lwd=1.5)
+      lines(ellipse(x0=centre[1],y0=centre[2],a=start,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
+      lines(ellipse(x0=centre[1],y0=centre[2],a=end,e=0,pa=0),col='lightblue',lty=3,lwd=1.5)
     }
     psf[cbind(xy[,1],xy[,2])]<-0
     if (plot) { 
