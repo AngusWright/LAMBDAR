@@ -272,6 +272,33 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #If Estimating the PSF, read additional parameters {{{
+  if (any(psf.map=="ESTIMATE")) {
+    #PSF Estimate Minimum Radius
+    ID="PSFEST_Tolerance"
+    ind<-which(params[ID,]!="")
+    psfest.tolerance<-as.numeric(params[ID,ind])
+    if ((length(ind)==0)||(is.na(psfest.tolerance))) {
+      if ((length(ind)==1)) {
+        psfest.tolerance<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+        if (class(psfest.tolerance)=="try-error") {
+          param.warnings<-c(param.warnings,"PSFEST_Tolerance Parameter table read failed; Using 1.0")
+          psfest.tolerance<-0.01
+        }
+        if (is.na(psfest.tolerance)) {
+          param.warnings<-c(param.warnings,"PSFEST_Tolerance Parameter not in Parameter File; Using 0.01")
+          psfest.tolerance<-0.01
+        }
+      } else {
+        param.warnings<-c(param.warnings,"PSFEST_Tolerance Parameter not in Parameter File; Using 0.01")
+        psfest.tolerance<-0.01
+      }
+    }
+  } else {
+    psfest.tolerance<-0.01
+  }
+  #}}}
+
   #PSF FWHM Label {{{
   ID="PSFLabel"
   ind<-which(params[ID,]!="")
@@ -2062,7 +2089,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     }
   }
   use.pixel.fluxweight<-(use.pixel.fluxweight==1)
-  if (use.pixel.fluxweight) { weight.type<-"scale" }
+  #if (use.pixel.fluxweight) { weight.type<-"scale" }
   #}}}
 
   #Do we just want the Deblend Fraction for each aperture? {{{
@@ -2256,6 +2283,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("psf.filt"          , psf.filt          , envir = env) #
   assign("psf.label"         , psf.label         , envir = env) #
   assign("psf.label.type"    , psf.label.type    , envir = env) #
+  assign("psfest.tolerance"  , psfest.tolerance  , envir = env) #
   assign("quick.sky"         , quick.sky         , envir = env) #
   assign("radial.tolerance"  , radial.tolerance  , envir = env) # QR
   assign("resample.aperture" , resample.aperture , envir = env) # 

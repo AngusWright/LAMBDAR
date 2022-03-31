@@ -1,5 +1,7 @@
 estimate.psf <-
-function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=25,all.limit=0.15,env=NULL,plot=FALSE) {
+function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',
+          lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,
+          mask.tolerance=0.0,radial.tolerance=25,all.limit=0.15,env=NULL,plot=FALSE) {
 
   message('--------------------------Estimate_PSF-------------------------------------')
   # Load Parameter Space {{{

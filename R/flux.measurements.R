@@ -90,7 +90,7 @@ function(env=NULL) {
             layout(matrix(1:6,nrow=2,byrow=T))
           }
           psf.cen[[i]]<-psf.est$centre
-          trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+          trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre,tolerance=psfest.tolerance)
           psf[[i]]<-trunc$Im
           psf.cen[[i]]<-trunc$centre
           psf[[i]]<-psf[[i]]-min(psf[[i]],na.rm=TRUE)
@@ -569,7 +569,16 @@ function(env=NULL) {
       message("WARNING: No objects have pixel flux measurements that are > Pixel Mode+MAD. Pixel Flux weighting cannot be used\n")
         flux.weight<-1
     } else {
-      flux.weight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='lin',bad=0.01)$map
+      if (weight.type=='flux') { 
+        message("Using linear scaling of pixel flux measurements as initial weight\n")
+        flux.weight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='lin',bad=0.01)$map
+      } else if (weight.type=='mag') { 
+        message("Using logarithmic scaling of pixel flux measurements as initial weight\n")
+        flux.weight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='log',bad=0.01)$map
+      } else { 
+        message("Using histogram scaling of pixel flux measurements as initial weight\n")
+        flux.weight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='cdf',bad=0.01)$map
+      } 
     }
     cat(" - Done\n")
     # /*fend*/ }}}

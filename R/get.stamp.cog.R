@@ -230,6 +230,9 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   #Overlay the Aperture /*fold*/ {{{
   suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apT, main="Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, zlim=c(0,1), xlim=xlims, ylim=ylims,add=TRUE))
   # /*fend*/ }}}
+  #Plot Sources /*fold*/ {{{
+  points(x=(x.pix-x.pix[i]+1)*arcsec.per.pix,y=(y.pix-y.pix[i]+1)*arcsec.per.pix, pch=3,col=hsv(v=0,a=0.3))
+  # /*fend*/ }}}
   #Draw the Axes and scalebar /*fold*/ {{{
   magaxis(frame.plot=TRUE,main="Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)",cex.axis=1.2)
   magaxis(side=c(3,4),labels=FALSE)
