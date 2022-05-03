@@ -1041,14 +1041,14 @@ function(env=NULL) {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
                           data.stamp.lims=data.stamp.lims,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
-                          data.stamp=data.stamp,mask.stamp=mask.stamp,
+                          data.stamp=data.stamp,mask.stamp=mask.stamp,plot.device=plot.device,
                           clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.sci=plot.sci,contams=contams,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         } else {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
                           data.stamp.lims=data.stamp.lims,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
-                          data.stamp=image.env$im,mask.stamp=image.env$imm.dimim,
+                          data.stamp=image.env$im,mask.stamp=image.env$imm.dimim,plot.device=plot.device,
                           clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.sci=plot.sci,contams=contams,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         }
