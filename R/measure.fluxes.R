@@ -8,13 +8,13 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
     if (!(any(grepl("doMPI", search()))&&any(grepl("Rmpi", search())))) {
       #MPI libraries are *not* already loaded
       loadlibs<-try(require("Rmpi"),silent=TRUE)
-      if (class(loadlibs)=="try-error") {
+      if (class(loadlibs)[1]=="try-error") {
         stop(cat("MPI backend requested, but Rmpi package could not be loaded.",
                  "\nPackage may be in a special library location not known to LAMBDAR.",
                  "\nTry loading it before running measure.fluxes"))
       }
       loadlibs<-try(require("doMPI"),silent=TRUE)
-      if (class(loadlibs)=="try-error") {
+      if (class(loadlibs)[1]=="try-error") {
         stop(cat("MPI backend requested, but doMPI package could not be loaded.",
                  "\nPackage may be in a special library location not known to LAMBDAR.",
                  "\nTry loading it before running measure.fluxes"))
@@ -203,7 +203,7 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
 
     #Send Message output to logfile /*fold*/ {{{
     sink.file<-try(file(file.path(path.root,path.work,path.out,logfile),open="wt"),silent=TRUE)
-    if (any(class(sink.file)=='try-error')) {
+    if (any(class(sink.file)[1]=='try-error')) {
       stop("Unable to open Log File. Likely the path is incorrect or you do not have permission to write there:\n   ",file.path(path.root,path.work,path.out,logfile))
     }
     sink(sink.file, type="message")
@@ -338,7 +338,7 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
       read.images(env=NULL,quiet,showtime,outenv=image.env)
     } else {
       status<-try(read.images(env=NULL,quiet,showtime,outenv=image.env))
-      if (class(status)=='try-error') {
+      if (class(status)[1]=='try-error') {
         if (!quiet) { cat("Failed! Files missing\n") }
         sink(type="message")
         close(sink.file)

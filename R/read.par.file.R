@@ -29,7 +29,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
 
   #Test Reading of Parameter File {{{
   no.params<-try(max(count.fields(par.file)),silent=TRUE)
-  if (class(no.params)=="try-error") {
+  if (class(no.params)[1]=="try-error") {
   #Stop on Error
     if (grepl("cannot open the connection",no.params[1])) {
       cause="File not found"
@@ -42,7 +42,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     stop(paste("Parameter file read failed:",cause))
   }
   params<-try(read.table(par.file, strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#", row.names=1, fill=TRUE, col.names=1:no.params), silent=TRUE)
-  if (class(params)=="try-error") {
+  if (class(params)[1]=="try-error") {
     #Stop on Error
     if (grepl("duplicate 'row.names'",params[1])) {
       cause="Duplicate Parameters in Parameter File"
@@ -75,7 +75,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     stop("WorkingDirectory Parameter not in Parameter File")
   } else {
     path.work<-try(suppressWarnings(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
-    if (class(path.work)=="try-error") {
+    if (class(path.work)[1]=="try-error") {
       path.work<-params[ID,ind]
     }
   }
@@ -91,7 +91,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     stop("OutputDirectory not in Parameter File")
   } else {
     path.out<-try(suppressWarnings(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
-    if (class(path.out)=="try-error") {
+    if (class(path.out)[1]=="try-error") {
       path.out<-params[ID,ind]
     }
   }
@@ -136,7 +136,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(psf.check))) {
     if ((length(ind)==1)) {
       psf.check<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-      if (class(psf.check)=="try-error") {
+      if (class(psf.check)[1]=="try-error") {
         param.warnings<-c(param.warnings,"PSFCheck Parameter table read failed; Using 0 (FALSE)")
         psf.check<-0
       }
@@ -159,7 +159,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(psf.filt))) {
     if ((length(ind)==1)) {
       psf.filt<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-      if (class(psf.filt)=="try-error") {
+      if (class(psf.filt)[1]=="try-error") {
         param.warnings<-c(param.warnings,"PSFConvolve Parameter table read failed; Using 0 (FALSE)")
         psf.filt<-0
       }
@@ -182,7 +182,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(psf.weighted))) {
     if ((length(ind)==1)) {
       psf.weighted<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(psf.weighted)=="try-error") {
+      if (class(psf.weighted)[1]=="try-error") {
         param.warnings<-c(param.warnings,"PSFWeighted Parameter table read failed; Using 0 (FALSE)")
         psf.weighted<-0
       }
@@ -211,7 +211,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(psf.map)==1)&(psf.map!="NONE")&(psf.map!="ESTIMATE")&(!grepl(".fits", psf.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     psf.map<-try(c(t(read.table(file.path(path.root,psf.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(psf.map)=="try-error") {
+    if (class(psf.map)[1]=="try-error") {
       param.warnings<-c(param.warnings,"PSFMap Parameter table read failed; Using NONE")
       psf.map<-"NONE"
     }
@@ -232,7 +232,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(gauss.fwhm.arcsec))) {
       if ((length(ind)==1)) {
         gauss.fwhm.arcsec<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-        if (class(gauss.fwhm.arcsec)=="try-error") {
+        if (class(gauss.fwhm.arcsec)[1]=="try-error") {
           param.warnings<-c(param.warnings,"Gauss_FWHM_AS Parameter table read failed; Using 0")
           gauss.fwhm.arcsec<-0.0
         }
@@ -281,7 +281,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(psfest.tolerance))) {
       if ((length(ind)==1)) {
         psfest.tolerance<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-        if (class(psfest.tolerance)=="try-error") {
+        if (class(psfest.tolerance)[1]=="try-error") {
           param.warnings<-c(param.warnings,"PSFEST_Tolerance Parameter table read failed; Using 1.0")
           psfest.tolerance<-0.01
         }
@@ -309,7 +309,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   } else if (length(ind)==1&&(file.exists(file.path(path.root,psf.label)))) {
     #One file provided
     psf.label<-try(c(t(read.table(file.path(path.root,psf.label), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(psf.label)=="try-error") {
+    if (class(psf.label)[1]=="try-error") {
       param.warnings<-c(param.warnings,"psfLabel Parameter table read failed; Using 'PSFSEE'")
       psf.label<-"PSFSEE"
     }
@@ -330,7 +330,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   } else if (length(ind)==1&&(file.exists(file.path(path.root,psf.label.type)))) {
     #One file provided
     psf.label.type<-try(c(t(read.table(file.path(path.root,psf.label.type), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(psf.label.type)=="try-error") {
+    if (class(psf.label.type)[1]=="try-error") {
       param.warnings<-c(param.warnings,"PSFLabelType Parameter table read failed; Using 'FWHM.AS'")
       psf.label.type<-"FWHM.AS"
     }
@@ -355,7 +355,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(filt.contam))) {
     if ((length(ind)==1)) {
       filt.contam<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(filt.contam)=="try-error") {
+      if (class(filt.contam)[1]=="try-error") {
         param.warnings<-c(param.warnings,"RemoveContam Parameter table read failed; Using 0 (FALSE)")
         filt.contam<-FALSE
       } else { filt.contam<-(filt.contam==1) }
@@ -378,7 +378,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(check.contam))) {
       if ((length(ind)==1)) {
         check.contam<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(check.contam)=="try-error") {
+        if (class(check.contam)[1]=="try-error") {
           param.warnings<-c(param.warnings,"CheckContam Parameter table read failed; Using 0 (FALSE)")
           check.contam<-FALSE
         } else { check.contam<-(check.contam==1) }
@@ -399,7 +399,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(num.nearest.neighbours))) {
       if ((length(ind)==1)) {
         num.nearest.neighbours<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(num.nearest.neighbours)=="try-error") {
+        if (class(num.nearest.neighbours)[1]=="try-error") {
           param.warnings<-c(param.warnings,"nNearestCheck Parameter table read failed; Using 10")
           num.nearest.neighbours<-10
         } else { num.nearest.neighbours<-(num.nearest.neighbours==1) }
@@ -431,7 +431,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(group.weights))) {
     if ((length(ind)==1)) {
       group.weights<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(group.weights)=="try-error") {
+      if (class(group.weights)[1]=="try-error") {
         param.warnings<-c(param.warnings,"GroupWeights Parameter table read failed; Using 0 (FALSE)")
         group.weights<-FALSE
       } else { group.weights<-(group.weights==1) }
@@ -459,7 +459,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if (!grepl(".dat",catalogue,ignore.case=TRUE)) {
       #One file provided without relevant extension - must be filelist
       catalogue<-try(c(t(read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-      if (class(catalogue)=="try-error") {
+      if (class(catalogue)[1]=="try-error") {
         #Stop on Error
         stop("Catalogue Filelist read failed")
       }
@@ -469,7 +469,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     } else {
       #One file provided with ambiguous extension - check if it is a filelist
       tmp.catalogue<-try(((read.table(file.path(path.root,catalogue), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-      if (class(tmp.catalogue)=="try-error") {
+      if (class(tmp.catalogue)[1]=="try-error") {
         #Stop on Error
         stop("Catalogue Filelist read failed")
       }
@@ -569,7 +569,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(data.map)==1)&(data.map!="NONE")&(!grepl(".fits", data.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     data.map<-try(c(t(read.table(file.path(path.root,data.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(data.map)=="try-error") {
+    if (class(data.map)[1]=="try-error") {
       #Stop on Error
       stop("Datamap Parameter table read failed")
     }
@@ -592,7 +592,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(error.map)==1)&(is.na(as.numeric(error.map)))&(error.map!="NONE")&(!grepl(".fits", error.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     error.map<-try(c(t(read.table(file.path(path.root,error.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(error.map)=="try-error") {
+    if (class(error.map)[1]=="try-error") {
       param.warnings<-c(param.warnings,"ErrorMap Parameter table read failed; Using 'NONE'")
       error.map<-"NONE"
     }
@@ -616,7 +616,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(mask.map)==1)&(mask.map!="NONE")&(!grepl(".fits", mask.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     mask.map<-try(c(t(read.table(file.path(path.root,mask.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(mask.map)=="try-error") {
+    if (class(mask.map)[1]=="try-error") {
       param.warnings<-c(param.warnings,"MaskMap Parameter table read failed; Using 'NONE'")
       mask.map<-"NONE"
     }
@@ -640,7 +640,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(weight.map)==1)&(weight.map!="NONE")&(!grepl(".fits", weight.map,ignore.case=TRUE))) {
     #One file provided without .fits extension - must be filelist
     weight.map<-try(c(t(read.table(file.path(path.root,weight.map), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(weight.map)=="try-error") {
+    if (class(weight.map)[1]=="try-error") {
       param.warnings<-c(param.warnings,"WeightMap Parameter table read failed; Using 'NONE'")
       weight.map<-"NONE"
     }
@@ -668,7 +668,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(data.extn))) {
     if ((length(ind)==1)) {
       data.extn<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(data.extn)=='try-error') {
+      if (class(data.extn)[1]=='try-error') {
         param.warnings<-c(param.warnings,"DataExtn Parameter table read failed; Using 0")
         data.extn<-0
       }
@@ -690,7 +690,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(data.error.extn))) {
     if ((length(ind)==1)) {
       data.error.extn<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(data.error.extn)=='try-error') {
+      if (class(data.error.extn)[1]=='try-error') {
         param.warnings<-c(param.warnings,"ErrorExtn Parameter table read failed; Using 0")
         data.error.extn<-0
       }
@@ -712,7 +712,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(data.mask.extn))) {
     if ((length(ind)==1)) {
       data.mask.extn<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(data.mask.extn)=='try-error') {
+      if (class(data.mask.extn)[1]=='try-error') {
         param.warnings<-c(param.warnings,"MaskExtn Parameter table read failed; Using 0")
         data.mask.extn<-0
       }
@@ -734,7 +734,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(data.weight.extn))) {
     if ((length(ind)==1)) {
       data.weight.extn<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(data.weight.extn)=='try-error') {
+      if (class(data.weight.extn)[1]=='try-error') {
         param.warnings<-c(param.warnings,"WeightExtn Parameter table read failed; Using 0")
         data.weight.extn<-0
       }
@@ -756,7 +756,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(aperture.type)) {
     if ((length(ind)==1)) {
       aperture.type<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(aperture.type)=='try-error') {
+      if (class(aperture.type)[1]=='try-error') {
         param.warnings<-c(param.warnings,"ApertureType Parameter table read failed; Using 0 (Normal Apertures)")
         aperture.type<-1
       }
@@ -781,7 +781,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(error.factor))) {
     if ((length(ind)==1)) {
       error.factor<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(error.factor)=='try-error') {
+      if (class(error.factor)[1]=='try-error') {
         param.warnings<-c(param.warnings,"EFactor Parameter table read failed; Using 0")
         error.factor<-1
       }
@@ -803,7 +803,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(flux.corr))) {
     if ((length(ind)==1)) {
       flux.corr<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(flux.corr)=='try-error') {
+      if (class(flux.corr)[1]=='try-error') {
         param.warnings<-c(param.warnings,"FluxCorr Parameter table read failed; Using 1")
         flux.corr<-1
       }
@@ -835,7 +835,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(crop.image))) {
     if ((length(ind)==1)) {
       crop.image<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(crop.image)=='try-error') {
+      if (class(crop.image)[1]=='try-error') {
         param.warnings<-c(param.warnings,"CropImage Parameter table read failed; Using 0 (FALSE)")
         crop.image<-0
       }
@@ -873,7 +873,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       if (length(ind)==1) {
         #Try Reading table:
         ra0<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(ra0)=="try-error") {
+        if (class(ra0)[1]=="try-error") {
           #Warn on Error
           param.warnings<-c(param.warnings,"CropImRA0 Parameter table read failed; Using -999")
           ra0<- -999
@@ -897,7 +897,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       if (length(ind)==1) {
         #Try Reading table:
         dec0<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(dec0)=="try-error") {
+        if (class(dec0)[1]=="try-error") {
           #Warn on Error
           param.warnings<-c(param.warnings,"CropImDec0 Parameter table read failed; Using -999")
           dec0<- -999
@@ -921,7 +921,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       if (length(ind)==1) {
         #Try Reading table:
         crop.radius<-try(as.numeric(c(t(read.table(file.path(path.root,params[ID,1]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(crop.radius)=="try-error") {
+        if (class(crop.radius)[1]=="try-error") {
           #Warn on Error
           param.warnings<-c(param.warnings,"CropImRad Parameter table read failed; Using 0.5")
           crop.radius<- 0.5
@@ -947,7 +947,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(conf))) {
     if ((length(ind)==1)) {
       conf<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(conf)=='try-error') {
+      if (class(conf)[1]=='try-error') {
         param.warnings<-c(param.warnings,"Confusion_units Parameter table read failed; Using 0")
         conf<-0
       }
@@ -969,7 +969,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(num.cores))) {
     if ((length(ind)==1)) {
       num.cores<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(num.cores)=='try-error') {
+      if (class(num.cores)[1]=='try-error') {
         param.warnings<-c(param.warnings,"nProcessors Parameter table read failed; Using 0")
         num.cores<-1
       }
@@ -991,7 +991,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(careful))) {
     if ((length(ind)==1)) {
       careful<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(careful)=='try-error') {
+      if (class(careful)[1]=='try-error') {
         param.warnings<-c(param.warnings,"CarefulWithEdges table read failed; Using TRUE")
         careful<-1
       }
@@ -1016,7 +1016,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(ang.offset)) {
     if ((length(ind)==1)) {
       ang.offset<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(ang.offset)=='try-error') {
+      if (class(ang.offset)[1]=='try-error') {
         param.warnings<-c(param.warnings,"AngularOffset Parameter table read failed; Using 0 (N0E90)")
         ang.offset<-0
       }
@@ -1039,7 +1039,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(Jybm))) {
     if ((length(ind)==1)) {
       Jybm<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(Jybm)=='try-error') {
+      if (class(Jybm)[1]=='try-error') {
         param.warnings<-c(param.warnings,"MapUnitsPerBeam Parameter table read failed; Using 0 (FALSE)")
         Jybm<-0
       }
@@ -1063,7 +1063,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(resample.aperture))) {
     if ((length(ind)==1)) {
       resample.aperture<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(resample.aperture)=="try-error") {
+      if (class(resample.aperture)[1]=="try-error") {
         param.warnings<-c(param.warnings,"ResampleAper Parameter table read failed; Using 1 (TRUE)")
         resample.aperture<-1
       }
@@ -1088,7 +1088,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(resample.upres))) {
       if ((length(ind)==1)) {
         resample.upres<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(resample.upres)=='try-error') {
+        if (class(resample.upres)[1]=='try-error') {
           param.warnings<-c(param.warnings,"ResamplingRes Parameter table read failed; Using 3")
           resample.upres<-3
         }
@@ -1109,7 +1109,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(resample.iterations))) {
       if ((length(ind)==1)) {
         resample.iterations<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(resample.iterations)=='try-error') {
+        if (class(resample.iterations)[1]=='try-error') {
           param.warnings<-c(param.warnings,"ResamplingIters Parameter table read failed; Using 5")
           resample.iterations<-5
         }
@@ -1140,7 +1140,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(confidence)) {
     if ((length(ind)==1)) {
       confidence<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(confidence)=='try-error') {
+      if (class(confidence)[1]=='try-error') {
         param.warnings<-c(param.warnings,"PSFConfidence Parameter table read failed; Using 1")
         confidence<-1
       }
@@ -1162,7 +1162,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(def.buff)) {
     if ((length(ind)==1)) {
       def.buff<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(def.buff)=='try-error') {
+      if (class(def.buff)[1]=='try-error') {
         param.warnings<-c(param.warnings,"ApStampWidth Parameter table read failed; Using 1.05")
         def.buff<-1.05
       }
@@ -1188,7 +1188,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if (length(ind)==0||is.na(sourcemask.only)) {
     if (length(ind)==1) {
       sourcemask.only<-try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-      if (class(sourcemask.only)=="try-error") {
+      if (class(sourcemask.only)[1]=="try-error") {
         param.warnings<-c(param.warnings,"SourceMaskOnly Parameter table read failed; Using 0 (FALSE)")
         sourcemask.only<-0
       }
@@ -1212,7 +1212,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if (length(ind)==0||is.na(sourcemask.out)) {
       if (length(ind)==1) {
         sourcemask.out<-try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-        if (class(sourcemask.out)=="try-error") {
+        if (class(sourcemask.out)[1]=="try-error") {
           #Warn on Error
           param.warnings<-c(param.warnings,"WriteSourceMask Parameter table read failed; Using 0 (FALSE)")
           sourcemask.out<-0
@@ -1354,7 +1354,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     } else {
       if (length(ind)==1) {
         tableout.name<-try(suppressWarnings(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
-        if (class(tableout.name)=="try-error") {
+        if (class(tableout.name)[1]=="try-error") {
           #Warn on Error
           tableout.name<-params[ID,1]
         }
@@ -1397,7 +1397,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(use.mask.lim)) {
     if ((length(ind)==1)) {
       use.mask.lim<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(use.mask.lim)=='try-error') {
+      if (class(use.mask.lim)[1]=='try-error') {
         param.warnings<-c(param.warnings,"UseMaskLim Parameter table read failed; Using 0.2")
         use.mask.lim<-0.2
       }
@@ -1520,7 +1520,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(mag.zp))) {
       if (length(ind)==1) {
         mag.zp<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(mag.zp)=="try-error") {
+        if (class(mag.zp)[1]=="try-error") {
           #Warn on Error
           param.warnings<-c(param.warnings,"MagZeroPoint Parameter table read failed; Using 0.0")
           mag.zp<-0.0
@@ -1564,7 +1564,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   } else if (length(ind)==1&&(file.exists(file.path(path.root,satur.label)))) {
     #One file provided
     satur.label<-try(c(t(read.table(file.path(path.root,satur.label), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(satur.label)=="try-error") {
+    if (class(satur.label)[1]=="try-error") {
       param.warnings<-c(param.warnings,"SaturationLabel Parameter table read failed; Using 'SATUR'")
       satur.label<-"SATUR"
     }
@@ -1585,7 +1585,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   } else if (length(ind)==1&&(file.exists(file.path(path.root,saturation)))) {
     #One file provided
     saturation<-try(as.numeric(c(t(read.table(file.path(path.root,saturation), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#")))),silent=TRUE)
-    if (class(saturation)=="try-error") {
+    if (class(saturation)[1]=="try-error") {
       param.warnings<-c(param.warnings,"Saturation Parameter table read failed; Using Inf")
       saturation<-Inf
     }
@@ -1609,7 +1609,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   } else if (length(ind)==1&&(file.exists(file.path(path.root,gain.label)))) {
     #One file provided
     gain.label<-try(c(t(read.table(file.path(path.root,gain.label), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
-    if (class(gain.label)=="try-error") {
+    if (class(gain.label)[1]=="try-error") {
       param.warnings<-c(param.warnings,"GainLabel Parameter table read failed; Using 'GAIN'")
       gain.label<-"GAIN"
     }
@@ -1628,7 +1628,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(blank.cor))) {
     if ((length(ind)==1)) {
       blank.cor<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(blank.cor)=="try-error") {
+      if (class(blank.cor)[1]=="try-error") {
         param.warnings<-c(param.warnings,"BlankCor Parameter table read failed; Using 0 (FALSE)")
         blank.cor<-0
       }
@@ -1649,7 +1649,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(num.blanks))) {
     if ((length(ind)==1)) {
       num.blanks<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(num.blanks)=="try-error") {
+      if (class(num.blanks)[1]=="try-error") {
         param.warnings<-c(param.warnings,"nBlanks Parameter table read failed; Using 10")
         num.blanks<-10
       }
@@ -1674,7 +1674,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(ran.cor))) {
     if ((length(ind)==1)) {
       ran.cor<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(ran.cor)=="try-error") {
+      if (class(ran.cor)[1]=="try-error") {
         param.warnings<-c(param.warnings,"RanCor Parameter table read failed; Using 0 (FALSE)")
         ran.cor<-0
       }
@@ -1695,7 +1695,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(num.randoms))) {
     if ((length(ind)==1)) {
       num.randoms<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(num.randoms)=="try-error") {
+      if (class(num.randoms)[1]=="try-error") {
         param.warnings<-c(param.warnings,"nRandoms Parameter table read failed; Using 10")
         num.randoms<-10
       }
@@ -1718,7 +1718,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0) || is.na(do.sky.est)) {
     if (length(ind)==1) {
       do.sky.est<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(do.sky.est)=="try-error") {
+      if (class(do.sky.est)[1]=="try-error") {
         #Warn on Error
         param.warnings<-c(param.warnings,"DoSkyEst Parameter table read failed; Using 0 (FALSE)")
         do.sky.est<-0
@@ -1746,7 +1746,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(get.sky.rms)) {
     if (length(ind)==1) {
       get.sky.rms<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(get.sky.rms)=="try-error") {
+      if (class(get.sky.rms)[1]=="try-error") {
         #Warn on Error
         param.warnings<-c(param.warnings,"GetSkyRMS Parameter not in Parameter File; Using 0 (FALSE)")
         get.sky.rms<-0
@@ -1791,7 +1791,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)|| (is.na(sky.clip.prob))) {
       if ((length(ind)==1)) {
         sky.clip.prob<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(sky.clip.prob)=='try-error') {
+        if (class(sky.clip.prob)[1]=='try-error') {
           param.warnings<-c(param.warnings,"SkyEstProbCut Parameter table read failed; Using 3")
           sky.clip.prob<-3
         }
@@ -1823,7 +1823,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if ((length(ind)==0)||(is.na(correl.noise))) {
       if ((length(ind)==1)) {
         correl.noise<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(correl.noise)=='try-error') {
+        if (class(correl.noise)[1]=='try-error') {
           param.warnings<-c(param.warnings,"SkyCorrelNoise Parameter table read failed; Using 1")
           correl.noise<-1
         }
@@ -1861,7 +1861,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
       if (length(ind)==0||is.na(sourcemask.filename)||((length(sourcemask.filename)==1)&(!grepl(".fits", sourcemask.filename,ignore.case=TRUE)))) {
         if (length(ind)==1) {
           sourcemask.filename<-(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-          if (class(sourcemask.filename)=="try-error") {
+          if (class(sourcemask.filename)[1]=="try-error") {
             #Warn on Error
             param.warnings<-c(param.warnings,"SourceMaskFile Parameter table read failed; Using 'SourceMask.fits'")
             sourcemask.filename<-"SourceMask.fits"
@@ -1885,7 +1885,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if (length(ind)==0||is.na(transmission.map)) {
       if (length(ind)==1) {
         transmission.map<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(transmission.map)=="try-error") {
+        if (class(transmission.map)[1]=="try-error") {
           #Warn on Error
           param.warnings<-c(param.warnings,"TransmissionMap Parameter table read failed; Using 0 (FALSE)")
           transmission.map<-0
@@ -1909,7 +1909,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     if (length(ind)==0||is.na(sourcemask.conf.lim)) {
       if (length(ind)==1) {
         sourcemask.conf.lim<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-        if (class(sourcemask.conf.lim)=="try-error") {
+        if (class(sourcemask.conf.lim)[1]=="try-error") {
           #Warn on Error
           param.warnings<-c(param.warnings,"SourceMaskConfLim Parameter table read failed; Using 0.95")
           sourcemask.conf.lim<-0.95
@@ -1938,7 +1938,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(min.ap.rad))) {
     if (length(ind)==1) {
       min.ap.rad<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(min.ap.rad)=="try-error") {
+      if (class(min.ap.rad)[1]=="try-error") {
         #Warn on Error
         param.warnings<-c(param.warnings,"MinApRad Parameter not in Parameter File; Using 0")
         min.ap.rad<-0
@@ -1963,7 +1963,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(mem.safe)) {
     if ((length(ind)==1)) {
       mem.safe<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(mem.safe)=='try-error') {
+      if (class(mem.safe)[1]=='try-error') {
         param.warnings<-c(param.warnings,"MemorySafe Parameter table read failed; Using 0 (FALSE)")
         mem.safe<-0
       }
@@ -1987,7 +1987,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||(is.na(ap.limit))) {
     if (length(ind)==1) {
       ap.limit<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(ap.limit)=="try-error") {
+      if (class(ap.limit)[1]=="try-error") {
         #Warn on Error
         param.warnings<-c(param.warnings,"ApertureConfLimit Parameter table read failed; Using 0.9")
         ap.limit<-0.9
@@ -2012,7 +2012,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(iterate.fluxes)) {
     if (length(ind)==1) {
       iterate.fluxes<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(iterate.fluxes)=="try-error") {
+      if (class(iterate.fluxes)[1]=="try-error") {
         #Warn on Error
         param.warnings<-c(param.warnings,"IterateFluxes Parameter table read failed; Using 0 (FALSE)")
         iterate.fluxes<-0
@@ -2038,7 +2038,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(num.iterations)) {
     if ((length(ind)==1)) {
       num.iterations<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(num.iterations)=='try-error') {
+      if (class(num.iterations)[1]=='try-error') {
         param.warnings<-c(param.warnings,"nIterations Parameter table read failed; Using 2")
         num.iterations<-2
       }
@@ -2072,7 +2072,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(use.pixel.fluxweight)) {
     if (length(ind)==1) {
       use.pixel.fluxweight<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(use.pixel.fluxweight)=="try-error") {
+      if (class(use.pixel.fluxweight)[1]=="try-error") {
         #Warn on Error
         param.warnings<-c(param.warnings,"UsePixelFluxWgts Parameter table read failed; Using 0 (FALSE)")
         use.pixel.fluxweight<-0
@@ -2099,7 +2099,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(get.debl.frac)) {
     if (length(ind)==1) {
       get.debl.frac<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(get.debl.frac)=="try-error") {
+      if (class(get.debl.frac)[1]=="try-error") {
         #Warn on Error
         param.warnings<-c(param.warnings,"GetDeblFrac Parameter not in Parameter File; Using 0 (FALSE)")
         get.debl.frac<-0
@@ -2144,7 +2144,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   if ((length(ind)==0)||is.na(sim.gauss.arcsec)) {
     if ((length(ind)==1)) {
       sim.gauss.arcsec<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
-      if (class(sim.gauss.arcsec)=='try-error') {
+      if (class(sim.gauss.arcsec)[1]=='try-error') {
         param.warnings<-c(param.warnings,"SimGauss_AS Parameter table read failed; Using 0")
         sim.gauss.arcsec<-0
       }

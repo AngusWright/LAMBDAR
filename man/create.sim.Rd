@@ -119,7 +119,7 @@ measure.fluxes("Lambdar_Sample.par")
 create.par.file(file="Lambdar_Simulation.par",DataMap="SampleImage.fits",
 Catalogue="LAMBDAR_Results.csv",Gauss_FWHM_AS=2,SimGauss_AS=1.1,
 FluxWgtColumnLabel="DFAFlux_Jy",OutputDirectory="Simulation/",PSFConvolve=1,
-GainLabel='WTGAIN',SaturationLabel='SWPSATUR')
+GainLabel='WTGAIN',SaturationLabel='SWPSATUR',FluxWgtType='flux')
 
 #Create Simulation from Catalogued objects only
 create.sim('Lambdar_Simulation.par',ObsParm=data.frame(exp=53.9,area=4.91,
@@ -141,7 +141,7 @@ image(x=1:length(inp.im$dat[[1]][,1]),y=1:length(inp.im$dat[[1]][1,]),
 inp.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],
 c(0,0.999)),asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
 invisible(Vectorize(function(x,y,a,b,pa) {
-   lines(ellipse(x,y,a,b,pa=pa),col='red',lty=2)
+   lines(ellipse(x0=x,y0=y,a=a,b=b,pa=pa),col='red',lty=2)
    points(x,y,pch=3,cex=0.5,col='red')
 })(xy[,1],xy[,2],ApCat.sample$radmajasec/aspp,ApCat.sample$radminasec/aspp,
 ApCat.sample$rotW2N))
@@ -150,7 +150,7 @@ image(x=1:length(sim.im$dat[[1]][,1]),y=1:length(sim.im$dat[[1]][1,]),
 sim.im$dat[[1]],col=grey.colors(1E3),zlim=quantile(inp.im$dat[[1]],
 c(0,0.999)),asp=1,useRaster=TRUE,xlab='X (pix)',ylab="Y (pix)")
 invisible(Vectorize(function(x,y,a,b,pa) {
-   lines(ellipse(x,y,a,b,pa=pa),col='red',lty=2)
+   lines(ellipse(x0=x,y0=y,a=a,b=b,pa=pa),col='red',lty=2)
    points(x,y,pch=3,cex=0.5,col='red')
 })(xy[,1],xy[,2],ApCat.sample$radmajasec/aspp,ApCat.sample$radminasec/aspp,
 ApCat.sample$rotW2N))

@@ -121,7 +121,7 @@ function(outenv=parent.env(environment()), env=NULL){
   }#}}}
 
   #Check for Foreach errors {{{
-  if ((length(s_mask) > 0) && class(s_mask[[1]])=="try-error") {
+  if ((length(s_mask) > 0) && class(s_mask[[1]])[1]=="try-error") {
     stop(paste("Fatal Error in Foreach's Multi-Core Application.\n",
     "This seems to at random, but is more likely\n",
     "to happen with increasing numbers of objects\n",

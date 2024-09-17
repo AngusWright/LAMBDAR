@@ -22,7 +22,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #}}}
   #Read the Image astrometry {{{
   seg.astr<-try(read.astrometry(paste(path.root,path.work,catalogue,sep="")),silent=TRUE)
-  if (class(seg.astr)=="try-error") {
+  if (class(seg.astr)[1]=="try-error") {
     #Stop on Error
     geterrmessage()
     sink(type="message")
@@ -31,7 +31,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #}}}
   #Read the Image {{{
   segmentation<-try(read.fits.im(paste(path.root,path.work,catalogue,sep=""))$dat[[1]],silent=TRUE)
-  if (class(segmentation)=="try-error") {
+  if (class(segmentation)[1]=="try-error") {
     #Stop on Error
     geterrmessage()
     sink(type="message")

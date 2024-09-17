@@ -15,7 +15,7 @@ function(zdist,centre){
     lim<-c(centre[1]-im.rad.x, centre[1]+im.rad.x, centre[2]-im.rad.y, centre[2]+im.rad.y)
     x = try(seq(floor(-im.rad.x), floor(im.rad.x), length=im.rad.x*2+1))
     y = try(seq(floor(-im.rad.y), floor(im.rad.y), length=im.rad.y*2+1))
-    if (class(x)=='try-error' | class(y)=='try-error') { 
+    if (class(x)[1]=='try-error' | class(y)[1]=='try-error') { 
       return=NA
     } else { 
       xy = expand.grid(x,y)
