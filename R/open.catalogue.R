@@ -35,7 +35,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
     fitstable<-try(fread(paste(path.root,path.work,catalogue,sep=""),data.table=FALSE,stringsAsFactors=FALSE,showProgress=FALSE),silent=TRUE)
     options(op)
     #Test Read of Catalogue for errors
-    if (class(fitstable)=="try-error") {
+    if (class(fitstable)[1]=="try-error") {
       #Check for a fread warning
       if (ascii) { 
         fitstable<-try(read.table(paste(path.root,path.work,catalogue,sep=""),strip.white=TRUE, blank.lines.skip=TRUE,comment.char = "#",stringsAsFactors=FALSE),silent=TRUE)
@@ -43,7 +43,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
         fitstable<-try(read.csv(paste(path.root,path.work,catalogue,sep=""),strip.white=TRUE, blank.lines.skip=TRUE,comment.char = "#",stringsAsFactors=FALSE),silent=TRUE)
       }
     }
-    if (class(fitstable)=="try-error") {
+    if (class(fitstable)[1]=="try-error") {
       #Stop on Error
       geterrmessage()
       sink(type="message")
@@ -51,7 +51,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
     }
   } else if (fits) {
     fitstable<-try(read.fits.cat(paste(path.root,path.work,catalogue,sep=""),data.table=FALSE,stringsAsFactors=FALSE),silent=TRUE)
-    if (class(fitstable)=="try-error") {
+    if (class(fitstable)[1]=="try-error") {
       #Stop on Error
       geterrmessage()
       sink(type="message")
@@ -59,7 +59,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
     }
   } else if (ldac) {
     fitstable<-try(read.ldac(paste(path.root,path.work,catalogue,sep=""),ldactoasc=ldac.exec,data.table=FALSE,stringsAsFactors=FALSE),silent=TRUE)
-    if (class(fitstable)=="try-error") {
+    if (class(fitstable)[1]=="try-error") {
       #Stop on Error
       geterrmessage()
       sink(type="message")
@@ -67,7 +67,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
     }
   } else if (rdat) {
     names<-try(as.list(load(paste(path.root,path.work,catalogue,sep=""))),silent=TRUE)
-    if (class(names)=="try-error") {
+    if (class(names)[1]=="try-error") {
       #Stop on Error
       geterrmessage()
       sink(type="message")
@@ -87,7 +87,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #Check for Correct Column Syntax & Read Data {{{
   #Catalogue ID {{{
   cat.id<-try(fitstable[,cata.lab],silent=TRUE)
-  if ((class(cat.id)=="try-error")||(length(cat.id)==0)||all(is.na(cat.id))) {
+  if ((class(cat.id)[1]=="try-error")||(length(cat.id)==0)||all(is.na(cat.id))) {
     sink(type="message")
     stop(paste("Catalogue does not contain",cata.lab,"column"))
   }#}}}
@@ -105,13 +105,13 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #}}}
   #Object RA {{{
   cat.ra<-try(as.numeric(fitstable[,ra.lab]),silent=TRUE)
-  if ((class(cat.ra)=="try-error")||(length(cat.ra)==0)||all(is.na(cat.ra))) {
+  if ((class(cat.ra)[1]=="try-error")||(length(cat.ra)==0)||all(is.na(cat.ra))) {
     sink(type="message")
     stop(paste("Catalogue does not contain",ra.lab,"column"))
   }#}}}
   #Object Dec {{{
   cat.dec<-try(as.numeric(fitstable[,dec.lab]),silent=TRUE)
-  if ((class(cat.dec)=="try-error")||(length(cat.dec)==0)||all(is.na(cat.dec))) {
+  if ((class(cat.dec)[1]=="try-error")||(length(cat.dec)==0)||all(is.na(cat.dec))) {
     sink(type="message")
     stop(paste("Catalogue does not contain",dec.lab,"column"))
   }#}}}
@@ -126,13 +126,13 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
     #Otherwise, Check Syntax & Read in Aperture Variables {{{
     #Aperture Angle {{{
     cat.theta<-try(as.numeric(fitstable[,theta.lab]),silent=TRUE)  # theta
-    if ((class(cat.theta)=="try-error")||(length(cat.theta)==0)||all(is.na(cat.theta))) {
+    if ((class(cat.theta)[1]=="try-error")||(length(cat.theta)==0)||all(is.na(cat.theta))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",theta.lab,"column"))
     }#}}}
     #Aperture Semi-Major Axis {{{
     cat.a<-try(as.numeric(fitstable[,semimaj.lab]),silent=TRUE) # semimajor in arcsec
-    if ((class(cat.a)=="try-error")||(length(cat.a)==0)||all(is.na(cat.a))) {
+    if ((class(cat.a)[1]=="try-error")||(length(cat.a)==0)||all(is.na(cat.a))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",semimaj.lab,"column"))
     }
@@ -140,7 +140,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
     #}}}
     #Aperture Semi-Minor Axis {{{
     cat.b<-try(as.numeric(fitstable[,semimin.lab]),silent=TRUE) # semiminor in arcsec
-    if ((class(cat.b)=="try-error")||(length(cat.b)==0)||all(is.na(cat.b))) {
+    if ((class(cat.b)[1]=="try-error")||(length(cat.b)==0)||all(is.na(cat.b))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",semimin.lab,"column"))
     }
@@ -162,7 +162,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #If wanted, read contaminants column {{{
   if (filt.contam) {
     contams<-try(as.numeric(fitstable[,contam.lab]),silent=TRUE)
-    if ((class(contams)=="try-error")||(length(contams)==0)||all(is.na(contams))) {
+    if ((class(contams)[1]=="try-error")||(length(contams)==0)||all(is.na(contams))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",contam.lab,"column"))
     }
@@ -181,7 +181,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   }#}}}
   #If Weight Column exists, read values {{{
   flux.weight<-try(as.numeric(fitstable[,flux.weight.lab] ),silent=TRUE)
-  if ((class(flux.weight)=="try-error")||(length(flux.weight)==0)||all(is.na(flux.weight))) {
+  if ((class(flux.weight)[1]=="try-error")||(length(flux.weight)==0)||all(is.na(flux.weight))) {
     #Otherwise, set all weights to unity
     flux.weight<-1
   }#}}}
@@ -194,7 +194,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   if (group.weights) {
     if (!exists("group.lab")) { group.lab<-"GROUP" }
     groups<-try(as.numeric(fitstable[1:num.rows,group.lab]),silent=TRUE)
-    if ((class(groups)=="try-error")||(length(groups)==0)||all(is.na(groups))) {
+    if ((class(groups)[1]=="try-error")||(length(groups)==0)||all(is.na(groups))) {
       sink(type="message")
       stop(paste("Catalogue does not contain",group.lab,"column"))
     }

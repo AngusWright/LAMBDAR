@@ -90,7 +90,7 @@ function(env=NULL) {
             layout(matrix(1:6,nrow=2,byrow=T))
           }
           psf.cen[[i]]<-psf.est$centre
-          trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre)
+          trunc<-truncate.upturn(estpsf[[i]],plot=plot.sample,centre=psf.est$centre,tolerance=psfest.tolerance)
           psf[[i]]<-trunc$Im
           psf.cen[[i]]<-trunc$centre
           psf[[i]]<-psf[[i]]-min(psf[[i]],na.rm=TRUE)
@@ -569,7 +569,16 @@ function(env=NULL) {
       message("WARNING: No objects have pixel flux measurements that are > Pixel Mode+MAD. Pixel Flux weighting cannot be used\n")
         flux.weight<-1
     } else {
-      flux.weight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='lin',bad=0.01)$map
+      if (weight.type=='flux') { 
+        message("Using linear scaling of pixel flux measurements as initial weight\n")
+        flux.weight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='lin',bad=0.01)$map
+      } else if (weight.type=='mag') { 
+        message("Using logarithmic scaling of pixel flux measurements as initial weight\n")
+        flux.weight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='log',bad=0.01)$map
+      } else { 
+        message("Using histogram scaling of pixel flux measurements as initial weight\n")
+        flux.weight<-magmap(pixflux, lo=mode+mad, hi=max(pixflux), range=c(0.01,1), type="num", stretch='cdf',bad=0.01)$map
+      } 
     }
     cat(" - Done\n")
     # /*fend*/ }}}
@@ -1032,14 +1041,14 @@ function(env=NULL) {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
                           data.stamp.lims=data.stamp.lims,plot.device=plot.device,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
-                          data.stamp=data.stamp,mask.stamp=mask.stamp,
+                          data.stamp=data.stamp,mask.stamp=mask.stamp,plot.device=plot.device,
                           clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.sci=plot.sci,contams=contams,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         } else {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
                           data.stamp.lims=data.stamp.lims,plot.device=plot.device,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
-                          data.stamp=image.env$im,mask.stamp=image.env$imm.dimim,
+                          data.stamp=image.env$im,mask.stamp=image.env$imm.dimim,plot.device=plot.device,
                           clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.sci=plot.sci,contams=contams,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         }

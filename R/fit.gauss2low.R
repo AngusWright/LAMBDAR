@@ -18,7 +18,7 @@ fit.gauss2low<-function (x, bw = diff(quantile(x,pnorm(c(-2,2))))/1e4, from=medi
             fixat)^2/(2 * s1^2)), start = list(a1 = max(dens$y)/dnorm(fixat,fixat,mad(x)), 
             s1 = mad(x)), data = list(x = dens$x[ind], y = dens$y[ind], 
             fixat = fixat),control=list(warnOnly=FALSE)))
-        if (class(fit)=='try-error') { 
+        if (class(fit)[1]=='try-error') { 
           #try again with more restrictive limits 
           ind <- which(dens$x <= fixat & dens$x >= fixat-mad(x))
           fit <- nls(y ~ a1 * 1/(sqrt(2 * pi) * s1) * exp(-(x - 
@@ -35,7 +35,7 @@ fit.gauss2low<-function (x, bw = diff(quantile(x,pnorm(c(-2,2))))/1e4, from=medi
             abline(h=0,lty=3)
         }
         summ<-try(coef(summary(fit)))
-        if (class(summ)=='try-error') { 
+        if (class(summ)[1]=='try-error') { 
           mu<-sd<-amp<-muerr<-sderr<-amperr<-NA
         } else { 
           mu = fixat 
@@ -56,7 +56,7 @@ fit.gauss2low<-function (x, bw = diff(quantile(x,pnorm(c(-2,2))))/1e4, from=medi
             m1)^2/(2 * s1^2)), start = list(a1 = max(dens$y)/dnorm(mode,mode,mad(x)), 
             m1 = mode, s1 = mad(x)), data = list(x = dens$x[ind], 
             y = dens$y[ind]),control=list(warnOnly=FALSE)))
-        if (class(fit)=='try-error') { 
+        if (class(fit)[1]=='try-error') { 
           #try again with more restrictive limits 
           ind <- which(dens$x <= mode + mad(x)/2 & dens$x >= mode -mad(x))
           fit <- try(nls(y ~ a1 * 1/(sqrt(2 * pi) * s1) * exp(-(x - 
@@ -73,7 +73,7 @@ fit.gauss2low<-function (x, bw = diff(quantile(x,pnorm(c(-2,2))))/1e4, from=medi
             abline(h=0,lty=3)
         }
         summ<-try(coef(summary(fit)))
-        if (class(summ)=='try-error') { 
+        if (class(summ)[1]=='try-error') { 
           mu<-sd<-amp<-muerr<-sderr<-amperr<-NA
         } else { 
           summ<-coef(summary(fit))

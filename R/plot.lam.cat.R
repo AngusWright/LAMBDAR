@@ -29,7 +29,7 @@ plot.lam.cat<-function(par.file='Lambdar_default.par',quiet=FALSE,smooth.bw) {
   #Plot the Input and Simulation Images
   layout(cbind(1,2))
 
-  if (class(image.read)=='try-error') { 
+  if (class(image.read)[1]=='try-error') { 
     #No images, just plot the apertures
     #Plot Input & Aperture Ellipses
     magplot(cat.ra,cat.dec,pch=3,cex=0.5,col=ifelse(contams,'red','green3'),

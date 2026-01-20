@@ -10,8 +10,8 @@
 #To do this, you must have the developer tools installed & loaded.
 #To install & load the devtools, inside the R console Run:
 
-install.packages("devtools")
-library(devtools)
+install.packages("remotes")
+library(remotes)
 
 #Then, still in the R console, run:
 

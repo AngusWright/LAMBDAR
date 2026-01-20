@@ -34,7 +34,7 @@ read.ldac<-function(file,ldactoasc=system('which ldactoasc',intern=T),table='OBJ
     system(paste0("grep -v \"^#\" ",outfile," > ",bodycat))
     cat<-try(fread(bodycat,header=FALSE,...))
   }
-  if (class(cat)=='try-error') { 
+  if (class(cat)[1]=='try-error') { 
     system(paste0("grep -v \"^#\" ",outfile," > ",bodycat))
     cat<-fread(bodycat,header=FALSE,...)
   }

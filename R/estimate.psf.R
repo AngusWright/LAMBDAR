@@ -1,5 +1,7 @@
 estimate.psf <-
-function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,mask.tolerance=0.0,radial.tolerance=25,all.limit=0.15,env=NULL,plot=FALSE) {
+function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e2,onlyContams=TRUE,bin.type='SNR.quan',
+          lo=20,hi=200,type='num',check.one.sky=length(point.sources)>5*n.sources,blend.tolerance=0.5,
+          mask.tolerance=0.0,radial.tolerance=25,all.limit=0.15,env=NULL,plot=FALSE) {
 
   message('--------------------------Estimate_PSF-------------------------------------')
   # Load Parameter Space {{{
@@ -87,7 +89,7 @@ function (outenv=parent.env(environment()),n.bins=1,bloom.bin=FALSE,n.sources=5e
       }
       skypix<-skypix[which(abs(skypix-median(skypix,na.rm=T))<10*mad(skypix,na.rm=T))]
       onesky<-try(fit.gauss2low(skypix))
-      if (class(onesky)=='try-error') { 
+      if (class(onesky)[1]=='try-error') { 
         onesky<-data.frame(mu=median(skypix,na.rm=TRUE),sd=mad(skypix,na.rm=T))
       }
       pixval<-image.env$im[cbind(cat.x[point.sources],cat.y[point.sources])] - onesky$mu

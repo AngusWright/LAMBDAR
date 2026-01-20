@@ -46,7 +46,7 @@ if (all(grepl("TAN", astr.struc$CTYPE[c(1:2)]))) {
 
 #Test Read of Data Image for errors {{{
 im_fits<-try(read.fits.im(paste(path.root,path.work,data.map,sep=""),hdu=data.extn, comments=FALSE,pyfits=use.pyfits),silent=TRUE)
-if (class(im_fits)=="try-error") {
+if (class(im_fits)[1]=="try-error") {
   #Stop on Error
   sink(type='message')
   geterrmessage()
@@ -63,7 +63,7 @@ im<-im_fits$dat[[1]]
 #Read Saturation Level {{{
 if (!is.finite(saturation)) {
   saturation<-try(as.numeric(read.fitskey(satur.label,paste(path.root,path.work,data.map,sep=""),hdu=ifelse(data.extn<=1,1,data.extn))),silent=TRUE)
-  if (class(saturation)=='try-error' | is.na(saturation)) {
+  if (class(saturation)[1]=='try-error' | is.na(saturation)) {
     saturation<-Inf
   }
 }
@@ -83,7 +83,7 @@ if ((weight.map!="NONE")&(mask.map=="NONE"|error.map=="NONE")) {
   if (!quiet) { cat(paste("   Reading Data from Weight Map",weight.map,"   ")) }
   #Try read weight map {{{
   imwt_fits<-try(read.fits.im(paste(path.root,path.work,weight.map,sep=""),hdu=data.weight.extn,comments=FALSE,pyfits=use.pyfits),silent=TRUE)
-  if (class(imwt_fits)=="try-error") {
+  if (class(imwt_fits)[1]=="try-error") {
     #Stop on Error
     sink(type='message')
     geterrmessage()
@@ -136,7 +136,7 @@ if (mask.map=='NONE') {
   if (!quiet) { cat(paste("   Reading Data from MaskMap",mask.map,"   ")) }
   #Test Read of Mask Map for errors {{{
   imm_fits<-try(read.fits.im(paste(path.root,path.work,mask.map,sep=""),hdu=data.mask.extn, comments=FALSE,pyfits=use.pyfits),silent=TRUE)
-  if (class(imm_fits)=="try-error") {
+  if (class(imm_fits)[1]=="try-error") {
     #Stop on Error
     sink(type='message')
     geterrmessage()
@@ -184,7 +184,7 @@ if (error.map=='NONE' & weight.map=="NONE") {
   if (!quiet) { cat(paste("   Generating Error Map from Data")) }
   #Try reading gain from header {{{
   gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=ifelse(data.extn<=1,1,data.extn))),silent=TRUE)
-  if ((class(gain)=="try-error")|is.na(gain)|gain==0){
+  if ((class(gain)[1]=="try-error")|is.na(gain)|gain==0){
     #No Gain; No Weightmap; SNR map is poisson-like {{{
     message(paste0("No Gain supplied or able to be read from header; making Poisson Error Map"))
     ime<-sqrt(abs(im))
@@ -206,7 +206,7 @@ if (error.map=='NONE' & weight.map=="NONE") {
   } else { 
     gain<-try(as.numeric(read.fitskey(gain.label,file=paste(path.root,path.work,data.map,sep=""),hdu=ifelse(data.extn<=1,1,data.extn))),silent=TRUE)
   }
-  if ((class(gain)=="try-error")|is.na(gain)|gain==0){
+  if ((class(gain)[1]=="try-error")|is.na(gain)|gain==0){
     #No Max gain; Weightmap present; sigma map is 1/sqrt(weight.map) {{{
     message(paste0("No Gain supplied or able to be read from header; Using Weight-map as absolute 1/Var(x) to generate the Error Map."))
     #sigma map = 1/sqrt(weight.map)
@@ -261,7 +261,7 @@ if (error.map=='NONE' & weight.map=="NONE") {
     gain<-NA
     #Test Read of Error Map for errors {{{
     ime_fits<-try(read.fits.im(paste(path.root,path.work,error.map,sep=""),hdu=data.error.extn, comments=FALSE,pyfits=use.pyfits),silent=TRUE)
-    if (class(ime_fits)=="try-error") {
+    if (class(ime_fits)[1]=="try-error") {
       #Stop on Error
       sink(type='message')
       geterrmessage()

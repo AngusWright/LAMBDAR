@@ -95,7 +95,7 @@ function (outenv=parent.env(environment()), filename,arcsec.per.pix,apsize,confi
       stop("PSF Image does not exist at location specified:",filename)
     }#}}}
     psf<-try(read.fits(filename,hdu=0),silent=TRUE)
-    if (class(psf)=="try-error") {
+    if (class(psf)[1]=="try-error") {
       sink(type='message')
       stop("PSF file read failed")
     }
