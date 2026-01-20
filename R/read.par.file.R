@@ -722,6 +722,27 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #GoodMask value {{{
+  ID="GoodMaskValue"
+  ind<-which(params[ID,]!="")
+  good.mask.value<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(good.mask.value))) {
+    if ((length(ind)==1)) {
+      good.mask.value<-as.numeric(try(c(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE))
+      if (class(good.mask.value)=='try-error') {
+        param.warnings<-c(param.warnings,"GoodMaskValue Parameter table read failed; Using NA")
+        good.mask.value<-NA
+      } else if (is.na(good.mask.value)) {
+        param.warnings<-c(param.warnings,"GoodMaskValue Parameter not in Parameter File; Using NA")
+        data.mask.extn<-NA
+      }
+    } else {
+      param.warnings<-c(param.warnings,"GoodMaskValue Parameter not in Parameter File; Using NA")
+      good.mask.value<-NA
+    }
+  }
+  #}}}
+
   #Do we want to use normal apertures, force use of point sources, or use gaussian apertures? {{{
   ID="ApertureType"
   ind<-which(params[ID,]!="")
@@ -1464,6 +1485,16 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
+  #Do we want to compute COGs? {{{
+  ID="DoCOG"
+  ind<-which(params[ID,]!="")
+  do.cog<-params[ID,ind]
+  if ((length(ind)==0)||is.na(do.cog)) {
+    param.warnings<-c(param.warnings,"DoCOG Parameter not present in the Parameter File; Using 1 (TRUE)")
+    do.cog<-TRUE
+  } else { do.cog<-(do.cog==1) }
+  #}}}
+
   #Make magnitudes in Output? {{{
   ID="Magnitudes"
   ind<-which(params[ID,]!="")
@@ -1735,7 +1766,9 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
         get.sky.rms<-0
     }
   }
-  get.sky.rms<-get.sky.rms==1
+  quick.sky<-quick.sky | (get.sky.rms==1 | get.sky.rms==2)
+  fit.sky<-(get.sky.rms==2)
+  get.sky.rms<-get.sky.rms>0
   #}}}
 
   #Sky Estimate Paramters {{{
@@ -2140,6 +2173,29 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
     ldac.exec<-"ldactoasc"
   }#}}}
 
+  #Do we want to skip all the important calculations? {{{
+  ID="NoCalculations"
+  ind<-which(params[ID,]!="")
+  no.calculations<-as.numeric(params[ID,ind])
+  if ((length(ind)==0)||(is.na(no.calculations))) {
+    if ((length(ind)==1)) {
+      no.calculations<-try(as.numeric(t(read.table(file.path(path.root,params[ID,ind[1]]), strip.white=TRUE, blank.lines.skip=TRUE, stringsAsFactors=FALSE, comment.char = "#"))),silent=TRUE)
+      if (class(no.calculations)=="try-error") {
+        param.warnings<-c(param.warnings,"NoCalculations Parameter table read failed; Using 0 (FALSE)")
+        no.calculations<-0
+      }
+      if (is.na(no.calculations)) {
+        param.warnings<-c(param.warnings,"NoCalculations Parameter not in Parameter File; Using 0 (FALSE)")
+        no.calculations<-0
+      }
+    } else {
+      param.warnings<-c(param.warnings,"NoCalculations Parameter not in Parameter File; Using 0 (FALSE)")
+      no.calculations<-0
+    }
+  }
+  no.calculations<-no.calculations==1
+  #}}}
+
   #Do you want to read images with PyFits instead of R? {{{
   ID="PyFITSRead"
   use.pyfits<-as.numeric(params[ID,1])
@@ -2190,6 +2246,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("cata.lab"          , cata.lab          , envir = env) #
   assign("data.map"          , data.map          , envir = env) # D
   assign("do.sky.est"         , do.sky.est         , envir = env) #
+  assign("do.cog"       , do.cog      , envir = env) #
   assign("def.buff"          , def.buff          , envir = env) #
   assign("diagnostic"       , diagnostic       , envir = env) #
   assign("dec0"             , dec0             , envir = env) #
@@ -2212,6 +2269,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("gauss.fwhm.arcsec"    , gauss.fwhm.arcsec    , envir = env) # G
   assign("get.debl.frac"      , get.debl.frac      , envir = env) #
   assign("get.sky.rms"        , get.sky.rms        , envir = env) #
+  assign("good.mask.value" , good.mask.value , envir = env) #
   assign("group.lab"       , group.lab       , envir = env) #
   assign("group.weights"       , group.weights       , envir = env) #
   assign("resample.iterations"        , resample.iterations        , envir = env) # I
@@ -2237,6 +2295,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   assign("mem.safe"          , mem.safe          , envir = env) #
   assign("no.psf"            , no.psf            , envir = env) # N
   assign("num.nearest.neighbours"             , num.nearest.neighbours             , envir = env) #
+  assign("no.calculations"    , no.calculations    , envir = env) #
   assign("no.contam.map"      , no.contam.map      , envir = env) #
   assign("n.sources"           , n.sources           , envir = env) #
   assign("num.cores"           , num.cores           , envir = env) #

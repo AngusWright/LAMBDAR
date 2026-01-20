@@ -1030,14 +1030,14 @@ function(env=NULL) {
       if (!quiet) { message("Plotting Sky Estimation"); cat("Plotting Sky Estimation") }
         if (cutup) {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
-                          data.stamp.lims=data.stamp.lims,
+                          data.stamp.lims=data.stamp.lims,plot.device=plot.device,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                           data.stamp=data.stamp,mask.stamp=mask.stamp,
                           clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.sci=plot.sci,contams=contams,plot.all=plot.all,
                           path=file.path(path.root,path.work,path.out),rem.mask=TRUE,toFile=TRUE))
         } else {
           timer<-system.time(plot.sky.estimate(cat.id=cat.id,cat.x=cat.x,cat.y=cat.y,
-                          data.stamp.lims=data.stamp.lims,
+                          data.stamp.lims=data.stamp.lims,plot.device=plot.device,
                           cutlo=(cat.a/arcsec.per.pix),cuthi=(cat.a/arcsec.per.pix)*5,
                           data.stamp=image.env$im,mask.stamp=image.env$imm.dimim,
                           clipiters=sky.clip.iters,sigma.cut=sky.clip.prob,PSFFWHMinPIX=psffwhm,plot.sci=plot.sci,contams=contams,plot.all=plot.all,
@@ -1835,7 +1835,11 @@ function(env=NULL) {
   # /*fend*/ }}}
   # /*fend*/ }}}
   #PART FOUR: COMPUTE AND OUTPUT GALAXY-BY-GALAXY RESULTS /*fold*/ {{{
-  if (!quiet) { cat("Computing Galaxy-by-Galaxy Results {\n") }
+  if (!no.calculations) { 
+    if (!quiet) { cat("Computing Galaxy-by-Galaxy Results {\n") }
+  } else { 
+    if (!quiet) { cat("SKIPPING THE GALAXY-BY-GALAXY RESULTS: NoCalculations is TRUE!\n") }
+  }
   # Make Images Available /*fold*/ {{{
   if (!cutup) { attach(image.env) }
   # /*fend*/ }}}
@@ -1847,669 +1851,686 @@ function(env=NULL) {
     if (length(which(is.na(dfa)))!=0) {        message(paste("Input Parameter 'dfa' contains NA elements")) }
     if (length(which(is.na(flux.corr)))!=0) {        message(paste("Input Parameter 'flux.corr' contains NA elements")) }
   }# /*fend*/ }}}
-  #Perform Calculations /*fold*/ {{{
-  if (!quiet) { cat("   Calculating Fluxes ") }
-  if (verbose) { cat("{\n") }
-  timer<-proc.time()
-#-----
-  #Check for Saturations; saturated /*fold*/ {{{
-  if (is.finite(saturation)) {
-    if (verbose) { cat("      Checking for Saturations ") }
-    if (cutup) {
-      saturated<-foreach(sfam=sfa, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export='saturation') %dopar% {
-          any(im[xlo:xup,ylo:yup][which(sfam!=0,arr.ind=TRUE)]>=saturation)
-      }
-    } else {
-      saturated<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export=c('im','saturation'), xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-          any(im[xlo:xup,ylo:yup][which(sfam!=0,arr.ind=TRUE)]>=saturation)
-      }
-    }
-    if (verbose) { cat(" - Done\n") }
-  } else {
-    saturated<-rep(FALSE,length(cat.id))
-  }
-  # /*fend*/ }}}
-#-----
-  #Image Flux at central pixel; pixflux /*fold*/ {{{
-  if (!use.pixel.fluxweight) {
-    if (verbose) { cat("      Image Flux at central pixel ") }
-    if (cutup) {
-      pixflux<-foreach(xp=x.pix-(data.stamp.lims[,1]-1),yp=y.pix-(data.stamp.lims[,3]-1), im=data.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-            im[xp,yp]
-      }
-    } else {
-      pixflux<-foreach(xp=x.pix,yp=y.pix, .noexport=ls(envir=environment()), .export=c('im'), .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-            im[xp,yp]
-      }
-    }
-    if (verbose) { cat(" - Done\n") }
-  }
-  # /*fend*/ }}}
-#-----
-  #Integral of the aperture; ssa /*fold*/ {{{
-  if (verbose) { cat("      Integral of the aperture") }
-  ssa<-foreach(sam=sa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sam) }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-##-----
-#  #Integral of the convolved aperture; ssfa /*fold*/ {{{
-#  if (verbose) { cat("      Integral of the convolved aperture") }
-#  ssfa<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam) }
-#  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Integral of the [(unmodified convolved aperture)*(modified convolved aperture)]; ssfau /*fold*/ {{{
-  if (verbose) { cat("      Integral of the [(unmodified convolved aperture)*(convolved aperture)]") }
-  ssfau<-foreach(sfam=sfa, usfam=sfabak, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam*usfam)  }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Integral of the (convolved aperture * image); ssfad /*fold*/ {{{
-  if (verbose) { cat("      Integral of the (convolved aperture * image)") }
-  if (cutup) {
-    ssfad<-foreach(sfam=sfa, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-        sum(sfam*(im[xlo:xup,ylo:yup]))
-    }
-  } else {
-    ssfad<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export='im', xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-        sum(sfam*(im[xlo:xup,ylo:yup]))
-    }
-  }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Quartered Photometry - Quartered Integral of the (convolved aperture * image); qssfad /*fold*/ {{{
-  if (verbose) { cat("      Quartered Integral of the (convolved aperture * image)") }
-  if (cutup) {
-    qssfad<-foreach(sfam=sfa, im=data.stamp, x1=ap.lims.data.stamp[,1], x2=ap.lims.data.stamp[,1]+floor((ap.lims.data.stamp[,2]-ap.lims.data.stamp[,1])/2), x3=ap.lims.data.stamp[,1]+floor((ap.lims.data.stamp[,2]-ap.lims.data.stamp[,1])/2)+1, x4=ap.lims.data.stamp[,2],
-                                          y1=ap.lims.data.stamp[,3], y2=ap.lims.data.stamp[,3]+floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2), y3=ap.lims.data.stamp[,3]+floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2)+1, y4=ap.lims.data.stamp[,4],
-                                         sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
-                                         sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
-                                          .inorder=TRUE, .options.mpi=mpi.opts, .combine="rbind", .noexport=ls(envir=environment())) %dopar% {
-        cbind(sum(sfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(sfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(sfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(sfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
-    }
-  } else {
-    qssfad<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export='im', x1=ap.lims.data.map[,1], x2=ap.lims.data.map[,1]+floor((ap.lims.data.map[,2]-ap.lims.data.map[,1])/2), x3=ap.lims.data.map[,1]+floor((ap.lims.data.map[,2]-ap.lims.data.map[,1])/2)+1, x4=ap.lims.data.map[,2],
-                                          y1=ap.lims.data.map[,3], y2=ap.lims.data.map[,3]+floor((ap.lims.data.map[,4]-ap.lims.data.map[,3])/2), y3=ap.lims.data.map[,3]+floor((ap.lims.data.map[,4]-ap.lims.data.map[,3])/2)+1, y4=ap.lims.data.map[,4],
-                                         sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
-                                         sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
-                                          .inorder=TRUE, .options.mpi=mpi.opts, .combine="rbind") %dopar% {
-        cbind(sum(sfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(sfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(sfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(sfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
-    }
-  }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Integral of the reinterpolated psf; spsf /*fold*/ {{{
-  if (!no.psf) {
-    if (verbose) { cat("      Integral of the reinterpolated psf") }
-    spsf<-rep(NA,length(cat.id))
-    for (i in 1:length(psf)) {
-      spsf[which(psf.id==i)]<-sumpsf[i]
-    }
-    if (verbose) { cat(" - Done\n") }
-  } else {
-    spsf<-rep(NA, length(sfa))
-  }
-  # /*fend*/ }}}
-#-----
-  #Integral of the estimated psf; spsf /*fold*/ {{{
-  if (any(estpsf.warn!=8)) {
-    if (verbose) { cat("      Integral of the estimated psf") }
-    sepsf<-rep(NA,length(cat.id))
-    for (i in 1:length(estpsf)) {
-      sepsf[which(epsf.id==i)]<-sumepsf[i]
-    }
-    if (verbose) { cat(" - Done\n") }
-  } else {
-    sepsf<-rep(NA, length(sfa))
-  }
-  # /*fend*/ }}}
-#-----
-  #Integral of the reinterpolated psf^2; spsf2 /*fold*/ {{{
-  if (!no.psf) {
-    if (verbose) { cat("      Integral of the reinterpolated psf") }
-    spsf2<-rep(NA, length(sfa))
-    for (i in 1:length(psf)) {
-      spsf2[which(psf.id==i)]<-sum(psf[[i]]^2)
-    }
-    if (verbose) { cat(" - Done\n") }
-  } else {
-    spsf2<-rep(NA, length(sfa))
-  }
-  # /*fend*/ }}}
-#-----
-  #Integral of the reinterpolated psf * estimated psf sepsfp /*fold*/ {{{
-  if (!no.psf & any(estpsf.warn!=8 & estpsf.warn!=-1)) {
-    if (verbose) { cat("      Integral of the reinterpolated psf * estimated psf") }
-    sepsfp<-rep(NA, length(sfa))
-    for (i in 1:length(psf)) {
-      for (j in 1:length(estpsf)) {
-        if (length(which(psf.id==i&epsf.id==j))>0) {
-          sepsfp[which(psf.id==i&epsf.id==j)]<-sum(psf.plot[[i]]*estpsf.plot[[j]])
+  if (!no.calculations) { 
+    #Perform Calculations /*fold*/ {{{
+    if (!quiet) { cat("   Calculating Fluxes ") }
+    if (verbose) { cat("{\n") }
+    timer<-proc.time()
+    #-----
+    #Check for Saturations; saturated /*fold*/ {{{
+    if (is.finite(saturation)) {
+      if (verbose) { cat("      Checking for Saturations ") }
+      if (cutup) {
+        saturated<-foreach(sfam=sfa, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export='saturation') %dopar% {
+            any(im[xlo:xup,ylo:yup][which(sfam!=0,arr.ind=TRUE)]>=saturation)
+        }
+      } else {
+        saturated<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export=c('im','saturation'), xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+            any(im[xlo:xup,ylo:yup][which(sfam!=0,arr.ind=TRUE)]>=saturation)
         }
       }
+      if (verbose) { cat(" - Done\n") }
+    } else {
+      saturated<-rep(FALSE,length(cat.id))
     }
-    if (verbose) { cat(" - Done\n") }
-  } else {
-    sepsfp<-rep(NA, length(sfa))
-  }
-  # /*fend*/ }}}
-#-----
-  #Reinterpolate the PSF; psfi /*fold*/ {{{
-  if (!no.psf) {
-    if (!careful) {
+    # /*fend*/ }}}
+    #-----
+    #Image Flux at central pixel; pixflux /*fold*/ {{{
+    if (!use.pixel.fluxweight) {
+      if (verbose) { cat("      Image Flux at central pixel ") }
+      if (cutup) {
+        pixflux<-foreach(xp=x.pix-(data.stamp.lims[,1]-1),yp=y.pix-(data.stamp.lims[,3]-1), im=data.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+              im[xp,yp]
+        }
+      } else {
+        pixflux<-foreach(xp=x.pix,yp=y.pix, .noexport=ls(envir=environment()), .export=c('im'), .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+              im[xp,yp]
+        }
+      }
+      if (verbose) { cat(" - Done\n") }
+    }
+    # /*fend*/ }}}
+    #-----
+    #Integral of the aperture; ssa /*fold*/ {{{
+    if (verbose) { cat("      Integral of the aperture") }
+    ssa<-foreach(sam=sa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sam) }
+    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    ##-----
+    #  #Integral of the convolved aperture; ssfa /*fold*/ {{{
+    #  if (verbose) { cat("      Integral of the convolved aperture") }
+    #  ssfa<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam) }
+    #  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+    #Integral of the [(unmodified convolved aperture)*(modified convolved aperture)]; ssfau /*fold*/ {{{
+    if (verbose) { cat("      Integral of the [(unmodified convolved aperture)*(convolved aperture)]") }
+    ssfau<-foreach(sfam=sfa, usfam=sfabak, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam*usfam)  }
+    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+    #Integral of the (convolved aperture * image); ssfad /*fold*/ {{{
+    if (verbose) { cat("      Integral of the (convolved aperture * image)") }
+    if (cutup) {
+      ssfad<-foreach(sfam=sfa, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+          sum(sfam*(im[xlo:xup,ylo:yup]))
+      }
+    } else {
+      ssfad<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export='im', xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+          sum(sfam*(im[xlo:xup,ylo:yup]))
+      }
+    }
+    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+    #Quartered Photometry - Quartered Integral of the (convolved aperture * image); qssfad /*fold*/ {{{
+    if (verbose) { cat("      Quartered Integral of the (convolved aperture * image)") }
+    if (cutup) {
+      qssfad<-foreach(sfam=sfa, im=data.stamp, x1=ap.lims.data.stamp[,1], x2=ap.lims.data.stamp[,1]+floor((ap.lims.data.stamp[,2]-ap.lims.data.stamp[,1])/2), x3=ap.lims.data.stamp[,1]+floor((ap.lims.data.stamp[,2]-ap.lims.data.stamp[,1])/2)+1, x4=ap.lims.data.stamp[,2],
+                                            y1=ap.lims.data.stamp[,3], y2=ap.lims.data.stamp[,3]+floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2), y3=ap.lims.data.stamp[,3]+floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2)+1, y4=ap.lims.data.stamp[,4],
+                                           sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
+                                           sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
+                                            .inorder=TRUE, .options.mpi=mpi.opts, .combine="rbind", .noexport=ls(envir=environment())) %dopar% {
+          cbind(sum(sfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(sfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(sfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(sfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
+      }
+    } else {
+      qssfad<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export='im', x1=ap.lims.data.map[,1], x2=ap.lims.data.map[,1]+floor((ap.lims.data.map[,2]-ap.lims.data.map[,1])/2), x3=ap.lims.data.map[,1]+floor((ap.lims.data.map[,2]-ap.lims.data.map[,1])/2)+1, x4=ap.lims.data.map[,2],
+                                            y1=ap.lims.data.map[,3], y2=ap.lims.data.map[,3]+floor((ap.lims.data.map[,4]-ap.lims.data.map[,3])/2), y3=ap.lims.data.map[,3]+floor((ap.lims.data.map[,4]-ap.lims.data.map[,3])/2)+1, y4=ap.lims.data.map[,4],
+                                           sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
+                                           sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
+                                            .inorder=TRUE, .options.mpi=mpi.opts, .combine="rbind") %dopar% {
+          cbind(sum(sfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(sfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(sfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(sfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
+      }
+    }
+    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+    #Integral of the reinterpolated psf; spsf /*fold*/ {{{
+    if (!no.psf) {
+      if (verbose) { cat("      Integral of the reinterpolated psf") }
+      spsf<-rep(NA,length(cat.id))
+      for (i in 1:length(psf)) {
+        spsf[which(psf.id==i)]<-sumpsf[i]
+      }
+      if (verbose) { cat(" - Done\n") }
+    } else {
+      spsf<-rep(NA, length(sfa))
+    }
+    # /*fend*/ }}}
+    #-----
+    #Integral of the estimated psf; spsf /*fold*/ {{{
+    if (any(estpsf.warn!=8)) {
+      if (verbose) { cat("      Integral of the estimated psf") }
+      sepsf<-rep(NA,length(cat.id))
+      for (i in 1:length(estpsf)) {
+        sepsf[which(epsf.id==i)]<-sumepsf[i]
+      }
+      if (verbose) { cat(" - Done\n") }
+    } else {
+      sepsf<-rep(NA, length(sfa))
+    }
+    # /*fend*/ }}}
+    #-----
+    #Integral of the reinterpolated psf^2; spsf2 /*fold*/ {{{
+    if (!no.psf) {
+      if (verbose) { cat("      Integral of the reinterpolated psf") }
+      spsf2<-rep(NA, length(sfa))
+      for (i in 1:length(psf)) {
+        spsf2[which(psf.id==i)]<-sum(psf[[i]]^2)
+      }
+      if (verbose) { cat(" - Done\n") }
+    } else {
+      spsf2<-rep(NA, length(sfa))
+    }
+    # /*fend*/ }}}
+    #-----
+    #Integral of the reinterpolated psf * estimated psf sepsfp /*fold*/ {{{
+    if (!no.psf & any(estpsf.warn!=8 & estpsf.warn!=-1)) {
+      if (verbose) { cat("      Integral of the reinterpolated psf * estimated psf") }
+      sepsfp<-rep(NA, length(sfa))
+      for (i in 1:length(psf)) {
+        for (j in 1:length(estpsf)) {
+          if (length(which(psf.id==i&epsf.id==j))>0) {
+            sepsfp[which(psf.id==i&epsf.id==j)]<-sum(psf.plot[[i]]*estpsf.plot[[j]])
+          }
+        }
+      }
+      if (verbose) { cat(" - Done\n") }
+    } else {
+      sepsfp<-rep(NA, length(sfa))
+    }
+    # /*fend*/ }}}
+    #-----
+    #Reinterpolate the PSF; psfi /*fold*/ {{{
+    if (!no.psf) {
+      if (!careful) {
+        if (verbose) { cat("      Reinterpolating the psf (per object)") }
+        psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, llim.x=ap.lims.data.map[,1],
+                      ulim.x=ap.lims.data.map[,2],llim.y=ap.lims.data.map[,3],ulim.y=ap.lims.data.map[,4],
+                      pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
+          #limits of stamp in segmentation image space
+          x<-psf.cen[[pid]][1]
+          y<-psf.cen[[pid]][2]
+          lims<-zfloor(c(x,x,y,y)+c(-1,1,-1,1)*(c(xc-llim.x,ulim.x-xc,yc-llim.y,ulim.y-yc)))
+          lims[1]<-max(c(lims[1],1))
+          lims[3]<-max(c(lims[3],1))
+          lims[2]<-min(c(lims[2],length(psf[[pid]][,1])))
+          lims[4]<-min(c(lims[4],length(psf[[pid]][1,])))
+          psf.tmp<-psf[[pid]][lims[1]:lims[2],lims[3]:lims[4]]
+          #reinterpolate the PSF onto the new grid {{{
+          #Make grid for aperture at old centroid {{{
+          psf.obj<-list(x=(seq(lims[1],lims[2])-x),y=(seq(lims[3],lims[4])-y),z=psf.tmp)
+          #}}}
+          #Make expanded grid of new pixel centres {{{
+          expanded<-expand.grid(seq(llim.x,ulim.x)-xc,seq(llim.y,ulim.y)-yc)
+          #}}}
+          #Interpolate {{{
+          psf.sing=matrix(interp.2d(expanded[,1], expanded[,2], psf.obj)[,3], ncol=length(seq(llim.x,ulim.x)),nrow=length(seq(llim.y,ulim.y)))
+          #}}}
+          #}}}
+          psf.sing
+        }
+        if (verbose) { cat(" - Done\n") }
+      } else {
       if (verbose) { cat("      Reinterpolating the psf (per object)") }
-      psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, llim.x=ap.lims.data.map[,1],
-                    ulim.x=ap.lims.data.map[,2],llim.y=ap.lims.data.map[,3],ulim.y=ap.lims.data.map[,4],
-                    pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
-        #limits of stamp in segmentation image space
-        x<-psf.cen[[pid]][1]
-        y<-psf.cen[[pid]][2]
-        lims<-zfloor(c(x,x,y,y)+c(-1,1,-1,1)*(c(xc-llim.x,ulim.x-xc,yc-llim.y,ulim.y-yc)))
-        lims[1]<-max(c(lims[1],1))
-        lims[3]<-max(c(lims[3],1))
-        lims[2]<-min(c(lims[2],length(psf[[pid]][,1])))
-        lims[4]<-min(c(lims[4],length(psf[[pid]][1,])))
-        psf.tmp<-psf[[pid]][lims[1]:lims[2],lims[3]:lims[4]]
-        #reinterpolate the PSF onto the new grid {{{
-        #Make grid for aperture at old centroid {{{
-        psf.obj<-list(x=(seq(lims[1],lims[2])-x),y=(seq(lims[3],lims[4])-y),z=psf.tmp)
-        #}}}
-        #Make expanded grid of new pixel centres {{{
-        expanded<-expand.grid(seq(llim.x,ulim.x)-xc,seq(llim.y,ulim.y)-yc)
-        #}}}
-        #Interpolate {{{
-        psf.sing=matrix(interp.2d(expanded[,1], expanded[,2], psf.obj)[,3], ncol=length(seq(llim.x,ulim.x)),nrow=length(seq(llim.y,ulim.y)))
-        #}}}
-        #}}}
-        psf.sing
+        psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
+          #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
+          centre<-psf.cen[[pid]]
+          delta<-floor(slen/2)*c(-1,+1)
+          lims<-rbind(centre[1]+delta,centre[2]+delta)
+          dx<-lims[1,1]-1
+          dy<-lims[2,1]-1
+          dx<-ifelse(dx>0,dx+1,dx)
+          dy<-ifelse(dy>0,dy+1,dy)
+          # /*fend*/ }}}
+          #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
+          lenxpsf<-length(psf[[pid]][,1])
+          lenypsf<-length(psf[[pid]][1,])
+          lenx<-length(1:slen)
+          leny<-length(1:slen)
+          #Make grid for psf at old pixel centres /*fold*/ {{{
+          psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[[pid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+          # /*fend*/ }}}
+          #Make expanded grid of new pixel centres /*fold*/ {{{
+          expanded<-expand.grid(seq(1,lenx),seq(1,leny))
+          xnew<-expanded[,1]-xc%%1
+          ynew<-expanded[,2]-yc%%1
+          # /*fend*/ }}}
+          #Interpolate /*fold*/ {{{
+          ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
+          # /*fend*/ }}}
+          # /*fend*/ }}}
+          ap
+        }
+        if (verbose) { cat(" - Done\n") }
+      }
+    } else {
+      psfi<-rep(NA, length(sfa))
+    }
+    # /*fend*/ }}}
+    #-----
+    #Integral of the (convolved aperture * psf); ssfap /*fold*/ {{{
+    if (!no.psf) {
+      if (verbose) { cat("      Integral of the (convolved aperture * psf)") }
+      ssfap<-foreach(sfam=sfa, ap=psfi, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam*ap) }
+      if (verbose) { cat(" - Done\n") }
+    } else {
+      ssfap<-rep(NA, length(sfa))
+    }
+    # /*fend*/ }}}
+    #-----
+    #Integral of the (psf * image); spsfd /*fold*/ {{{
+    if (!no.psf) {
+      if (verbose) { cat("      Integral of the (psf * image)") }
+      if (cutup) {
+        spsfd<-foreach(ap=psfi, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment())) %dopar% {
+          sum(ap*im[xlo:xup,ylo:yup])
+        }
+      } else {
+        spsfd<-foreach(ap=psfi, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("im")) %dopar% {
+          sum(ap*im[xlo:xup,ylo:yup])
+        }
       }
       if (verbose) { cat(" - Done\n") }
     } else {
-    if (verbose) { cat("      Reinterpolating the psf (per object)") }
-      psfi<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, pid=psf.id, .options.mpi=mpi.opts, .noexport=ls(envir=environment()), .export="psf") %dopar% {
-        #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-psf.cen[[pid]]
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        dx<-lims[1,1]-1
-        dy<-lims[2,1]-1
-        dx<-ifelse(dx>0,dx+1,dx)
-        dy<-ifelse(dy>0,dy+1,dy)
-        # /*fend*/ }}}
-        #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-        lenxpsf<-length(psf[[pid]][,1])
-        lenypsf<-length(psf[[pid]][1,])
-        lenx<-length(1:slen)
-        leny<-length(1:slen)
-        #Make grid for psf at old pixel centres /*fold*/ {{{
-        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=psf[[pid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
-        # /*fend*/ }}}
-        #Make expanded grid of new pixel centres /*fold*/ {{{
-        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
-        xnew<-expanded[,1]-xc%%1
-        ynew<-expanded[,2]-yc%%1
-        # /*fend*/ }}}
-        #Interpolate /*fold*/ {{{
-        ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
-        # /*fend*/ }}}
-        # /*fend*/ }}}
-        ap
+      spsfd<-rep(NA, length(sfa))
+    }
+    # /*fend*/ }}}
+    #-----
+    #Integral of the (estimate psf * image); sepsfd /*fold*/ {{{
+    if (any(estpsf.warn!=8)) {
+      if (verbose) { cat("      Integral of the (estimated psf * image)") }
+      if (cutup) {
+        sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export="estpsf.plot") %dopar% {
+          #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
+          centre<-estpsf.cen[[epid]]
+          delta<-floor(slen/2)*c(-1,+1)
+          lims<-rbind(centre[1]+delta,centre[2]+delta)
+          dx<-lims[1,1]-1
+          dy<-lims[2,1]-1
+          dx<-ifelse(dx>0,dx+1,dx)
+          dy<-ifelse(dy>0,dy+1,dy)
+          # /*fend*/ }}}
+          #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
+          lenxpsf<-length(estpsf.plot[[epid]][,1])
+          lenypsf<-length(estpsf.plot[[epid]][1,])
+          lenx<-length(1:slen)
+          leny<-length(1:slen)
+          #Make grid for psf at old pixel centres /*fold*/ {{{
+          psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=estpsf.plot[[epid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+          # /*fend*/ }}}
+          #Make expanded grid of new pixel centres /*fold*/ {{{
+          expanded<-expand.grid(seq(1,lenx),seq(1,leny))
+          xnew<-expanded[,1]-xc%%1
+          ynew<-expanded[,2]-yc%%1
+          # /*fend*/ }}}
+          #Interpolate /*fold*/ {{{
+          ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
+          # /*fend*/ }}}
+          # /*fend*/ }}}
+          sum(ap*im[xlo:xup,ylo:yup])
+        }
+      } else {
+        sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("estpsf.plot","im")) %dopar% {
+          #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
+          centre<-estpsf.cen[[epid]]
+          delta<-floor(slen/2)*c(-1,+1)
+          lims<-rbind(centre[1]+delta,centre[2]+delta)
+          dx<-lims[1,1]-1
+          dy<-lims[2,1]-1
+          dx<-ifelse(dx>0,dx+1,dx)
+          dy<-ifelse(dy>0,dy+1,dy)
+          # /*fend*/ }}}
+          #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
+          lenxpsf<-length(estpsf.plot[[epid]][,1])
+          lenypsf<-length(estpsf.plot[[epid]][1,])
+          lenx<-length(1:slen)
+          leny<-length(1:slen)
+          #Make grid for psf at old pixel centres /*fold*/ {{{
+          psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=estpsf.plot[[epid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
+          # /*fend*/ }}}
+          #Make expanded grid of new pixel centres /*fold*/ {{{
+          expanded<-expand.grid(seq(1,lenx),seq(1,leny))
+          xnew<-expanded[,1]-xc%%1
+          ynew<-expanded[,2]-yc%%1
+          # /*fend*/ }}}
+          #Interpolate /*fold*/ {{{
+          ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
+          # /*fend*/ }}}
+          # /*fend*/ }}}
+          sum(ap*im[xlo:xup,ylo:yup])
+        }
       }
       if (verbose) { cat(" - Done\n") }
+    } else {
+      sepsfd<-rep(NA, length(sfa))
     }
-  } else {
-    psfi<-rep(NA, length(sfa))
-  }
-  # /*fend*/ }}}
-#-----
-  #Integral of the (convolved aperture * psf); ssfap /*fold*/ {{{
-  if (!no.psf) {
-    if (verbose) { cat("      Integral of the (convolved aperture * psf)") }
-    ssfap<-foreach(sfam=sfa, ap=psfi, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(sfam*ap) }
-    if (verbose) { cat(" - Done\n") }
-  } else {
-    ssfap<-rep(NA, length(sfa))
-  }
-  # /*fend*/ }}}
-#-----
-  #Integral of the (psf * image); spsfd /*fold*/ {{{
-  if (!no.psf) {
-    if (verbose) { cat("      Integral of the (psf * image)") }
+
+    # /*fend*/ }}}
+    ##-----
+    #  #Integral of the deblended convolved aperture; sdfa /*fold*/ {{{
+    #  if (verbose) { cat("      Integral of the deblended convolved aperture") }
+    #  sdfa<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(dfam)  }
+    #  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+    #Integral of the (deblended convolved aperture * image); sdfad /*fold*/ {{{
+    if (verbose) { cat("      Integral of the (deblended convolved aperture * image)") }
     if (cutup) {
-      spsfd<-foreach(ap=psfi, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment())) %dopar% {
-        sum(ap*im[xlo:xup,ylo:yup])
+      sdfad<-foreach(dfam=dfa,im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+          sum(dfam*(im[xlo:xup,ylo:yup]))
       }
     } else {
-      spsfd<-foreach(ap=psfi, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("im")) %dopar% {
-        sum(ap*im[xlo:xup,ylo:yup])
+      sdfad<-foreach(dfam=dfa,.noexport=ls(envir=environment()), .export='im', xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+          sum(dfam*(im[xlo:xup,ylo:yup]))
       }
     }
-    if (verbose) { cat(" - Done\n") }
-  } else {
-    spsfd<-rep(NA, length(sfa))
-  }
-  # /*fend*/ }}}
-#-----
-  #Integral of the (estimate psf * image); sepsfd /*fold*/ {{{
-  if (any(estpsf.warn!=8)) {
-    if (verbose) { cat("      Integral of the (estimated psf * image)") }
+    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+    #Quartered Photometry - Quartered Integral of the (deblended convolved aperture * image); qsdfad /*fold*/ {{{
+    if (verbose) { cat("      Quartered Integral of the (deblended convolved aperture * image)") }
     if (cutup) {
-      sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export="estpsf.plot") %dopar% {
-        #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-estpsf.cen[[epid]]
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        dx<-lims[1,1]-1
-        dy<-lims[2,1]-1
-        dx<-ifelse(dx>0,dx+1,dx)
-        dy<-ifelse(dy>0,dy+1,dy)
-        # /*fend*/ }}}
-        #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-        lenxpsf<-length(estpsf.plot[[epid]][,1])
-        lenypsf<-length(estpsf.plot[[epid]][1,])
-        lenx<-length(1:slen)
-        leny<-length(1:slen)
-        #Make grid for psf at old pixel centres /*fold*/ {{{
-        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=estpsf.plot[[epid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
-        # /*fend*/ }}}
-        #Make expanded grid of new pixel centres /*fold*/ {{{
-        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
-        xnew<-expanded[,1]-xc%%1
-        ynew<-expanded[,2]-yc%%1
-        # /*fend*/ }}}
-        #Interpolate /*fold*/ {{{
-        ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
-        # /*fend*/ }}}
-        # /*fend*/ }}}
-        sum(ap*im[xlo:xup,ylo:yup])
+      qsdfad<-foreach(dfam=dfa, im=data.stamp, x1=ap.lims.data.stamp[,1], x2=ap.lims.data.stamp[,1]+floor((ap.lims.data.stamp[,2]-ap.lims.data.stamp[,1])/2), x3=ap.lims.data.stamp[,1]+floor((ap.lims.data.stamp[,2]-ap.lims.data.stamp[,1])/2)+1, x4=ap.lims.data.stamp[,2],
+                                            y1=ap.lims.data.stamp[,3], y2=ap.lims.data.stamp[,3]+floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2), y3=ap.lims.data.stamp[,3]+floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2)+1, y4=ap.lims.data.stamp[,4],
+                                           sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
+                                           sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
+                                            .inorder=TRUE, .options.mpi=mpi.opts, .combine="rbind", .noexport=ls(envir=environment())) %dopar% {
+          cbind(sum(dfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(dfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(dfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(dfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
       }
     } else {
-      sepsfd<-foreach(slen=stamplen, xc=cat.x, yc=cat.y, epid=epsf.id, xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4],  .combine='c', .options.mpi=mpi.opts, .inorder=TRUE, .noexport=ls(envir=environment()), .export=c("estpsf.plot","im")) %dopar% {
-        #Make Sure PSF is centred on centre of stamp /*fold*/ {{{
-        centre<-estpsf.cen[[epid]]
-        delta<-floor(slen/2)*c(-1,+1)
-        lims<-rbind(centre[1]+delta,centre[2]+delta)
-        dx<-lims[1,1]-1
-        dy<-lims[2,1]-1
-        dx<-ifelse(dx>0,dx+1,dx)
-        dy<-ifelse(dy>0,dy+1,dy)
-        # /*fend*/ }}}
-        #Reinterpolate the PSF at point source XcenYcen /*fold*/ {{{
-        lenxpsf<-length(estpsf.plot[[epid]][,1])
-        lenypsf<-length(estpsf.plot[[epid]][1,])
-        lenx<-length(1:slen)
-        leny<-length(1:slen)
-        #Make grid for psf at old pixel centres /*fold*/ {{{
-        psf.obj<-list(x=seq(1,lenx), y=seq(1,leny),z=estpsf.plot[[epid]][(1:(lenxpsf+1)+dx-1)%%(lenxpsf+1),(1:(lenypsf+1)+dy-1)%%(lenypsf+1)][1:lenx,1:leny])
-        # /*fend*/ }}}
-        #Make expanded grid of new pixel centres /*fold*/ {{{
-        expanded<-expand.grid(seq(1,lenx),seq(1,leny))
-        xnew<-expanded[,1]-xc%%1
-        ynew<-expanded[,2]-yc%%1
-        # /*fend*/ }}}
-        #Interpolate /*fold*/ {{{
-        ap<-matrix(interp.2d(xnew, ynew, psf.obj)[,3], ncol=leny,nrow=lenx)
-        # /*fend*/ }}}
-        # /*fend*/ }}}
-        sum(ap*im[xlo:xup,ylo:yup])
+      qsdfad<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export='im', x1=ap.lims.data.map[,1], x2=ap.lims.data.map[,1]+floor((ap.lims.data.map[,2]-ap.lims.data.map[,1])/2), x3=ap.lims.data.map[,1]+floor((ap.lims.data.map[,2]-ap.lims.data.map[,1])/2)+1, x4=ap.lims.data.map[,2],
+                                            y1=ap.lims.data.map[,3], y2=ap.lims.data.map[,3]+floor((ap.lims.data.map[,4]-ap.lims.data.map[,3])/2), y3=ap.lims.data.map[,3]+floor((ap.lims.data.map[,4]-ap.lims.data.map[,3])/2)+1, y4=ap.lims.data.map[,4],
+                                           sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
+                                           sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
+                                            .inorder=TRUE, .options.mpi=mpi.opts, .combine="rbind") %dopar% {
+          cbind(sum(dfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(dfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(dfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(dfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
       }
     }
-    if (verbose) { cat(" - Done\n") }
-  } else {
-    sepsfd<-rep(NA, length(sfa))
-  }
-
-  # /*fend*/ }}}
-##-----
-#  #Integral of the deblended convolved aperture; sdfa /*fold*/ {{{
-#  if (verbose) { cat("      Integral of the deblended convolved aperture") }
-#  sdfa<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum(dfam)  }
-#  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Integral of the (deblended convolved aperture * image); sdfad /*fold*/ {{{
-  if (verbose) { cat("      Integral of the (deblended convolved aperture * image)") }
-  if (cutup) {
-    sdfad<-foreach(dfam=dfa,im=data.stamp, xlo=ap.lims.data.stamp[,1],xup=ap.lims.data.stamp[,2], ylo=ap.lims.data.stamp[,3],yup=ap.lims.data.stamp[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-        sum(dfam*(im[xlo:xup,ylo:yup]))
-    }
-  } else {
-    sdfad<-foreach(dfam=dfa,.noexport=ls(envir=environment()), .export='im', xlo=ap.lims.data.map[,1],xup=ap.lims.data.map[,2], ylo=ap.lims.data.map[,3],yup=ap.lims.data.map[,4], .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-        sum(dfam*(im[xlo:xup,ylo:yup]))
-    }
-  }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Quartered Photometry - Quartered Integral of the (deblended convolved aperture * image); qsdfad /*fold*/ {{{
-  if (verbose) { cat("      Quartered Integral of the (deblended convolved aperture * image)") }
-  if (cutup) {
-    qsdfad<-foreach(dfam=dfa, im=data.stamp, x1=ap.lims.data.stamp[,1], x2=ap.lims.data.stamp[,1]+floor((ap.lims.data.stamp[,2]-ap.lims.data.stamp[,1])/2), x3=ap.lims.data.stamp[,1]+floor((ap.lims.data.stamp[,2]-ap.lims.data.stamp[,1])/2)+1, x4=ap.lims.data.stamp[,2],
-                                          y1=ap.lims.data.stamp[,3], y2=ap.lims.data.stamp[,3]+floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2), y3=ap.lims.data.stamp[,3]+floor((ap.lims.data.stamp[,4]-ap.lims.data.stamp[,3])/2)+1, y4=ap.lims.data.stamp[,4],
-                                         sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
-                                         sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
-                                          .inorder=TRUE, .options.mpi=mpi.opts, .combine="rbind", .noexport=ls(envir=environment())) %dopar% {
-        cbind(sum(dfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(dfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(dfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(dfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
-    }
-  } else {
-    qsdfad<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export='im', x1=ap.lims.data.map[,1], x2=ap.lims.data.map[,1]+floor((ap.lims.data.map[,2]-ap.lims.data.map[,1])/2), x3=ap.lims.data.map[,1]+floor((ap.lims.data.map[,2]-ap.lims.data.map[,1])/2)+1, x4=ap.lims.data.map[,2],
-                                          y1=ap.lims.data.map[,3], y2=ap.lims.data.map[,3]+floor((ap.lims.data.map[,4]-ap.lims.data.map[,3])/2), y3=ap.lims.data.map[,3]+floor((ap.lims.data.map[,4]-ap.lims.data.map[,3])/2)+1, y4=ap.lims.data.map[,4],
-                                         sx1=rep(1,length(stamplen)),sx2=1+floor(stamplen-1)/2,sx3=1+floor(stamplen-1)/2+1,sx4=stamplen,
-                                         sy1=rep(1,length(stamplen)),sy2=1+floor(stamplen-1)/2,sy3=1+floor(stamplen-1)/2+1,sy4=stamplen,
-                                          .inorder=TRUE, .options.mpi=mpi.opts, .combine="rbind") %dopar% {
-        cbind(sum(dfam[sx1:sx2,sy1:sy2]*(im[x1:x2,y1:y2])),sum(dfam[sx3:sx4,sy1:sy2]*(im[x3:x4,y1:y2])),sum(dfam[sx1:sx2,sy3:sy4]*(im[x1:x2,y3:y4])),sum(dfam[sx3:sx4,sy3:sy4]*(im[x3:x4,y3:y4])))
-    }
-  }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Integral of the [(convolved aperture * image error)^2]; ssfa2e2 /*fold*/ {{{
-  if (verbose) { cat("      Integral of the [(convolved aperture * image error)^2]") }
-  if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
-    ssfa2e2<-foreach(sfam=sfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-        sum((sfam*ime[xlo:xup,ylo:yup])^2.)
-    }
-  } else if (length(error.stamp)==1){
-    if (error.stamp==1) {
-      ssfa2e2<-ssfa2
-    } else if (error.stamp==0) {
-      ssfa2e2<-rep(0,length(ssfa))
-    } else {
-      ssfa2e2<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-          sum((sfam*error.stamp)^2.)
-      }
-    }
-  } else {
-    ssfa2e2<-foreach(sfam=sfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-        sum((sfam*ime[xlo:xup,ylo:yup])^2.)
-    }
-  }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-  #Integral of the [(deblended convolved aperture * image error)^2]; sdfa2e2 /*fold*/ {{{
-  if (verbose) { cat("      Integral of the [(deblended convolved aperture * image error)^2]") }
-  if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
-    sdfa2e2<-foreach(dfam=dfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-        sum((dfam*ime[xlo:xup,ylo:yup])^2.)
-    }
-  } else if (length(error.stamp)==1){
-    if (error.stamp==1) {
-      sdfa2e2<-sdfa2
-    } else if (error.stamp==0) {
-      sdfa2e2<-rep(0,length(ssfa))
-    } else {
-      sdfa2e2<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-          sum((dfam*error.stamp)^2.)
-      }
-    }
-  } else {
-    sdfa2e2<-foreach(dfam=dfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-        sum((dfam*ime[xlo:xup,ylo:yup])^2.)
-    }
-  }
-  if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-#-----
-#----- DIAGNOSTIC ITEMS -----# /*fold*/ {{{
-  if (diagnostic) {
-  #-----
-    #Integral of the (convolved aperture * (image error)^2); ssfae2 /*fold*/ {{{
-    if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
+    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+    #Integral of the [(convolved aperture * image error)^2]; ssfa2e2 /*fold*/ {{{
+    if (verbose) { cat("      Integral of the [(convolved aperture * image error)^2]") }
     if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
-      ssfae2<-foreach(sfam=sfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-          sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
+      ssfa2e2<-foreach(sfam=sfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+          sum((sfam*ime[xlo:xup,ylo:yup])^2.)
       }
     } else if (length(error.stamp)==1){
       if (error.stamp==1) {
-        ssfae2<-ssfa
+        ssfa2e2<-ssfa2
       } else if (error.stamp==0) {
-        ssfae2<-rep(0,length(ssfa))
+        ssfa2e2<-rep(0,length(ssfa))
       } else {
-        ssfae2<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-            sum(sfam*(error.stamp)^2.)
+        ssfa2e2<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+            sum((sfam*error.stamp)^2.)
         }
       }
     } else {
-      ssfae2<-foreach(sfam=sfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-          sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
+      ssfa2e2<-foreach(sfam=sfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+          sum((sfam*ime[xlo:xup,ylo:yup])^2.)
       }
     }
     if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-  #-----
-    #Integral of the [deblended convolved aperture * (image error)^2]; sdfae2 /*fold*/ {{{
-    if (verbose) { cat("      Integral of the [deblended convolved aperture * (image error)^2]") }
+    #-----
+    #Integral of the [(deblended convolved aperture * image error)^2]; sdfa2e2 /*fold*/ {{{
+    if (verbose) { cat("      Integral of the [(deblended convolved aperture * image error)^2]") }
     if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
-      sdfae2<-foreach(dfam=dfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-          sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
+      sdfa2e2<-foreach(dfam=dfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+          sum((dfam*ime[xlo:xup,ylo:yup])^2.)
       }
     } else if (length(error.stamp)==1){
       if (error.stamp==1) {
-        sdfae2<-sdfa2
+        sdfa2e2<-sdfa2
       } else if (error.stamp==0) {
-        sdfae2<-rep(0,length(ssfa))
+        sdfa2e2<-rep(0,length(ssfa))
       } else {
-        sdfae2<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-            sum(dfam*(error.stamp)^2.)
+        sdfa2e2<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+            sum((dfam*error.stamp)^2.)
         }
       }
     } else {
-      sdfae2<-foreach(dfam=dfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-          sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
+      sdfa2e2<-foreach(dfam=dfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+          sum((dfam*ime[xlo:xup,ylo:yup])^2.)
       }
     }
     if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-  #-----
-    #Integral of the (convolved aperture * image error); ssfae /*fold*/ {{{
-    if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
-    if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
-      ssfae<-foreach(sfam=sfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-        sum(sfam*ime[xlo:xup,ylo:yup])
-      }
-    } else if (length(error.stamp)==1){
-      if (error.stamp==1) {
-        ssfae<-ssfa
-      } else if (error.stamp==0) {
-        ssfae<-rep(0,length(ssfa))
+    #-----
+    #----- DIAGNOSTIC ITEMS -----# /*fold*/ {{{
+    if (diagnostic) {
+    #-----
+      #Integral of the (convolved aperture * (image error)^2); ssfae2 /*fold*/ {{{
+      if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
+      if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
+        ssfae2<-foreach(sfam=sfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+            sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
+        }
+      } else if (length(error.stamp)==1){
+        if (error.stamp==1) {
+          ssfae2<-ssfa
+        } else if (error.stamp==0) {
+          ssfae2<-rep(0,length(ssfa))
+        } else {
+          ssfae2<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+              sum(sfam*(error.stamp)^2.)
+          }
+        }
       } else {
-        ssfae<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-          sum(sfam*error.stamp)
+        ssfae2<-foreach(sfam=sfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+            sum(sfam*(ime[xlo:xup,ylo:yup])^2.)
         }
       }
-    } else {
-      ssfae<-foreach(sfam=sfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-        sum(sfam*ime[xlo:xup,ylo:yup])
-      }
-    }
-    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-  #-----
-    #Integral of the (deblended convolved aperture * image error); sdfae /*fold*/ {{{
-    if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
-    if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
-      sdfae<-foreach(dfam=dfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
-        sum(dfam*ime[xlo:xup,ylo:yup])
-      }
-    } else if (length(error.stamp)==1){
-      if (error.stamp==1) {
-        sdfae<-sdfa
-      } else if (error.stamp==0) {
-        sdfae<-rep(0,length(sdfa))
+      if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+      #Integral of the [deblended convolved aperture * (image error)^2]; sdfae2 /*fold*/ {{{
+      if (verbose) { cat("      Integral of the [deblended convolved aperture * (image error)^2]") }
+      if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
+        sdfae2<-foreach(dfam=dfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+            sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
+        }
+      } else if (length(error.stamp)==1){
+        if (error.stamp==1) {
+          sdfae2<-sdfa2
+        } else if (error.stamp==0) {
+          sdfae2<-rep(0,length(ssfa))
+        } else {
+          sdfae2<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+              sum(dfam*(error.stamp)^2.)
+          }
+        }
       } else {
-        sdfae<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-          sum(dfam*error.stamp)
+        sdfae2<-foreach(dfam=dfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+            sum(dfam*(ime[xlo:xup,ylo:yup])^2.)
         }
       }
+      if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+      #Integral of the (convolved aperture * image error); ssfae /*fold*/ {{{
+      if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
+      if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
+        ssfae<-foreach(sfam=sfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+          sum(sfam*ime[xlo:xup,ylo:yup])
+        }
+      } else if (length(error.stamp)==1){
+        if (error.stamp==1) {
+          ssfae<-ssfa
+        } else if (error.stamp==0) {
+          ssfae<-rep(0,length(ssfa))
+        } else {
+          ssfae<-foreach(sfam=sfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+            sum(sfam*error.stamp)
+          }
+        }
+      } else {
+        ssfae<-foreach(sfam=sfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+          sum(sfam*ime[xlo:xup,ylo:yup])
+        }
+      }
+      if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+      #Integral of the (deblended convolved aperture * image error); sdfae /*fold*/ {{{
+      if (verbose) { cat("      Integral of the (convolved aperture * image error)") }
+      if (length(error.stamp)>1|(length(error.stamp)==1 & is.list(error.stamp))) {
+        sdfae<-foreach(dfam=dfa, xlo=ap.lims.error.stamp[,1],xup=ap.lims.error.stamp[,2],ylo=ap.lims.error.stamp[,3],yup=ap.lims.error.stamp[,4], ime=error.stamp, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% {
+          sum(dfam*ime[xlo:xup,ylo:yup])
+        }
+      } else if (length(error.stamp)==1){
+        if (error.stamp==1) {
+          sdfae<-sdfa
+        } else if (error.stamp==0) {
+          sdfae<-rep(0,length(sdfa))
+        } else {
+          sdfae<-foreach(dfam=dfa, .noexport=ls(envir=environment()), .export="error.stamp", .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+            sum(dfam*error.stamp)
+          }
+        }
+      } else {
+        sdfae<-foreach(dfam=dfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
+          sum(dfam*ime[xlo:xup,ylo:yup])
+        }
+      }
+      if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+      #Integral of the [(convolved aperture)^2]; ssfa2 /*fold*/ {{{
+      if (verbose) { cat("      Integral of the [(convolved aperture)^2]") }
+      ssfa2<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum((sfam)^2.)  }
+      if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+      #Integral of the [(deblended convolved aperture)^2]; sdfa2 /*fold*/ {{{
+      if (verbose) { cat("      Integral of the [(deblended convolved aperture)^2]") }
+      sdfa2<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum((dfam)^2.)  }
+      if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
+    #-----
+    }
+    #/*fend*/ }}}
+    #-----
+    #Final Flux & Error Calculations /*fold*/ {{{
+    if (!cutup) { detach(image.env) }
+    if (verbose) { cat("      Final Fluxes and Error Calculations ") }
+    #Calculate PSF-Weighting Correction /*fold*/ {{{
+    PSCorr<-spsf/spsf2
+    # /*fend*/ }}}
+    #Calculate Aperture-Weighting Correction /*fold*/ {{{
+    WtCorr<-ssfa/ssfau
+    # /*fend*/ }}}
+    #Calculate Minimum Aperture Correction /*fold*/ {{{
+    if (!no.psf) {
+      ApCorr<-spsf/ssfap
     } else {
-      sdfae<-foreach(dfam=dfa, xlo=ap.lims.error.map[,1],xup=ap.lims.error.map[,2],ylo=ap.lims.error.map[,3],yup=ap.lims.error.map[,4], .noexport=ls(envir=environment()), .export='ime', .inorder=TRUE, .combine='c', .options.mpi=mpi.opts) %dopar% {
-        sum(dfam*ime[xlo:xup,ylo:yup])
+      ApCorr<-1
+    }
+    # /*fend*/ }}}
+    #Calculate Estimated PSF Correction /*fold*/ {{{
+    if (any(estpsf.warn!=8)) {
+      EstPSFCorr<-sepsf/sepsfp
+    } else {
+      EstPSFCorr<-1
+    }
+    # /*fend*/ }}}
+
+    #Point Source flux = Int(PSF*Im) /*fold*/ {{{
+    psfflux<-spsfd
+    # /*fend*/ }}}
+
+    #Convolved aperture flux = Int(fltAp*Im) /*fold*/ {{{
+    sfaflux<-ssfad
+    # /*fend*/ }}}
+
+    #Deblended convolved aperture flux = Int(DBfltAp*Im) /*fold*/ {{{
+    dfaflux<-sdfad
+    # /*fend*/ }}}
+
+    #Point Source Flux error /*fold*/ {{{
+    if (!no.psf) {
+      psferr<-((conf*beamarea[psf.id])^2.*sqrt(spsf)*PSCorr)^2
+    } else {
+      psferr<-rep(NA,length(spsfd))
+    }
+    # /*fend*/ }}}
+
+    #Convolved aperture error /*fold*/ {{{
+    if (!no.psf) {
+      sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(ssfa)*ApCorr)^2
+    } else {
+      sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(ssfa)*ApCorr)^2
+    }
+    if (blank.cor) { sfaerr<-sfaerr+(blanks$randMean.MAD*ApCorr)^2 }
+    # /*fend*/ }}}
+
+    #Deblended Convolved aperture error /*fold*/ {{{
+    if (!no.psf) {
+      dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(sdfa)*ApCorr)^2
+    } else {
+      dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)*ApCorr)^2
+    }
+    if (blank.cor) { dfaerr<-dfaerr+(blanks$randMean.MAD*ApCorr)^2 }
+    # /*fend*/ }}}
+
+    if (verbose) { cat(" - Done\n   } ") }
+    # /*fend*/ }}}
+    #-----
+    #Notify /*fold*/ {{{
+    if (showtime) { cat(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
+      message(paste("Perform Calculations - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )"))
+    } else if (!quiet) { cat(" - Done\n") }
+    # /*fend*/ }}}
+    # /*fend*/ }}}
+    #Final Calculations /*fold*/ {{{
+    if (!quiet) { cat("   Performing Final Calculations   ") }
+    if (do.sky.est|get.sky.rms) {
+      skyflux.mean<-skylocal.mean*sdfa
+      skyflux<-skylocal*sdfa
+      if (!blank.cor) {
+        sfaerr[which(!is.na(skyrms))]<-(sfaerr+(skyrms*sqrt(ssfa)*ApCorr)^2)[which(!is.na(skyrms))]
+        dfaerr[which(!is.na(skyrms))]<-(dfaerr+(skyrms*sqrt(sdfa)*ApCorr)^2)[which(!is.na(skyrms))]
+      }
+      psferr[which(!is.na(skyrms))]<-(psferr+(skyrms*sqrt(spsf)*PSCorr)^2)[which(!is.na(skyrms))]
+      if (do.sky.est) {
+        if (!quiet) { message("Perfoming Sky Subtraction"); cat("{\n   Performing Sky Subtraction") }
+        #Subtract Sky Flux /*fold*/ {{{
+        dfaflux<-dfaflux-skyflux
+        sfaflux<-sfaflux-skylocal*ssfa
+        psfflux<-psfflux-skylocal*spsf
+        pixflux<-pixflux-skylocal
+        dfaerr[which(!is.na(skyerr))]<-(dfaerr+(skyerr*sdfa*ApCorr)^2)[which(!is.na(skyerr))]
+        sfaerr[which(!is.na(skyerr))]<-(sfaerr+(skyerr*ssfa*ApCorr)^2)[which(!is.na(skyerr))]
+        psferr[which(!is.na(skyerr))]<-(psferr+(skyerr*spsf*PSCorr)^2)[which(!is.na(skyerr))]
+        if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
+        # /*fend*/ }}}
       }
     }
-    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-  #-----
-    #Integral of the [(convolved aperture)^2]; ssfa2 /*fold*/ {{{
-    if (verbose) { cat("      Integral of the [(convolved aperture)^2]") }
-    ssfa2<-foreach(sfam=sfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum((sfam)^2.)  }
-    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-  #-----
-    #Integral of the [(deblended convolved aperture)^2]; sdfa2 /*fold*/ {{{
-    if (verbose) { cat("      Integral of the [(deblended convolved aperture)^2]") }
-    sdfa2<-foreach(dfam=dfa, .inorder=TRUE, .combine='c', .options.mpi=mpi.opts, .noexport=ls(envir=environment())) %dopar% { sum((dfam)^2.)  }
-    if (verbose) { cat(" - Done\n") } # /*fend*/ }}}
-  #-----
-  }
-#/*fend*/ }}}
-#-----
-  #Final Flux & Error Calculations /*fold*/ {{{
-  if (!cutup) { detach(image.env) }
-  if (verbose) { cat("      Final Fluxes and Error Calculations ") }
-  #Calculate PSF-Weighting Correction /*fold*/ {{{
-  PSCorr<-spsf/spsf2
-  # /*fend*/ }}}
-  #Calculate Aperture-Weighting Correction /*fold*/ {{{
-  WtCorr<-ssfa/ssfau
-  # /*fend*/ }}}
-  #Calculate Minimum Aperture Correction /*fold*/ {{{
-  if (!no.psf) {
-    ApCorr<-spsf/ssfap
-  } else {
-    ApCorr<-1
-  }
-  # /*fend*/ }}}
-  #Calculate Estimated PSF Correction /*fold*/ {{{
-  if (any(estpsf.warn!=8)) {
-    EstPSFCorr<-sepsf/sepsfp
-  } else {
-    EstPSFCorr<-1
-  }
-  # /*fend*/ }}}
-
-  #Point Source flux = Int(PSF*Im) /*fold*/ {{{
-  psfflux<-spsfd
-  # /*fend*/ }}}
-
-  #Convolved aperture flux = Int(fltAp*Im) /*fold*/ {{{
-  sfaflux<-ssfad
-  # /*fend*/ }}}
-
-  #Deblended convolved aperture flux = Int(DBfltAp*Im) /*fold*/ {{{
-  dfaflux<-sdfad
-  # /*fend*/ }}}
-
-
-  #Point Source Flux error /*fold*/ {{{
-  if (!no.psf) {
-    psferr<-((conf*beamarea[psf.id])^2.*sqrt(spsf)*PSCorr)^2
-  } else {
-    psferr<-rep(NA,length(spsfd))
-  }
-  # /*fend*/ }}}
-
-  #Convolved aperture error /*fold*/ {{{
-  if (!no.psf) {
-    sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(ssfa)*ApCorr)^2
-  } else {
-    sfaerr<-ssfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(ssfa)*ApCorr)^2
-  }
-  if (blank.cor) { sfaerr<-sfaerr+(blanks$randMean.MAD*ApCorr)^2 }
-  # /*fend*/ }}}
-
-  #Deblended Convolved aperture error /*fold*/ {{{
-  if (!no.psf) {
-    dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea[psf.id])^2.*sqrt(sdfa)*ApCorr)^2
-  } else {
-    dfaerr<-sdfa2e2*ApCorr^2 + ((conf*beamarea)^2.*sqrt(sdfa)*ApCorr)^2
-  }
-  if (blank.cor) { dfaerr<-dfaerr+(blanks$randMean.MAD*ApCorr)^2 }
-  # /*fend*/ }}}
-
-  if (verbose) { cat(" - Done\n   } ") }
-  # /*fend*/ }}}
-#-----
-  #Notify /*fold*/ {{{
-  if (showtime) { cat(" - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )\n")
-    message(paste("Perform Calculations - Done (",round(proc.time()[3]-timer[3],digits=2),"sec )"))
-  } else if (!quiet) { cat(" - Done\n") }
-  # /*fend*/ }}}
-  #Final Calculations /*fold*/ {{{
-  if (!quiet) { cat("   Performing Final Calculations   ") }
-  if (do.sky.est|get.sky.rms) {
-    skyflux.mean<-skylocal.mean*sdfa
-    skyflux<-skylocal*sdfa
-    if (!blank.cor) {
-      sfaerr[which(!is.na(skyrms))]<-(sfaerr+(skyrms*sqrt(ssfa)*ApCorr)^2)[which(!is.na(skyrms))]
-      dfaerr[which(!is.na(skyrms))]<-(dfaerr+(skyrms*sqrt(sdfa)*ApCorr)^2)[which(!is.na(skyrms))]
-    }
-    psferr[which(!is.na(skyrms))]<-(psferr+(skyrms*sqrt(spsf)*PSCorr)^2)[which(!is.na(skyrms))]
-    if (do.sky.est) {
-      if (!quiet) { message("Perfoming Sky Subtraction"); cat("{\n   Performing Sky Subtraction") }
-      #Subtract Sky Flux /*fold*/ {{{
-      dfaflux<-dfaflux-skyflux
-      sfaflux<-sfaflux-skylocal*ssfa
-      psfflux<-psfflux-skylocal*spsf
-      pixflux<-pixflux-skylocal
-      dfaerr[which(!is.na(skyerr))]<-(dfaerr+(skyerr*sdfa*ApCorr)^2)[which(!is.na(skyerr))]
-      sfaerr[which(!is.na(skyerr))]<-(sfaerr+(skyerr*ssfa*ApCorr)^2)[which(!is.na(skyerr))]
-      psferr[which(!is.na(skyerr))]<-(psferr+(skyerr*spsf*PSCorr)^2)[which(!is.na(skyerr))]
-      if (!quiet) { message(paste("   - Done\n")); cat("   - Done\n")}
-      # /*fend*/ }}}
-    }
-  }
-
-  #Deblend error /*fold*/ {{{
-  deblerr<-((1-sdfa/ssfa)*(1/sqrt(12))*abs(sfaflux)*ApCorr)
-  dfaerr<-dfaerr + (deblerr)^2
-  # /*fend*/ }}}
-
-  #Finalise Errors /*fold*/ {{{
-  psferr<-sqrt(psferr)
-  sfaerr<-sqrt(sfaerr)
-  dfaerr<-sqrt(dfaerr)
-  # /*fend*/ }}}
-  # /*fend*/ }}}
-  #Apply Aperture Correction to the Aperture Fluxess /*fold*/ {{{
-  psfflux<-psfflux*PSCorr
-  sfaflux<-sfaflux*ApCorr
-  dfaflux<-dfaflux*ApCorr
-  # /*fend*/ }}}
-  #Apply Additional Flux Correction to the Finalised Values /*fold*/ {{{
-  if (flux.corr!=1) {
-    psfflux<-psfflux*flux.corr
-    sfaflux<-sfaflux*flux.corr
-    dfaflux<-dfaflux*flux.corr
-    psferr<-psferr*flux.corr
-    sfaerr<-sfaerr*flux.corr
-    dfaerr<-dfaerr*flux.corr
-  }# /*fend*/ }}}
-  #Calculate magnitudes /*fold*/ {{{
-  if (magnitudes) {
-    suppressWarnings(mags<--2.5*(log10(dfaflux)-log10(ab.vega.flux))+mag.zp)
-  } else {
-    mags<-array(NA, dim=c(length(dfaflux)))
-  } # /*fend*/ }}}
-  #Get an estimate of the shot noise from the final flux /*fold*/ {{{
-  if (!is.null(image.env$gain) && !is.na(as.numeric(image.env$gain))) { 
-    quick.shot<-sqrt(dfaflux)/as.numeric(image.env$gain)
+    # /*fend*/ }}}
+    #Deblend error /*fold*/ {{{
+    deblerr<-((1-sdfa/ssfa)*(1/sqrt(12))*abs(sfaflux)*ApCorr)
+    dfaerr<-dfaerr + (deblerr)^2
+    # /*fend*/ }}}
+    #Finalise Errors /*fold*/ {{{
+    psferr<-sqrt(psferr)
+    sfaerr<-sqrt(sfaerr)
+    dfaerr<-sqrt(dfaerr)
+    # /*fend*/ }}}
+    #Apply Aperture Correction to the Aperture Fluxess /*fold*/ {{{
+    psfflux<-psfflux*PSCorr
+    sfaflux<-sfaflux*ApCorr
+    dfaflux<-dfaflux*ApCorr
+    # /*fend*/ }}}
+    #Apply Additional Flux Correction to the Finalised Values /*fold*/ {{{
+    if (flux.corr!=1) {
+      psfflux<-psfflux*flux.corr
+      sfaflux<-sfaflux*flux.corr
+      dfaflux<-dfaflux*flux.corr
+      psferr<-psferr*flux.corr
+      sfaerr<-sfaerr*flux.corr
+      dfaerr<-dfaerr*flux.corr
+    }# /*fend*/ }}}
+    #Calculate magnitudes /*fold*/ {{{
+    if (magnitudes) {
+      suppressWarnings(mags<--2.5*(log10(dfaflux)-log10(ab.vega.flux))+mag.zp)
+    } else {
+      mags<-array(NA, dim=c(length(dfaflux)))
+    } # /*fend*/ }}}
+    #Get an estimate of the shot noise from the final flux /*fold*/ {{{
+    if (!is.null(image.env$gain) && !is.na(as.numeric(image.env$gain))) { 
+      quick.shot<-sqrt(dfaflux)/as.numeric(image.env$gain)
+    } else { 
+      quick.shot<-rep(NA,length(dfaflux))
+    } 
+    # /*fend*/ }}}
+    #-----Diagnostic-----# /*fold*/ {{{
+    if (diagnostic) {
+      message(paste("After assignment",round(length(which(is.na(ssa    )))/length(ssa    )*100,digits=2),"% of the ssa matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(ssfa   )))/length(ssfa   )*100,digits=2),"% of the ssfa matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(sdfa   )))/length(sdfa   )*100,digits=2),"% of the sdfa matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(ssfa2  )))/length(ssfa2  )*100,digits=2),"% of the ssfa2 matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(sdfa2  )))/length(sdfa2  )*100,digits=2),"% of the sdfa2 matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(ssfad  )))/length(ssfad  )*100,digits=2),"% of the ssfad matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(sdfad  )))/length(sdfad  )*100,digits=2),"% of the sdfad matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(sfaflux)))/length(sfaflux)*100,digits=2),"% of the sfaflux matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(sfaerr )))/length(sfaerr )*100,digits=2),"% of the sfaerr matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(dfaflux)))/length(dfaflux)*100,digits=2),"% of the dfaflux matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(dfaerr )))/length(dfaerr )*100,digits=2),"% of the dfaerr matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(ssfae  )))/length(ssfae  )*100,digits=2),"% of the ssfae matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(ssfae2 )))/length(ssfae2 )*100,digits=2),"% of the ssfae2 matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(ssfa2e2)))/length(ssfa2e2)*100,digits=2),"% of the ssfa2e2 matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(sdfa2e2)))/length(sdfa2e2)*100,digits=2),"% of the sdfa2e2 matrix are NA"))
+      message(paste("After assignment",round(length(which(is.na(pixflux)))/length(pixflux)*100,digits=2),"% of the pixflux matrix are NA"))
+    }# /*fend*/ }}}
+    if (!quiet) { cat("\n} Galaxy Results Complete\n") }
   } else { 
-    quick.shot<-rep(NA,length(dfaflux))
-  } 
-  # /*fend*/ }}}
-  #-----Diagnostic-----# /*fold*/ {{{
-  if (diagnostic) {
-    message(paste("After assignment",round(length(which(is.na(ssa    )))/length(ssa    )*100,digits=2),"% of the ssa matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(ssfa   )))/length(ssfa   )*100,digits=2),"% of the ssfa matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(sdfa   )))/length(sdfa   )*100,digits=2),"% of the sdfa matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(ssfa2  )))/length(ssfa2  )*100,digits=2),"% of the ssfa2 matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(sdfa2  )))/length(sdfa2  )*100,digits=2),"% of the sdfa2 matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(ssfad  )))/length(ssfad  )*100,digits=2),"% of the ssfad matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(sdfad  )))/length(sdfad  )*100,digits=2),"% of the sdfad matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(sfaflux)))/length(sfaflux)*100,digits=2),"% of the sfaflux matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(sfaerr )))/length(sfaerr )*100,digits=2),"% of the sfaerr matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(dfaflux)))/length(dfaflux)*100,digits=2),"% of the dfaflux matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(dfaerr )))/length(dfaerr )*100,digits=2),"% of the dfaerr matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(ssfae  )))/length(ssfae  )*100,digits=2),"% of the ssfae matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(ssfae2 )))/length(ssfae2 )*100,digits=2),"% of the ssfae2 matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(ssfa2e2)))/length(ssfa2e2)*100,digits=2),"% of the ssfa2e2 matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(sdfa2e2)))/length(sdfa2e2)*100,digits=2),"% of the sdfa2e2 matrix are NA"))
-    message(paste("After assignment",round(length(which(is.na(pixflux)))/length(pixflux)*100,digits=2),"% of the pixflux matrix are NA"))
-  }# /*fend*/ }}}
-  if (!quiet) { cat("\n} Galaxy Results Complete\n") }
-  # /*fend*/ }}}
+    #Fake the computations with NAs /*fold*/ {{{
+    variable.list<-c("saturated","pixflux","ssa","ssfau","ssfad","qssfad","spsf",
+    "sepsf","spsf2","sepsfp","psfi","ssfap","spsfd","sepsfd","sdfad","qsdfad",
+    "ssfa2e2","sdfa2e2","PSCorr","WtCorr","ApCorr","EstPSFCorr","psfflux","sfaflux",
+    "dfaflux","psferr","sfaerr","dfaerr","deblerr","dfaerr","mags","quick.shot")
+    if (diagnostic) {
+      variable.list<-c(variable.list,
+      "ssfae2","ssfae2","sdfae2","ssfae","sdfae")
+    }
+    for (var in variable.list) { 
+      assign(var,rep(NA,length(cat.ra)))
+    }
+    if (do.sky.est|get.sky.rms) {
+      skyflux.mean<-skylocal.mean*sdfa
+      skyflux<-skylocal*sdfa
+    }
+    # /*fend*/ }}}
+  }
   # /*fend*/ }}}
   #PART FIVE: OUTPUT /*fold*/ {{{
   #Do we want to plot a sample of the apertures? /*fold*/ {{{
-  if (plot.sample) {
+  if (plot.sample & do.cog) {
     #Set output name /*fold*/ {{{
     dir.create(file.path(path.root,path.work,path.out,"COGs"),showWarnings=FALSE)
     # /*fend*/ }}}
@@ -2671,10 +2692,12 @@ function(env=NULL) {
   photWarnFlag<-rep("",length(cat.ra))
   photWarnBitFlag<-rep(0,length(cat.ra))
   #Bad Quartered Photometry /*fold*/ {{{
-  Qbad<-(apply(qsdfad,1,'max',na.rm=TRUE)/apply(qsdfad,1,'sum',na.rm=TRUE))>=0.7
-  Qbad[which(!is.finite(Qbad))]<-1
-  photWarnFlag<-paste0(photWarnFlag,ifelse(Qbad,"Q",""))
-  photWarnBitFlag<-photWarnBitFlag+ifelse(Qbad,2^0,0)
+  if (!no.calculations) { 
+    Qbad<-(apply(qsdfad,1,'max',na.rm=TRUE)/apply(qsdfad,1,'sum',na.rm=TRUE))>=0.7
+    Qbad[which(!is.finite(Qbad))]<-1
+    photWarnFlag<-paste0(photWarnFlag,ifelse(Qbad,"Q",""))
+    photWarnBitFlag<-photWarnBitFlag+ifelse(Qbad,2^0,0)
+  }
   # /*fend*/ }}}
   #Saturation /*fold*/ {{{
   photWarnFlag<-paste0(photWarnFlag,ifelse(saturated,"X",""))

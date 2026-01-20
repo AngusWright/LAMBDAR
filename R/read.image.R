@@ -153,13 +153,21 @@ if (mask.map=='NONE') {
   #}}}
   #Check for bad scaling {{{
   if (any(!as.numeric(imm)%in%c(0,1))) {
-    message("WARNING: Mask map has values that are not either 0 or 1.")
-    message("         Modifying mask range to be [0,1]. If there are ")
-    message("         values *between* (0,1) this will act to WEIGHT ")
-    message("         PIXELS DOWN when determining if an aperture ")
-    message("         should be kept or discarded.... ")
-    imm<-imm-min(imm)
-    imm<-imm/max(imm)
+    if (!is.finite(good.mask.value)) { 
+      message("WARNING: Mask map has values that are not either 0 or 1.")
+      message("         Modifying mask range to be [0,1]. If there are ")
+      message("         values *between* (0,1) this will act to WEIGHT ")
+      message("         PIXELS DOWN when determining if an aperture ")
+      message("         should be kept or discarded.... ")
+      imm<-imm-min(imm)
+      imm<-imm/max(imm)
+    } else { 
+      message("Using good.mask.value value to convert mask to 0 or 1.")
+      ind<-imm!=good.mask.value
+      imm[which(ind)]<-NA
+      imm[which(!ind)]<-1
+      imm[which(is.na(imm))]<-0
+    }
   }
   #}}}
   #}}}

@@ -258,30 +258,46 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],x0=0,y0=0),col='purple',lty=templty[bin],lwd=bin.lwd) }
       }
       magaxis(side=3:4,labels=FALSE)
-      magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
+      magaxis(side=1:2,xlab=expression("Image "*X-X[source]*" (pix)"),ylab=expression("Image "*Y-Y[source]*" (pix)"))
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
+      if (is.finite(skyRMS)) { 
+        mult=ceiling(log10(skyRMS*5))
+      } else { 
+        mult=ceiling(log10(max(abs(tempval))))
+      }
+      if (!is.finite(mult)) mult=1
       if (length(tempval)>1E4) {
         #Thin out
         samp<-sample(length(tempval),1E4)
-        magplot(x=temprad[samp],y=tempval[samp],pch=20,xlab='Radius (pix); Thinned to 1E4 points',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad[samp],na.rm=TRUE)),100,max(temprad[samp],na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim),skyRMS),col=hsv(inten[samp]))
+        print((ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim,na.rm=T),skyRMS))/10^mult)
+        magplot(x=temprad[samp],y=tempval[samp]/10^mult,pch=20,xlab='Radius (pix); Thinned to 1E4 points',
+                ylab=bquote(paste("Pixel Value (x",10^.(mult),")")),
+                xlim=c(0,ifelse(!is.finite(max(temprad[samp],na.rm=TRUE)),100,max(temprad[samp],na.rm=TRUE))),
+                ylim=(ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim,na.rm=T),skyRMS))/10^mult,
+                col=hsv(inten[samp]),grid=FALSE)
         magaxis(side=3:4,labels=FALSE)
       } else {
-        magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim),skyRMS),col=hsv(inten))
+        print((ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim,na.rm=T),skyRMS))/10^mult)
+        magplot(x=temprad,y=tempval/10^mult,pch=20,xlab='Radius (pix)',
+                ylab=bquote(paste("Pixel Value (x",10^.(mult),")")),
+                xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=T)),100,max(temprad,na.rm=TRUE))),
+                ylim=(ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(origim,na.rm=T),skyRMS))/10^mult,
+                col=hsv(inten),grid=FALSE)
         magaxis(side=3:4,labels=FALSE)
       }
       if (!any(is.na(templtybak))) {
         abline(v=tempxbak,col=grey(0.5),lty=templtybak,lwd=bin.lwd)
         abline(v=tempx,col='purple',lty=templty,lwd=bin.lwd)
-        lines(x=tempxbak,y=tempybak,lwd=all.est.lwd,col=grey(0.5))
-        lines(x=tempx,y=tempy,lwd=est.lwd)
-        lines(x=tempxbak,y=tempylimsbak[,1],lwd=all.est.lwd,lty=2,col=grey(0.5))
-        lines(x=tempxbak,y=tempylimsbak[,2],lwd=all.est.lwd,lty=2,col=grey(0.5))
-        lines(x=tempx,y=tempylims[,1],lwd=est.lwd,lty=2)
-        lines(x=tempx,y=tempylims[,2],lwd=est.lwd,lty=2)
+        lines(x=tempxbak,y=tempybak/10^mult,lwd=all.est.lwd,col=grey(0.5))
+        lines(x=tempx,y=tempy/10^mult,lwd=est.lwd)
+        lines(x=tempxbak,y=tempylimsbak[,1]/10^mult,lwd=all.est.lwd,lty=2,col=grey(0.5))
+        lines(x=tempxbak,y=tempylimsbak[,2]/10^mult,lwd=all.est.lwd,lty=2,col=grey(0.5))
+        lines(x=tempx,y=tempylims[,1]/10^mult,lwd=est.lwd,lty=2)
+        lines(x=tempx,y=tempylims[,2]/10^mult,lwd=est.lwd,lty=2)
         abline(h=0,col='darkgreen')
-        abline(h=meanStat$sky,col='red')
-        abline(h=medianStat$sky,col='red',lty=2)
+        abline(h=meanStat$sky/10^mult,col='red')
+        abline(h=medianStat$sky/10^mult,col='red',lty=2)
       }
       if (toFile) { dev.off() }
     }
@@ -465,30 +481,46 @@ plot.sky.estimate<-function(data.stamp,mask.stamp=NULL,rem.mask=FALSE,data.stamp
         for (bin in 1:length(tempx)) { lines(ellipse(a=tempx[bin],b=tempx[bin],x0=0,y0=0),col='purple',lty=templty[bin],lwd=bin.lwd) }
       }
       magaxis(side=3:4,labels=FALSE)
-      magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
+      magaxis(side=1:2,xlab=expression("Image "*X-X[source]*" (pix)"),ylab=expression("Image "*Y-Y[source]*" (pix)"))
       inten<-magmap(tempval,lo=lo,hi=hi,type='num',range=c(0,2/3),flip=TRUE,stretch='asinh')$map
       inten[which(is.na(inten))]<-1
+      if (is.finite(skyRMS)) { 
+        mult=ceiling(log10(skyRMS*5))
+      } else { 
+        mult=ceiling(log10(max(abs(tempval))))
+      }
+      if (!is.finite(mult)) mult=1
       if (length(tempval)>1E4) {
         #Thin out
         samp<-sample(length(tempval),1E4)
-        magplot(x=temprad[samp],y=tempval[samp],pch=20,xlab='Radius (pix); Thinned to 1E4 points',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad[samp],na.rm=TRUE)),100,max(temprad[samp],na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(data.stamp),skyRMS),col=hsv(inten[samp]))
+        print((ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(data.stamp,na.rm=T),skyRMS))/10^mult)
+        magplot(x=temprad[samp],y=tempval[samp]/10^mult,pch=20,xlab='Radius (pix); Thinned to 1E4 points',
+                ylab=bquote(paste("Pixel Value (x",10^.(mult),")")),
+                xlim=c(0,ifelse(!is.finite(max(temprad[samp],na.rm=TRUE)),100,max(temprad[samp],na.rm=TRUE))),
+                ylim=(ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(data.stamp,na.rm=T),skyRMS))/10^mult,
+                col=hsv(inten[samp]),grid=FALSE)
         magaxis(side=3:4,labels=FALSE)
       } else {
-        magplot(x=temprad,y=tempval,pch=20,xlab='Radius (pix)',ylab="Pixel Value",xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=TRUE)),100,max(temprad,na.rm=TRUE))),ylim=ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(data.stamp),skyRMS),col=hsv(inten))
+        print((ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(data.stamp,na.rm=T),skyRMS))/10^mult)
+        magplot(x=temprad,y=tempval/10^mult,pch=20,xlab='Radius (pix)',
+                ylab=bquote(paste("Pixel Value (x",10^.(mult),")")),
+                xlim=c(0,ifelse(!is.finite(max(temprad,na.rm=TRUE)),100,max(temprad,na.rm=TRUE))),
+                ylim=(ifelse(!is.finite(sky),0,sky)+c(-1.0,1.0)*ifelse(!is.finite(skyRMS),mad(data.stamp,na.rm=T),skyRMS))/10^mult,
+                col=hsv(inten),grid=FALSE)
         magaxis(side=3:4,labels=FALSE)
       }
       if (!any(is.na(templtybak))) {
         abline(v=tempxbak,col=grey(0.5),lty=templtybak,lwd=bin.lwd)
         abline(v=tempx,col='purple',lty=templty,lwd=bin.lwd)
-        lines(x=tempxbak,y=tempybak,lwd=all.est.lwd,col=grey(0.5))
-        lines(x=tempx,y=tempy,lwd=est.lwd)
-        lines(x=tempxbak,y=tempylimsbak[,1],lwd=all.est.lwd,lty=2,col=grey(0.5))
-        lines(x=tempxbak,y=tempylimsbak[,2],lwd=all.est.lwd,lty=2,col=grey(0.5))
-        lines(x=tempx,y=tempylims[,1],lwd=est.lwd,lty=2)
-        lines(x=tempx,y=tempylims[,2],lwd=est.lwd,lty=2)
+        lines(x=tempxbak,y=tempybak/10^mult,lwd=all.est.lwd,col=grey(0.5))
+        lines(x=tempx,y=tempy/10^mult,lwd=est.lwd)
+        lines(x=tempxbak,y=tempylimsbak[,1]/10^mult,lwd=all.est.lwd,lty=2,col=grey(0.5))
+        lines(x=tempxbak,y=tempylimsbak[,2]/10^mult,lwd=all.est.lwd,lty=2,col=grey(0.5))
+        lines(x=tempx,y=tempylims[,1]/10^mult,lwd=est.lwd,lty=2)
+        lines(x=tempx,y=tempylims[,2]/10^mult,lwd=est.lwd,lty=2)
         abline(h=0,col='darkgreen')
-        abline(h=meanStat$sky,col='red')
-        abline(h=medianStat$sky,col='red',lty=2)
+        abline(h=meanStat$sky/10^mult,col='red')
+        abline(h=medianStat$sky/10^mult,col='red',lty=2)
       }
       if (toFile) { dev.off() }
     }

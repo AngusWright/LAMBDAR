@@ -33,6 +33,7 @@ create.par.file <-
     MaskMap='NONE',
     WeightMap='NONE',
     WeightMapZP=0,
+    GoodMaskValue=NA,
     Saturation=Inf,
     SaturationLabel='SATUR',
     GainLabel='GAIN',
@@ -76,6 +77,7 @@ create.par.file <-
     Diagnostic=0,
     Verbose=0,
     PlotDevice='png',
+    DoCOG=1,
     PlotSample=0,
     PlotAll=0,
     Magnitudes=1,
@@ -105,6 +107,7 @@ create.par.file <-
     UsePixelFluxWgts=0,
     LDACBinary='ldactoasc',
     PyFITSRead=0, 
+    NoCalculations=0,
     LogFile='LAMBDAR_Log.txt') {
 
 #Sink Output to File {{{
@@ -152,6 +155,7 @@ BeamArea_SqAS          ",paste(BeamArea_SqAS              ,collapse=' '),"    #B
 FluxCorr               ",paste(FluxCorr                   ,collapse=' '),"    #Flux Correction Factor
 EFactor                ",paste(EFactor                    ,collapse=' '),"    #Error Map Scale Factor
 WeightMapZP            ",paste(WeightMapZP                ,collapse=' '),"    #Zero Point of the Weight Map - used for masking Data if no mask is supplied
+GoodMaskValue          ",paste(GoodMaskValue              ,collapse=' '),"    #Value of 'good' pixels in the MASK - used for masking Data if mask is not binary 
 Saturation             ",paste(Saturation                 ,collapse=' '),"    #Saturation value of the Map - used for Flagging bad fluxes. If unknown, use Inf
 SaturationLabel        ",paste(SaturationLabel            ,collapse=' '),"    #Saturation Label in FITS header - used for reading saturation value if none supplied
 GainLabel              ",paste(GainLabel                  ,collapse=' '),"    #Gain Label in FITS header - used for generating error map if no error.map/gain supplied
@@ -185,6 +189,7 @@ ResamplingIters        ",paste(ResamplingIters            ,collapse=' '),"    #N
 UseMaskLim             ",paste(UseMaskLim                 ,collapse=' '),"    #Limit for determining whether or not to use an object overlapping the mask edge
 Verbose                ",paste(as.numeric(Verbose)        ,collapse=' '),"    #Verbose Output?
 ShowTime               ",paste(as.numeric(ShowTime)       ,collapse=' '),"    #Display execution & total elapsed time during run?
+DoCOG                  ",paste(as.numeric(DoCOG)          ,collapse=' '),"    #Do we want to compute example curves-of-growth (good for QC, but slow)?
 PlotSample             ",paste(as.numeric(PlotSample)     ,collapse=' '),"    #Plot a sample of the Object Apertures & Fluxes for Inspection? Includes Aperture Images and object COGs
 PlotAll                ",paste(as.numeric(PlotAll)        ,collapse=' '),"    #Plot All of the Object Apertures & Fluxes for Inspection? [1] Or just the non-contaminant sources? [2] Includes Aperture Images and object COGs
 Diagnostic             ",paste(as.numeric(Diagnostic)     ,collapse=' '),"    #Diagnostic Output of Variable Values During Computation - Helpful in Understanding Code
@@ -235,6 +240,7 @@ CarefulWithEdges      ",paste(as.numeric(CarefulWithEdges),collapse=' '),"    #D
 ApStampWidth           ",paste(ApStampWidth               ,collapse=' '),"    #Width of the Aperture stamps in multiples of aperture major axis; Can be changed with caution if memory issues arise.
 PSFConfidence          ",paste(PSFConfidence              ,collapse=' '),"    #PSF Confidence Value used in buffering the Aperture Stamp Widths; PSF integrated out to this width, and that radii is added.
 LDACBinary             ",paste(LDACBinary                 ,collapse=' '),"    #If using LDAC catalogue format, specify here the absolute path to the LDAC-to-ASCII conversion binary.
+NoCalculations         ",paste(NoCalculations             ,collapse=' '),"    #Do we want to skip all the actually important calculations? Unless you only care about sky information, this is probably a bad idea.
 PyFITSRead             ",paste(PyFITSRead                 ,collapse=' '),"    #Do you want to read images via PyFITS instead of via the FITSio package (with large images can be ~2x faster."))
 #}}}
 #Close Sink and return NULL {{{
