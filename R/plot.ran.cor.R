@@ -212,7 +212,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           }
         }
         dat=data.frame(randMean.mean=wflux,randMean.SD=wsd,randMean.MAD=wmad,nRand=length(which(is.finite(flux))),randAp.mean=mean(sumap,na.rm=TRUE),randAp.SD=sd(sumap,na.rm=TRUE),randAp.MAD=mad(sumap,na.rm=TRUE))
-        lim<-(ceiling(log10(max(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
+        lim<-(ceiling(log10(min(abs(quantile(origim,c(0.001,0.999),na.rm=TRUE))))))
         if (!is.finite(lim)) { next }
         PlotDev(file=file.path(path,paste0(cat.id[i],"_blankscor.",plot.device)),height=6,width=10,units='in')
         layout(cbind(1,2))
@@ -225,7 +225,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         }
         image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
-        magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
+        magaxis(side=1:2,xlab=expression("Image "*X-X[source]*" (pix)"),ylab=expression("Image "*Y-Y[source]*" (pix)"))
         points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
         if (asinh) { 
           #Convert pix values onto asinh scale
@@ -265,7 +265,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
           #Plot Histogram and Count axis
           if (any(!is.na(tempvecstretch))) { 
-            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
+            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)),grid=FALSE,grid.col=NA)
             #Convert Labels to Pretty style
             labs<-floor(log10(abs(axespoints)))
             pref<-ifelse(axespoints<0,"-","")
@@ -284,7 +284,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             #Draw X major and minor ticks
             axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
             axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
-            mtext('Blanks Pixel Values (pix)', 1, line = 2)
+            mtext('Blanks Pixel Values', 1, line = 2)
             #Draw major tick labels
             ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
             axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
@@ -300,8 +300,8 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
               abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
             }
             abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-            legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
+            legend('topright',title='Blanks flux',legend=c("Mean"),col=hsv(0,0,0),lty=c(1),cex=0.8,inset=c(0.01,0.01))
+            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.8,inset=c(0.5,0.5))
             if (any(!is.na(flux/sumap))) { 
               boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
             } else { 
@@ -309,7 +309,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             }
             boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
           } else { 
-            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
+            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1),grid=FALSE,grid.col=NA)
             label('top',lab="There are no numeric data!")
           } 
         } else { 
@@ -319,7 +319,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           pix<-hist(as.numeric(tempvec)[which(cdf(tempvec)>0.02 & cdf(tempvec)<0.98)],plot=FALSE,breaks=seq(quantile(tempvec,0.01,na.rm=T),quantile(tempvec,0.99,na.rm=T),length=100))
           #Plot Histogram and Count axis
           magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=quantile(tempvec,c(0.01,0.99),na.rm=T),
-                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
+                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)),grid=FALSE,grid.col=NA,grid.col=NA)
           #Convert Labels to Pretty style
           #Draw histograms for each bin.
           for(iter in 1:numIters) {
@@ -333,8 +333,8 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             abline(v=dat$randMean.mean/(max(sumap,na.rm=T)),col=hsv(0,0,0,alpha=0.7),lty=1)
           }
           abline(v=0,col='darkgreen')
-          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.6)
+          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.8,inset=c(0.01,0.01))
+          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.8,inset=c(0.5,0.5))
           boxx<-flux/sumap
           boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
         }
@@ -390,7 +390,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         } 
         image(x=1:length(origim[,1])-(x.pix[i]-imsxl),y=1:length(origim[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
-        magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
+        magaxis(side=1:2,xlab=expression("Image "*X-X[source]*" (pix)"),ylab=expression("Image "*Y-Y[source]*" (pix)"))
         points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
         if (asinh) { 
           #Convert pix values onto asinh scale
@@ -430,7 +430,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
           if (any(!is.na(tempvecstretch))) { 
             #Plot Histogram and Count axis
-            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
+            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)),grid=FALSE,grid.col=NA)
             #Convert Labels to Pretty style
             labs<-floor(log10(abs(axespoints)))
             pref<-ifelse(axespoints<0,"-","")
@@ -449,7 +449,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             #Draw X major and minor ticks
             axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
             axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
-            mtext('Randoms Pixel Values (pix)', 1, line = 2)
+            mtext('Randoms Pixel Values', 1, line = 2)
             #Draw major tick labels
             ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
             axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
@@ -465,8 +465,8 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
               abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
             }
             abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-            legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
+            legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.8,inset=c(0.01,0.01))
+            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.8,inset=c(0.5,0.5))
             if (any(!is.na(flux/sumap))) { 
                boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
             } else {
@@ -474,7 +474,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             } 
             boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
           } else { 
-            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
+            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1),grid=FALSE,grid.col=NA)
             label('top',lab="There are no numeric data!")
           } 
         } else { 
@@ -484,7 +484,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           pix<-hist(as.numeric(tempvec)[which(cdf(tempvec)>0.02 & cdf(tempvec)<0.98)],plot=FALSE,breaks=seq(quantile(tempvec,0.01,na.rm=T),quantile(tempvec,0.99,na.rm=T),length=100))
           #Plot Histogram and Count axis
           magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=quantile(tempvec,c(0.01,0.99),na.rm=T),
-                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
+                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)),grid=FALSE,grid.col=NA)
           #Convert Labels to Pretty style
           #Draw histograms for each bin.
           for(iter in 1:numIters) {
@@ -498,8 +498,8 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             abline(v=dat$randMean.mean/(max(sumap,na.rm=T)),col=hsv(0,0,0,alpha=0.7),lty=1)
           }
           abline(v=0,col='darkgreen')
-          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.6)
+          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.8,inset=c(0.01,0.01))
+          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.8,inset=c(0.5,0.5))
           boxx<-flux/sumap
           boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
         }
@@ -617,7 +617,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         }
         image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
-        magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
+        magaxis(side=1:2,xlab=expression("Image "*X-X[source]*" (pix)"),ylab=expression("Image "*Y-Y[source]*" (pix)"))
         points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
         if (asinh) { 
           #Convert pix values onto asinh scale
@@ -657,7 +657,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
           if (any(!is.na(tempvecstretch))) { 
             #Plot Histogram and Count axis
-            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),ylim=c(1,10^(log10(max(pix$counts))+1)),main="Pixel Histogram",log='y')
+            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),ylim=c(1,10^(log10(max(pix$counts))+1)),main="Pixel Histogram",log='y',grid=FALSE,grid.col=NA)
             #Convert Labels to Pretty style
             labs<-floor(log10(abs(axespoints)))
             pref<-ifelse(axespoints<0,"-","")
@@ -676,7 +676,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             #Draw X major and minor ticks
             axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
             axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
-            mtext('Blanks Pixel Values (pix)', 1, line = 2)
+            mtext('Blanks Pixel Values', 1, line = 2)
             #Draw major tick labels
             ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
             axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
@@ -692,8 +692,8 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
               abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
             }
             abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-            legend('topright',legend=c("Blanks Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
+            legend('topright',title='Blanks flux',legend=c("Mean"),col=hsv(0,0,0),lty=c(1),cex=0.8,inset=c(0.01,0.01))
+            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.8,inset=c(0.5,0.5))
             if (any(!is.na(flux/sumap))) { 
               boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
             } else { 
@@ -701,7 +701,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             }
             boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
           } else { 
-            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
+            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1),grid=FALSE,grid.col=NA)
             label('top',lab="There are no numeric data!")
           } 
         } else { 
@@ -711,7 +711,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           pix<-hist(as.numeric(tempvec)[which(cdf(tempvec)>0.02 & cdf(tempvec)<0.98)],plot=FALSE,breaks=seq(quantile(tempvec,0.01,na.rm=T),quantile(tempvec,0.99,na.rm=T),length=100))
           #Plot Histogram and Count axis
           magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=quantile(tempvec,c(0.01,0.99),na.rm=T),
-                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
+                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)),grid=FALSE,grid.col=NA)
           #Convert Labels to Pretty style
           #Draw histograms for each bin.
           for(iter in 1:numIters) {
@@ -725,8 +725,8 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             abline(v=dat$randMean.mean/(max(sumap,na.rm=T)),col=hsv(0,0,0,alpha=0.7),lty=1)
           }
           abline(v=0,col='darkgreen')
-          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.6)
+          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.8,inset=c(0.01,0.01))
+          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.8,inset=c(0.5,0.5))
           boxx<-flux/sumap
           boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
         }
@@ -783,7 +783,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
         } 
         image(x=1:length(data.stamp[,1])-(x.pix[i]-imsxl),y=1:length(data.stamp[1,])-(y.pix[i]-imsyl),ranaps,col=hsv(0,0,0,alpha=0:100/100),add=TRUE,useRaster=TRUE)
         magaxis(side=1:4,labels=FALSE)
-        magaxis(side=1:2,xlab="X (pix)",ylab="Y (pix)")
+        magaxis(side=1:2,xlab=expression("Image "*X-X[source]*" (pix)"),ylab=expression("Image "*Y-Y[source]*" (pix)"))
         points(x=(x.pix-x.pix[i]+1),y=(y.pix-y.pix[i]+1), pch=3)
         if (asinh) { 
           #Convert pix values onto asinh scale
@@ -823,7 +823,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           pix<-hist(as.numeric(tempvecstretch),plot=FALSE,breaks=seq(0,1,length=100))
           if (any(!is.na(tempvecstretch))) { 
             #Plot Histogram and Count axis
-            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)))
+            magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=c(0,1),main="Pixel Histogram",log='y',ylim=c(1,10^(log10(max(pix$counts))+1)),grid=FALSE,grid.col=NA)
             #Convert Labels to Pretty style
             labs<-floor(log10(abs(axespoints)))
             pref<-ifelse(axespoints<0,"-","")
@@ -842,7 +842,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             #Draw X major and minor ticks
             axis(1,asinhticks[which(asinhtcls==0.5)],labels=FALSE,tcl=0.5)
             axis(1,asinhticks[which(asinhtcls==0.2)],labels=FALSE,tcl=0.2)
-            mtext('Randoms Pixel Values (pix)', 1, line = 2)
+            mtext('Randoms Pixel Values', 1, line = 2)
             #Draw major tick labels
             ind<-which(asinhtcls==0.5 & (labs=="0" | abs(asinhticks-0.5)>0.1))
             axis(1,asinhticks[ind],labels=axespoints[ind],tcl=0)
@@ -858,8 +858,8 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
               abline(v=magmap(dat$randMean.mean/(max(sumap,na.rm=T)),lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col=hsv(0,0,0,alpha=0.7),lty=1)
             }
             abline(v=magmap(0,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map,col='darkgreen')
-            legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.6)
+            legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.8,inset=c(0.01,0.01))
+            label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/(max(sumap,na.rm=TRUE)),digits=3)," (per pix)"),cex=0.8,inset=c(0.5,0.5))
             if (any(!is.na(flux/sumap))) { 
               boxx<-magmap(flux/sumap,lo=-1*10^(lim),hi=10^(lim),range=c(0,1),type='num',stretch='asinh',clip='NA',stretchscale=stretchscale)$map
             } else { 
@@ -867,7 +867,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             } 
             boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.2),boxwex=2)
           } else { 
-            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1))
+            magplot(NA,type='s',xlab='',ylab="Count",side=2,main="Pixel Histogram",log='y',ylim=c(1e-4,1),xlim=c(-1,1),grid=FALSE,grid.col=NA)
             label('top',lab="There are no numeric data!")
           } 
         } else { 
@@ -877,7 +877,7 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
           pix<-hist(as.numeric(tempvec)[which(cdf(tempvec)>0.02 & cdf(tempvec)<0.98)],plot=FALSE,breaks=seq(quantile(tempvec,0.01,na.rm=T),quantile(tempvec,0.99,na.rm=T),length=100))
           #Plot Histogram and Count axis
           magplot(x=rev(rev(pix$breaks)[-1]),y=pix$counts,type='s',xlab='',ylab="Count",side=2,xlim=quantile(tempvec,c(0.01,0.99),na.rm=T),
-                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)))
+                  log='y',main="Pixel Histogram",ylim=c(1,10^(log10(max(pix$counts))+1)),grid=FALSE,grid.col=NA)
           #Convert Labels to Pretty style
           #Draw histograms for each bin.
           for(iter in 1:numIters) {
@@ -891,8 +891,8 @@ plot.ran.cor<-function(data.stamp,ap.stamp,mask.stamp=NULL,ap.stamp.lims=NULL,da
             abline(v=dat$randMean.mean/(max(sumap,na.rm=T)),col=hsv(0,0,0,alpha=0.7),lty=1)
           }
           abline(v=0,col='darkgreen')
-          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.6)
-          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.6)
+          legend('topright',legend=c("Random Flux; Mean"),col=hsv(0,0,0),lty=c(1),cex=0.8,inset=c(0.01,0.01))
+          label('topleft',lab=paste0("Histograms show:\nBlack - All Randoms Pix\nColoured - Individual Randoms\nMean Est = ",signif(dat$randMean.mean/max(sumap,na.rm=TRUE),digits=3)," (per pix)\nStd Dev = ",signif(dat$randMean.SD/max(sumap,na.rm=TRUE),digits=3)," (per pix)"),cex=0.8,inset=c(0.5,0.5))
           boxx<-flux/sumap
           boxplot(boxx,horizontal=TRUE,axes=FALSE,add=TRUE,pch=8,at=10^(log10(max(pix$counts))-1.5),boxwex=2)
         }
