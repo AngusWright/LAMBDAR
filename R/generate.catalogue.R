@@ -31,6 +31,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   #}}}
   #Read the Image {{{
   segmentation<-try(read.fits.im(paste(path.root,path.work,catalogue,sep=""))$dat[[1]],silent=TRUE)
+  seg.hdr.keyvalues<-Rfits::Rfits_read_header(paste(path.root,path.work,catalogue,sep=""))
   if (class(segmentation)[1]=="try-error") {
     #Stop on Error
     geterrmessage()
@@ -114,6 +115,7 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
   assign("flux.weight",flux.weight,envir=outenv)
   assign("num.rows"     ,num.rows     ,envir=outenv)
   assign("segmentation" ,segmentation    ,envir=outenv)
+  assign("seg.hdr.keyvalues" ,seg.hdr.keyvalues    ,envir=outenv)
   assign("seg.astr" ,seg.astr    ,envir=outenv)
   assign("seg.pix" ,seg.pix    ,envir=outenv)
   if (save.table) {

@@ -14,6 +14,7 @@ function(env=NULL) {
   environment(make.catalogue.apertures)<-environment()
   environment(make.gaussian.apertures)<-environment()
   environment(make.segmentation.apertures)<-environment()
+  environment(make.segmentation.apertures.propane)<-environment()
   environment(make.convolved.apertures)<-environment()
   environment(make.aperture.map)<-environment()
   environment(make.data.array.maps)<-environment()
@@ -446,7 +447,7 @@ function(env=NULL) {
   } else if (aperture.type == 2) {
     timer=system.time(sa<-make.gaussian.apertures(outenv=environment()))
   } else if (aperture.type == 3) {
-    timer=system.time(sa<-make.segmentation.apertures(outenv=environment()))
+    timer=system.time(sa<-make.segmentation.apertures.propane(outenv=environment()))
   }
   if (showtime) { cat("   - Done (",round(timer[3],digits=2),"sec )\n")
     message(paste('Make SA Mask - Done (',round(timer[3], digits=2),'sec )'))

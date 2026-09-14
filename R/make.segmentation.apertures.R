@@ -41,27 +41,27 @@ function(outenv=parent.env(environment()), env=NULL){
 
   #Create Aperture Masks {{{
   message("Creating Aperture Masks")
-  #if ("EBImage" %in% rownames(installed.packages())) { 
-  #  require(EBImage) 
-  #  #Using the Affine transformation {{{
-  #  s_mask<-foreach(slen=floor(stamplen/2),seglen=ceiling(stamplen/pixrat/2),x=seg.x,y=seg.y,
-  #                  id=cat.id,xc=cat.x,yc=cat.y, 
-  #                  .export=c("segmentation","pixrat"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
-  #     #For each stamp, place down the relevant aperture {{{
-  #     lims<-c(x+c(-seglen,seglen),y+c(-seglen,seglen))
-  #     if (any(lims[1:2]>seg.astr$NAXIS[1]) | any(lims[3:4]>seg.astr$NAXIS[2]) | any(lims<1)) { 
-  #       return(matrix(0,ncol=slen*2+1,nrow=slen*2+1))
-  #     } else {
-  #       seg.all<-segmentation[lims[1]:lims[2],lims[3]:lims[4]]
-  #       seg.all[which(seg.all!=id)]<-0
-  #       seg.all[which(seg.all==id)]<-1
-  #       #place the aperture down on the new grid
-  #       return(resize(seg.all,slen*2+1,slen*2+1))
-  #     } 
-  #     #}}}
-  #  }
-  #  #}}}
-  #} else { 
+  if ("EBImage" %in% rownames(installed.packages())) { 
+    require(EBImage) 
+    #Using the Affine transformation {{{
+    s_mask<-foreach(slen=floor(stamplen/2),seglen=ceiling(stamplen/pixrat/2),x=seg.x,y=seg.y,
+                    id=cat.id,xc=cat.x,yc=cat.y, 
+                    .export=c("segmentation","pixrat"), .inorder=TRUE, .options.mpi=mpi.opts) %dopar% {
+       #For each stamp, place down the relevant aperture {{{
+       lims<-c(x+c(-seglen,seglen),y+c(-seglen,seglen))
+       if (any(lims[1:2]>seg.astr$NAXIS[1]) | any(lims[3:4]>seg.astr$NAXIS[2]) | any(lims<1)) { 
+         return(matrix(0,ncol=slen*2+1,nrow=slen*2+1))
+       } else {
+         seg.all<-segmentation[lims[1]:lims[2],lims[3]:lims[4]]
+         seg.all[which(seg.all!=id)]<-0
+         seg.all[which(seg.all==id)]<-1
+         #place the aperture down on the new grid
+         return(resize(seg.all,slen*2+1,slen*2+1))
+       } 
+       #}}}
+    }
+    #}}}
+  } else { 
     #Using 2D interpolation {{{
     message("WARNING: generating low-resolution apertures using the 2D interpolation, 
             instead of using the Affine Transformation. This can lead to _pathologically_ 
@@ -128,7 +128,7 @@ function(outenv=parent.env(environment()), env=NULL){
       }
     } 
     #}}}
-  #}
+  }
   message("Aperture Creation Complete")
   #}}}
 

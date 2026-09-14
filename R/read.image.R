@@ -57,6 +57,7 @@ if (class(im_fits)[1]=="try-error") {
 #Read Data Image {{{
 hdr=im_fits$hdr[[1]][which(im_fits$hdr[[1]][,"key"]!="COMMENT"),]
 data.hdr<-as.data.frame(hdr[,"value"], row.names=hdr[,"key"], stringsAsFactors=FALSE)
+data.hdr.keyvalues<-Rfits::Rfits_read_header(paste(path.root,path.work,data.map,sep=""))
 im<-im_fits$dat[[1]]
 #}}}
 
@@ -315,6 +316,7 @@ if (showtime) {
   assign("ime"       , ime       , envir = outenv)
   assign("im"        , im        , envir = outenv)
   assign("data.hdr"   , data.hdr   , envir = outenv)
+  assign("data.hdr.keyvalues"   , data.hdr.keyvalues   , envir = outenv)
   assign("error.hdr"   , error.hdr   , envir = outenv)
   assign("mask.hdr"  , mask.hdr  , envir = outenv)
   assign("astr.struc", astr.struc, envir = outenv)

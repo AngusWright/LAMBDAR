@@ -1380,7 +1380,7 @@ function(par.file=NA, start.time=NA, quiet=FALSE, env=NULL){
   }
   #}}}
 
-  #Do we want Diagnostic Output in Log File {{{
+  #Do we want Interactive running {{{
   ID="Interactive"
   ind<-which(params[ID,]!="")
   interact<-params[ID,ind]

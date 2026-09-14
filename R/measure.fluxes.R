@@ -379,6 +379,9 @@ function(par.file, quiet=FALSE, mpi.backend=FALSE, do.return=FALSE, stop.on.miss
       if (use.segmentation) { 
         #Generate the catalogue from the Segmentation map
         generate.catalogue(outenv=environment(),save.table=(f!=loop.total && reuse.table[f+1]))
+        #Assign the segmentation image and header to the image environment 
+        assign('segmentation',segmentation,envir=image.env)
+        assign('seg.hdr.keyvalues',seg.hdr.keyvalues,envir=image.env)
       } else { 
         #Read the catalogue
         open.catalogue(outenv=environment(),save.table=(f!=loop.total && reuse.table[f+1]))
