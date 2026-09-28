@@ -21,7 +21,7 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,weight
     #xy = expand.grid(x,y)
     #r=sqrt(xy[,1]^2+xy[,2]^2)
     if (!is.null(proj)) {
-      if (length(proj==2) & is.finite(proj[1])) {
+      if (length(proj)==2 && is.finite(proj[1])) {
         #Proj is present, correctly used, and the source is resolved (Axrat != 0/0)
         #if (length(proj)!=2) { stop("Projection parameters must be length 2: c(Axrat,PA)") }
         ang = atan2(xy[,1], xy[,2]) - proj[2] * pi/180
@@ -62,9 +62,9 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,weight
     if (is.finite(weight.power)) { 
       weights=as.numeric(lev)^weight.power
       weights=weights/sum(weights)
-      lev<-sample(lev,sample,probs=weights)
+      lev<-base::sample(lev,sample,prob=weights)
     } else { 
-      lev<-sample(lev,sample)
+      lev<-base::sample(lev,sample)
     }
     ind<-which(cog$x %in% lev) 
     cog<-cog[ind,]
@@ -149,16 +149,15 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,weight
     avg$y<-avg$y/sqrt((pi*avg$x^2))
   }
   if (!is.null(sample) && sample > length(cog$y)) {
-    sample<-seq.int(1,length(cog$y),length.out=sample)
-    cog<-cog[sample,]
+    sample.ind<-round(seq.int(1,length(cog$y),length.out=sample))
+    cog<-cog[sample.ind,]
   }
   if (!is.null(sample) && sample > length(avg$y)) {
-    sample<-seq.int(1,length(avg$y),length.out=sample)
-    avg<-avg[sample,]
+    sample.ind<-round(seq.int(1,length(avg$y),length.out=sample))
+    avg<-avg[sample.ind,]
   }
   #}}}
   #Return FWHM {{{
   return=list(all=cog,avg=avg,cen=centre)
   #}}}
 }
-

@@ -100,6 +100,31 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   }
   # /*fend*/ }}}
   # /*fend*/ }}}
+  #Write COGs to text file /*fold*/ {{{
+  cog.to.table<-function(x, deblended, sky.subtracted) {
+    data.frame(
+      curve=if (deblended) "deblended" else "blended",
+      sky.subtracted=sky.subtracted,
+      radius.pix=x$x,
+      radius.arcsec=x$x*arcsec.per.pix,
+      enclosed.flux=x$y
+    )
+  }
+  cog.table<-rbind(
+    cog.to.table(cog, FALSE, FALSE),
+    cog.to.table(debl.cog, TRUE, FALSE),
+    cog.to.table(cog.nosky, FALSE, TRUE),
+    cog.to.table(debl.cog.nosky, TRUE, TRUE)
+  )
+  write.table(
+    cog.table,
+    file=file.path(path.root,path.work,path.out,paste0("COGs/",cat.id[i],".txt")),
+    sep="\t",
+    row.names=FALSE,
+    quote=FALSE,
+    na="NA"
+  )
+  # /*fend*/ }}}
   #Plot COGs /*fold*/ {{{
   if (magnitudes) {
     #Plot in Magnitude Space /*fold*/ {{{
@@ -244,4 +269,3 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
   # /*fend*/ }}}
 }
-
