@@ -51,11 +51,24 @@ def bump(version, level):
 
 
 def commit_messages(before, after, cwd=None):
-    """Return the messages of the commits introduced by a push."""
-    revision = after if not before or set(before) == {"0"} else f"{before}..{after}"
-    output = subprocess.check_output(
-        ["git", "log", revision, "--format=%B%x00"], text=True, cwd=cwd
-    )
+    """Return the messages of the commits introduced by a push.
+
+    When no usable `before` revision is available (a newly created branch, or a
+    revision that has been removed by a force push) only the pushed commit is
+    considered, so that unrelated history cannot trigger a bump.
+    """
+    command = ["git", "log", "--format=%B%x00"]
+    if before and set(before) != {"0"}:
+        try:
+            output = subprocess.check_output(
+                [*command, f"{before}..{after}"], text=True, cwd=cwd
+            )
+        except subprocess.CalledProcessError:
+            output = None
+        if output is not None:
+            return [message for message in output.split("\0") if message.strip()]
+
+    output = subprocess.check_output([*command, "-n", "1", after], text=True, cwd=cwd)
     return [message for message in output.split("\0") if message.strip()]
 
 

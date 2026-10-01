@@ -144,10 +144,16 @@ class EndToEndTest(unittest.TestCase):
         self.commit("update the documentation")
         self.assertEqual(self.run_script(), "0.20.7")
 
-    def test_initial_push_without_a_previous_revision(self):
+    def test_initial_push_only_considers_the_pushed_commit(self):
+        self.commit("major: an old breaking change")
         self.commit("moderate: add a feature")
         self.before = "0" * 40
         self.assertEqual(self.run_script(), "0.21.0")
+
+    def test_unknown_previous_revision_falls_back_to_the_pushed_commit(self):
+        self.commit("minor: tidy up")
+        self.before = "b" * 40
+        self.assertEqual(self.run_script(), "0.20.8")
 
 
 if __name__ == "__main__":
