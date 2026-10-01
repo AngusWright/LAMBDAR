@@ -32,5 +32,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add DESCRIPTION
           git commit -m "chore: bump package version [skip ci]"
-          git pull --rebase
-          git push
+          git pull --rebase origin ${{ github.ref_name }}
+          git push origin HEAD:${{ github.ref_name }}

@@ -50,6 +50,17 @@ def bump(version, level):
     return version
 
 
+def _messages(revisions, cwd=None):
+    """Return the commit messages of `revisions`, or None if git failed."""
+    try:
+        output = subprocess.check_output(
+            ["git", "log", "--format=%B%x00", *revisions], text=True, cwd=cwd
+        )
+    except subprocess.CalledProcessError:
+        return None
+    return [message for message in output.split("\0") if message.strip()]
+
+
 def commit_messages(before, after, cwd=None):
     """Return the messages of the commits introduced by a push.
 
@@ -57,19 +68,11 @@ def commit_messages(before, after, cwd=None):
     revision that has been removed by a force push) only the pushed commit is
     considered, so that unrelated history cannot trigger a bump.
     """
-    command = ["git", "log", "--format=%B%x00"]
     if before and set(before) != {"0"}:
-        try:
-            output = subprocess.check_output(
-                [*command, f"{before}..{after}"], text=True, cwd=cwd
-            )
-        except subprocess.CalledProcessError:
-            output = None
-        if output is not None:
-            return [message for message in output.split("\0") if message.strip()]
-
-    output = subprocess.check_output([*command, "-n", "1", after], text=True, cwd=cwd)
-    return [message for message in output.split("\0") if message.strip()]
+        messages = _messages([f"{before}..{after}"], cwd=cwd)
+        if messages is not None:
+            return messages
+    return _messages(["-n", "1", after], cwd=cwd) or []
 
 
 def update_description(path, level):
