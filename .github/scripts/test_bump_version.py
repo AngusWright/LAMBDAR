@@ -68,6 +68,14 @@ class BumpTest(unittest.TestCase):
         messages = ["minor: a", "major: b", "moderate: c"]
         self.assertEqual(bump_version.highest_level(messages), bump_version.MAJOR)
 
+    def test_a_malformed_description_is_rejected(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        description = Path(directory.name) / "DESCRIPTION"
+        description.write_text("Package: LAMBDAR\nVersion: devel\n")
+        with self.assertRaises(SystemExit):
+            bump_version.update_description(description, bump_version.PATCH)
+
     def test_unclassified_messages(self):
         self.assertEqual(bump_version.highest_level(["fix a typo"]), 0)
         self.assertEqual(bump_version.highest_level([]), 0)

@@ -54,7 +54,10 @@ def _messages(revisions, cwd=None):
     """Return the commit messages of `revisions`, or None if git failed."""
     try:
         output = subprocess.check_output(
-            ["git", "log", "--format=%B%x00", *revisions], text=True, cwd=cwd
+            ["git", "log", "--format=%B%x00", *revisions],
+            text=True,
+            cwd=cwd,
+            stderr=subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
         return None
