@@ -12,7 +12,9 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,weight
     x = seq(1,dim(zdist)[1])
     y = seq(1,dim(zdist)[2])
     xy = expand.grid(x,y)
-    r=sqrt((xy[,1]-centre[1]+0.5)^2+(xy[,2]-centre[2]+0.5)^2)
+    dx=xy[,1]-centre[1]+0.5
+    dy=xy[,2]-centre[2]+0.5
+    r=sqrt(dx^2+dy^2)
     #im.rad.x<-min(centre[1],length(zdist[,1])-centre[1])-1
     #im.rad.y<-min(centre[2],length(zdist[1,])-centre[2])-1
     #lim<-c(centre[1]-im.rad.x, centre[1]+im.rad.x, centre[2]-im.rad.y, centre[2]+im.rad.y)
@@ -21,10 +23,10 @@ function(zdist, centre=NULL,sample=NULL,proj=NULL,SNR=FALSE,poly.degree=4,weight
     #xy = expand.grid(x,y)
     #r=sqrt(xy[,1]^2+xy[,2]^2)
     if (!is.null(proj)) {
-      if (length(proj)==2 && is.finite(proj[1])) {
+      if (length(proj)==2 && is.finite(proj[1]) && proj[1]>0 && proj[1]<=1) {
         #Proj is present, correctly used, and the source is resolved (Axrat != 0/0)
         #if (length(proj)!=2) { stop("Projection parameters must be length 2: c(Axrat,PA)") }
-        ang = atan2(xy[,1], xy[,2]) - proj[2] * pi/180
+        ang = atan2(dx,dy) - proj[2] * pi/180
         r=sqrt((r*sin(ang)/proj[1])^2+(r*cos(ang))^2)
       }
     }

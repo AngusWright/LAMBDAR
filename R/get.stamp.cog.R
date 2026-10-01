@@ -99,10 +99,30 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
     debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,poly.degree=Inf,flexible=FALSE)$avg
   }
   # /*fend*/ }}}
+  #Deprojected COGs /*fold*/ {{{
+  axis.ratio<-cat.b[i]/cat.a[i]
+  deprojection.available<-is.finite(axis.ratio) && axis.ratio>0 && axis.ratio<=1
+  if (deprojection.available) {
+    projection<-c(axis.ratio,theta.offset[i])
+    if (psf.weighted) {
+      deproj.cog<-get.cog(sfa[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=projection,poly.degree=Inf,flexible=FALSE)$avg
+      deproj.cog.nosky<-get.cog(sfa[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=projection,poly.degree=Inf,flexible=FALSE)$avg
+      deproj.debl.cog<-get.cog(sfa[[i]]*dbw[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=projection,poly.degree=Inf,flexible=FALSE)$avg
+      deproj.debl.cog.nosky<-get.cog(sfa[[i]]*dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=projection,poly.degree=Inf,flexible=FALSE)$avg
+    } else {
+      raw.centre<-c((diff(range(data.stamp.lims[i,1]:data.stamp.lims[i,2]))+1)/2, (diff(range(data.stamp.lims[i,3]:data.stamp.lims[i,4]))+1)/2)
+      deproj.cog<-get.cog(image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]],centre=raw.centre,sample=1E3,proj=projection,poly.degree=Inf,flexible=FALSE)$avg
+      deproj.cog.nosky<-get.cog(image.env$im[data.stamp.lims[i,1]:data.stamp.lims[i,2],data.stamp.lims[i,3]:data.stamp.lims[i,4]]-skylocal[i],centre=raw.centre,sample=1E3,proj=projection,poly.degree=Inf,flexible=FALSE)$avg
+      deproj.debl.cog<-get.cog(dbw[[i]]*image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]],centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=projection,poly.degree=Inf,flexible=FALSE)$avg
+      deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=projection,poly.degree=Inf,flexible=FALSE)$avg
+    }
+  }
+  # /*fend*/ }}}
   # /*fend*/ }}}
   #Write COGs to text file /*fold*/ {{{
-  cog.to.table<-function(x, deblended, sky.subtracted) {
+  cog.to.table<-function(x, geometry, deblended, sky.subtracted) {
     data.frame(
+      geometry=geometry,
       curve=if (deblended) "deblended" else "blended",
       sky.subtracted=sky.subtracted,
       radius.pix=x$x,
@@ -111,11 +131,20 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
     )
   }
   cog.table<-rbind(
-    cog.to.table(cog, FALSE, FALSE),
-    cog.to.table(debl.cog, TRUE, FALSE),
-    cog.to.table(cog.nosky, FALSE, TRUE),
-    cog.to.table(debl.cog.nosky, TRUE, TRUE)
+    cog.to.table(cog, "circular", FALSE, FALSE),
+    cog.to.table(debl.cog, "circular", TRUE, FALSE),
+    cog.to.table(cog.nosky, "circular", FALSE, TRUE),
+    cog.to.table(debl.cog.nosky, "circular", TRUE, TRUE)
   )
+  if (deprojection.available) {
+    cog.table<-rbind(
+      cog.table,
+      cog.to.table(deproj.cog, "deprojected", FALSE, FALSE),
+      cog.to.table(deproj.debl.cog, "deprojected", TRUE, FALSE),
+      cog.to.table(deproj.cog.nosky, "deprojected", FALSE, TRUE),
+      cog.to.table(deproj.debl.cog.nosky, "deprojected", TRUE, TRUE)
+    )
+  }
   write.table(
     cog.table,
     file=file.path(path.root,path.work,path.out,paste0("COGs/",cat.id[i],".txt")),
@@ -165,15 +194,23 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
     # /*fend*/ }}}
     #Note Half Light Radius /*fold*/ {{{
     if (do.sky.est) {
-      deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]),poly.degree=Inf,flexible=FALSE)$avg
       hlr<-which(debl.cog.nosky$y>=max(debl.cog.nosky$y,na.rm=TRUE)/2)
-      dhlr<-which(deproj.debl.cog.nosky$y>max(debl.cog.nosky$y,na.rm=TRUE)/2)
-      label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog.nosky$x[dhlr]),digits=2)),cex=1.2)
+      if (deprojection.available) {
+        dhlr<-which(deproj.debl.cog.nosky$y>max(debl.cog.nosky$y,na.rm=TRUE)/2)
+        label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(deproj.debl.cog.nosky$x[dhlr]),digits=2)),cex=1.2)
+      } else {
+        dhlr<-hlr
+        label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2)),cex=1.2)
+      }
     } else {
-      deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]),poly.degree=Inf,flexible=FALSE)$avg
       hlr<-which(debl.cog$y>=max(debl.cog$y,na.rm=TRUE)/2)
-      dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
-      label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog$x[dhlr]),digits=2)),cex=1.2)
+      if (deprojection.available) {
+        dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
+        label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(deproj.debl.cog$x[dhlr]),digits=2)),cex=1.2)
+      } else {
+        dhlr<-hlr
+        label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2)),cex=1.2)
+      }
     }
     # /*fend*/ }}}
     # /*fend*/ }}}
@@ -208,15 +245,23 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
            col=c('grey','black','grey','black','orange','green'),pch=-1, cex=1.2)
     #Note Half Light Radius /*fold*/ {{{
     if (do.sky.est) {
-      deproj.debl.cog.nosky<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]-skylocal[i]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]),poly.degree=Inf,flexible=FALSE)$avg
       hlr<-which(debl.cog.nosky$y>=max(cog$y,na.rm=TRUE)/2)
-      dhlr<-which(deproj.debl.cog.nosky$y>max(debl.cog$y,na.rm=TRUE)/2)
-      label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog.nosky$x[dhlr]),digits=2)))
+      if (deprojection.available) {
+        dhlr<-which(deproj.debl.cog.nosky$y>max(debl.cog$y,na.rm=TRUE)/2)
+        label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2),"\nDeprojected:",round(min(deproj.debl.cog.nosky$x[dhlr]),digits=2)))
+      } else {
+        dhlr<-hlr
+        label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog.nosky$x[hlr]),digits=2)))
+      }
     } else {
-      deproj.debl.cog<-get.cog(dbw[[i]]*(image.env$im[ap.lims.data.map[i,1]:ap.lims.data.map[i,2],ap.lims.data.map[i,3]:ap.lims.data.map[i,4]]),centre=c(stamplen[i]/2, stamplen[i]/2),sample=1E3,proj=c(cat.b[i]/cat.a[i],theta.offset[i]),poly.degree=Inf,flexible=FALSE)$avg
       hlr<-which(debl.cog$y>=max(cog$y,na.rm=TRUE)/2)
-      dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
-      label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(debl.cog$x[dhlr]),digits=2)))
+      if (deprojection.available) {
+        dhlr<-which(deproj.debl.cog$y>max(debl.cog$y,na.rm=TRUE)/2)
+        label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2),"\nDeprojected:",round(min(deproj.debl.cog$x[dhlr]),digits=2)))
+      } else {
+        dhlr<-hlr
+        label('topright',lab=paste0("Deblended Half-Light Radius:\nImage:",round(min(debl.cog$x[hlr]),digits=2)))
+      }
     }
     # /*fend*/ }}}
     # /*fend*/ }}}
@@ -239,7 +284,10 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   suppressWarnings(image(x=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix,y=(seq(1,length(sfa[[i]][,1]))-length(sfa[[i]][,1])/2)*arcsec.per.pix, z=z*apT, main="Image x Weight Matrix", asp=1, col=rev(rainbow(256, start=0,end=2/3)), useRaster=Rast, xlab="", ylab="", axes=FALSE, xlim=xlims, ylim=ylims,add=TRUE))
   # /*fend*/ }}}
   #Draw the projected half-light ellipse {{{
-  lines(ellipse(a=min(debl.cog$x[dhlr]),e=1-cat.b[i]/cat.a[i],pa=90-theta.offset[i],x0=cat.x[i]%%1,y0=cat.y[i]%%1),col='black',lty=3,lwd=2)
+  if (deprojection.available) {
+    deproj.hlr.cog<-if (do.sky.est) deproj.debl.cog.nosky else deproj.debl.cog
+    lines(ellipse(a=min(deproj.hlr.cog$x[dhlr])*arcsec.per.pix,e=1-axis.ratio,pa=90-theta.offset[i],x0=(cat.x[i]%%1)*arcsec.per.pix,y0=(cat.y[i]%%1)*arcsec.per.pix),col='black',lty=3,lwd=2)
+  }
   #}}}
   #Draw the Axes and scalebar /*fold*/ {{{
   magaxis(frame.plot=TRUE,main="Image x Weight Matrix",xlab="Delta RA (arcsec)",ylab="Delta Dec (arcsec)",cex.axis=1.2)
@@ -267,5 +315,39 @@ get.stamp.cog<-function(outenv=parent.env(environment()), env=NULL) {
   # /*fend*/ }}}
   #Close the file /*fold*/ {{{
   if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
+  # /*fend*/ }}}
+  #Plot deprojected COGs /*fold*/ {{{
+  if (deprojection.available) {
+    PlotDev(file=file.path(path.root,path.work,path.out,paste0("COGs/",cat.id[i],"_deprojected.",plot.device)),width=8,height=8,units='in')
+    par(mar=mar)
+    deproj.xlim<-c(0,max(c(deproj.cog$x,deproj.debl.cog$x,deproj.cog.nosky$x,deproj.debl.cog.nosky$x),na.rm=TRUE)*arcsec.per.pix)
+    if (magnitudes) {
+      to.mag<-function(x) -2.5*(log10(x)-log10(ab.vega.flux))+mag.zp
+      suppressWarnings(deproj.ylim<-c(to.mag(dfaflux[i])+3,to.mag(dfaflux[i])-3))
+      if (!all(is.finite(deproj.ylim))) {
+        suppressWarnings(deproj.ylim<-median(to.mag(deproj.cog$y),na.rm=TRUE)+c(-1,3))
+      }
+      if (!all(is.finite(deproj.ylim))) { deproj.ylim<-18+c(-1,3) }
+      suppressWarnings(magplot(deproj.cog$x*arcsec.per.pix,to.mag(deproj.cog$y),type='l',lty=2,col='grey',xlab="Deprojected semi-major radius (arcsec)",ylab="Enclosed Magnitude",xlim=deproj.xlim,ylim=deproj.ylim,main="Deprojected Curve of Growth",cex.axis=1.2))
+      suppressWarnings(lines(deproj.debl.cog$x*arcsec.per.pix,to.mag(deproj.debl.cog$y),lty=2,col='black'))
+      suppressWarnings(lines(deproj.cog.nosky$x*arcsec.per.pix,to.mag(deproj.cog.nosky$y),lty=1,col='grey'))
+      suppressWarnings(lines(deproj.debl.cog.nosky$x*arcsec.per.pix,to.mag(deproj.debl.cog.nosky$y),lty=1,col='black'))
+      suppressWarnings(abline(h=to.mag(sfaflux[i]),lwd=1,col='orange'))
+      suppressWarnings(abline(h=to.mag(dfaflux[i]),lwd=1,col='green'))
+      legend('bottomright',legend=c("Image COG","Deblended COG","Sky removed COG","Deblended & Sky Rem. COG","Undeblended ApMag","Deblended ApMag"),lty=c(2,2,1,1,1,1),col=c('grey','black','grey','black','orange','green'),pch=-1,cex=1.2)
+    } else {
+      deproj.ylim<-range(c(deproj.cog$y,deproj.debl.cog$y,deproj.cog.nosky$y,deproj.debl.cog.nosky$y),finite=TRUE)
+      magplot(deproj.cog$x*arcsec.per.pix,deproj.cog$y,type='l',lty=2,col='grey',xlab="Deprojected semi-major radius (arcsec)",ylab="Enclosed Flux",xlim=deproj.xlim,ylim=deproj.ylim,main="Deprojected Curve of Growth",cex.axis=1.2)
+      lines(deproj.debl.cog$x*arcsec.per.pix,deproj.debl.cog$y,lty=2,col='black')
+      lines(deproj.cog.nosky$x*arcsec.per.pix,deproj.cog.nosky$y,lty=1,col='grey')
+      lines(deproj.debl.cog.nosky$x*arcsec.per.pix,deproj.debl.cog.nosky$y,lty=1,col='black')
+      abline(h=sfaflux[i],lwd=1,col='orange')
+      abline(h=dfaflux[i],lwd=1,col='green')
+      legend('bottomright',legend=c("Image COG","Deblended COG","Sky removed COG","Deblended & Sky Rem. COG","Undeblended Flux","Deblended Flux"),lty=c(2,2,1,1,1,1),col=c('grey','black','grey','black','orange','green'),pch=-1,cex=1.2)
+    }
+    mtext(paste0("Axis ratio b/a = ",round(axis.ratio,3),"; PA = ",round(theta.offset[i],2)," deg"),side=3,line=0.25,cex=0.9)
+    magaxis(side=c(3,4),labels=FALSE)
+    if (!grepl('x11',plot.device,ignore.case=TRUE)) { dev.off() }
+  }
   # /*fend*/ }}}
 }

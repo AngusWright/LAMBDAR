@@ -58,7 +58,8 @@ function(outenv=parent.env(environment()), save.table=FALSE, env=NULL){
       stop("Catalogue File read failed")
     }
   } else if (ldac) {
-    fitstable<-try(read.ldac(paste(path.root,path.work,catalogue,sep=""),ldactoasc=ldac.exec,data.table=FALSE,stringsAsFactors=FALSE),silent=TRUE)
+    #fitstable<-try(read.ldac(paste(path.root,path.work,catalogue,sep=""),ldactoasc=ldac.exec,data.table=FALSE,stringsAsFactors=FALSE),silent=TRUE)
+    fitstable<-try(helpRfuncs::read.file(paste(path.root,path.work,catalogue,sep="")),silent=TRUE)
     if (class(fitstable)[1]=="try-error") {
       #Stop on Error
       geterrmessage()

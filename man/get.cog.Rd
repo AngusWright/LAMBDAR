@@ -24,7 +24,9 @@ numeric; Number of radial points to sample COG at. Dictates output length.
 }
   \item{proj}{
 numeric (length 2) vector; Parameters for calculating de-projected COG. Must be length 2
-with first value Axel Ratio (b/a) and second value position angle (PA).
+with first value axis ratio (b/a, in the range 0 < b/a <= 1) and second value position
+angle (PA, in degrees). The returned radius is the semi-major-axis radius of concentric
+ellipses aligned with the projected galaxy disk.
 }
   \item{SNR}{
 logical; Do you want the CoG returned as a SNR rather than straight flux? 
